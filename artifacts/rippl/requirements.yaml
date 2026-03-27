@@ -1,0 +1,19 @@
+packages:
+  "qrcode": "Generate QR codes client-side for referrers"
+  "@types/qrcode": "Types for qrcode package"
+  "framer-motion": "Smooth page transitions and component animations"
+  "date-fns": "Formatting dates for the dashboard and events table"
+  "lucide-react": "Beautiful premium icons for the UI"
+  "clsx": "Utility for constructing className strings"
+  "tailwind-merge": "Utility for merging tailwind classes"
+  "react-hook-form": "Form state management for adding referrers"
+  "@hookform/resolvers": "Zod resolver for form validation"
+
+images:
+  - path: "artifacts/rippl/public/images/auth-bg.png"
+    description: "Abstract dark navy gradient mesh with soft teal light leaks, extremely premium and professional"
+    aspect_ratio: "16:9"
+
+notes:
+  - API endpoints are generated and available in @workspace/api-client-react
+  - Token for claim page is passed via query param ?token=... but used as path param in API

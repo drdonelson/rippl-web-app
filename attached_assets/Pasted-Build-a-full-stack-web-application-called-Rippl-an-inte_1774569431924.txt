@@ -1,0 +1,26 @@
+Build a full-stack web application called Rippl — an internal patient referral reward platform for a dental practice. Use React (Vite) for the frontend, Node.js + Express for the backend, and Supabase for the database. Host the backend server on the same Replit project.
+DATABASE TABLES (Supabase)
+Create these three tables:
+referrers — id, patient_id (text), name, phone, email, referral_code (unique), total_referrals (int, default 0), total_rewards_issued (int, default 0), created_at
+referral_events — id, new_patient_name, new_patient_phone, referrer_id (foreign key), team_source (front/back/assistant), office (text), status (Lead / Booked / Exam Completed / Reward Sent), reward_type (nullable), created_at
+rewards — id, referrer_id (foreign key), referral_event_id (foreign key), reward_type (in-house-credit / amazon-gift-card / partner-gift-card), fulfilled (boolean default false), created_at
+BACKEND — Node.js/Express API routes:
+POST /api/referrals — create a new referral event (accepts new_patient_name, new_patient_phone, referrer_id, team_source, office). Sets status to “Lead”.
+PATCH /api/referrals/:id/status — update status of a referral event. When status is set to “Exam Completed”, automatically send a notification (console.log for now, Twilio later).
+POST /api/rewards — create a reward record when patient selects reward type. Updates referral_event status to “Reward Sent”.
+GET /api/dashboard — returns: total referral count, exam completion count, rewards issued count, top 5 referrers by total_referrals, recent 10 referral events.
+GET /api/referrers — returns all referrers with their stats.
+POST /api/referrers — create a new referrer (patient enrolled in the program).
+GET /api/referrers/:id/qr — returns the unique referral URL for that patient: https://[domain]/refer?ref=[referral_code]
+FRONTEND — React app with 4 pages:
+1. Dashboard (/) — Show 4 stat cards (total referrals, exams completed, rewards issued, active referrers). Show a recent activity feed. Show a top referrers leaderboard. All data pulled live from GET /api/dashboard.
+2. Referral Events (/events) — Table of all referral events with columns: new patient name, referrer name, team source, status badge, date, reward type, action button. Action button says “Trigger Reward” when status is “Exam Completed” — clicking it opens a modal to select reward type and calls POST /api/rewards.
+3. Patients & QR (/patients) — Grid of referrer cards showing name, patient ID, referral count, reward count. Each card has a “Get QR Code” button that displays their unique referral URL and a QR code image generated using the qrcode npm package.
+4. Reward Claim Page (/claim?token=[referral_code]) — Public-facing mobile-friendly page. Looks up the referral event by token. Shows: “Hallmark Dental wants to say thank you, [referrer name].” Three reward options as large tap-friendly cards: $100 In-House Credit, $50 Amazon Gift Card, $75 Partner Gift Card. On selection, calls POST /api/rewards and shows a confirmation screen.
+DESIGN
+Use Tailwind CSS. Dark navy theme (#0a1628 background). Accent color teal (#0d9488). Clean, professional. Use the qrcode npm package for QR generation. No external UI component libraries — just Tailwind utility classes.
+ENV VARIABLES (use Replit Secrets)
+SUPABASE_URL, SUPABASE_ANON_KEY, PORT (default 3001)
+SEED DATA
+Seed the database with 3 sample referrers and 5 sample referral events so the dashboard is populated on first load.
+Start with the database schema and backend routes, confirm they work, then build the frontend.

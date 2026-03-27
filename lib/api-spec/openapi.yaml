@@ -1,15 +1,22 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Rippl - Patient Referral Reward Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: referrers
+    description: Referrer management
+  - name: referrals
+    description: Referral event management
+  - name: rewards
+    description: Reward management
+  - name: dashboard
+    description: Dashboard statistics
 paths:
   /healthz:
     get:
@@ -24,6 +31,166 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /referrers:
+    get:
+      operationId: getReferrers
+      tags: [referrers]
+      summary: Get all referrers
+      responses:
+        "200":
+          description: List of referrers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Referrer"
+    post:
+      operationId: createReferrer
+      tags: [referrers]
+      summary: Create a new referrer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReferrerInput"
+      responses:
+        "201":
+          description: Created referrer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Referrer"
+
+  /referrers/{id}/qr:
+    get:
+      operationId: getReferrerQr
+      tags: [referrers]
+      summary: Get QR code URL for a referrer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: QR code info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferrerQr"
+
+  /referrals:
+    get:
+      operationId: getReferralEvents
+      tags: [referrals]
+      summary: Get all referral events
+      responses:
+        "200":
+          description: List of referral events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReferralEvent"
+    post:
+      operationId: createReferral
+      tags: [referrals]
+      summary: Create a new referral event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReferralInput"
+      responses:
+        "201":
+          description: Created referral event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralEvent"
+
+  /referrals/{id}/status:
+    patch:
+      operationId: updateReferralStatus
+      tags: [referrals]
+      summary: Update the status of a referral event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateReferralStatusInput"
+      responses:
+        "200":
+          description: Updated referral event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralEvent"
+
+  /referrals/by-token/{token}:
+    get:
+      operationId: getReferralByToken
+      tags: [referrals]
+      summary: Get a referral event by referral code token
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Referral event with referrer info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralWithReferrer"
+
+  /rewards:
+    post:
+      operationId: createReward
+      tags: [rewards]
+      summary: Create a reward and update referral status to Reward Sent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRewardInput"
+      responses:
+        "201":
+          description: Created reward
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reward"
+
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get dashboard statistics
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +201,220 @@ components:
       required:
         - status
 
+    Referrer:
+      type: object
+      properties:
+        id:
+          type: string
+        patient_id:
+          type: string
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        referral_code:
+          type: string
+        total_referrals:
+          type: integer
+        total_rewards_issued:
+          type: integer
+        created_at:
+          type: string
+      required:
+        - id
+        - patient_id
+        - name
+        - phone
+        - referral_code
+        - total_referrals
+        - total_rewards_issued
+        - created_at
+
+    CreateReferrerInput:
+      type: object
+      properties:
+        patient_id:
+          type: string
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+      required:
+        - patient_id
+        - name
+        - phone
+
+    ReferrerQr:
+      type: object
+      properties:
+        referral_url:
+          type: string
+        referral_code:
+          type: string
+      required:
+        - referral_url
+        - referral_code
+
+    ReferralEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        new_patient_name:
+          type: string
+        new_patient_phone:
+          type: string
+        referrer_id:
+          type: string
+        referrer_name:
+          type: string
+        team_source:
+          type: string
+          enum: [front, back, assistant]
+        office:
+          type: string
+        status:
+          type: string
+          enum: [Lead, Booked, "Exam Completed", "Reward Sent"]
+        reward_type:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+      required:
+        - id
+        - new_patient_name
+        - new_patient_phone
+        - referrer_id
+        - team_source
+        - office
+        - status
+        - created_at
+
+    CreateReferralInput:
+      type: object
+      properties:
+        new_patient_name:
+          type: string
+        new_patient_phone:
+          type: string
+        referrer_id:
+          type: string
+        team_source:
+          type: string
+          enum: [front, back, assistant]
+        office:
+          type: string
+      required:
+        - new_patient_name
+        - new_patient_phone
+        - referrer_id
+        - team_source
+        - office
+
+    UpdateReferralStatusInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [Lead, Booked, "Exam Completed", "Reward Sent"]
+      required:
+        - status
+
+    ReferralWithReferrer:
+      type: object
+      properties:
+        referral:
+          $ref: "#/components/schemas/ReferralEvent"
+        referrer:
+          $ref: "#/components/schemas/Referrer"
+      required:
+        - referral
+        - referrer
+
+    Reward:
+      type: object
+      properties:
+        id:
+          type: string
+        referrer_id:
+          type: string
+        referral_event_id:
+          type: string
+        reward_type:
+          type: string
+          enum: [in-house-credit, amazon-gift-card, partner-gift-card]
+        fulfilled:
+          type: boolean
+        created_at:
+          type: string
+      required:
+        - id
+        - referrer_id
+        - referral_event_id
+        - reward_type
+        - fulfilled
+        - created_at
+
+    CreateRewardInput:
+      type: object
+      properties:
+        referrer_id:
+          type: string
+        referral_event_id:
+          type: string
+        reward_type:
+          type: string
+          enum: [in-house-credit, amazon-gift-card, partner-gift-card]
+      required:
+        - referrer_id
+        - referral_event_id
+        - reward_type
+
+    TopReferrer:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        total_referrals:
+          type: integer
+        total_rewards_issued:
+          type: integer
+      required:
+        - id
+        - name
+        - total_referrals
+        - total_rewards_issued
+
+    DashboardStats:
+      type: object
+      properties:
+        total_referrals:
+          type: integer
+        exams_completed:
+          type: integer
+        rewards_issued:
+          type: integer
+        active_referrers:
+          type: integer
+        top_referrers:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopReferrer"
+        recent_events:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReferralEvent"
+      required:
+        - total_referrals
+        - exams_completed
+        - rewards_issued
+        - active_referrers
+        - top_referrers
+        - recent_events
