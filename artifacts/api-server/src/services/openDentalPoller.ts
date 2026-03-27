@@ -7,6 +7,7 @@ import { sendRewardNotification } from "./notifications";
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const OPEN_DENTAL_URL = process.env.OPEN_DENTAL_URL;
 const OPEN_DENTAL_KEY = process.env.OPEN_DENTAL_KEY;
+const OPEN_DENTAL_DEVELOPER_KEY = process.env.OPEN_DENTAL_DEVELOPER_KEY;
 
 interface OpenDentalProcedure {
   ProcNum: number;
@@ -42,12 +43,27 @@ export async function syncOpenDental(): Promise<SyncResult> {
     url.searchParams.set("ProcCode", "REF-COMP");
     url.searchParams.set("ProcStatus", "2"); // 2 = Complete
 
+    // Build auth headers — Open Dental REST API requires:
+    //   Authorization: ODFHIR <CustomerKey>
+    //   (optionally) DeveloperKey: <DeveloperKey>  for multi-practice installs
+    // If the key already starts with "ODFHIR ", use it as-is to avoid double-prefix
+    const authValue = OPEN_DENTAL_KEY!.trimStart().startsWith("ODFHIR ")
+      ? OPEN_DENTAL_KEY!.trim()
+      : `ODFHIR ${OPEN_DENTAL_KEY!.trim()}`;
+
+    const headers: Record<string, string> = {
+      "Authorization": authValue,
+      "Content-Type": "application/json",
+    };
+    if (OPEN_DENTAL_DEVELOPER_KEY) {
+      headers["DeveloperKey"] = OPEN_DENTAL_DEVELOPER_KEY;
+    }
+
+    logger.info({ url: url.toString(), authPrefix: authValue.split(" ")[0] }, "Calling Open Dental API");
+
     const response = await fetch(url.toString(), {
       method: "GET",
-      headers: {
-        "Authorization": OPEN_DENTAL_KEY,
-        "Content-Type": "application/json",
-      },
+      headers,
       signal: AbortSignal.timeout(15_000),
     });
 
