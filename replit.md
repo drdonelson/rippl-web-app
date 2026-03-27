@@ -54,12 +54,20 @@ artifacts-monorepo/
 - `POST /api/referrals` — Create referral event (status = Lead)
 - `PATCH /api/referrals/:id/status` — Update status (logs notification at Exam Completed)
 - `GET /api/referrals/by-token/:token` — Look up referral by referral code
-- `POST /api/rewards` — Create reward, updates event to Reward Sent
+- `POST /api/rewards` — Create reward, updates event to Reward Sent; creates admin task if reward_type = charity-donation
+- `GET /api/admin-tasks` — List all incomplete admin tasks (with referrer & patient info)
+- `PATCH /api/admin-tasks/:id/complete` — Mark an admin task as done
 
 ### Database Tables
 - `referrers` — Patient referrers enrolled in the program
 - `referral_events` — Individual referral events tracking
-- `rewards` — Issued rewards
+- `rewards` — Issued rewards (types: in-house-credit, amazon-gift-card, charity-donation)
+- `admin_tasks` — Manual to-do items for charity donations until API is integrated
+
+### Reward Types
+- `in-house-credit` — $100 applied to patient account
+- `amazon-gift-card` — $50 digital gift card via email
+- `charity-donation` — $50 donated on referrer's behalf (creates admin_task for manual processing)
 
 ## TypeScript & Composite Projects
 
@@ -96,6 +104,7 @@ Database layer using Drizzle ORM with PostgreSQL.
 - `src/schema/referrers.ts` — referrers table
 - `src/schema/referral_events.ts` — referral events table
 - `src/schema/rewards.ts` — rewards table
+- `src/schema/admin_tasks.ts` — admin tasks table (manual to-dos)
 
 Run `pnpm --filter @workspace/db run push` to apply schema changes.
 Run `pnpm --filter @workspace/scripts run seed` to seed sample data.

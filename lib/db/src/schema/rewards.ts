@@ -8,7 +8,7 @@ export const rewardsTable = pgTable("rewards", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   referrer_id: text("referrer_id").notNull().references(() => referrersTable.id),
   referral_event_id: text("referral_event_id").notNull().references(() => referralEventsTable.id),
-  reward_type: text("reward_type").notNull(), // in-house-credit | amazon-gift-card | partner-gift-card
+  reward_type: text("reward_type").notNull(), // in-house-credit | amazon-gift-card | charity-donation
   fulfilled: boolean("fulfilled").notNull().default(false),
   created_at: timestamp("created_at").notNull().defaultNow(),
 });

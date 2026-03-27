@@ -6,6 +6,7 @@ import rewardsRouter from "./rewards";
 import dashboardRouter from "./dashboard";
 import testRouter from "./test";
 import syncRouter from "./sync";
+import adminTasksRouter from "./adminTasks";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use("/rewards", rewardsRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/test", testRouter);
 router.use("/sync", syncRouter);
+router.use("/admin-tasks", adminTasksRouter);
 
 export default router;

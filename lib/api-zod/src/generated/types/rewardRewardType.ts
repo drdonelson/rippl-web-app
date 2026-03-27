@@ -12,5 +12,5 @@ export type RewardRewardType =
 export const RewardRewardType = {
   "in-house-credit": "in-house-credit",
   "amazon-gift-card": "amazon-gift-card",
-  "partner-gift-card": "partner-gift-card",
+  "charity-donation": "charity-donation",
 } as const;

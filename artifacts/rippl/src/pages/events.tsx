@@ -16,8 +16,14 @@ const STATUS_COLORS: Record<string, string> = {
 const REWARD_OPTIONS = [
   { id: "in-house-credit", title: "$100 In-House Credit", icon: "💎", desc: "Applied directly to patient account" },
   { id: "amazon-gift-card", title: "$50 Amazon Gift Card", icon: "📦", desc: "Digital delivery via email" },
-  { id: "partner-gift-card", title: "$75 Partner Gift Card", icon: "🤝", desc: "Local business partner card" },
+  { id: "charity-donation", title: "$50 Charity Donation", icon: "💛", desc: "We donate $50 on their behalf" },
 ];
+
+const REWARD_LABELS: Record<string, string> = {
+  "in-house-credit": "In-House Credit",
+  "amazon-gift-card": "Amazon Gift Card",
+  "charity-donation": "Charity Donation",
+};
 
 export default function Events() {
   const { data: events, isLoading } = useGetReferralEvents();
@@ -166,7 +172,7 @@ export default function Events() {
                       ) : event.status === "Reward Sent" ? (
                         <div className="flex items-center justify-end gap-2 text-primary font-medium text-sm">
                           <CheckCircle2 className="w-4 h-4" />
-                          {event.reward_type?.split('-').join(' ')}
+                          {event.reward_type ? (REWARD_LABELS[event.reward_type] ?? event.reward_type) : ""}
                         </div>
                       ) : (
                         <button className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors">

@@ -11,7 +11,7 @@ export const referralEventsTable = pgTable("referral_events", {
   team_source: text("team_source").notNull(), // front | back | assistant
   office: text("office").notNull(),
   status: text("status").notNull().default("Lead"), // Lead | Booked | Exam Completed | Reward Sent
-  reward_type: text("reward_type"), // in-house-credit | amazon-gift-card | partner-gift-card
+  reward_type: text("reward_type"), // in-house-credit | amazon-gift-card | charity-donation
   external_proc_num: text("external_proc_num"), // Open Dental ProcNum for deduplication
   created_at: timestamp("created_at").notNull().defaultNow(),
 });

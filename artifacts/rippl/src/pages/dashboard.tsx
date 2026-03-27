@@ -1,11 +1,44 @@
 import React from "react";
 import { useGetDashboard } from "@workspace/api-client-react";
-import { Users, UserPlus, Gift, Trophy, ArrowRight, Activity } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Users, UserPlus, Gift, Trophy, ArrowRight, Activity, CheckCircle2, ClipboardList } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
 
+interface AdminTask {
+  id: string;
+  task_type: string;
+  amount: number;
+  notes: string | null;
+  referrer_name: string | null;
+  referrer_email: string | null;
+  new_patient_name: string | null;
+  created_at: string;
+}
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+function useAdminTasks() {
+  return useQuery<AdminTask[]>({
+    queryKey: ["/api/admin-tasks"],
+    queryFn: () => fetch(`${BASE}/api/admin-tasks`).then(r => r.json()),
+    refetchInterval: 30_000,
+  });
+}
+
+function useCompleteTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetch(`${BASE}/api/admin-tasks/${id}/complete`, { method: "PATCH" }).then(r => r.json()),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/admin-tasks"] }),
+  });
+}
+
 export default function Dashboard() {
   const { data: stats, isLoading, error } = useGetDashboard();
+  const { data: adminTasks = [] } = useAdminTasks();
+  const completeTask = useCompleteTask();
 
   if (isLoading) {
     return (
@@ -63,6 +96,56 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      {/* Pending Admin Tasks */}
+      {adminTasks.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <ClipboardList className="w-5 h-5 text-yellow-400" />
+            <h2 className="text-xl font-display font-bold text-foreground">
+              Pending Tasks
+            </h2>
+            <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+              {adminTasks.length}
+            </span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {adminTasks.map(task => (
+              <div key={task.id} className="bg-card rounded-2xl border border-yellow-500/20 p-5 flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-yellow-400">
+                      💛 Charity Donation
+                    </p>
+                    <p className="font-bold text-foreground text-lg mt-0.5">${task.amount}</p>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 shrink-0">
+                    Pending
+                  </span>
+                </div>
+                <div className="text-sm text-muted-foreground space-y-0.5">
+                  <p><span className="text-foreground font-medium">Referrer:</span> {task.referrer_name ?? "—"}</p>
+                  {task.referrer_email && <p className="truncate text-xs">{task.referrer_email}</p>}
+                  {task.new_patient_name && (
+                    <p><span className="text-foreground font-medium">Patient:</span> {task.new_patient_name}</p>
+                  )}
+                  <p className="text-xs pt-1 text-muted-foreground/70">
+                    {format(new Date(task.created_at), "MMM d, yyyy")}
+                  </p>
+                </div>
+                <button
+                  onClick={() => completeTask.mutate(task.id)}
+                  disabled={completeTask.isPending}
+                  className="mt-auto flex items-center justify-center gap-2 w-full py-2 px-4 rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 text-sm font-semibold border border-yellow-500/20 transition-colors disabled:opacity-50"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  Mark as Done
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Recent Events */}

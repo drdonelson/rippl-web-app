@@ -347,7 +347,7 @@ components:
           type: string
         reward_type:
           type: string
-          enum: [in-house-credit, amazon-gift-card, partner-gift-card]
+          enum: [in-house-credit, amazon-gift-card, charity-donation]
         fulfilled:
           type: boolean
         created_at:
@@ -369,7 +369,7 @@ components:
           type: string
         reward_type:
           type: string
-          enum: [in-house-credit, amazon-gift-card, partner-gift-card]
+          enum: [in-house-credit, amazon-gift-card, charity-donation]
       required:
         - referrer_id
         - referral_event_id

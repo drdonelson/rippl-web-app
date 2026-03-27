@@ -149,7 +149,7 @@ export const CreateRewardBody = zod.object({
   reward_type: zod.enum([
     "in-house-credit",
     "amazon-gift-card",
-    "partner-gift-card",
+    "charity-donation",
   ]),
 });
 

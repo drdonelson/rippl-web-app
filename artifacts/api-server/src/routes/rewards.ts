@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { rewardsTable, referralEventsTable, referrersTable } from "@workspace/db/schema";
+import { rewardsTable, referralEventsTable, referrersTable, adminTasksTable } from "@workspace/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { CreateRewardBody } from "@workspace/api-zod";
 
@@ -27,6 +27,19 @@ router.post("/", async (req, res) => {
     .update(referrersTable)
     .set({ total_rewards_issued: sql`${referrersTable.total_rewards_issued} + 1` })
     .where(eq(referrersTable.id, body.referrer_id));
+
+  // For charity-donation, create an admin task for manual processing
+  if (body.reward_type === "charity-donation") {
+    await db.insert(adminTasksTable).values({
+      task_type: "charity-donation",
+      referrer_id: body.referrer_id,
+      referral_event_id: body.referral_event_id,
+      amount: 50,
+      notes: "Manually process $50 charity donation on behalf of referrer.",
+      completed: false,
+    });
+    req.log.info({ referralEventId: body.referral_event_id }, "Admin task created for charity-donation");
+  }
 
   res.status(201).json(reward);
 });
