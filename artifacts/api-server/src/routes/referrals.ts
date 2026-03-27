@@ -8,6 +8,7 @@ import {
   UpdateReferralStatusBody,
   GetReferralByTokenParams,
 } from "@workspace/api-zod";
+import { sendRewardNotification } from "../services/notifications";
 
 const router: IRouter = Router();
 
@@ -62,11 +63,24 @@ router.patch("/:id/status", async (req, res) => {
     return;
   }
 
-  if (body.status === "Exam Completed") {
-    req.log.info({ referralId: id }, "Exam completed — notification would be sent via Twilio");
+  const [referrer] = await db.select().from(referrersTable).where(eq(referrersTable.id, event.referrer_id));
+
+  if (body.status === "Exam Completed" && referrer) {
+    req.log.info({ referralId: id, referrerId: referrer.id }, "Exam completed — sending notifications");
+    // Fire-and-forget: do not await so response isn't delayed
+    sendRewardNotification(
+      referrer.name,
+      referrer.phone,
+      referrer.email ?? null,
+      event.new_patient_name,
+      referrer.referral_code
+    ).then((result) => {
+      req.log.info({ result }, "Notification result");
+    }).catch((err) => {
+      req.log.error({ err }, "Notification error");
+    });
   }
 
-  const [referrer] = await db.select().from(referrersTable).where(eq(referrersTable.id, event.referrer_id));
   res.json({ ...event, referrer_name: referrer?.name ?? null });
 });
 
@@ -83,7 +97,7 @@ router.get("/by-token/:token", async (req, res) => {
     return;
   }
 
-  // Get the most recent "Exam Completed" referral for this referrer that hasn't been rewarded
+  // Get the most recent referral for this referrer
   const [referral] = await db
     .select()
     .from(referralEventsTable)
