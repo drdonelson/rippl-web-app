@@ -43,23 +43,20 @@ export async function syncOpenDental(): Promise<SyncResult> {
     url.searchParams.set("ProcCode", "REF-COMP");
     url.searchParams.set("ProcStatus", "2"); // 2 = Complete
 
-    // Build auth headers — Open Dental REST API requires:
-    //   Authorization: ODFHIR <CustomerKey>
-    //   (optionally) DeveloperKey: <DeveloperKey>  for multi-practice installs
-    // If the key already starts with "ODFHIR ", use it as-is to avoid double-prefix
-    const authValue = OPEN_DENTAL_KEY!.trimStart().startsWith("ODFHIR ")
-      ? OPEN_DENTAL_KEY!.trim()
-      : `ODFHIR ${OPEN_DENTAL_KEY!.trim()}`;
-
+    // Open Dental REST API authentication:
+    // - If only OPEN_DENTAL_KEY is set, it is the CustomerKey → send as "Authorization: ODFHIR <key>"
+    // - If OPEN_DENTAL_DEVELOPER_KEY is also set, CustomerKey goes in Authorization
+    //   and DeveloperKey goes in a separate "DeveloperKey" header
+    const customerKey = OPEN_DENTAL_KEY!.trim();
     const headers: Record<string, string> = {
-      "Authorization": authValue,
+      "Authorization": `ODFHIR ${customerKey}`,
       "Content-Type": "application/json",
     };
     if (OPEN_DENTAL_DEVELOPER_KEY) {
-      headers["DeveloperKey"] = OPEN_DENTAL_DEVELOPER_KEY;
+      headers["DeveloperKey"] = OPEN_DENTAL_DEVELOPER_KEY.trim();
     }
 
-    logger.info({ url: url.toString(), authPrefix: authValue.split(" ")[0] }, "Calling Open Dental API");
+    logger.info({ url: url.toString() }, "Calling Open Dental API");
 
     const response = await fetch(url.toString(), {
       method: "GET",
