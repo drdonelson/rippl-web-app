@@ -79,73 +79,140 @@ export async function sendRewardNotification(
 }
 
 function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: string): string {
+  const practiceName = "Hallmark Dental";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Your Rippl Reward</title>
+  <title>You started a Rippl 🎊</title>
+  <style>
+    @media only screen and (max-width: 600px) {
+      .email-wrapper { padding: 16px 0 !important; }
+      .email-card { border-radius: 0 !important; }
+      .email-body { padding: 32px 24px !important; }
+      .reward-row { display: block !important; }
+      .reward-cell {
+        display: block !important;
+        width: 100% !important;
+        padding: 0 0 12px 0 !important;
+      }
+      .reward-box { width: 100% !important; box-sizing: border-box !important; }
+      .cta-btn { padding: 16px 28px !important; font-size: 17px !important; }
+    }
+  </style>
 </head>
-<body style="margin:0;padding:0;background-color:#060e1c;font-family:'Inter',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#060e1c;padding:40px 0;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#0a1628;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
+<body style="margin:0;padding:0;background-color:#0a1628;">
 
-          <!-- Header -->
+  <table width="100%" cellpadding="0" cellspacing="0" class="email-wrapper" style="background-color:#0a1628;padding:40px 0;">
+    <tr>
+      <td align="center" style="padding:0 16px;">
+
+        <table width="600" cellpadding="0" cellspacing="0" class="email-card" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:20px;overflow:hidden;">
+
+          <!-- ── HEADER ── -->
           <tr>
-            <td style="background:linear-gradient(135deg,#0d9488 0%,#0a7a6e 100%);padding:36px 40px;text-align:center;">
-              <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.7);">Hallmark Dental</p>
-              <h1 style="margin:0;font-size:32px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">Rippl</h1>
-              <p style="margin:12px 0 0 0;font-size:14px;color:rgba(255,255,255,0.8);">Patient Referral Reward Program</p>
+            <td align="center" style="background-color:#0a1628;padding:36px 40px 28px;">
+              <h1 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:38px;font-weight:700;color:#ffffff;letter-spacing:-1px;line-height:1;">Rippl</h1>
+              <div style="width:48px;height:3px;background-color:#0d9488;border-radius:2px;margin:10px auto 0;"></div>
+              <p style="margin:14px 0 0;font-family:Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:#0d9488;">${practiceName}</p>
             </td>
           </tr>
 
-          <!-- Body -->
+          <!-- ── HERO BODY ── -->
           <tr>
-            <td style="padding:48px 40px;">
-              <p style="margin:0 0 8px 0;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#0d9488;">You've earned a reward</p>
-              <h2 style="margin:0 0 24px 0;font-size:28px;font-weight:800;color:#ffffff;line-height:1.2;">
-                Thank you, ${referrerName}! 🎉
+            <td class="email-body" style="padding:48px 48px 36px;background-color:#ffffff;">
+
+              <!-- Heading -->
+              <h2 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-size:32px;font-weight:700;color:#0a1628;line-height:1.2;text-align:center;">
+                You started a Rippl 🎊
               </h2>
-              <p style="margin:0 0 32px 0;font-size:16px;line-height:1.7;color:#94a3b8;">
-                Great news — <strong style="color:#ffffff;">${newPatientName}</strong> just completed their visit at Hallmark Dental. As a thank you for your referral, we'd like to send you a reward.
+
+              <!-- Intro -->
+              <p style="margin:0 0 28px;font-family:Arial,sans-serif;font-size:16px;line-height:1.75;color:#374151;text-align:center;">
+                Hi <strong style="color:#0a1628;">${referrerName}</strong> — great news!<br/>
+                <strong style="color:#0a1628;">${newPatientName}</strong> just completed their visit at<br/>
+                <strong style="color:#0d9488;">${practiceName}</strong>.<br/><br/>
+                As a thank you for the referral, choose your reward below.
               </p>
 
-              <!-- Reward Options Summary -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="background-color:rgba(13,148,136,0.08);border:1px solid rgba(13,148,136,0.2);border-radius:12px;margin-bottom:32px;">
+              <!-- Divider -->
+              <div style="width:100%;height:1px;background-color:#e5e7eb;margin:0 0 32px;"></div>
+
+              <!-- Reward label -->
+              <p style="margin:0 0 16px;font-family:Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#6b7280;text-align:center;">Choose your reward</p>
+
+              <!-- ── 3 REWARD BOXES ── -->
+              <table width="100%" cellpadding="0" cellspacing="0" class="reward-row" style="margin-bottom:36px;">
                 <tr>
-                  <td style="padding:24px;">
-                    <p style="margin:0 0 12px 0;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#0d9488;">Choose your reward</p>
-                    <p style="margin:0 0 8px 0;font-size:15px;color:#e2e8f0;">💎 &nbsp;<strong>$100 In-House Credit</strong> — Applied to your next visit</p>
-                    <p style="margin:0 0 8px 0;font-size:15px;color:#e2e8f0;">📦 &nbsp;<strong>$50 Amazon Gift Card</strong> — Sent to your email</p>
-                    <p style="margin:0;font-size:15px;color:#e2e8f0;">🤝 &nbsp;<strong>$75 Partner Gift Card</strong> — Support local businesses</p>
+                  <!-- $100 In-House -->
+                  <td class="reward-cell" style="width:33.33%;padding:0 6px 0 0;vertical-align:top;">
+                    <table width="100%" cellpadding="0" cellspacing="0" class="reward-box" style="background-color:#f0fdf9;border:2px solid #0d9488;border-radius:14px;overflow:hidden;">
+                      <tr>
+                        <td align="center" style="padding:20px 16px 18px;">
+                          <div style="font-size:28px;line-height:1;margin-bottom:10px;">💎</div>
+                          <p style="margin:0 0 4px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#0a1628;">$100</p>
+                          <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:12px;font-weight:700;color:#0d9488;letter-spacing:0.5px;text-transform:uppercase;">In-House Credit</p>
+                          <p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#6b7280;line-height:1.5;">Applied to your next visit</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+
+                  <!-- $50 Amazon -->
+                  <td class="reward-cell" style="width:33.33%;padding:0 3px;vertical-align:top;">
+                    <table width="100%" cellpadding="0" cellspacing="0" class="reward-box" style="background-color:#f8fafc;border:2px solid #cbd5e1;border-radius:14px;overflow:hidden;">
+                      <tr>
+                        <td align="center" style="padding:20px 16px 18px;">
+                          <div style="font-size:28px;line-height:1;margin-bottom:10px;">📦</div>
+                          <p style="margin:0 0 4px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#0a1628;">$50</p>
+                          <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:12px;font-weight:700;color:#0d9488;letter-spacing:0.5px;text-transform:uppercase;">Amazon Gift Card</p>
+                          <p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#6b7280;line-height:1.5;">Sent to your email</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+
+                  <!-- $75 Partner -->
+                  <td class="reward-cell" style="width:33.33%;padding:0 0 0 6px;vertical-align:top;">
+                    <table width="100%" cellpadding="0" cellspacing="0" class="reward-box" style="background-color:#f8fafc;border:2px solid #cbd5e1;border-radius:14px;overflow:hidden;">
+                      <tr>
+                        <td align="center" style="padding:20px 16px 18px;">
+                          <div style="font-size:28px;line-height:1;margin-bottom:10px;">🤝</div>
+                          <p style="margin:0 0 4px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#0a1628;">$75</p>
+                          <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:12px;font-weight:700;color:#0d9488;letter-spacing:0.5px;text-transform:uppercase;">Partner Gift Card</p>
+                          <p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#6b7280;line-height:1.5;">Support local businesses</p>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               </table>
 
-              <!-- CTA Button -->
-              <table width="100%" cellpadding="0" cellspacing="0">
+              <!-- ── CTA BUTTON ── -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
                 <tr>
                   <td align="center">
-                    <a href="${claimUrl}" style="display:inline-block;padding:16px 40px;background-color:#0d9488;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;border-radius:12px;letter-spacing:0.3px;">
-                      Claim My Reward →
+                    <a href="${claimUrl}" class="cta-btn" style="display:inline-block;padding:18px 48px;background-color:#0d9488;color:#ffffff;font-family:Arial,sans-serif;font-size:18px;font-weight:700;text-decoration:none;border-radius:14px;letter-spacing:0.3px;line-height:1;">
+                      Claim My Reward &rarr;
                     </a>
                   </td>
                 </tr>
               </table>
 
-              <p style="margin:32px 0 0 0;font-size:13px;color:#64748b;text-align:center;">
-                Or copy this link: <a href="${claimUrl}" style="color:#0d9488;word-break:break-all;">${claimUrl}</a>
+              <!-- Fallback link -->
+              <p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#9ca3af;text-align:center;">
+                Button not working? <a href="${claimUrl}" style="color:#0d9488;text-decoration:underline;word-break:break-all;">${claimUrl}</a>
               </p>
+
             </td>
           </tr>
 
-          <!-- Footer -->
+          <!-- ── FOOTER ── -->
           <tr>
-            <td style="padding:24px 40px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;">
-              <p style="margin:0;font-size:12px;color:#475569;">
-                © Hallmark Dental · Powered by Rippl<br/>
+            <td align="center" style="padding:20px 40px 28px;background-color:#f8fafc;border-top:1px solid #e5e7eb;">
+              <p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#9ca3af;line-height:1.6;">
+                Sent with <strong style="color:#0d9488;">Rippl</strong> by ${practiceName}<br/>
                 You're receiving this because you referred a patient to our practice.
               </p>
             </td>
@@ -155,6 +222,7 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
       </td>
     </tr>
   </table>
+
 </body>
 </html>`;
 }
