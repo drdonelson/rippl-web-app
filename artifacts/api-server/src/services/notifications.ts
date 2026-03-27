@@ -140,7 +140,7 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
             </td>
           </tr>
 
-          <!-- ── 3 REWARD CARDS (each is a clickable link) ── -->
+          <!-- ── 3 REWARD CARDS (each is a fully clickable anchor wrapping td content) ── -->
           <tr>
             <td style="padding:0 32px 32px;">
               <table border="0" cellpadding="0" cellspacing="0" width="100%">
@@ -148,53 +148,50 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
 
                   <!-- $100 In-House Credit -->
                   <td width="33%" valign="top" style="padding:0 6px 0 0;">
-                    <a href="${claimUrl}?reward=in-house-credit" target="_blank" style="display:block;text-decoration:none;">
-                      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:1px solid #1e3a5f;cursor:pointer;"
-                        onmouseover="this.style.borderColor='#0d9488'" onmouseout="this.style.borderColor='#1e3a5f'">
-                        <tr>
-                          <td align="center" style="padding:20px 12px;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:2px solid #1e3a5f;">
+                      <tr>
+                        <td align="center" style="padding:0;">
+                          <a href="${claimUrl}?reward=in-house-credit" target="_blank" style="display:block;text-decoration:none;color:inherit;padding:20px 12px;">
                             <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1;">&#x1F48E;</p>
                             <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#0d9488;line-height:1;">$100</p>
                             <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#ffffff;line-height:1.3;">In-House Credit</p>
                             <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;line-height:1.5;">Applied to your next visit</p>
-                          </td>
-                        </tr>
-                      </table>
-                    </a>
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
 
                   <!-- $50 Amazon Gift Card -->
                   <td width="33%" valign="top" style="padding:0 3px;">
-                    <a href="${claimUrl}?reward=amazon-gift-card" target="_blank" style="display:block;text-decoration:none;">
-                      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:1px solid #1e3a5f;cursor:pointer;"
-                        onmouseover="this.style.borderColor='#0d9488'" onmouseout="this.style.borderColor='#1e3a5f'">
-                        <tr>
-                          <td align="center" style="padding:20px 12px;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:2px solid #1e3a5f;">
+                      <tr>
+                        <td align="center" style="padding:0;">
+                          <a href="${claimUrl}?reward=amazon-gift-card" target="_blank" style="display:block;text-decoration:none;color:inherit;padding:20px 12px;">
                             <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1;">&#x1F4E6;</p>
                             <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#0d9488;line-height:1;">$50</p>
                             <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#ffffff;line-height:1.3;">Amazon Gift Card</p>
                             <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;line-height:1.5;">Sent to your email</p>
-                          </td>
-                        </tr>
-                      </table>
-                    </a>
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
 
                   <!-- $50 Charity Donation -->
                   <td width="33%" valign="top" style="padding:0 0 0 6px;">
-                    <a href="${claimUrl}?reward=charity-donation" target="_blank" style="display:block;text-decoration:none;">
-                      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:1px solid #1e3a5f;cursor:pointer;"
-                        onmouseover="this.style.borderColor='#0d9488'" onmouseout="this.style.borderColor='#1e3a5f'">
-                        <tr>
-                          <td align="center" style="padding:20px 12px;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:2px solid #1e3a5f;">
+                      <tr>
+                        <td align="center" style="padding:0;">
+                          <a href="${claimUrl}?reward=charity-donation" target="_blank" style="display:block;text-decoration:none;color:inherit;padding:20px 12px;">
                             <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1;">&#x1F49B;</p>
                             <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#0d9488;line-height:1;">$50</p>
                             <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#ffffff;line-height:1.3;">Charity Donation</p>
                             <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;line-height:1.5;">We donate on your behalf</p>
-                          </td>
-                        </tr>
-                      </table>
-                    </a>
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
 
                 </tr>

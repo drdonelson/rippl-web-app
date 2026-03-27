@@ -30,29 +30,29 @@ export default function Claim() {
     }
   });
 
-  // Auto-claim the pre-selected reward from the email link ?reward= param
+  // Pre-select (highlight) the reward from the ?reward= URL param on load — does NOT auto-submit
   useEffect(() => {
-    if (data && preselectedReward && !isSuccess && !createReward.isPending) {
+    if (data && preselectedReward && !isSuccess) {
       const valid = REWARDS.find(r => r.id === preselectedReward);
-      if (valid) {
-        handleClaim(preselectedReward);
-      }
+      if (valid) setSelectedReward(preselectedReward);
     }
-    // Only run once when data first loads
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  const handleClaim = (rewardId: string) => {
-    setSelectedReward(rewardId);
-    if (data) {
-      createReward.mutate({
-        data: {
-          referrer_id: data.referrer.id,
-          referral_event_id: data.referral.id,
-          reward_type: rewardId as any
-        }
-      });
-    }
+  // Selecting a card just highlights it; submitting is a separate action
+  const handleSelect = (rewardId: string) => {
+    if (!createReward.isPending) setSelectedReward(rewardId);
+  };
+
+  const handleConfirm = () => {
+    if (!selectedReward || !data || createReward.isPending) return;
+    createReward.mutate({
+      data: {
+        referrer_id: data.referrer.id,
+        referral_event_id: data.referral.id,
+        reward_type: selectedReward as any,
+      }
+    });
   };
 
   if (!token || error) {
@@ -152,47 +152,86 @@ export default function Claim() {
                 </p>
               </div>
 
-              <div className="space-y-4 mb-8">
-                {REWARDS.map((reward, i) => (
-                  <motion.button
-                    key={reward.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    onClick={() => handleClaim(reward.id)}
-                    disabled={createReward.isPending}
-                    className={cn(
-                      "w-full text-left bg-card/60 backdrop-blur-md border border-border rounded-3xl p-5 relative overflow-hidden group transition-all duration-300",
-                      "hover:bg-card hover:border-primary/50 hover:shadow-xl hover:-translate-y-1",
-                      "disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                    )}
-                  >
-                    <div className={cn(
-                      "absolute top-0 right-0 w-32 h-32 bg-gradient-to-br opacity-10 rounded-full blur-3xl -mr-10 -mt-10 transition-opacity group-hover:opacity-20",
-                      reward.gradient
-                    )} />
-                    
-                    <div className="flex items-center gap-5 relative z-10">
-                      <div className="w-16 h-16 rounded-2xl bg-background border border-border flex items-center justify-center text-3xl shadow-sm">
-                        {reward.icon}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">{reward.type}</p>
-                        <h3 className="text-xl font-display font-bold text-foreground mb-1">{reward.value}</h3>
-                        <p className="text-sm text-muted-foreground leading-snug">{reward.desc}</p>
-                      </div>
-                      <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
-                        {createReward.isPending && selectedReward === reward.id ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
+              <div className="space-y-4 mb-6">
+                {REWARDS.map((reward, i) => {
+                  const isSelected = selectedReward === reward.id;
+                  return (
+                    <motion.button
+                      key={reward.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      onClick={() => handleSelect(reward.id)}
+                      disabled={createReward.isPending}
+                      className={cn(
+                        "w-full text-left backdrop-blur-md rounded-3xl p-5 relative overflow-hidden group transition-all duration-300",
+                        "disabled:cursor-not-allowed disabled:transform-none",
+                        isSelected
+                          ? "bg-card border-2 border-primary shadow-xl shadow-primary/20 -translate-y-1"
+                          : "bg-card/60 border border-border hover:bg-card hover:border-primary/50 hover:shadow-xl hover:-translate-y-1"
+                      )}
+                    >
+                      <div className={cn(
+                        "absolute top-0 right-0 w-32 h-32 bg-gradient-to-br rounded-full blur-3xl -mr-10 -mt-10 transition-opacity",
+                        reward.gradient,
+                        isSelected ? "opacity-20" : "opacity-10 group-hover:opacity-20"
+                      )} />
+
+                      <div className="flex items-center gap-5 relative z-10">
+                        <div className={cn(
+                          "w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-sm transition-colors",
+                          isSelected ? "bg-primary/10 border-2 border-primary" : "bg-background border border-border"
+                        )}>
+                          {reward.icon}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">{reward.type}</p>
+                          <h3 className="text-xl font-display font-bold text-foreground mb-1">{reward.value}</h3>
+                          <p className="text-sm text-muted-foreground leading-snug">{reward.desc}</p>
+                        </div>
+                        <div className={cn(
+                          "w-10 h-10 rounded-full flex items-center justify-center transition-colors shrink-0",
+                          isSelected ? "bg-primary text-primary-foreground" : "bg-secondary group-hover:bg-primary group-hover:text-primary-foreground"
+                        )}>
                           <ChevronRight className="w-5 h-5" />
-                        )}
+                        </div>
                       </div>
-                    </div>
-                  </motion.button>
-                ))}
+                    </motion.button>
+                  );
+                })}
               </div>
-              
+
+              {/* Confirm button — appears when a card is selected */}
+              <AnimatePresence>
+                {selectedReward && (
+                  <motion.div
+                    key="confirm"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 12 }}
+                    className="mb-6"
+                  >
+                    <button
+                      onClick={handleConfirm}
+                      disabled={createReward.isPending}
+                      className="w-full py-4 px-6 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg flex items-center justify-center gap-3 transition-all shadow-lg shadow-primary/30 disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                      {createReward.isPending ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Claiming…
+                        </>
+                      ) : (
+                        <>
+                          <Gift className="w-5 h-5" />
+                          Confirm &amp; Claim Reward
+                        </>
+                      )}
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <p className="text-center text-xs text-muted-foreground mt-auto">
                 By claiming a reward, you agree to Hallmark Dental's referral program terms and conditions.
               </p>
