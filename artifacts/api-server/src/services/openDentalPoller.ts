@@ -45,9 +45,8 @@ export async function syncOpenDental(): Promise<SyncResult> {
     url.searchParams.set("ProcStatus", "2"); // 2 = Complete
 
     // Open Dental REST API authentication format:
-    //   Authorization: ODFHIR {DeveloperKey}
-    //   CustomerKey: {CustomerKey}
-    // If only one key is provided (no developer key), fall back to treating it as the customer key
+    //   Authorization: ODFHIR {DeveloperKey}/{CustomerKey}
+    // Both keys are combined with a forward slash in a single Authorization header.
     const customerKey = OPEN_DENTAL_KEY!.trim();
     const developerKey = OPEN_DENTAL_DEVELOPER_KEY?.trim();
 
@@ -55,11 +54,11 @@ export async function syncOpenDental(): Promise<SyncResult> {
       "Content-Type": "application/json",
     };
 
-    // Customer key always goes in Authorization
-    headers["Authorization"] = `ODFHIR ${customerKey}`;
     if (developerKey) {
-      // Developer key goes in its own header
-      headers["DeveloperKey"] = developerKey;
+      headers["Authorization"] = `ODFHIR ${developerKey}/${customerKey}`;
+    } else {
+      // Fallback if only one key is configured
+      headers["Authorization"] = `ODFHIR ${customerKey}`;
     }
 
     logger.info({ url: url.toString(), twoKeyMode: !!developerKey }, "Calling Open Dental API");
