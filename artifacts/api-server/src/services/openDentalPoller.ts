@@ -6,7 +6,8 @@ import { sendRewardNotification } from "./notifications";
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const OPEN_DENTAL_URL = process.env.OPEN_DENTAL_URL;
-const OPEN_DENTAL_KEY = process.env.OPEN_DENTAL_KEY;
+// Support both OPEN_DENTAL_CUSTOMER_KEY and legacy OPEN_DENTAL_KEY
+const OPEN_DENTAL_KEY = process.env.OPEN_DENTAL_CUSTOMER_KEY || process.env.OPEN_DENTAL_KEY;
 const OPEN_DENTAL_DEVELOPER_KEY = process.env.OPEN_DENTAL_DEVELOPER_KEY;
 
 interface OpenDentalProcedure {
@@ -43,20 +44,25 @@ export async function syncOpenDental(): Promise<SyncResult> {
     url.searchParams.set("ProcCode", "REF-COMP");
     url.searchParams.set("ProcStatus", "2"); // 2 = Complete
 
-    // Open Dental REST API authentication:
-    // - If only OPEN_DENTAL_KEY is set, it is the CustomerKey → send as "Authorization: ODFHIR <key>"
-    // - If OPEN_DENTAL_DEVELOPER_KEY is also set, CustomerKey goes in Authorization
-    //   and DeveloperKey goes in a separate "DeveloperKey" header
+    // Open Dental REST API authentication format:
+    //   Authorization: ODFHIR {DeveloperKey}
+    //   CustomerKey: {CustomerKey}
+    // If only one key is provided (no developer key), fall back to treating it as the customer key
     const customerKey = OPEN_DENTAL_KEY!.trim();
+    const developerKey = OPEN_DENTAL_DEVELOPER_KEY?.trim();
+
     const headers: Record<string, string> = {
-      "Authorization": `ODFHIR ${customerKey}`,
       "Content-Type": "application/json",
     };
-    if (OPEN_DENTAL_DEVELOPER_KEY) {
-      headers["DeveloperKey"] = OPEN_DENTAL_DEVELOPER_KEY.trim();
+
+    // Customer key always goes in Authorization
+    headers["Authorization"] = `ODFHIR ${customerKey}`;
+    if (developerKey) {
+      // Developer key goes in its own header
+      headers["DeveloperKey"] = developerKey;
     }
 
-    logger.info({ url: url.toString() }, "Calling Open Dental API");
+    logger.info({ url: url.toString(), twoKeyMode: !!developerKey }, "Calling Open Dental API");
 
     const response = await fetch(url.toString(), {
       method: "GET",
