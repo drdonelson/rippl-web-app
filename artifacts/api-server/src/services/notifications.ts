@@ -140,7 +140,7 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
             </td>
           </tr>
 
-          <!-- ── 3 REWARD CARDS ── -->
+          <!-- ── 3 REWARD CARDS (each is a clickable link) ── -->
           <tr>
             <td style="padding:0 32px 32px;">
               <table border="0" cellpadding="0" cellspacing="0" width="100%">
@@ -148,59 +148,55 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
 
                   <!-- $100 In-House Credit -->
                   <td width="33%" valign="top" style="padding:0 6px 0 0;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:1px solid #0d9488;">
-                      <tr>
-                        <td align="center" style="padding:20px 12px;">
-                          <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1;">&#x1F48E;</p>
-                          <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#0d9488;line-height:1;">$100</p>
-                          <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#ffffff;line-height:1.3;">In-House Credit</p>
-                          <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;line-height:1.5;">Applied to your next visit</p>
-                        </td>
-                      </tr>
-                    </table>
+                    <a href="${claimUrl}?reward=in-house-credit" target="_blank" style="display:block;text-decoration:none;">
+                      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:1px solid #1e3a5f;cursor:pointer;"
+                        onmouseover="this.style.borderColor='#0d9488'" onmouseout="this.style.borderColor='#1e3a5f'">
+                        <tr>
+                          <td align="center" style="padding:20px 12px;">
+                            <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1;">&#x1F48E;</p>
+                            <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#0d9488;line-height:1;">$100</p>
+                            <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#ffffff;line-height:1.3;">In-House Credit</p>
+                            <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;line-height:1.5;">Applied to your next visit</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </a>
                   </td>
 
                   <!-- $50 Amazon Gift Card -->
                   <td width="33%" valign="top" style="padding:0 3px;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:1px solid #1e3a5f;">
-                      <tr>
-                        <td align="center" style="padding:20px 12px;">
-                          <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1;">&#x1F4E6;</p>
-                          <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#0d9488;line-height:1;">$50</p>
-                          <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#ffffff;line-height:1.3;">Amazon Gift Card</p>
-                          <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;line-height:1.5;">Sent to your email</p>
-                        </td>
-                      </tr>
-                    </table>
+                    <a href="${claimUrl}?reward=amazon-gift-card" target="_blank" style="display:block;text-decoration:none;">
+                      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:1px solid #1e3a5f;cursor:pointer;"
+                        onmouseover="this.style.borderColor='#0d9488'" onmouseout="this.style.borderColor='#1e3a5f'">
+                        <tr>
+                          <td align="center" style="padding:20px 12px;">
+                            <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1;">&#x1F4E6;</p>
+                            <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#0d9488;line-height:1;">$50</p>
+                            <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#ffffff;line-height:1.3;">Amazon Gift Card</p>
+                            <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;line-height:1.5;">Sent to your email</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </a>
                   </td>
 
-                  <!-- $75 Partner Gift Card -->
+                  <!-- $50 Charity Donation -->
                   <td width="33%" valign="top" style="padding:0 0 0 6px;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:1px solid #1e3a5f;">
-                      <tr>
-                        <td align="center" style="padding:20px 12px;">
-                          <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1;">&#x1F91D;</p>
-                          <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#0d9488;line-height:1;">$75</p>
-                          <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#ffffff;line-height:1.3;">Partner Gift Card</p>
-                          <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;line-height:1.5;">Support local businesses</p>
-                        </td>
-                      </tr>
-                    </table>
+                    <a href="${claimUrl}?reward=charity-donation" target="_blank" style="display:block;text-decoration:none;">
+                      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:1px solid #1e3a5f;cursor:pointer;"
+                        onmouseover="this.style.borderColor='#0d9488'" onmouseout="this.style.borderColor='#1e3a5f'">
+                        <tr>
+                          <td align="center" style="padding:20px 12px;">
+                            <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1;">&#x1F49B;</p>
+                            <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#0d9488;line-height:1;">$50</p>
+                            <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#ffffff;line-height:1.3;">Charity Donation</p>
+                            <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;line-height:1.5;">We donate on your behalf</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </a>
                   </td>
 
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- ── CTA BUTTON ── -->
-          <tr>
-            <td align="center" style="padding:0 40px 16px;">
-              <table border="0" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td align="center" style="background-color:#0d9488;">
-                    <a href="${claimUrl}" target="_blank" style="display:inline-block;padding:18px 48px;font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.5px;">Claim My Reward &#8594;</a>
-                  </td>
                 </tr>
               </table>
             </td>
@@ -210,7 +206,7 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
           <tr>
             <td align="center" style="padding:0 40px 32px;">
               <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#475569;line-height:1.6;">
-                If the button doesn&#39;t work, copy this link into your browser:<br/>
+                Cards not clickable? Visit:<br/>
                 <a href="${claimUrl}" target="_blank" style="color:#0d9488;text-decoration:underline;word-break:break-all;">${escHtml(claimUrl)}</a>
               </p>
             </td>

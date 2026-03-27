@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useGetReferralByToken, useCreateReward } from "@workspace/api-client-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Droplets, Gift, CheckCircle2, ChevronRight, Loader2 } from "lucide-react";
@@ -7,12 +7,13 @@ import { cn } from "@/lib/utils";
 const REWARDS = [
   { id: "in-house-credit", title: "$100 Account Credit", value: "$100", type: "In-House", icon: "💎", desc: "Applied directly to your next visit at Hallmark Dental", gradient: "from-blue-600 to-indigo-600" },
   { id: "amazon-gift-card", title: "$50 Amazon Card", value: "$50", type: "Digital", icon: "📦", desc: "Sent instantly to your email inbox", gradient: "from-orange-500 to-amber-500" },
-  { id: "partner-gift-card", title: "$75 Local Partner", value: "$75", type: "Gift Card", icon: "🤝", desc: "Support local businesses in our community", gradient: "from-emerald-500 to-teal-500" },
+  { id: "charity-donation", title: "$50 Charity Donation", value: "$50", type: "Charity", icon: "💛", desc: "We donate on your behalf to a cause you care about", gradient: "from-yellow-400 to-amber-500" },
 ];
 
 export default function Claim() {
   const searchParams = new URLSearchParams(window.location.search);
   const token = searchParams.get("ref") || searchParams.get("token") || "";
+  const preselectedReward = searchParams.get("reward") || null;
   
   const { data, isLoading, error } = useGetReferralByToken(token, {
     query: { enabled: !!token, retry: false }
@@ -28,6 +29,18 @@ export default function Claim() {
       }
     }
   });
+
+  // Auto-claim the pre-selected reward from the email link ?reward= param
+  useEffect(() => {
+    if (data && preselectedReward && !isSuccess && !createReward.isPending) {
+      const valid = REWARDS.find(r => r.id === preselectedReward);
+      if (valid) {
+        handleClaim(preselectedReward);
+      }
+    }
+    // Only run once when data first loads
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const handleClaim = (rewardId: string) => {
     setSelectedReward(rewardId);
