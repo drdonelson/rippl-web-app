@@ -42,8 +42,8 @@ export default function Dashboard() {
   return (
     <div className="space-y-10">
       <header>
-        <h1 className="text-4xl font-display font-bold text-foreground">Welcome back</h1>
-        <p className="text-muted-foreground mt-2 text-lg">Here's what's happening with your referral program today.</p>
+        <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">Welcome back</h1>
+        <p className="text-muted-foreground mt-2 text-base md:text-lg">Here's what's happening with your referral program today.</p>
       </header>
 
       {/* Stats Grid */}
@@ -66,7 +66,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Recent Events */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 min-w-0">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-display font-bold text-foreground">Recent Activity</h2>
             <Link href="/events" className="text-sm font-semibold text-primary hover:text-primary/80 flex items-center gap-1 transition-colors">
@@ -83,21 +83,21 @@ export default function Dashboard() {
             ) : (
               <div className="divide-y divide-border/50">
                 {stats.recent_events.slice(0, 5).map((event) => (
-                  <div key={event.id} className="p-5 flex items-center justify-between hover:bg-muted/30 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-border">
-                        <Users className="w-5 h-5 text-muted-foreground" />
+                  <div key={event.id} className="p-4 md:p-5 flex items-start md:items-center justify-between gap-3 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 shrink-0 rounded-full bg-secondary flex items-center justify-center border border-border">
+                        <Users className="w-4 h-4 text-muted-foreground" />
                       </div>
-                      <div>
-                        <p className="font-semibold text-foreground">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-foreground text-sm md:text-base truncate">
                           {event.new_patient_name} <span className="text-muted-foreground font-normal">referred by</span> {event.referrer_name || 'Unknown'}
                         </p>
-                        <p className="text-sm text-muted-foreground mt-0.5">
+                        <p className="text-xs text-muted-foreground mt-0.5">
                           {format(new Date(event.created_at), 'MMM d, yyyy • h:mm a')}
                         </p>
                       </div>
                     </div>
-                    <div className="px-3 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border">
+                    <div className="px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border shrink-0">
                       {event.status}
                     </div>
                   </div>

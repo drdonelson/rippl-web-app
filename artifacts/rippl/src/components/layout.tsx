@@ -15,8 +15,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      {/* Sidebar */}
-      <aside className="w-72 border-r border-border bg-card/30 backdrop-blur-xl flex flex-col shrink-0">
+      {/* Sidebar — hidden on mobile, visible on md+ */}
+      <aside className="hidden md:flex w-72 border-r border-border bg-card/30 backdrop-blur-xl flex-col shrink-0">
         <div className="p-8 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20">
             <Droplets className="w-6 h-6 text-primary-foreground" />
@@ -31,20 +31,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {NAV_ITEMS.map((item) => {
             const isActive = location === item.href;
             const Icon = item.icon;
-            
             return (
-              <Link 
-                key={item.href} 
+              <Link
+                key={item.href}
                 href={item.href}
                 className={cn(
                   "flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium transition-all duration-300 group relative",
-                  isActive 
-                    ? "text-primary-foreground bg-primary/10" 
+                  isActive
+                    ? "text-primary-foreground bg-primary/10"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 )}
               >
                 {isActive && (
-                  <motion.div 
+                  <motion.div
                     layoutId="active-nav"
                     className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/5 border border-primary/20 rounded-xl"
                     initial={false}
@@ -70,21 +69,65 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden relative">
+      {/* Main Content — full width on mobile */}
+      <main className="flex-1 flex flex-col overflow-hidden relative min-w-0">
+        {/* Mobile top header */}
+        <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-card/50 backdrop-blur-xl shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+            <Droplets className="w-4 h-4 text-primary-foreground" />
+          </div>
+          <div>
+            <span className="text-base font-display font-bold text-foreground leading-none">Rippl</span>
+            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider ml-2">Hallmark Dental</span>
+          </div>
+        </div>
+
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -z-10" />
-        <div className="flex-1 overflow-y-auto p-8 lg:p-12 z-0">
+
+        {/* Scrollable content — adds bottom padding on mobile for the tab bar */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12 pb-24 md:pb-8 z-0">
           <motion.div
             key={location}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="max-w-6xl mx-auto"
+            className="max-w-6xl mx-auto w-full"
           >
             {children}
           </motion.div>
         </div>
       </main>
+
+      {/* Bottom Tab Bar — mobile only */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border flex items-stretch safe-area-bottom">
+        {NAV_ITEMS.map((item) => {
+          const isActive = location === item.href;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex-1 flex flex-col items-center justify-center gap-1 py-3 px-2 transition-all duration-200",
+                isActive ? "text-primary" : "text-muted-foreground"
+              )}
+            >
+              <div className={cn(
+                "w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200",
+                isActive ? "bg-primary/15" : ""
+              )}>
+                <Icon className="w-5 h-5" />
+              </div>
+              <span className={cn(
+                "text-[10px] font-semibold leading-none",
+                isActive ? "text-primary" : "text-muted-foreground"
+              )}>
+                {item.label === "Referral Events" ? "Events" : item.label === "Patients & QR" ? "Patients" : item.label}
+              </span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }

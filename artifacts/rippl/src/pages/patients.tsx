@@ -84,7 +84,7 @@ export default function Patients() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-display font-bold text-foreground">Patients & QR</h1>
+          <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">Patients & QR</h1>
           <p className="text-muted-foreground mt-2">Manage your referrers and generate custom QR codes.</p>
         </div>
         
