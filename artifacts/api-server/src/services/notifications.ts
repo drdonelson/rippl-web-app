@@ -53,16 +53,19 @@ export async function sendRewardNotification(
     logger.error({ err, to: referrerPhone }, "Failed to send Twilio SMS");
   }
 
-  // Send email via SendGrid
+  // Send email via SendGrid — HTML only, click tracking disabled
   if (referrerEmail) {
     try {
       const sg = getSendGridClient();
       await sg.send({
         to: referrerEmail,
         from: SENDGRID_FROM_EMAIL,
-        subject: `🎉 Your Rippl reward is ready, ${referrerName}!`,
-        text: smsBody,
+        subject: `You started a Rippl 🎊 — claim your reward, ${referrerName}!`,
         html: buildEmailHtml(referrerName, newPatientName, claimUrl),
+        // No text fallback — HTML only
+        trackingSettings: {
+          clickTracking: { enable: false, enableText: false },
+        },
       });
       results.email = "sent";
       logger.info({ to: referrerEmail }, "Email sent via SendGrid");
@@ -79,150 +82,179 @@ export async function sendRewardNotification(
 }
 
 function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: string): string {
-  const practiceName = "Hallmark Dental";
-  return `<!DOCTYPE html>
-<html lang="en">
+  const practice = "Hallmark Dental";
+
+  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>You started a Rippl 🎊</title>
-  <style>
-    @media only screen and (max-width: 600px) {
-      .email-wrapper { padding: 16px 0 !important; }
-      .email-card { border-radius: 0 !important; }
-      .email-body { padding: 32px 24px !important; }
-      .reward-row { display: block !important; }
-      .reward-cell {
-        display: block !important;
-        width: 100% !important;
-        padding: 0 0 12px 0 !important;
-      }
-      .reward-box { width: 100% !important; box-sizing: border-box !important; }
-      .cta-btn { padding: 16px 28px !important; font-size: 17px !important; }
-    }
-  </style>
+  <title>You started a Rippl &#x1F38A;</title>
 </head>
-<body style="margin:0;padding:0;background-color:#0a1628;">
+<body style="margin:0;padding:0;background-color:#0a1628;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
 
-  <table width="100%" cellpadding="0" cellspacing="0" class="email-wrapper" style="background-color:#0a1628;padding:40px 0;">
+  <!-- OUTER WRAPPER -->
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;">
     <tr>
-      <td align="center" style="padding:0 16px;">
+      <td align="center" style="padding:40px 16px;">
 
-        <table width="600" cellpadding="0" cellspacing="0" class="email-card" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:20px;overflow:hidden;">
+        <!-- CARD -->
+        <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;width:100%;background-color:#0f1f38;border:1px solid #1e3a5f;">
 
           <!-- ── HEADER ── -->
           <tr>
-            <td align="center" style="background-color:#0a1628;padding:36px 40px 28px;">
-              <h1 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:38px;font-weight:700;color:#ffffff;letter-spacing:-1px;line-height:1;">Rippl</h1>
-              <div style="width:48px;height:3px;background-color:#0d9488;border-radius:2px;margin:10px auto 0;"></div>
-              <p style="margin:14px 0 0;font-family:Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:#0d9488;">${practiceName}</p>
+            <td align="center" style="padding:36px 40px 28px;background-color:#0a1628;border-bottom:1px solid #1e3a5f;">
+              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:32px;font-weight:700;color:#0d9488;letter-spacing:2px;line-height:1;">Rippl</p>
+              <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#64748b;">Hallmark Dental</p>
             </td>
           </tr>
 
-          <!-- ── HERO BODY ── -->
+          <!-- ── HERO ── -->
           <tr>
-            <td class="email-body" style="padding:48px 48px 36px;background-color:#ffffff;">
-
-              <!-- Heading -->
-              <h2 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-size:32px;font-weight:700;color:#0a1628;line-height:1.2;text-align:center;">
-                You started a Rippl 🎊
-              </h2>
-
-              <!-- Intro -->
-              <p style="margin:0 0 28px;font-family:Arial,sans-serif;font-size:16px;line-height:1.75;color:#374151;text-align:center;">
-                Hi <strong style="color:#0a1628;">${referrerName}</strong> — great news!<br/>
-                <strong style="color:#0a1628;">${newPatientName}</strong> just completed their visit at<br/>
-                <strong style="color:#0d9488;">${practiceName}</strong>.<br/><br/>
-                As a thank you for the referral, choose your reward below.
+            <td align="center" style="padding:40px 40px 8px;background-color:#0f1f38;">
+              <p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;font-size:28px;font-weight:700;color:#ffffff;line-height:1.3;">You started a Rippl &#x1F38A;</p>
+              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:16px;color:#94a3b8;line-height:1.7;">
+                Hi <span style="color:#ffffff;font-weight:700;">${escHtml(referrerName)}</span> &#8212;<br/>
+                <span style="color:#ffffff;font-weight:700;">${escHtml(newPatientName)}</span> just completed their visit at<br/>
+                <span style="color:#0d9488;font-weight:700;">${escHtml(practice)}</span>.<br/><br/>
+                As a thank you for your referral, choose your reward below.
               </p>
+            </td>
+          </tr>
 
-              <!-- Divider -->
-              <div style="width:100%;height:1px;background-color:#e5e7eb;margin:0 0 32px;"></div>
-
-              <!-- Reward label -->
-              <p style="margin:0 0 16px;font-family:Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#6b7280;text-align:center;">Choose your reward</p>
-
-              <!-- ── 3 REWARD BOXES ── -->
-              <table width="100%" cellpadding="0" cellspacing="0" class="reward-row" style="margin-bottom:36px;">
+          <!-- DIVIDER -->
+          <tr>
+            <td style="padding:32px 40px 0;">
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
-                  <!-- $100 In-House -->
-                  <td class="reward-cell" style="width:33.33%;padding:0 6px 0 0;vertical-align:top;">
-                    <table width="100%" cellpadding="0" cellspacing="0" class="reward-box" style="background-color:#f0fdf9;border:2px solid #0d9488;border-radius:14px;overflow:hidden;">
+                  <td style="height:1px;background-color:#1e3a5f;font-size:0;line-height:0;">&nbsp;</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- CHOOSE YOUR REWARD LABEL -->
+          <tr>
+            <td align="center" style="padding:24px 40px 16px;">
+              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#64748b;">Choose your reward</p>
+            </td>
+          </tr>
+
+          <!-- ── 3 REWARD CARDS ── -->
+          <tr>
+            <td style="padding:0 32px 32px;">
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+
+                  <!-- $100 In-House Credit -->
+                  <td width="33%" valign="top" style="padding:0 6px 0 0;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:1px solid #0d9488;">
                       <tr>
-                        <td align="center" style="padding:20px 16px 18px;">
-                          <div style="font-size:28px;line-height:1;margin-bottom:10px;">💎</div>
-                          <p style="margin:0 0 4px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#0a1628;">$100</p>
-                          <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:12px;font-weight:700;color:#0d9488;letter-spacing:0.5px;text-transform:uppercase;">In-House Credit</p>
-                          <p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#6b7280;line-height:1.5;">Applied to your next visit</p>
+                        <td align="center" style="padding:20px 12px;">
+                          <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1;">&#x1F48E;</p>
+                          <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#0d9488;line-height:1;">$100</p>
+                          <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#ffffff;line-height:1.3;">In-House Credit</p>
+                          <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;line-height:1.5;">Applied to your next visit</p>
                         </td>
                       </tr>
                     </table>
                   </td>
 
-                  <!-- $50 Amazon -->
-                  <td class="reward-cell" style="width:33.33%;padding:0 3px;vertical-align:top;">
-                    <table width="100%" cellpadding="0" cellspacing="0" class="reward-box" style="background-color:#f8fafc;border:2px solid #cbd5e1;border-radius:14px;overflow:hidden;">
+                  <!-- $50 Amazon Gift Card -->
+                  <td width="33%" valign="top" style="padding:0 3px;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:1px solid #1e3a5f;">
                       <tr>
-                        <td align="center" style="padding:20px 16px 18px;">
-                          <div style="font-size:28px;line-height:1;margin-bottom:10px;">📦</div>
-                          <p style="margin:0 0 4px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#0a1628;">$50</p>
-                          <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:12px;font-weight:700;color:#0d9488;letter-spacing:0.5px;text-transform:uppercase;">Amazon Gift Card</p>
-                          <p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#6b7280;line-height:1.5;">Sent to your email</p>
+                        <td align="center" style="padding:20px 12px;">
+                          <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1;">&#x1F4E6;</p>
+                          <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#0d9488;line-height:1;">$50</p>
+                          <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#ffffff;line-height:1.3;">Amazon Gift Card</p>
+                          <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;line-height:1.5;">Sent to your email</p>
                         </td>
                       </tr>
                     </table>
                   </td>
 
-                  <!-- $75 Partner -->
-                  <td class="reward-cell" style="width:33.33%;padding:0 0 0 6px;vertical-align:top;">
-                    <table width="100%" cellpadding="0" cellspacing="0" class="reward-box" style="background-color:#f8fafc;border:2px solid #cbd5e1;border-radius:14px;overflow:hidden;">
+                  <!-- $75 Partner Gift Card -->
+                  <td width="33%" valign="top" style="padding:0 0 0 6px;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:1px solid #1e3a5f;">
                       <tr>
-                        <td align="center" style="padding:20px 16px 18px;">
-                          <div style="font-size:28px;line-height:1;margin-bottom:10px;">🤝</div>
-                          <p style="margin:0 0 4px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#0a1628;">$75</p>
-                          <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:12px;font-weight:700;color:#0d9488;letter-spacing:0.5px;text-transform:uppercase;">Partner Gift Card</p>
-                          <p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#6b7280;line-height:1.5;">Support local businesses</p>
+                        <td align="center" style="padding:20px 12px;">
+                          <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1;">&#x1F91D;</p>
+                          <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#0d9488;line-height:1;">$75</p>
+                          <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#ffffff;line-height:1.3;">Partner Gift Card</p>
+                          <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;line-height:1.5;">Support local businesses</p>
                         </td>
                       </tr>
                     </table>
+                  </td>
+
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ── CTA BUTTON ── -->
+          <tr>
+            <td align="center" style="padding:0 40px 16px;">
+              <table border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="background-color:#0d9488;">
+                    <a href="${claimUrl}" target="_blank" style="display:inline-block;padding:18px 48px;font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.5px;">Claim My Reward &#8594;</a>
                   </td>
                 </tr>
               </table>
+            </td>
+          </tr>
 
-              <!-- ── CTA BUTTON ── -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+          <!-- FALLBACK LINK -->
+          <tr>
+            <td align="center" style="padding:0 40px 32px;">
+              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#475569;line-height:1.6;">
+                If the button doesn&#39;t work, copy this link into your browser:<br/>
+                <a href="${claimUrl}" target="_blank" style="color:#0d9488;text-decoration:underline;word-break:break-all;">${escHtml(claimUrl)}</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- DIVIDER -->
+          <tr>
+            <td style="padding:0 40px;">
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
-                  <td align="center">
-                    <a href="${claimUrl}" class="cta-btn" style="display:inline-block;padding:18px 48px;background-color:#0d9488;color:#ffffff;font-family:Arial,sans-serif;font-size:18px;font-weight:700;text-decoration:none;border-radius:14px;letter-spacing:0.3px;line-height:1;">
-                      Claim My Reward &rarr;
-                    </a>
-                  </td>
+                  <td style="height:1px;background-color:#1e3a5f;font-size:0;line-height:0;">&nbsp;</td>
                 </tr>
               </table>
-
-              <!-- Fallback link -->
-              <p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#9ca3af;text-align:center;">
-                Button not working? <a href="${claimUrl}" style="color:#0d9488;text-decoration:underline;word-break:break-all;">${claimUrl}</a>
-              </p>
-
             </td>
           </tr>
 
           <!-- ── FOOTER ── -->
           <tr>
-            <td align="center" style="padding:20px 40px 28px;background-color:#f8fafc;border-top:1px solid #e5e7eb;">
-              <p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#9ca3af;line-height:1.6;">
-                Sent with <strong style="color:#0d9488;">Rippl</strong> by ${practiceName}<br/>
-                You're receiving this because you referred a patient to our practice.
+            <td align="center" style="padding:24px 40px 28px;background-color:#0a1628;">
+              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#475569;line-height:1.7;">
+                Sent with <span style="color:#0d9488;font-weight:700;">Rippl</span> by ${escHtml(practice)}<br/>
+                You&#39;re receiving this because you referred a patient to our practice.
               </p>
             </td>
           </tr>
 
         </table>
+        <!-- /CARD -->
+
       </td>
     </tr>
   </table>
+  <!-- /OUTER WRAPPER -->
 
 </body>
 </html>`;
+}
+
+/** Escape HTML special characters to prevent injection in email content */
+function escHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
