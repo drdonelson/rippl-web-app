@@ -39,6 +39,49 @@ function buildReferralCode(firstName: string, patNum: string | number): string {
   return `${first4}-${last4}`;
 }
 
+// ── GET /api/opendental/test ───────────────────────────────────────────────
+// Quick connectivity check: hits GET /api/v1/patients and returns first 5 results.
+router.get("/test", async (_req, res) => {
+  if (!OPEN_DENTAL_URL || !OPEN_DENTAL_KEY) {
+    res.status(503).json({ error: "Open Dental API is not configured (OPEN_DENTAL_URL / OPEN_DENTAL_KEY missing)" });
+    return;
+  }
+
+  const authHeader = buildAuthHeader();
+  if (!authHeader) {
+    res.status(503).json({ error: "Open Dental auth header could not be built" });
+    return;
+  }
+
+  try {
+    const url = new URL("/api/v1/patients", OPEN_DENTAL_URL);
+    url.searchParams.set("Limit", "5");
+
+    const response = await fetch(url.toString(), {
+      headers: { "Authorization": authHeader, "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(15_000),
+    });
+
+    const body = await response.text();
+    let parsed: unknown;
+    try { parsed = JSON.parse(body); } catch { parsed = body; }
+
+    if (!response.ok) {
+      res.status(response.status).json({
+        error: `Open Dental returned ${response.status}`,
+        body: parsed,
+      });
+      return;
+    }
+
+    const patients = Array.isArray(parsed) ? parsed.slice(0, 5) : parsed;
+    res.json({ status: response.status, patients });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(502).json({ error: `Request failed: ${message}` });
+  }
+});
+
 // ── GET /api/opendental/patients/active ────────────────────────────────────
 // Fetches active patients from Open Dental (PatStatus=0) and returns them.
 // Does NOT modify the database — call POST /import to actually enroll them.
