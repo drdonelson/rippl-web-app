@@ -82,6 +82,48 @@ router.get("/test", async (_req, res) => {
   }
 });
 
+// ── GET /api/opendental/test/procedures ───────────────────────────────────
+// Hits GET /api/v1/procedures?ProcStatus=2 and returns the raw first 5 results.
+router.get("/test/procedures", async (_req, res) => {
+  if (!OPEN_DENTAL_URL || !OPEN_DENTAL_KEY) {
+    res.status(503).json({ error: "Open Dental API is not configured" });
+    return;
+  }
+
+  const authHeader = buildAuthHeader();
+  if (!authHeader) {
+    res.status(503).json({ error: "Auth header could not be built" });
+    return;
+  }
+
+  try {
+    const url = new URL("/api/v1/procedures", OPEN_DENTAL_URL);
+    url.searchParams.set("ProcStatus", "2");
+    url.searchParams.set("Limit", "5");
+
+    logger.info({ url: url.toString() }, "Fetching completed procedures from Open Dental");
+
+    const response = await fetch(url.toString(), {
+      headers: { "Authorization": authHeader, "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(20_000),
+    });
+
+    const rawText = await response.text();
+    let parsed: unknown;
+    try { parsed = JSON.parse(rawText); } catch { parsed = rawText; }
+
+    res.status(response.status).json({
+      od_status: response.status,
+      od_status_text: response.statusText,
+      url: url.toString(),
+      raw: parsed,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(502).json({ error: `Request failed: ${message}` });
+  }
+});
+
 // ── GET /api/opendental/patients/active ────────────────────────────────────
 // Fetches active patients from Open Dental (PatStatus=0) and returns them.
 // Does NOT modify the database — call POST /import to actually enroll them.
