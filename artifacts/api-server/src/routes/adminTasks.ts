@@ -14,6 +14,7 @@ router.get("/", async (req, res) => {
       amount: adminTasksTable.amount,
       notes: adminTasksTable.notes,
       completed: adminTasksTable.completed,
+      referral_event_id: adminTasksTable.referral_event_id,
       created_at: adminTasksTable.created_at,
       referrer_name: referrersTable.name,
       referrer_email: referrersTable.email,
@@ -44,6 +45,42 @@ router.patch("/:id/complete", async (req, res) => {
   }
 
   res.json(task);
+});
+
+// PATCH /api/admin-tasks/:id/override — mark task done and clear household_duplicate flag on event
+router.patch("/:id/override", async (req, res) => {
+  const { id } = req.params;
+
+  // Load the task first to get the referral_event_id
+  const [task] = await db
+    .select()
+    .from(adminTasksTable)
+    .where(and(eq(adminTasksTable.id, id), eq(adminTasksTable.completed, false)));
+
+  if (!task) {
+    res.status(404).json({ error: "Task not found or already completed" });
+    return;
+  }
+
+  // Mark admin task as done
+  await db
+    .update(adminTasksTable)
+    .set({ completed: true })
+    .where(eq(adminTasksTable.id, id));
+
+  // Clear the household_duplicate flag so the event re-enters the normal reward flow
+  const [updatedEvent] = await db
+    .update(referralEventsTable)
+    .set({ household_duplicate: false })
+    .where(eq(referralEventsTable.id, task.referral_event_id))
+    .returning();
+
+  req.log.info(
+    { taskId: id, referralEventId: task.referral_event_id },
+    "Admin overrode household duplicate — duplicate flag cleared"
+  );
+
+  res.json({ task: { ...task, completed: true }, event: updatedEvent });
 });
 
 export default router;

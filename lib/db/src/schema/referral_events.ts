@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { referrersTable } from "./referrers";
@@ -13,6 +13,8 @@ export const referralEventsTable = pgTable("referral_events", {
   status: text("status").notNull().default("Lead"), // Lead | Booked | Exam Completed | Reward Sent
   reward_type: text("reward_type"), // in-house-credit | amazon-gift-card | charity-donation
   external_proc_num: text("external_proc_num"), // Open Dental ProcNum for deduplication
+  household_id: text("household_id"), // hash(lastName + streetAddress) for duplicate detection
+  household_duplicate: boolean("household_duplicate").notNull().default(false),
   created_at: timestamp("created_at").notNull().defaultNow(),
 });
 

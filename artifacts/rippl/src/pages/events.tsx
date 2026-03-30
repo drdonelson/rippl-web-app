@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { useGetReferralEvents, useCreateReward, useUpdateReferralStatus } from "@workspace/api-client-react";
 import { format } from "date-fns";
-import { Gift, Search, MoreHorizontal, CheckCircle2, ChevronDown } from "lucide-react";
+import { Gift, Search, MoreHorizontal, CheckCircle2, ChevronDown, ShieldAlert, ShieldCheck } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { cn } from "@/lib/utils";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const STATUS_COLORS: Record<string, string> = {
   "Lead": "bg-slate-500/10 text-slate-400 border-slate-500/20",
@@ -25,12 +27,43 @@ const REWARD_LABELS: Record<string, string> = {
   "charity-donation": "Charity Donation",
 };
 
+interface ReferralEvent {
+  id: string;
+  new_patient_name: string;
+  new_patient_phone: string;
+  referrer_id: string;
+  referrer_name?: string | null;
+  team_source: string;
+  office: string;
+  status: string;
+  reward_type?: string | null;
+  household_duplicate?: boolean | null;
+  created_at: string;
+}
+
+function useOverrideHousehold() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (eventId: string) =>
+      fetch(`${BASE}/api/referrals/${eventId}/override-household`, { method: "PATCH" })
+        .then(r => r.json()) as Promise<ReferralEvent>,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/referrals"] });
+      qc.invalidateQueries({ queryKey: ["/api/admin-tasks"] });
+    },
+  });
+}
+
+type TabId = "all" | "flagged";
+
 export default function Events() {
-  const { data: events, isLoading } = useGetReferralEvents();
+  const { data: rawEvents, isLoading } = useGetReferralEvents();
+  const events = rawEvents as ReferralEvent[] | undefined;
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState<TabId>("all");
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  
+
   const createReward = useCreateReward({
     mutation: {
       onSuccess: () => {
@@ -43,22 +76,26 @@ export default function Events() {
 
   const updateStatus = useUpdateReferralStatus({
     mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["/api/referrals"] });
-      }
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/referrals"] }),
     }
   });
 
-  const filteredEvents = events?.filter(e => 
-    e.new_patient_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (e.referrer_name && e.referrer_name.toLowerCase().includes(searchTerm.toLowerCase()))
-  ) || [];
+  const overrideHousehold = useOverrideHousehold();
+
+  const flaggedCount = events?.filter(e => e.household_duplicate).length ?? 0;
+
+  const filteredEvents = (events ?? []).filter(e => {
+    const matchesSearch =
+      e.new_patient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (e.referrer_name && e.referrer_name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesTab = activeTab === "flagged" ? !!e.household_duplicate : true;
+    return matchesSearch && matchesTab;
+  });
 
   const handleReward = (rewardType: string) => {
     if (!selectedEventId) return;
     const event = events?.find(e => e.id === selectedEventId);
     if (!event) return;
-
     createReward.mutate({
       data: {
         referrer_id: event.referrer_id,
@@ -72,12 +109,26 @@ export default function Events() {
     const sequence = ["Lead", "Booked", "Exam Completed"];
     const currentIndex = sequence.indexOf(currentStatus);
     if (currentIndex >= 0 && currentIndex < sequence.length - 1) {
-      updateStatus.mutate({
-        id: eventId,
-        data: { status: sequence[currentIndex + 1] as any }
-      });
+      updateStatus.mutate({ id: eventId, data: { status: sequence[currentIndex + 1] as any } });
     }
   };
+
+  const handleOverrideAndReward = (event: ReferralEvent) => {
+    overrideHousehold.mutate(event.id, {
+      onSuccess: (updatedEvent) => {
+        // If status is Exam Completed, open reward modal immediately
+        if (updatedEvent.status === "Exam Completed") {
+          setSelectedEventId(event.id);
+        }
+        // Otherwise just refresh — admin advances status then sends reward
+      }
+    });
+  };
+
+  const tabs: { id: TabId; label: string; count?: number }[] = [
+    { id: "all", label: "All Events" },
+    { id: "flagged", label: "Flagged", count: flaggedCount },
+  ];
 
   return (
     <div className="space-y-8">
@@ -86,10 +137,10 @@ export default function Events() {
           <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">Referral Events</h1>
           <p className="text-muted-foreground mt-2">Track the pipeline of your new patients.</p>
         </div>
-        
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <input 
+          <input
             type="text"
             placeholder="Search patients..."
             value={searchTerm}
@@ -98,6 +149,40 @@ export default function Events() {
           />
         </div>
       </div>
+
+      {/* Tab bar */}
+      <div className="flex items-center gap-1 border-b border-border">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={cn(
+              "relative px-4 py-2.5 text-sm font-semibold transition-colors flex items-center gap-2",
+              activeTab === tab.id
+                ? "text-foreground after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-t"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {tab.id === "flagged" && <ShieldAlert className="w-4 h-4 text-amber-400" />}
+            {tab.label}
+            {tab.count !== undefined && tab.count > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                {tab.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "flagged" && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm">
+          <ShieldAlert className="w-5 h-5 shrink-0" />
+          <p>
+            These referrals share a household with an existing completed patient.
+            Review each one and click <strong>Override &amp; Reward</strong> only if it's a genuinely new household member.
+          </p>
+        </div>
+      )}
 
       <div className="bg-card border border-border rounded-2xl shadow-xl shadow-black/10 overflow-hidden">
         <div className="overflow-x-auto">
@@ -114,7 +199,7 @@ export default function Events() {
             </thead>
             <tbody className="divide-y divide-border">
               {isLoading ? (
-                Array.from({length: 5}).map((_, i) => (
+                Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     <td className="px-6 py-5"><div className="h-4 w-32 bg-muted rounded"></div></td>
                     <td className="px-6 py-5"><div className="h-4 w-24 bg-muted rounded"></div></td>
@@ -127,15 +212,32 @@ export default function Events() {
               ) : filteredEvents.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
-                    No referral events found.
+                    {activeTab === "flagged"
+                      ? "No flagged referrals — everything looks clean."
+                      : "No referral events found."}
                   </td>
                 </tr>
               ) : (
                 filteredEvents.map((event) => (
-                  <tr key={event.id} className="hover:bg-muted/10 transition-colors group">
+                  <tr
+                    key={event.id}
+                    className={cn(
+                      "hover:bg-muted/10 transition-colors group",
+                      event.household_duplicate && "bg-amber-500/5"
+                    )}
+                  >
                     <td className="px-6 py-5">
-                      <p className="font-semibold text-foreground">{event.new_patient_name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{event.new_patient_phone}</p>
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <p className="font-semibold text-foreground">{event.new_patient_name}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{event.new_patient_phone}</p>
+                        </div>
+                        {event.household_duplicate && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/25 whitespace-nowrap">
+                            Household Review
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-5">
                       <p className="font-medium text-foreground">{event.referrer_name || 'Unknown'}</p>
@@ -147,21 +249,32 @@ export default function Events() {
                       {format(new Date(event.created_at), 'MMM d, yyyy')}
                     </td>
                     <td className="px-6 py-5">
-                      <button 
-                        onClick={() => handleStatusCycle(event.id, event.status)}
-                        disabled={event.status === "Reward Sent" || updateStatus.isPending}
+                      <button
+                        onClick={() => !event.household_duplicate && handleStatusCycle(event.id, event.status)}
+                        disabled={event.status === "Reward Sent" || updateStatus.isPending || !!event.household_duplicate}
                         className={cn(
                           "px-3 py-1.5 rounded-full text-xs font-bold border flex items-center gap-1.5 transition-all",
                           STATUS_COLORS[event.status] || "bg-muted text-muted-foreground",
-                          event.status !== "Reward Sent" && "hover:brightness-125 cursor-pointer"
+                          event.status !== "Reward Sent" && !event.household_duplicate && "hover:brightness-125 cursor-pointer"
                         )}
                       >
                         {event.status}
-                        {event.status !== "Reward Sent" && <ChevronDown className="w-3 h-3 opacity-50" />}
+                        {event.status !== "Reward Sent" && !event.household_duplicate && (
+                          <ChevronDown className="w-3 h-3 opacity-50" />
+                        )}
                       </button>
                     </td>
                     <td className="px-6 py-5 text-right">
-                      {event.status === "Exam Completed" ? (
+                      {event.household_duplicate ? (
+                        <button
+                          onClick={() => handleOverrideAndReward(event)}
+                          disabled={overrideHousehold.isPending}
+                          className="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg text-sm font-semibold border border-amber-500/30 transition-all flex items-center gap-2 ml-auto disabled:opacity-50"
+                        >
+                          <ShieldCheck className="w-4 h-4" />
+                          Override &amp; Reward
+                        </button>
+                      ) : event.status === "Exam Completed" ? (
                         <button
                           onClick={() => setSelectedEventId(event.id)}
                           className="px-4 py-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg text-sm font-semibold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 transition-all flex items-center gap-2 ml-auto"

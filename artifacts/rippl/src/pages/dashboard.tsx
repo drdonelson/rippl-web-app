@@ -110,39 +110,69 @@ export default function Dashboard() {
             </span>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {adminTasks.map(task => (
-              <div key={task.id} className="bg-card rounded-2xl border border-yellow-500/20 p-5 flex flex-col gap-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-yellow-400">
-                      💛 Charity Donation
-                    </p>
-                    <p className="font-bold text-foreground text-lg mt-0.5">${task.amount}</p>
+            {adminTasks.map(task => {
+              const isHouseholdDupe = task.task_type === "household-duplicate-review";
+              const isGiftCard = task.task_type === "amazon-gift-card";
+
+              const accent = isHouseholdDupe
+                ? { border: "border-orange-500/20", bg: "bg-orange-500/10", text: "text-orange-400", badgeBg: "bg-orange-500/10", badgeBorder: "border-orange-500/20", btnBg: "bg-orange-500/10 hover:bg-orange-500/20", btnBorder: "border-orange-500/20" }
+                : { border: "border-yellow-500/20", bg: "bg-yellow-500/10", text: "text-yellow-400", badgeBg: "bg-yellow-500/10", badgeBorder: "border-yellow-500/20", btnBg: "bg-yellow-500/10 hover:bg-yellow-500/20", btnBorder: "border-yellow-500/20" };
+
+              const taskLabel = isHouseholdDupe
+                ? "🏠 Household Review"
+                : isGiftCard
+                ? "📦 Gift Card"
+                : "💛 Charity Donation";
+
+              return (
+                <div key={task.id} className={`bg-card rounded-2xl border ${accent.border} p-5 flex flex-col gap-3`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className={`text-xs font-semibold uppercase tracking-wider ${accent.text}`}>
+                        {taskLabel}
+                      </p>
+                      {task.amount > 0 && (
+                        <p className="font-bold text-foreground text-lg mt-0.5">${task.amount}</p>
+                      )}
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${accent.badgeBg} ${accent.text} border ${accent.badgeBorder} shrink-0`}>
+                      Pending
+                    </span>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 shrink-0">
-                    Pending
-                  </span>
-                </div>
-                <div className="text-sm text-muted-foreground space-y-0.5">
-                  <p><span className="text-foreground font-medium">Referrer:</span> {task.referrer_name ?? "—"}</p>
-                  {task.referrer_email && <p className="truncate text-xs">{task.referrer_email}</p>}
-                  {task.new_patient_name && (
-                    <p><span className="text-foreground font-medium">Patient:</span> {task.new_patient_name}</p>
+                  <div className="text-sm text-muted-foreground space-y-0.5">
+                    <p><span className="text-foreground font-medium">Referrer:</span> {task.referrer_name ?? "—"}</p>
+                    {task.referrer_email && <p className="truncate text-xs">{task.referrer_email}</p>}
+                    {task.new_patient_name && (
+                      <p><span className="text-foreground font-medium">Patient:</span> {task.new_patient_name}</p>
+                    )}
+                    {task.notes && isHouseholdDupe && (
+                      <p className="text-xs pt-1 text-muted-foreground/70 italic line-clamp-2">{task.notes}</p>
+                    )}
+                    <p className="text-xs pt-1 text-muted-foreground/70">
+                      {format(new Date(task.created_at), "MMM d, yyyy")}
+                    </p>
+                  </div>
+                  {isHouseholdDupe ? (
+                    <a
+                      href="#"
+                      onClick={(e) => { e.preventDefault(); window.location.hash = "/events?tab=flagged"; }}
+                      className={`mt-auto flex items-center justify-center gap-2 w-full py-2 px-4 rounded-xl ${accent.btnBg} ${accent.text} text-sm font-semibold border ${accent.btnBorder} transition-colors`}
+                    >
+                      Review on Events Page →
+                    </a>
+                  ) : (
+                    <button
+                      onClick={() => completeTask.mutate(task.id)}
+                      disabled={completeTask.isPending}
+                      className={`mt-auto flex items-center justify-center gap-2 w-full py-2 px-4 rounded-xl ${accent.btnBg} ${accent.text} text-sm font-semibold border ${accent.btnBorder} transition-colors disabled:opacity-50`}
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      Mark as Done
+                    </button>
                   )}
-                  <p className="text-xs pt-1 text-muted-foreground/70">
-                    {format(new Date(task.created_at), "MMM d, yyyy")}
-                  </p>
                 </div>
-                <button
-                  onClick={() => completeTask.mutate(task.id)}
-                  disabled={completeTask.isPending}
-                  className="mt-auto flex items-center justify-center gap-2 w-full py-2 px-4 rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 text-sm font-semibold border border-yellow-500/20 transition-colors disabled:opacity-50"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  Mark as Done
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

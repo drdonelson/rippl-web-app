@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { referralEventsTable, referrersTable } from "@workspace/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { referralEventsTable, referrersTable, adminTasksTable } from "@workspace/db/schema";
+import { eq, sql, and } from "drizzle-orm";
 import {
   CreateReferralBody,
   UpdateReferralStatusParams,
@@ -10,6 +10,7 @@ import {
 } from "@workspace/api-zod";
 import { sendRewardNotification } from "../services/notifications";
 import { scheduleOnboardingSms } from "../services/onboardingSms";
+import { checkHouseholdDuplicate } from "../services/householdDuplicate";
 
 const router: IRouter = Router();
 
@@ -25,6 +26,8 @@ router.get("/", async (req, res) => {
       office: referralEventsTable.office,
       status: referralEventsTable.status,
       reward_type: referralEventsTable.reward_type,
+      household_id: referralEventsTable.household_id,
+      household_duplicate: referralEventsTable.household_duplicate,
       created_at: referralEventsTable.created_at,
     })
     .from(referralEventsTable)
@@ -35,9 +38,19 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   const body = CreateReferralBody.parse(req.body);
+
+  // ── Household duplicate check ────────────────────────────────────────────
+  const householdResult = await checkHouseholdDuplicate(
+    body.new_patient_name,
+    body.new_patient_phone
+  );
+
+  // Insert the referral event with household fields
   const [event] = await db.insert(referralEventsTable).values({
     ...body,
     status: "Lead",
+    household_id: householdResult.household_id,
+    household_duplicate: householdResult.is_duplicate,
   }).returning();
 
   // Increment referrer's total_referrals
@@ -45,6 +58,26 @@ router.post("/", async (req, res) => {
     .update(referrersTable)
     .set({ total_referrals: sql`${referrersTable.total_referrals} + 1` })
     .where(eq(referrersTable.id, body.referrer_id));
+
+  // If duplicate household → create admin task and return early (no reward flow)
+  if (householdResult.is_duplicate) {
+    req.log.warn(
+      { eventId: event.id, householdId: householdResult.household_id, conflictingEventId: householdResult.conflicting_event_id },
+      "Household duplicate detected — creating admin review task"
+    );
+
+    await db.insert(adminTasksTable).values({
+      task_type: "household-duplicate-review",
+      referrer_id: body.referrer_id,
+      referral_event_id: event.id,
+      amount: 0,
+      notes: `Household duplicate detected. Existing completed event: ${householdResult.conflicting_event_id ?? "unknown"}. Address match: ${householdResult.od_address_found ? "yes (OD address)" : "name only"}. Review and override if legitimate.`,
+      completed: false,
+    });
+
+    res.status(201).json({ ...event, referrer_name: null });
+    return;
+  }
 
   res.status(201).json({ ...event, referrer_name: null });
 });
@@ -69,7 +102,6 @@ router.patch("/:id/status", async (req, res) => {
   if (body.status === "Exam Completed") {
     if (referrer) {
       req.log.info({ referralId: id, referrerId: referrer.id }, "Exam completed — sending reward notification to referrer");
-      // Fire-and-forget: do not await so response isn't delayed
       sendRewardNotification(
         referrer.name,
         referrer.phone,
@@ -83,8 +115,6 @@ router.patch("/:id/status", async (req, res) => {
       });
     }
 
-    // Schedule onboarding SMS for the new patient (fires in 2 hours)
-    // Only fires if the new patient isn't already a referrer or hasn't been sent this SMS before
     if (event.new_patient_phone) {
       scheduleOnboardingSms({
         newPatientName:  event.new_patient_name,
@@ -105,6 +135,55 @@ router.patch("/:id/status", async (req, res) => {
   res.json({ ...event, referrer_name: referrer?.name ?? null });
 });
 
+// PATCH /api/referrals/:id/override-household
+// Admin override: clear household_duplicate flag and mark the associated admin task done.
+router.patch("/:id/override-household", async (req, res) => {
+  const { id } = req.params;
+
+  const [event] = await db
+    .select()
+    .from(referralEventsTable)
+    .where(eq(referralEventsTable.id, id));
+
+  if (!event) {
+    res.status(404).json({ error: "Referral event not found" });
+    return;
+  }
+
+  if (!event.household_duplicate) {
+    res.status(400).json({ error: "This event is not flagged as a household duplicate" });
+    return;
+  }
+
+  // Clear duplicate flag
+  const [updatedEvent] = await db
+    .update(referralEventsTable)
+    .set({ household_duplicate: false })
+    .where(eq(referralEventsTable.id, id))
+    .returning();
+
+  // Mark any associated household-duplicate admin task as complete
+  await db
+    .update(adminTasksTable)
+    .set({ completed: true })
+    .where(
+      and(
+        eq(adminTasksTable.referral_event_id, id),
+        eq(adminTasksTable.task_type, "household-duplicate-review"),
+        eq(adminTasksTable.completed, false)
+      )
+    );
+
+  const [referrer] = await db
+    .select()
+    .from(referrersTable)
+    .where(eq(referrersTable.id, event.referrer_id));
+
+  req.log.info({ eventId: id, referrerId: event.referrer_id }, "Household duplicate overridden by admin");
+
+  res.json({ ...updatedEvent, referrer_name: referrer?.name ?? null });
+});
+
 router.get("/by-token/:token", async (req, res) => {
   const { token } = GetReferralByTokenParams.parse(req.params);
 
@@ -118,7 +197,6 @@ router.get("/by-token/:token", async (req, res) => {
     return;
   }
 
-  // Get the most recent referral for this referrer
   const [referral] = await db
     .select()
     .from(referralEventsTable)
