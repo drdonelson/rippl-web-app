@@ -15,13 +15,13 @@ const STATUS_COLORS: Record<string, string> = {
 
 const REWARD_OPTIONS = [
   { id: "in-house-credit", title: "$100 In-House Credit", icon: "💎", desc: "Applied directly to patient account" },
-  { id: "amazon-gift-card", title: "$50 Amazon Gift Card", icon: "📦", desc: "Digital delivery via email" },
+  { id: "amazon-gift-card", title: "$50 Gift Card", icon: "📦", desc: "Reward Link — sent to referrer's email" },
   { id: "charity-donation", title: "$50 Charity Donation", icon: "💛", desc: "We donate $50 on their behalf" },
 ];
 
 const REWARD_LABELS: Record<string, string> = {
   "in-house-credit": "In-House Credit",
-  "amazon-gift-card": "Amazon Gift Card",
+  "amazon-gift-card": "Gift Card",
   "charity-donation": "Charity Donation",
 };
 

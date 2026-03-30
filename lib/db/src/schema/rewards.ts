@@ -10,6 +10,7 @@ export const rewardsTable = pgTable("rewards", {
   referral_event_id: text("referral_event_id").notNull().references(() => referralEventsTable.id),
   reward_type: text("reward_type").notNull(), // in-house-credit | amazon-gift-card | charity-donation
   fulfilled: boolean("fulfilled").notNull().default(false),
+  tango_order_id: text("tango_order_id"),
   created_at: timestamp("created_at").notNull().defaultNow(),
 });
 

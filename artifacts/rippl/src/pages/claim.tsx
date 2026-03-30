@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 const REWARDS = [
   { id: "in-house-credit", title: "$100 Account Credit", value: "$100", type: "In-House", icon: "💎", desc: "Applied directly to your next visit at Hallmark Dental", gradient: "from-blue-600 to-indigo-600" },
-  { id: "amazon-gift-card", title: "$50 Amazon Card", value: "$50", type: "Digital", icon: "📦", desc: "Sent instantly to your email inbox", gradient: "from-orange-500 to-amber-500" },
+  { id: "amazon-gift-card", title: "$50 Gift Card", value: "$50", type: "Your Choice", icon: "📦", desc: "Choose from Amazon, Target, Starbucks & more — sent to your email", gradient: "from-orange-500 to-amber-500" },
   { id: "charity-donation", title: "$50 Charity Donation", value: "$50", type: "Charity", icon: "💛", desc: "We donate on your behalf to a cause you care about", gradient: "from-yellow-400 to-amber-500" },
 ];
 
