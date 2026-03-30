@@ -59,15 +59,25 @@ artifacts-monorepo/
 - `PATCH /api/admin-tasks/:id/complete` — Mark an admin task as done
 
 ### Database Tables
-- `referrers` — Patient referrers enrolled in the program
-- `referral_events` — Individual referral events tracking
+- `referrers` — Patient referrers enrolled in the program (`onboarding_sms_sent` bool added)
+- `referral_events` — Individual referral events (`household_id`, `household_duplicate` cols added)
 - `rewards` — Issued rewards (types: in-house-credit, amazon-gift-card, charity-donation)
-- `admin_tasks` — Manual to-do items for charity donations until API is integrated
+- `admin_tasks` — Manual to-dos: charity-donation, amazon-gift-card, household-duplicate-review
+- `launch_emails` — One-time program announcement email queue (pending/sent/failed)
 
 ### Reward Types
 - `in-house-credit` — $100 applied to patient account
-- `amazon-gift-card` — $50 digital gift card via email
+- `amazon-gift-card` — $50 digital gift card via Tango (auto-fulfilled; admin_task on failure)
 - `charity-donation` — $50 donated on referrer's behalf (creates admin_task for manual processing)
+
+### Key Features
+- **Household duplicate detection** — SHA-256 hash of lastName+address from OD; flags `household_duplicate`, creates admin review task, "Override & Reward" on Events→Flagged tab
+- **Post-visit onboarding SMS** — fires 2h after exam completion for new patients; creates referrer record with `FIRST4-LAST4` code; guarded by `onboarding_sms_sent` flag
+- **Tango gift card auto-fulfillment** — uses UTID `U453114` (Reward Link US); account must be funded; fallback admin_task on failure
+- **Launch email blast** — `POST /api/launch/email-blast` queues personalized emails at 50/hr rate; `GET /api/launch/status` tracks progress; `POST /api/launch/test` sends preview
+
+### Important: Zod imports in api-server
+`api-server` routes must use `import { z } from "zod"` (not `zod/v4`). The api-server esbuild bundle does not include zod directly — prefer manual validation or import from `@workspace/api-zod`.
 
 ## TypeScript & Composite Projects
 

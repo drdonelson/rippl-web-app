@@ -7,6 +7,7 @@ import dashboardRouter from "./dashboard";
 import testRouter from "./test";
 import syncRouter from "./sync";
 import adminTasksRouter from "./adminTasks";
+import launchRouter from "./launch";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use("/dashboard", dashboardRouter);
 router.use("/test", testRouter);
 router.use("/sync", syncRouter);
 router.use("/admin-tasks", adminTasksRouter);
+router.use("/launch", launchRouter);
 
 export default router;
