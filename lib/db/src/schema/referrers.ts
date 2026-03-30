@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -11,6 +11,7 @@ export const referrersTable = pgTable("referrers", {
   referral_code: text("referral_code").notNull().unique(),
   total_referrals: integer("total_referrals").notNull().default(0),
   total_rewards_issued: integer("total_rewards_issued").notNull().default(0),
+  onboarding_sms_sent: boolean("onboarding_sms_sent").notNull().default(false),
   created_at: timestamp("created_at").notNull().defaultNow(),
 });
 

@@ -9,6 +9,7 @@ import {
   GetReferralByTokenParams,
 } from "@workspace/api-zod";
 import { sendRewardNotification } from "../services/notifications";
+import { scheduleOnboardingSms } from "../services/onboardingSms";
 
 const router: IRouter = Router();
 
@@ -65,20 +66,40 @@ router.patch("/:id/status", async (req, res) => {
 
   const [referrer] = await db.select().from(referrersTable).where(eq(referrersTable.id, event.referrer_id));
 
-  if (body.status === "Exam Completed" && referrer) {
-    req.log.info({ referralId: id, referrerId: referrer.id }, "Exam completed — sending notifications");
-    // Fire-and-forget: do not await so response isn't delayed
-    sendRewardNotification(
-      referrer.name,
-      referrer.phone,
-      referrer.email ?? null,
-      event.new_patient_name,
-      referrer.referral_code
-    ).then((result) => {
-      req.log.info({ result }, "Notification result");
-    }).catch((err) => {
-      req.log.error({ err }, "Notification error");
-    });
+  if (body.status === "Exam Completed") {
+    if (referrer) {
+      req.log.info({ referralId: id, referrerId: referrer.id }, "Exam completed — sending reward notification to referrer");
+      // Fire-and-forget: do not await so response isn't delayed
+      sendRewardNotification(
+        referrer.name,
+        referrer.phone,
+        referrer.email ?? null,
+        event.new_patient_name,
+        referrer.referral_code
+      ).then((result) => {
+        req.log.info({ result }, "Reward notification result");
+      }).catch((err) => {
+        req.log.error({ err }, "Reward notification error");
+      });
+    }
+
+    // Schedule onboarding SMS for the new patient (fires in 2 hours)
+    // Only fires if the new patient isn't already a referrer or hasn't been sent this SMS before
+    if (event.new_patient_phone) {
+      scheduleOnboardingSms({
+        newPatientName:  event.new_patient_name,
+        newPatientPhone: event.new_patient_phone,
+        referralEventId: id,
+      }).then((result) => {
+        if (result.skipped) {
+          req.log.info({ referralId: id }, "Onboarding SMS skipped — patient already enrolled");
+        } else {
+          req.log.info({ referralId: id, referrerId: result.referrerId, code: result.referralCode }, "Onboarding SMS scheduled");
+        }
+      }).catch((err) => {
+        req.log.error({ err, referralId: id }, "Failed to schedule onboarding SMS");
+      });
+    }
   }
 
   res.json({ ...event, referrer_name: referrer?.name ?? null });
