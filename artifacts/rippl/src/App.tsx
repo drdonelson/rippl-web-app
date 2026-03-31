@@ -9,6 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import Events from "@/pages/events";
 import Patients from "@/pages/patients";
 import Claim from "@/pages/claim";
+import { OfficeProvider } from "@/contexts/office-context";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,10 +45,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
+        <OfficeProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+        </OfficeProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

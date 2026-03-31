@@ -1,14 +1,15 @@
 import React, { useState, useMemo } from "react";
-import { useGetReferralEvents, useGetReferrers, useCreateReward, useUpdateReferralStatus } from "@workspace/api-client-react";
+import { useGetReferrers, useCreateReward, useUpdateReferralStatus } from "@workspace/api-client-react";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Gift, Search, MoreHorizontal, CheckCircle2, ChevronDown, ShieldAlert, ShieldCheck, Plus, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { cn } from "@/lib/utils";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSearch } from "wouter";
+import { useOffice } from "@/contexts/office-context";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -17,9 +18,18 @@ const logReferralSchema = z.object({
   new_patient_phone: z.string().min(10, "Valid phone number is required"),
   referrer_id:       z.string().min(1, "Referrer is required"),
   team_source:       z.enum(["front", "back", "assistant"], { required_error: "Team source is required" }),
-  office:            z.enum(["brentwood", "nashville"], { required_error: "Office is required" }),
+  office:            z.string().min(1, "Office is required"),
 });
 type LogReferralValues = z.infer<typeof logReferralSchema>;
+
+function useReferralEvents(officeId: string) {
+  const params = officeId !== "all" ? `?office_id=${officeId}` : "";
+  return useQuery<ReferralEvent[]>({
+    queryKey: ["/api/referrals", officeId],
+    queryFn: () => fetch(`${BASE}/api/referrals${params}`).then(r => r.json()),
+    refetchInterval: 30_000,
+  });
+}
 
 function useLogReferral(onSuccess: () => void) {
   const qc = useQueryClient();
@@ -105,8 +115,8 @@ export default function Events() {
   const initialTab = (params.get("tab") as TabId | null) ?? "all";
   const initialReferrer = params.get("referrer") ?? "";
 
-  const { data: rawEvents, isLoading } = useGetReferralEvents();
-  const events = rawEvents as ReferralEvent[] | undefined;
+  const { selectedOfficeId, offices } = useOffice();
+  const { data: events, isLoading } = useReferralEvents(selectedOfficeId);
   const { data: referrers } = useGetReferrers();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState(initialReferrer);
@@ -515,8 +525,17 @@ export default function Events() {
                 className="w-full px-4 py-2.5 bg-background border border-border rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-foreground appearance-none"
               >
                 <option value="">Select…</option>
-                <option value="brentwood">Brentwood</option>
-                <option value="nashville">Nashville</option>
+                {offices.length > 0 ? offices.map(o => {
+                  const dash = o.name.lastIndexOf("–");
+                  const shortName = dash !== -1 ? o.name.slice(dash + 2).trim() : o.name;
+                  return <option key={o.id} value={o.name}>{shortName}</option>;
+                }) : (
+                  <>
+                    <option value="Hallmark Dental – Brentwood">Brentwood</option>
+                    <option value="Hallmark Dental – Lewisburg">Lewisburg</option>
+                    <option value="Hallmark Dental – Greenbrier">Greenbrier</option>
+                  </>
+                )}
               </select>
               {logErrors.office && <p className="text-destructive text-xs mt-1">{logErrors.office.message}</p>}
             </div>

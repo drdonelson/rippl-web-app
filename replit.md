@@ -57,10 +57,15 @@ artifacts-monorepo/
 - `POST /api/rewards` — Create reward, updates event to Reward Sent; creates admin task if reward_type = charity-donation
 - `GET /api/admin-tasks` — List all incomplete admin tasks (with referrer & patient info)
 - `PATCH /api/admin-tasks/:id/complete` — Mark an admin task as done
+- `GET /api/offices` — All offices (id, name, location, active — no credentials exposed)
+- `GET /api/offices/active` — Active offices only
+- `GET /api/dashboard?office_id=` — Filtered dashboard stats (pass office UUID or omit for all)
+- `GET /api/referrals?office_id=` — Filtered referral events by office
 
 ### Database Tables
+- `offices` — Multi-location registry: id, name, open_dental_customer_key, location (brentwood/lewisburg/greenbrier), active (boolean)
 - `referrers` — Patient referrers enrolled in the program (`onboarding_sms_sent` bool added)
-- `referral_events` — Individual referral events (`household_id`, `household_duplicate` cols added)
+- `referral_events` — Individual referral events (`household_id`, `household_duplicate`, `office_id` FK cols added)
 - `rewards` — Issued rewards (types: in-house-credit, amazon-gift-card, charity-donation)
 - `admin_tasks` — Manual to-dos: charity-donation, amazon-gift-card, household-duplicate-review
 - `launch_emails` — One-time program announcement email queue (pending/sent/failed)
@@ -71,6 +76,7 @@ artifacts-monorepo/
 - `charity-donation` — $50 donated on referrer's behalf (creates admin_task for manual processing)
 
 ### Key Features
+- **Multi-location support** — `offices` table stores Brentwood/Lewisburg/Greenbrier with per-office OD customer keys. Poller loops through all active offices on each poll cycle. Frontend has an office selector dropdown (localStorage-persisted); selecting an office filters Dashboard stats and Events list via `?office_id=` query param. Offices API omits credentials (`open_dental_customer_key` never exposed to frontend).
 - **Household duplicate detection** — SHA-256 hash of lastName+address from OD; flags `household_duplicate`, creates admin review task, "Override & Reward" on Events→Flagged tab
 - **Post-visit onboarding SMS** — fires 2h after exam completion for new patients; creates referrer record with `FIRST4-LAST4` code; guarded by `onboarding_sms_sent` flag
 - **Tango gift card auto-fulfillment** — uses UTID `U453114` (Reward Link US); account must be funded; fallback admin_task on failure

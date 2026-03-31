@@ -1,5 +1,5 @@
 import { db } from "@workspace/db";
-import { referralEventsTable, referrersTable } from "@workspace/db/schema";
+import { referralEventsTable, referrersTable, officesTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { sendRewardNotification } from "./notifications";
@@ -67,14 +67,14 @@ interface SyncResult {
   debug?: ProcDebug[];
 }
 
-function buildHeaders(): Record<string, string> {
-  const customerKey = OPEN_DENTAL_KEY!.trim();
+function buildHeaders(customerKey?: string): Record<string, string> {
+  const ck = (customerKey ?? OPEN_DENTAL_KEY ?? "").trim();
   const developerKey = OPEN_DENTAL_DEVELOPER_KEY?.trim();
   return {
     "Content-Type": "application/json",
     Authorization: developerKey
-      ? `ODFHIR ${developerKey}/${customerKey}`
-      : `ODFHIR ${customerKey}`,
+      ? `ODFHIR ${developerKey}/${ck}`
+      : `ODFHIR ${ck}`,
   };
 }
 
@@ -160,20 +160,34 @@ async function lookupReferringPatNum(
   return { refAttaches, referralRecord, referringPatNum };
 }
 
-export async function syncOpenDental(options?: { force?: boolean }): Promise<SyncResult> {
-  const force = options?.force ?? false;
+export async function syncOpenDental(options?: {
+  force?: boolean;
+  office?: { id: string; name: string; open_dental_customer_key: string };
+}): Promise<SyncResult> {
+  const force    = options?.force ?? false;
+  const office   = options?.office ?? null;
   const result: SyncResult = {
     od_total: 0, fetched: 0, inserted: 0, skipped: 0, unmatched: 0, errors: [],
   };
 
-  if (!OPEN_DENTAL_URL || !OPEN_DENTAL_KEY) {
-    const msg = "Open Dental not configured — set OPEN_DENTAL_URL and OPEN_DENTAL_KEY";
+  if (!OPEN_DENTAL_URL) {
+    const msg = "Open Dental not configured — set OPEN_DENTAL_URL";
     logger.warn(msg);
     result.errors.push(msg);
     return result;
   }
 
-  const headers = buildHeaders();
+  const customerKey = office?.open_dental_customer_key ?? OPEN_DENTAL_KEY;
+  if (!customerKey) {
+    const msg = office
+      ? `Office "${office.name}" has no customer key configured`
+      : "OPEN_DENTAL_KEY not set";
+    logger.warn(msg);
+    result.errors.push(msg);
+    return result;
+  }
+
+  const headers = buildHeaders(customerKey);
 
   // ── Step 1: Fetch completed REF-COMP procedure logs ───────────────────────
   let procedures: OpenDentalProcedureLog[] = [];
@@ -330,7 +344,8 @@ export async function syncOpenDental(options?: { force?: boolean }): Promise<Syn
           new_patient_phone: proc.PatientPhone ?? "",
           referrer_id:       referrer.id,
           team_source:       "open-dental-sync",
-          office:            "Hallmark Dental",
+          office:            office?.name ?? "Hallmark Dental",
+          office_id:         office?.id ?? null,
           status:            "Exam Completed",
           external_proc_num: procNum,
         })
@@ -366,22 +381,59 @@ export async function syncOpenDental(options?: { force?: boolean }): Promise<Syn
   return result;
 }
 
+/**
+ * Loads all active offices from the DB and runs syncOpenDental for each one.
+ * Falls back to the legacy single-key mode if no offices are configured.
+ */
+export async function syncAllOffices(options?: { force?: boolean }): Promise<SyncResult[]> {
+  if (!OPEN_DENTAL_URL) {
+    logger.warn("OPEN_DENTAL_URL not set — skipping multi-office sync");
+    return [];
+  }
+
+  const offices = await db
+    .select()
+    .from(officesTable)
+    .where(eq(officesTable.active, true));
+
+  if (offices.length === 0) {
+    // No offices configured — fall back to single-key mode
+    logger.info("No active offices in DB — falling back to single-key mode");
+    const result = await syncOpenDental(options);
+    return [result];
+  }
+
+  logger.info({ officeCount: offices.length }, "Syncing all active offices");
+
+  const results: SyncResult[] = [];
+  for (const office of offices) {
+    logger.info({ officeId: office.id, officeName: office.name }, "Syncing office");
+    try {
+      const result = await syncOpenDental({ ...options, office });
+      results.push(result);
+    } catch (err) {
+      logger.error({ err, officeId: office.id }, "Error syncing office");
+    }
+  }
+  return results;
+}
+
 let pollerTimer: ReturnType<typeof setInterval> | null = null;
 
 export function startOpenDentalPoller(): void {
-  if (!OPEN_DENTAL_URL || !OPEN_DENTAL_KEY) {
-    logger.warn("OPEN_DENTAL_URL or OPEN_DENTAL_KEY not set — Open Dental poller disabled");
+  if (!OPEN_DENTAL_URL) {
+    logger.warn("OPEN_DENTAL_URL not set — Open Dental poller disabled");
     return;
   }
 
   logger.info({ intervalMs: POLL_INTERVAL_MS }, "Starting Open Dental poller");
 
-  syncOpenDental().catch((err) => {
+  syncAllOffices().catch((err) => {
     logger.error({ err }, "Open Dental initial sync error");
   });
 
   pollerTimer = setInterval(() => {
-    syncOpenDental().catch((err) => {
+    syncAllOffices().catch((err) => {
       logger.error({ err }, "Open Dental poll error");
     });
   }, POLL_INTERVAL_MS);

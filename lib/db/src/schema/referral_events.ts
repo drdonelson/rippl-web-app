@@ -2,6 +2,7 @@ import { pgTable, text, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { referrersTable } from "./referrers";
+import { officesTable } from "./offices";
 
 export const referralEventsTable = pgTable("referral_events", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -15,6 +16,7 @@ export const referralEventsTable = pgTable("referral_events", {
   external_proc_num: text("external_proc_num"), // Open Dental ProcNum for deduplication
   household_id: text("household_id"), // hash(lastName + streetAddress) for duplicate detection
   household_duplicate: boolean("household_duplicate").notNull().default(false),
+  office_id: text("office_id").references(() => officesTable.id), // nullable — legacy rows have no office_id
   created_at: timestamp("created_at").notNull().defaultNow(),
 });
 

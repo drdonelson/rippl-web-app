@@ -9,6 +9,7 @@ import syncRouter from "./sync";
 import adminTasksRouter from "./adminTasks";
 import launchRouter from "./launch";
 import openDentalRouter from "./openDental";
+import officesRouter from "./offices";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use("/sync", syncRouter);
 router.use("/admin-tasks", adminTasksRouter);
 router.use("/launch", launchRouter);
 router.use("/opendental", openDentalRouter);
+router.use("/offices", officesRouter);
 
 export default router;

@@ -1,9 +1,9 @@
 import React from "react";
-import { useGetDashboard } from "@workspace/api-client-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Users, UserPlus, Gift, Trophy, ArrowRight, Activity, CheckCircle2, ClipboardList } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
+import { useOffice } from "@/contexts/office-context";
 
 interface AdminTask {
   id: string;
@@ -17,6 +17,36 @@ interface AdminTask {
 }
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+interface DashboardStats {
+  total_referrals: number;
+  exams_completed: number;
+  rewards_issued: number;
+  active_referrers: number;
+  top_referrers: { id: string; name: string; total_referrals: number; total_rewards_issued: number }[];
+  recent_events: {
+    id: string;
+    new_patient_name: string;
+    new_patient_phone: string;
+    referrer_id: string;
+    referrer_name: string | null;
+    team_source: string;
+    office: string;
+    office_id: string | null;
+    status: string;
+    reward_type: string | null;
+    created_at: string;
+  }[];
+}
+
+function useDashboard(officeId: string) {
+  const params = officeId !== "all" ? `?office_id=${officeId}` : "";
+  return useQuery<DashboardStats>({
+    queryKey: ["/api/dashboard", officeId],
+    queryFn: () => fetch(`${BASE}/api/dashboard${params}`).then(r => r.json()),
+    refetchInterval: 30_000,
+  });
+}
 
 function useAdminTasks() {
   return useQuery<AdminTask[]>({
@@ -36,7 +66,8 @@ function useCompleteTask() {
 }
 
 export default function Dashboard() {
-  const { data: stats, isLoading, error } = useGetDashboard();
+  const { selectedOfficeId } = useOffice();
+  const { data: stats, isLoading, error } = useDashboard(selectedOfficeId);
   const { data: adminTasks = [] } = useAdminTasks();
   const completeTask = useCompleteTask();
 

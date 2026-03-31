@@ -15,6 +15,14 @@ import { checkHouseholdDuplicate } from "../services/householdDuplicate";
 const router: IRouter = Router();
 
 router.get("/", async (req, res) => {
+  const officeId = typeof req.query.office_id === "string" && req.query.office_id !== "all"
+    ? req.query.office_id
+    : null;
+
+  const officeFilter = officeId
+    ? eq(referralEventsTable.office_id, officeId)
+    : undefined;
+
   const events = await db
     .select({
       id: referralEventsTable.id,
@@ -24,6 +32,7 @@ router.get("/", async (req, res) => {
       referrer_name: referrersTable.name,
       team_source: referralEventsTable.team_source,
       office: referralEventsTable.office,
+      office_id: referralEventsTable.office_id,
       status: referralEventsTable.status,
       reward_type: referralEventsTable.reward_type,
       household_id: referralEventsTable.household_id,
@@ -32,6 +41,7 @@ router.get("/", async (req, res) => {
     })
     .from(referralEventsTable)
     .leftJoin(referrersTable, eq(referralEventsTable.referrer_id, referrersTable.id))
+    .where(officeFilter)
     .orderBy(referralEventsTable.created_at);
   res.json(events);
 });
