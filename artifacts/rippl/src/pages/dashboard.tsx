@@ -66,10 +66,10 @@ export default function Dashboard() {
   }
 
   const statCards = [
-    { label: "Total Referrals", value: stats.total_referrals, icon: Users, color: "text-blue-400", bg: "bg-blue-400/10", border: "border-blue-400/20" },
-    { label: "Exams Completed", value: stats.exams_completed, icon: Activity, color: "text-green-400", bg: "bg-green-400/10", border: "border-green-400/20" },
-    { label: "Rewards Issued", value: stats.rewards_issued, icon: Gift, color: "text-primary", bg: "bg-primary/10", border: "border-primary/20" },
-    { label: "Active Referrers", value: stats.active_referrers, icon: UserPlus, color: "text-purple-400", bg: "bg-purple-400/10", border: "border-purple-400/20" },
+    { label: "Total Referrals",  value: stats.total_referrals,  icon: Users,    color: "text-blue-400",   bg: "bg-blue-400/10",   border: "border-blue-400/20",   href: "/events" },
+    { label: "Exams Completed",  value: stats.exams_completed,  icon: Activity, color: "text-green-400",  bg: "bg-green-400/10",  border: "border-green-400/20",  href: "/events?tab=exam-completed" },
+    { label: "Rewards Issued",   value: stats.rewards_issued,   icon: Gift,     color: "text-primary",    bg: "bg-primary/10",    border: "border-primary/20",    href: "/events?tab=reward-sent" },
+    { label: "Active Referrers", value: stats.active_referrers, icon: UserPlus, color: "text-purple-400", bg: "bg-purple-400/10", border: "border-purple-400/20", href: "/patients" },
   ];
 
   return (
@@ -79,21 +79,23 @@ export default function Dashboard() {
         <p className="text-muted-foreground mt-2 text-base md:text-lg">Here's what's happening with your referral program today.</p>
       </header>
 
-      {/* Stats Grid */}
+      {/* Stats Grid — each tile navigates to the relevant filtered view */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((stat, i) => (
-          <div 
-            key={i} 
-            className="bg-card/50 backdrop-blur-sm rounded-2xl p-6 border border-border hover:border-muted-foreground/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/20"
+          <Link
+            key={i}
+            href={stat.href}
+            className="group bg-card/50 backdrop-blur-sm rounded-2xl p-6 border border-border hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/20 cursor-pointer block"
           >
             <div className="flex items-center justify-between mb-4">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stat.bg} ${stat.border} border`}>
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stat.bg} ${stat.border} border transition-all group-hover:scale-110`}>
                 <stat.icon className={`w-6 h-6 ${stat.color}`} />
               </div>
+              <ArrowRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-muted-foreground/70 transition-colors" />
             </div>
             <p className="text-muted-foreground font-medium mb-1">{stat.label}</p>
             <h3 className="text-4xl font-display font-bold text-foreground">{stat.value}</h3>
-          </div>
+          </Link>
         ))}
       </div>
 

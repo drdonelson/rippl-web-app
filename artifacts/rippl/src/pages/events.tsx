@@ -1,13 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useGetReferralEvents, useGetReferrers, useCreateReward, useUpdateReferralStatus } from "@workspace/api-client-react";
 import { format } from "date-fns";
-import { Gift, Search, MoreHorizontal, CheckCircle2, ChevronDown, ShieldAlert, ShieldCheck, Plus } from "lucide-react";
+import { Gift, Search, MoreHorizontal, CheckCircle2, ChevronDown, ShieldAlert, ShieldCheck, Plus, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { cn } from "@/lib/utils";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useSearch } from "wouter";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -83,17 +84,36 @@ function useOverrideHousehold() {
   });
 }
 
-type TabId = "all" | "flagged";
+type TabId = "all" | "lead" | "booked" | "exam-completed" | "reward-sent" | "flagged";
+type SortField = "date" | "new_patient_name" | "referrer_name" | "status" | "reward_type";
+type SortDir = "asc" | "desc";
+
+const STATUS_ORDER: Record<string, number> = {
+  "Lead": 0, "Booked": 1, "Exam Completed": 2, "Reward Sent": 3,
+};
+
+function SortIcon({ field, sortField, sortDir }: { field: SortField; sortField: SortField; sortDir: SortDir }) {
+  if (sortField !== field) return <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />;
+  return sortDir === "asc"
+    ? <ArrowUp className="w-3.5 h-3.5 text-primary" />
+    : <ArrowDown className="w-3.5 h-3.5 text-primary" />;
+}
 
 export default function Events() {
+  const search = useSearch();
+  const params = new URLSearchParams(search);
+  const initialTab = (params.get("tab") as TabId | null) ?? "all";
+
   const { data: rawEvents, isLoading } = useGetReferralEvents();
   const events = rawEvents as ReferralEvent[] | undefined;
   const { data: referrers } = useGetReferrers();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState<TabId>("all");
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+  const [sortField, setSortField] = useState<SortField>("date");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const { register: logRegister, handleSubmit: logHandleSubmit, reset: logReset, formState: { errors: logErrors } } = useForm<LogReferralValues>({
     resolver: zodResolver(logReferralSchema),
@@ -122,15 +142,63 @@ export default function Events() {
 
   const overrideHousehold = useOverrideHousehold();
 
-  const flaggedCount = events?.filter(e => e.household_duplicate).length ?? 0;
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir(d => d === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDir(field === "date" ? "desc" : "asc");
+    }
+  };
 
-  const filteredEvents = (events ?? []).filter(e => {
-    const matchesSearch =
-      e.new_patient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (e.referrer_name && e.referrer_name.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesTab = activeTab === "flagged" ? !!e.household_duplicate : true;
-    return matchesSearch && matchesTab;
-  });
+  // Tab counts
+  const counts = useMemo(() => ({
+    all:            (events ?? []).length,
+    lead:           (events ?? []).filter(e => e.status === "Lead").length,
+    booked:         (events ?? []).filter(e => e.status === "Booked").length,
+    "exam-completed": (events ?? []).filter(e => e.status === "Exam Completed").length,
+    "reward-sent":  (events ?? []).filter(e => e.status === "Reward Sent").length,
+    flagged:        (events ?? []).filter(e => e.household_duplicate).length,
+  }), [events]);
+
+  // Filter by tab + search
+  const filtered = useMemo(() => {
+    return (events ?? []).filter(e => {
+      const matchesSearch =
+        e.new_patient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (e.referrer_name && e.referrer_name.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesTab =
+        activeTab === "all"            ? true :
+        activeTab === "lead"           ? e.status === "Lead" :
+        activeTab === "booked"         ? e.status === "Booked" :
+        activeTab === "exam-completed" ? e.status === "Exam Completed" :
+        activeTab === "reward-sent"    ? e.status === "Reward Sent" :
+        activeTab === "flagged"        ? !!e.household_duplicate :
+        true;
+      return matchesSearch && matchesTab;
+    });
+  }, [events, searchTerm, activeTab]);
+
+  // Sort
+  const sortedEvents = useMemo(() => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      switch (sortField) {
+        case "date":
+          return dir * (new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        case "new_patient_name":
+          return dir * a.new_patient_name.localeCompare(b.new_patient_name);
+        case "referrer_name":
+          return dir * (a.referrer_name ?? "").localeCompare(b.referrer_name ?? "");
+        case "status":
+          return dir * ((STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99));
+        case "reward_type":
+          return dir * (a.reward_type ?? "").localeCompare(b.reward_type ?? "");
+        default:
+          return 0;
+      }
+    });
+  }, [filtered, sortField, sortDir]);
 
   const handleReward = (rewardType: string) => {
     if (!selectedEventId) return;
@@ -156,19 +224,37 @@ export default function Events() {
   const handleOverrideAndReward = (event: ReferralEvent) => {
     overrideHousehold.mutate(event.id, {
       onSuccess: (updatedEvent) => {
-        // If status is Exam Completed, open reward modal immediately
         if (updatedEvent.status === "Exam Completed") {
           setSelectedEventId(event.id);
         }
-        // Otherwise just refresh — admin advances status then sends reward
       }
     });
   };
 
-  const tabs: { id: TabId; label: string; count?: number }[] = [
-    { id: "all", label: "All Events" },
-    { id: "flagged", label: "Flagged", count: flaggedCount },
+  const tabs: { id: TabId; label: string }[] = [
+    { id: "all",            label: "All" },
+    { id: "lead",           label: "Leads" },
+    { id: "booked",         label: "Booked" },
+    { id: "exam-completed", label: "Exam Completed" },
+    { id: "reward-sent",    label: "Reward Sent" },
+    { id: "flagged",        label: "Flagged" },
   ];
+
+  const thBtn = (field: SortField, label: string, align: "left" | "right" = "left") => (
+    <th className={`px-6 py-4 font-semibold ${align === "right" ? "text-right" : ""}`}>
+      <button
+        onClick={() => handleSort(field)}
+        className={cn(
+          "flex items-center gap-1.5 text-xs uppercase tracking-wider font-semibold transition-colors",
+          align === "right" && "ml-auto",
+          sortField === field ? "text-primary" : "text-muted-foreground hover:text-foreground"
+        )}
+      >
+        {label}
+        <SortIcon field={field} sortField={sortField} sortDir={sortDir} />
+      </button>
+    </th>
+  );
 
   return (
     <div className="space-y-8">
@@ -200,27 +286,38 @@ export default function Events() {
       </div>
 
       {/* Tab bar */}
-      <div className="flex items-center gap-1 border-b border-border">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              "relative px-4 py-2.5 text-sm font-semibold transition-colors flex items-center gap-2",
-              activeTab === tab.id
-                ? "text-foreground after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-t"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {tab.id === "flagged" && <ShieldAlert className="w-4 h-4 text-amber-400" />}
-            {tab.label}
-            {tab.count !== undefined && tab.count > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                {tab.count}
-              </span>
-            )}
-          </button>
-        ))}
+      <div className="flex items-center gap-0 border-b border-border overflow-x-auto">
+        {tabs.map(tab => {
+          const count = counts[tab.id as keyof typeof counts] ?? 0;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                "relative px-4 py-2.5 text-sm font-semibold transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0",
+                isActive
+                  ? "text-foreground after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-t"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {tab.id === "flagged" && <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />}
+              {tab.label}
+              {count > 0 && (
+                <span className={cn(
+                  "px-1.5 py-0.5 rounded-full text-[10px] font-bold border",
+                  tab.id === "flagged"
+                    ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                    : isActive
+                    ? "bg-primary/20 text-primary border-primary/30"
+                    : "bg-muted text-muted-foreground border-border"
+                )}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {activeTab === "flagged" && (
@@ -237,13 +334,13 @@ export default function Events() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-muted/30 text-muted-foreground text-sm uppercase tracking-wider">
-                <th className="px-6 py-4 font-semibold">New Patient</th>
-                <th className="px-6 py-4 font-semibold">Referrer</th>
-                <th className="px-6 py-4 font-semibold">Source</th>
-                <th className="px-6 py-4 font-semibold">Date</th>
-                <th className="px-6 py-4 font-semibold">Status</th>
-                <th className="px-6 py-4 font-semibold text-right">Action</th>
+              <tr className="bg-muted/30 text-muted-foreground text-xs uppercase tracking-wider">
+                {thBtn("new_patient_name", "New Patient")}
+                {thBtn("referrer_name", "Referrer")}
+                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-muted-foreground">Source</th>
+                {thBtn("date", "Date")}
+                {thBtn("status", "Status")}
+                {thBtn("reward_type", "Action", "right")}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -258,7 +355,7 @@ export default function Events() {
                     <td className="px-6 py-5"></td>
                   </tr>
                 ))
-              ) : filteredEvents.length === 0 ? (
+              ) : sortedEvents.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
                     {activeTab === "flagged"
@@ -267,7 +364,7 @@ export default function Events() {
                   </td>
                 </tr>
               ) : (
-                filteredEvents.map((event) => (
+                sortedEvents.map((event) => (
                   <tr
                     key={event.id}
                     className={cn(
