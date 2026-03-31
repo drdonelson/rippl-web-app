@@ -29,7 +29,8 @@ interface SyncResult {
   errors: string[];
 }
 
-export async function syncOpenDental(): Promise<SyncResult> {
+export async function syncOpenDental(options?: { force?: boolean }): Promise<SyncResult> {
+  const force = options?.force ?? false;
   const result: SyncResult = { od_total: 0, fetched: 0, inserted: 0, skipped: 0, errors: [] };
 
   if (!OPEN_DENTAL_URL || !OPEN_DENTAL_KEY) {
@@ -102,19 +103,21 @@ export async function syncOpenDental(): Promise<SyncResult> {
     const patNum = String(proc.PatNum);
 
     try {
-      // Dedup: skip if we already have a referral_event with this external_proc_num
-      const existing = await db
-        .select({ id: referralEventsTable.id })
-        .from(referralEventsTable)
-        .where(eq(referralEventsTable.external_proc_num, procNum));
+      // Dedup check — skipped when force=true so every REF-COMP is reprocessed.
+      if (!force) {
+        const existing = await db
+          .select({ id: referralEventsTable.id })
+          .from(referralEventsTable)
+          .where(eq(referralEventsTable.external_proc_num, procNum));
 
-      if (existing.length > 0) {
-        result.skipped++;
-        logger.debug({ procNum }, "Procedure already synced — skipping");
-        continue;
+        if (existing.length > 0) {
+          result.skipped++;
+          logger.debug({ procNum }, "Procedure already synced — skipping");
+          continue;
+        }
       }
 
-      // Find the referrer by Open Dental patient ID
+      // Find the referrer by Open Dental patient ID (PatNum → patient_id)
       const [referrer] = await db
         .select()
         .from(referrersTable)
@@ -122,8 +125,23 @@ export async function syncOpenDental(): Promise<SyncResult> {
 
       if (!referrer) {
         result.skipped++;
-        logger.debug({ patNum, procNum }, "No referrer found for patient_id — skipping");
+        logger.debug({ patNum, procNum, force }, "No referrer found for patient_id — skipping");
         continue;
+      }
+
+      // In force mode, skip if an event already exists for this proc to avoid exact duplicates.
+      // (We reprocess to catch newly-imported referrers, not to create duplicate events.)
+      if (force) {
+        const existing = await db
+          .select({ id: referralEventsTable.id })
+          .from(referralEventsTable)
+          .where(eq(referralEventsTable.external_proc_num, procNum));
+
+        if (existing.length > 0) {
+          result.skipped++;
+          logger.debug({ procNum }, "Force mode — referrer exists but event already present, skipping duplicate");
+          continue;
+        }
       }
 
       // Create a new referral event with status Exam Completed
@@ -141,7 +159,7 @@ export async function syncOpenDental(): Promise<SyncResult> {
         .returning();
 
       result.inserted++;
-      logger.info({ procNum, patNum, referrerId: referrer.id }, "Synced new referral event from Open Dental");
+      logger.info({ procNum, patNum, referrerId: referrer.id, force }, "Synced new referral event from Open Dental");
 
       // Notify the referrer
       sendRewardNotification(
