@@ -21,14 +21,15 @@ interface OpenDentalProcedureLog {
   [key: string]: unknown;
 }
 
+// Data model: REF-COMP is posted on the REFERRER's chart in OD.
+// proc.PatNum = the referrer (the existing patient who made the referral).
+// The new patient name/phone are notes on the procedure, not a separate PatNum.
 interface ProcDebug {
   procNum: string;
-  patNum: string;
+  referrerPatNum: string;    // proc.PatNum = the referring patient's OD PatNum
   patientName: string | null;
   inReferrersTable: boolean;
-  referrerId: number | null;
-  odReferralSourcePatNum: string | null;  // ReferralPatNum from OD patient chart
-  odPatientSnapshot: Record<string, unknown> | null;
+  referrerId: string | null;
 }
 
 interface SyncResult {
@@ -38,28 +39,6 @@ interface SyncResult {
   skipped: number;
   errors: string[];
   debug?: ProcDebug[];   // Per-procedure detail — only populated in force mode
-}
-
-// Fetch a single patient record from Open Dental by PatNum.
-// Returns the raw patient object or null on error.
-async function odFetchPatient(patNum: string): Promise<Record<string, unknown> | null> {
-  if (!OPEN_DENTAL_URL || !OPEN_DENTAL_KEY) return null;
-  try {
-    const url = new URL(`/api/v1/patients/${patNum}`, OPEN_DENTAL_URL);
-    const customerKey = OPEN_DENTAL_KEY.trim();
-    const developerKey = OPEN_DENTAL_DEVELOPER_KEY?.trim();
-    const auth = developerKey
-      ? `ODFHIR ${developerKey}/${customerKey}`
-      : `ODFHIR ${customerKey}`;
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: auth, "Content-Type": "application/json" },
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return null;
-    return await res.json() as Record<string, unknown>;
-  } catch {
-    return null;
-  }
 }
 
 export async function syncOpenDental(options?: { force?: boolean }): Promise<SyncResult> {
@@ -77,25 +56,17 @@ export async function syncOpenDental(options?: { force?: boolean }): Promise<Syn
   let procedures: OpenDentalProcedureLog[] = [];
   try {
     const url = new URL("/api/v1/procedurelogs", OPEN_DENTAL_URL);
-    url.searchParams.set("procCode", "REF-COMP");  // lowercase — actual OD field name
-    url.searchParams.set("ProcStatus", "C");         // "C" = Complete (string, not numeric)
+    url.searchParams.set("procCode", "REF-COMP");
+    url.searchParams.set("ProcStatus", "C");
 
-    // Open Dental REST API authentication format:
-    //   Authorization: ODFHIR {DeveloperKey}/{CustomerKey}
-    // Both keys are combined with a forward slash in a single Authorization header.
     const customerKey = OPEN_DENTAL_KEY!.trim();
     const developerKey = OPEN_DENTAL_DEVELOPER_KEY?.trim();
-
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      Authorization: developerKey
+        ? `ODFHIR ${developerKey}/${customerKey}`
+        : `ODFHIR ${customerKey}`,
     };
-
-    if (developerKey) {
-      headers["Authorization"] = `ODFHIR ${developerKey}/${customerKey}`;
-    } else {
-      // Fallback if only one key is configured
-      headers["Authorization"] = `ODFHIR ${customerKey}`;
-    }
 
     logger.info({ url: url.toString(), twoKeyMode: !!developerKey }, "Calling Open Dental API (procedurelogs)");
 
@@ -113,8 +84,7 @@ export async function syncOpenDental(options?: { force?: boolean }): Promise<Syn
     const all = await response.json() as OpenDentalProcedureLog[];
     result.od_total = all.length;
 
-    // OD ignores the procCode query param server-side, so filter client-side.
-    // Only keep records whose procCode is exactly "REF-COMP".
+    // OD ignores the procCode query param server-side — filter client-side.
     procedures = all.filter(p => p.procCode === "REF-COMP");
     result.fetched = procedures.length;
 
@@ -131,11 +101,15 @@ export async function syncOpenDental(options?: { force?: boolean }): Promise<Syn
 
   if (force) result.debug = [];
 
-  // Process each REF-COMP completed procedure log
-  // ProcNum is the only ID field — procedurelogs has no ProcLogNum
+  // Process each REF-COMP completed procedure log.
+  //
+  // OD data model: REF-COMP is posted on the REFERRER's chart.
+  //   proc.PatNum = the existing patient who made the referral (the referrer).
+  // We look up proc.PatNum in our referrers table to identify the referrer,
+  // then create a referral event crediting them.
   for (const proc of procedures) {
     const procNum = String(proc.ProcNum);
-    const patNum = String(proc.PatNum);
+    const referrerPatNum = String(proc.PatNum);
 
     try {
       // Dedup check — skipped when force=true so every REF-COMP is reprocessed.
@@ -152,58 +126,38 @@ export async function syncOpenDental(options?: { force?: boolean }): Promise<Syn
         }
       }
 
-      // Find the referrer by Open Dental patient ID (PatNum → patient_id)
+      // Find the referrer by their OD PatNum (proc.PatNum = referrer's PatNum)
       const [referrer] = await db
         .select()
         .from(referrersTable)
-        .where(eq(referrersTable.patient_id, patNum));
+        .where(eq(referrersTable.patient_id, referrerPatNum));
 
-      // --- Force-mode debug: fetch OD patient chart and log everything ---
+      // Force-mode debug entry
       if (force) {
-        const odPatient = await odFetchPatient(patNum);
-
-        // OD stores the referring patient's PatNum in one of several possible fields
-        const odReferralSourcePatNum =
-          odPatient?.ReferralPatNum != null ? String(odPatient.ReferralPatNum) :
-          odPatient?.RefNum        != null ? String(odPatient.RefNum)         :
-          odPatient?.RefPatNum     != null ? String(odPatient.RefPatNum)      :
-          null;
-
-        // Build a clean snapshot — only string/number keys, drop nulls
-        const snapshot = odPatient
-          ? Object.fromEntries(
-              Object.entries(odPatient)
-                .filter(([, v]) => v !== null && v !== "" && v !== 0)
-                .slice(0, 30)            // cap at 30 fields for readability
-            ) as Record<string, unknown>
-          : null;
-
         const entry: ProcDebug = {
           procNum,
-          patNum,
+          referrerPatNum,
           patientName: proc.PatientName ?? null,
           inReferrersTable: !!referrer,
           referrerId: referrer?.id ?? null,
-          odReferralSourcePatNum,
-          odPatientSnapshot: snapshot,
         };
-
         result.debug!.push(entry);
-
         logger.info(
-          { procNum, patNum, inReferrers: !!referrer, odReferralSourcePatNum, referrerId: referrer?.id ?? null },
+          { procNum, referrerPatNum, inReferrersTable: !!referrer, referrerId: referrer?.id ?? null },
           "[force-debug] REF-COMP procedure"
         );
       }
 
       if (!referrer) {
         result.skipped++;
-        logger.debug({ patNum, procNum, force }, "No referrer found for patient_id — skipping");
+        logger.debug(
+          { referrerPatNum, procNum },
+          "No referrer found for PatNum — patient not enrolled in Rippl, skipping"
+        );
         continue;
       }
 
-      // In force mode, skip if an event already exists for this proc to avoid exact duplicates.
-      // (We reprocess to catch newly-imported referrers, not to create duplicate events.)
+      // In force mode, still guard against creating duplicate events.
       if (force) {
         const existing = await db
           .select({ id: referralEventsTable.id })
@@ -212,27 +166,30 @@ export async function syncOpenDental(options?: { force?: boolean }): Promise<Syn
 
         if (existing.length > 0) {
           result.skipped++;
-          logger.debug({ procNum }, "Force mode — referrer exists but event already present, skipping duplicate");
+          logger.debug({ procNum }, "Force mode — event already present, skipping duplicate");
           continue;
         }
       }
 
-      // Create a new referral event with status Exam Completed
+      // Create the referral event crediting the referrer.
       const [newEvent] = await db
         .insert(referralEventsTable)
         .values({
-          new_patient_name: proc.PatientName ?? "Unknown Patient",
+          new_patient_name:  proc.PatientName ?? "Unknown Patient",
           new_patient_phone: proc.PatientPhone ?? "",
-          referrer_id: referrer.id,
-          team_source: "open-dental-sync",
-          office: "Hallmark Dental",
-          status: "Exam Completed",
+          referrer_id:       referrer.id,
+          team_source:       "open-dental-sync",
+          office:            "Hallmark Dental",
+          status:            "Exam Completed",
           external_proc_num: procNum,
         })
         .returning();
 
       result.inserted++;
-      logger.info({ procNum, patNum, referrerId: referrer.id, force }, "Synced new referral event from Open Dental");
+      logger.info(
+        { procNum, referrerPatNum, referrerId: referrer.id, force },
+        "Synced new referral event from Open Dental"
+      );
 
       // Notify the referrer
       sendRewardNotification(
@@ -246,6 +203,7 @@ export async function syncOpenDental(options?: { force?: boolean }): Promise<Syn
       }).catch((err) => {
         logger.error({ err, procNum }, "Notification failed for synced referral");
       });
+
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       result.errors.push(`Procedure ${procNum}: ${message}`);
