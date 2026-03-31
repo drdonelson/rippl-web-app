@@ -16,7 +16,7 @@ function OfficePicker({ compact = false }: { compact?: boolean }) {
 
   if (isLoading) return null;
 
-  const allOption = { id: "all", name: "All Locations", location: "all" };
+  const allOption = { id: "all", name: "All Locations", location_code: "all", active: true };
   const options = [allOption, ...offices];
   const selected = options.find(o => o.id === selectedOfficeId) ?? allOption;
 

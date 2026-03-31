@@ -76,7 +76,7 @@ artifacts-monorepo/
 - `charity-donation` — $50 donated on referrer's behalf (creates admin_task for manual processing)
 
 ### Key Features
-- **Multi-location support** — `offices` table stores Brentwood/Lewisburg/Greenbrier with per-office OD customer keys. Poller loops through all active offices on each poll cycle. Frontend has an office selector dropdown (localStorage-persisted); selecting an office filters Dashboard stats and Events list via `?office_id=` query param. Offices API omits credentials (`open_dental_customer_key` never exposed to frontend).
+- **Multi-location support** — `offices` table: `id`, `name`, `customer_key`, `location_code`, `active`, `created_at`. Poller loops through all active offices, using each office's `customer_key`. Frontend office selector (localStorage) filters Dashboard + Events via `?office_id=`. `customer_key` never exposed to frontend. Patients & QR shows one Import row per office with its own status and progress; inactive offices show INACTIVE badge and disabled button. Seed with `pnpm --filter @workspace/scripts run seed-offices`. Activate Lewisburg/Greenbrier by setting `OPEN_DENTAL_CUSTOMER_KEY_LEWISBURG` / `OPEN_DENTAL_CUSTOMER_KEY_GREENBRIER` secrets and re-running seed-offices.
 - **Household duplicate detection** — SHA-256 hash of lastName+address from OD; flags `household_duplicate`, creates admin review task, "Override & Reward" on Events→Flagged tab
 - **Post-visit onboarding SMS** — fires 2h after exam completion for new patients; creates referrer record with `FIRST4-LAST4` code; guarded by `onboarding_sms_sent` flag
 - **Tango gift card auto-fulfillment** — uses UTID `U453114` (Reward Link US); account must be funded; fallback admin_task on failure

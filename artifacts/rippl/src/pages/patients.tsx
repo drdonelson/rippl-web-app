@@ -3,7 +3,7 @@ import { useGetReferrers, useCreateReferrer, useGetReferrerQr } from "@workspace
 import {
   Plus, QrCode, Search, Copy, Check, Download, RefreshCw,
   CheckCircle2, AlertTriangle, LayoutList, LayoutGrid,
-  ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Star,
+  ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Star, MapPin,
 } from "lucide-react";
 import QRCode from "qrcode";
 import { Modal } from "@/components/ui/modal";
@@ -13,6 +13,7 @@ import { z } from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { useOffice, type Office } from "@/contexts/office-context";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -47,26 +48,106 @@ function StatusDot({ n }: { n: number }) {
   return <span className="w-2 h-2 rounded-full bg-muted-foreground/30 shrink-0 inline-block" />;
 }
 
-async function fetchActivePatients() {
-  const res = await fetch(`${BASE}/api/opendental/patients/active`);
+async function fetchActivePatients(officeId?: string | null) {
+  const url = new URL(`${BASE}/api/opendental/patients/active`, window.location.origin);
+  if (officeId) url.searchParams.set("office_id", officeId);
+  const res = await fetch(url.toString());
   if (!res.ok) {
     const json = await res.json().catch(() => ({}));
     throw new Error(json.error || `HTTP ${res.status}`);
   }
-  return res.json() as Promise<{ patients: unknown[]; total: number }>;
+  return res.json() as Promise<{ patients: unknown[]; total: number; office_name?: string | null }>;
 }
 
-async function importPatients(patients: unknown[]) {
+async function importPatients(patients: unknown[], officeId?: string | null) {
   const res = await fetch(`${BASE}/api/opendental/patients/import`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(patients),
+    body: JSON.stringify({ patients, office_id: officeId ?? null }),
   });
   if (!res.ok) {
     const json = await res.json().catch(() => ({}));
     throw new Error(json.error || `HTTP ${res.status}`);
   }
   return res.json() as Promise<{ imported: number; skipped: number; total: number; errors: string[] }>;
+}
+
+interface OfficeImportRowProps {
+  officeKey: string;
+  officeName: string;
+  officeId: string | null;
+  active: boolean;
+  phase: ImportPhase;
+  onImport: () => void;
+  onReset: () => void;
+}
+
+function OfficeImportRow({ officeName, active, phase, onImport, onReset }: OfficeImportRowProps) {
+  const isWorking = phase.state === "fetching" || phase.state === "importing";
+
+  return (
+    <div className="py-3 first:pt-0 last:pb-0">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+          <span className="text-sm font-medium text-foreground truncate">
+            {officeName.replace("Hallmark Dental – ", "")}
+          </span>
+          {!active && (
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-muted text-muted-foreground flex-shrink-0">
+              INACTIVE
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3 flex-shrink-0">
+          {phase.state === "fetching" && (
+            <span className="text-xs text-muted-foreground animate-pulse hidden sm:inline">Connecting…</span>
+          )}
+          {phase.state === "importing" && (
+            <span className="text-xs text-muted-foreground tabular-nums hidden sm:inline">
+              {phase.current} / {phase.total}
+            </span>
+          )}
+          {phase.state === "done" && (
+            <span className="flex items-center gap-1 text-xs text-emerald-400">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              {phase.imported} new, {phase.skipped} skipped
+            </span>
+          )}
+          {phase.state === "error" && (
+            <span className="flex items-center gap-1 text-xs text-destructive max-w-[160px] truncate" title={phase.message}>
+              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+              {phase.message}
+            </span>
+          )}
+          {(phase.state === "done" || phase.state === "error") && (
+            <button onClick={onReset} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-colors" title="Reset">
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <button
+            onClick={onImport}
+            disabled={isWorking || !active}
+            title={!active ? "Office is inactive — customer key not yet configured" : undefined}
+            className="px-3 py-1.5 bg-secondary hover:bg-muted text-foreground text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {isWorking ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+            {isWorking ? "Importing…" : "Import"}
+          </button>
+        </div>
+      </div>
+
+      {phase.state === "importing" && phase.total > 0 && (
+        <div className="mt-2 h-1 bg-border rounded-full overflow-hidden">
+          <div
+            className="h-full bg-primary rounded-full transition-all duration-75"
+            style={{ width: `${Math.min(100, (phase.current / phase.total) * 100)}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
 }
 
 function SortIcon({ field, sortField, sortDir }: { field: SortField; sortField: SortField; sortDir: SortDir }) {
@@ -106,9 +187,24 @@ export default function Patients() {
     }
   };
 
-  // Import state
-  const [importPhase, setImportPhase] = useState<ImportPhase>({ state: "idle" });
-  const animFrameRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Office context
+  const { offices } = useOffice();
+
+  // Per-office import state: officeId (or "default") → ImportPhase
+  const [importPhases, setImportPhases] = useState<Map<string, ImportPhase>>(new Map());
+  const animFrameRefs = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const getImportPhase = (key: string): ImportPhase =>
+    importPhases.get(key) ?? { state: "idle" };
+
+  const setOfficeImportPhase = (key: string, phase: ImportPhase | ((prev: ImportPhase) => ImportPhase)) => {
+    setImportPhases(prev => {
+      const next = new Map(prev);
+      const current = next.get(key) ?? { state: "idle" };
+      next.set(key, typeof phase === "function" ? phase(current) : phase);
+      return next;
+    });
+  };
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -155,49 +251,58 @@ export default function Patients() {
     }
   };
 
-  const handleImport = async () => {
-    if (importPhase.state === "fetching" || importPhase.state === "importing") return;
-    setImportPhase({ state: "fetching" });
+  const handleImportOffice = async (officeKey: string, officeId: string | null) => {
+    const phase = getImportPhase(officeKey);
+    if (phase.state === "fetching" || phase.state === "importing") return;
+    setOfficeImportPhase(officeKey, { state: "fetching" });
     try {
-      const { patients, total } = await fetchActivePatients();
-      if (total === 0) { setImportPhase({ state: "done", imported: 0, skipped: 0, total: 0 }); return; }
+      const { patients, total } = await fetchActivePatients(officeId);
+      if (total === 0) {
+        setOfficeImportPhase(officeKey, { state: "done", imported: 0, skipped: 0, total: 0 });
+        return;
+      }
 
       let importResult: { imported: number; skipped: number; total: number } | null = null;
       let importDone = false;
-      setImportPhase({ state: "importing", total, current: 0 });
+      setOfficeImportPhase(officeKey, { state: "importing", total, current: 0 });
 
-      const importPromise = importPatients(patients).then(result => {
+      const importPromise = importPatients(patients, officeId).then(result => {
         importResult = result; importDone = true; return result;
       });
 
       await new Promise<void>(resolve => {
         const tick = () => {
-          setImportPhase(prev => {
+          setOfficeImportPhase(officeKey, prev => {
             if (prev.state !== "importing") return prev;
             const next = Math.min(prev.current + Math.max(1, Math.floor(total / 40)), total);
             return { state: "importing", total, current: next };
           });
-          if (!importDone) { animFrameRef.current = setTimeout(tick, 30); }
-          else { resolve(); }
+          if (!importDone) {
+            animFrameRefs.current.set(officeKey, setTimeout(tick, 30));
+          } else { resolve(); }
         };
-        animFrameRef.current = setTimeout(tick, 30);
+        animFrameRefs.current.set(officeKey, setTimeout(tick, 30));
       });
 
       const result = await importPromise;
       queryClient.invalidateQueries({ queryKey: ["/api/referrers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
-      setImportPhase({ state: "done", imported: result.imported, skipped: result.skipped, total: result.total });
+      setOfficeImportPhase(officeKey, {
+        state: "done",
+        imported: result.imported,
+        skipped: result.skipped,
+        total: result.total,
+      });
     } catch (err) {
-      setImportPhase({ state: "error", message: err instanceof Error ? err.message : String(err) });
+      setOfficeImportPhase(officeKey, { state: "error", message: err instanceof Error ? err.message : String(err) });
     }
   };
 
-  const resetImport = () => {
-    if (animFrameRef.current) clearTimeout(animFrameRef.current);
-    setImportPhase({ state: "idle" });
+  const resetOfficeImport = (key: string) => {
+    const timer = animFrameRefs.current.get(key);
+    if (timer) { clearTimeout(timer); animFrameRefs.current.delete(key); }
+    setOfficeImportPhase(key, { state: "idle" });
   };
-
-  const isImporting = importPhase.state === "fetching" || importPhase.state === "importing";
 
   // Filter
   const filteredReferrers = useMemo(() => {
@@ -298,65 +403,47 @@ export default function Patients() {
         </div>
       </div>
 
-      {/* ── Import Banner ─────────────────────────────────────────────── */}
-      <div className="bg-card border border-border rounded-2xl p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Download className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <p className="font-semibold text-foreground text-sm">Import Active Patients</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Pull all active patients from Open Dental and enroll them as referrers. Existing patients are skipped automatically.
-              </p>
-            </div>
+      {/* ── Import from Open Dental ───────────────────────────────────── */}
+      <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <Download className="w-4.5 h-4.5 text-primary" />
           </div>
-
-          <div className="flex items-center gap-3 flex-shrink-0">
-            {importPhase.state === "fetching" && <span className="text-xs text-muted-foreground animate-pulse">Connecting to Open Dental…</span>}
-            {importPhase.state === "importing" && (
-              <span className="text-xs text-muted-foreground tabular-nums">
-                Importing {importPhase.current} / {importPhase.total}…
-              </span>
-            )}
-            {importPhase.state === "done" && (
-              <span className="flex items-center gap-1.5 text-xs text-emerald-400">
-                <CheckCircle2 className="w-4 h-4" />
-                {importPhase.imported} imported, {importPhase.skipped} skipped
-              </span>
-            )}
-            {importPhase.state === "error" && (
-              <span className="flex items-center gap-1.5 text-xs text-destructive max-w-xs truncate" title={importPhase.message}>
-                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                {importPhase.message}
-              </span>
-            )}
-            {(importPhase.state === "done" || importPhase.state === "error") && (
-              <button onClick={resetImport} className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors" title="Reset">
-                <RefreshCw className="w-4 h-4" />
-              </button>
-            )}
-            <button
-              onClick={handleImport}
-              disabled={isImporting}
-              className="px-4 py-2 bg-secondary hover:bg-muted text-foreground text-sm font-semibold rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isImporting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              {isImporting ? "Importing…" : "Import from Open Dental"}
-            </button>
+          <div>
+            <p className="font-semibold text-foreground text-sm">Import from Open Dental</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Pull active patients per office and enroll them as referrers. Existing patients are skipped automatically.
+            </p>
           </div>
         </div>
-        {importPhase.state === "importing" && importPhase.total > 0 && (
-          <div className="mt-4">
-            <div className="h-1.5 bg-border rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full transition-all duration-75"
-                style={{ width: `${Math.min(100, (importPhase.current / importPhase.total) * 100)}%` }}
+
+        <div className="divide-y divide-border">
+          {offices.length === 0 ? (
+            /* Fallback: single import when offices haven't loaded yet */
+            <OfficeImportRow
+              officeKey="default"
+              officeName="Open Dental"
+              officeId={null}
+              active={true}
+              phase={getImportPhase("default")}
+              onImport={() => handleImportOffice("default", null)}
+              onReset={() => resetOfficeImport("default")}
+            />
+          ) : (
+            offices.map(office => (
+              <OfficeImportRow
+                key={office.id}
+                officeKey={office.id}
+                officeName={office.name}
+                officeId={office.id}
+                active={office.active}
+                phase={getImportPhase(office.id)}
+                onImport={() => handleImportOffice(office.id, office.id)}
+                onReset={() => resetOfficeImport(office.id)}
               />
-            </div>
-          </div>
-        )}
+            ))
+          )}
+        </div>
       </div>
 
       {/* ── Loading skeleton ───────────────────────────────────────────── */}

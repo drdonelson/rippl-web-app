@@ -3,6 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { referrersTable } from "./referrers";
 import { referralEventsTable } from "./referral_events";
+import { officesTable } from "./offices";
 
 export const rewardsTable = pgTable("rewards", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -11,6 +12,7 @@ export const rewardsTable = pgTable("rewards", {
   reward_type: text("reward_type").notNull(), // in-house-credit | amazon-gift-card | charity-donation
   fulfilled: boolean("fulfilled").notNull().default(false),
   tango_order_id: text("tango_order_id"),
+  office_id: text("office_id").references(() => officesTable.id), // nullable — pre-multi-location rewards have no office
   created_at: timestamp("created_at").notNull().defaultNow(),
 });
 

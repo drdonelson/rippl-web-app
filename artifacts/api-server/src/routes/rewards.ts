@@ -21,12 +21,19 @@ router.post("/", async (req, res) => {
     return;
   }
 
+  // Look up the event's office_id so we can tag the reward to the same office
+  const [event] = await db
+    .select({ office_id: referralEventsTable.office_id })
+    .from(referralEventsTable)
+    .where(eq(referralEventsTable.id, body.referral_event_id));
+
   // Insert the reward record (initially unfulfilled)
   const [reward] = await db.insert(rewardsTable).values({
     referrer_id:        body.referrer_id,
     referral_event_id:  body.referral_event_id,
     reward_type:        body.reward_type,
     fulfilled:          false,
+    office_id:          event?.office_id ?? null,
   }).returning();
 
   // Update referral event status to Reward Sent and set reward_type

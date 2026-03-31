@@ -7,10 +7,10 @@ const router: IRouter = Router();
 
 // Never expose the customer key to the frontend — select only safe columns
 const safeColumns = {
-  id:       officesTable.id,
-  name:     officesTable.name,
-  location: officesTable.location,
-  active:   officesTable.active,
+  id:            officesTable.id,
+  name:          officesTable.name,
+  location_code: officesTable.location_code,
+  active:        officesTable.active,
 };
 
 // GET /api/offices — return all offices (active and inactive), without credentials

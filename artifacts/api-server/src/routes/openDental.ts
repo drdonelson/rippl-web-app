@@ -1,13 +1,13 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { referrersTable } from "@workspace/db/schema";
+import { referrersTable, officesTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
-const OPEN_DENTAL_URL = process.env.OPEN_DENTAL_URL;
-const OPEN_DENTAL_KEY = process.env.OPEN_DENTAL_CUSTOMER_KEY || process.env.OPEN_DENTAL_KEY;
+const OPEN_DENTAL_URL        = process.env.OPEN_DENTAL_URL;
+const DEFAULT_CUSTOMER_KEY   = process.env.OPEN_DENTAL_CUSTOMER_KEY || process.env.OPEN_DENTAL_KEY;
 const OPEN_DENTAL_DEVELOPER_KEY = process.env.OPEN_DENTAL_DEVELOPER_KEY;
 
 interface OdPatient {
@@ -19,18 +19,14 @@ interface OdPatient {
   WkPhone?:        string;
   WirelessPhone?:  string;
   Email?:          string;
-  // OD REST API returns PatStatus as a string label, not a numeric code.
-  // String values: "Patient" (active=0), "NonPatient" (1), "Inactive" (2),
-  //                "Deceased" (3), "Archived" (4), "Prospect" (5)
-  // Numeric code 0 may also appear in some API versions.
   PatStatus?:      string | number;
 }
 
-function buildAuthHeader(): string | null {
-  const customerKey = OPEN_DENTAL_KEY?.trim();
-  const developerKey = OPEN_DENTAL_DEVELOPER_KEY?.trim();
-  if (!customerKey) return null;
-  return developerKey ? `ODFHIR ${developerKey}/${customerKey}` : `ODFHIR ${customerKey}`;
+function buildAuthHeader(customerKey?: string | null): string | null {
+  const ck = (customerKey ?? DEFAULT_CUSTOMER_KEY ?? "").trim();
+  if (!ck) return null;
+  const dk = OPEN_DENTAL_DEVELOPER_KEY?.trim();
+  return dk ? `ODFHIR ${dk}/${ck}` : `ODFHIR ${ck}`;
 }
 
 function getBestPhone(p: OdPatient): string {
@@ -43,10 +39,32 @@ function buildReferralCode(firstName: string, patNum: string | number): string {
   return `${first4}-${last4}`;
 }
 
+// Resolve an optional office_id query param → returns { officeId, customerKey, officeName }
+async function resolveOffice(officeId?: string): Promise<{
+  officeId: string | null;
+  customerKey: string | null;
+  officeName: string | null;
+}> {
+  if (!officeId) {
+    return { officeId: null, customerKey: DEFAULT_CUSTOMER_KEY ?? null, officeName: null };
+  }
+  const [office] = await db
+    .select()
+    .from(officesTable)
+    .where(eq(officesTable.id, officeId));
+  if (!office) {
+    return { officeId: null, customerKey: DEFAULT_CUSTOMER_KEY ?? null, officeName: null };
+  }
+  return {
+    officeId:   office.id,
+    customerKey: office.customer_key,
+    officeName: office.name,
+  };
+}
+
 // ── GET /api/opendental/test ───────────────────────────────────────────────
-// Quick connectivity check: hits GET /api/v1/patients and returns first 5 results.
 router.get("/test", async (_req, res) => {
-  if (!OPEN_DENTAL_URL || !OPEN_DENTAL_KEY) {
+  if (!OPEN_DENTAL_URL || !DEFAULT_CUSTOMER_KEY) {
     res.status(503).json({ error: "Open Dental API is not configured (OPEN_DENTAL_URL / OPEN_DENTAL_KEY missing)" });
     return;
   }
@@ -71,10 +89,7 @@ router.get("/test", async (_req, res) => {
     try { parsed = JSON.parse(body); } catch { parsed = body; }
 
     if (!response.ok) {
-      res.status(response.status).json({
-        error: `Open Dental returned ${response.status}`,
-        body: parsed,
-      });
+      res.status(response.status).json({ error: `Open Dental returned ${response.status}`, body: parsed });
       return;
     }
 
@@ -87,26 +102,20 @@ router.get("/test", async (_req, res) => {
 });
 
 // ── GET /api/opendental/test/procedurelogs ─────────────────────────────────
-// Probes GET /api/v1/procedurelogs with no filters — reveals field names and accepted params.
 router.get("/test/procedurelogs", async (req, res) => {
-  if (!OPEN_DENTAL_URL || !OPEN_DENTAL_KEY) {
+  if (!OPEN_DENTAL_URL || !DEFAULT_CUSTOMER_KEY) {
     res.status(503).json({ error: "Open Dental API is not configured" });
     return;
   }
 
   const authHeader = buildAuthHeader();
-  if (!authHeader) {
-    res.status(503).json({ error: "Auth header could not be built" });
-    return;
-  }
+  if (!authHeader) { res.status(503).json({ error: "Auth header could not be built" }); return; }
 
   try {
-    // Pass through any query params from the caller so we can experiment
     const url = new URL("/api/v1/procedurelogs", OPEN_DENTAL_URL);
     for (const [key, val] of Object.entries(req.query)) {
       if (typeof val === "string") url.searchParams.set(key, val);
     }
-    // Default: just limit to 3 results so the response is readable
     if (!url.searchParams.has("Limit")) url.searchParams.set("Limit", "3");
 
     logger.info({ url: url.toString() }, "Probing procedurelogs endpoint");
@@ -121,10 +130,8 @@ router.get("/test/procedurelogs", async (req, res) => {
     try { parsed = JSON.parse(rawText); } catch { parsed = rawText; }
 
     res.status(response.status).json({
-      od_status: response.status,
-      od_status_text: response.statusText,
-      url: url.toString(),
-      raw: parsed,
+      od_status: response.status, od_status_text: response.statusText,
+      url: url.toString(), raw: parsed,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -133,18 +140,14 @@ router.get("/test/procedurelogs", async (req, res) => {
 });
 
 // ── GET /api/opendental/test/procedures ───────────────────────────────────
-// Hits GET /api/v1/procedures?ProcStatus=2 and returns the raw first 5 results.
 router.get("/test/procedures", async (_req, res) => {
-  if (!OPEN_DENTAL_URL || !OPEN_DENTAL_KEY) {
+  if (!OPEN_DENTAL_URL || !DEFAULT_CUSTOMER_KEY) {
     res.status(503).json({ error: "Open Dental API is not configured" });
     return;
   }
 
   const authHeader = buildAuthHeader();
-  if (!authHeader) {
-    res.status(503).json({ error: "Auth header could not be built" });
-    return;
-  }
+  if (!authHeader) { res.status(503).json({ error: "Auth header could not be built" }); return; }
 
   try {
     const url = new URL("/api/v1/procedures", OPEN_DENTAL_URL);
@@ -163,10 +166,8 @@ router.get("/test/procedures", async (_req, res) => {
     try { parsed = JSON.parse(rawText); } catch { parsed = rawText; }
 
     res.status(response.status).json({
-      od_status: response.status,
-      od_status_text: response.statusText,
-      url: url.toString(),
-      raw: parsed,
+      od_status: response.status, od_status_text: response.statusText,
+      url: url.toString(), raw: parsed,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -175,20 +176,14 @@ router.get("/test/procedures", async (_req, res) => {
 });
 
 // ── GET /api/opendental/test/refattaches ──────────────────────────────────
-// Hits GET /api/v1/refattaches?PatNum=8280 and returns the raw response so
-// we can confirm field names before updating the poller's extraction logic.
-// Pass ?PatNum=XXXX to override the default.
 router.get("/test/refattaches", async (req, res) => {
-  if (!OPEN_DENTAL_URL || !OPEN_DENTAL_KEY) {
+  if (!OPEN_DENTAL_URL || !DEFAULT_CUSTOMER_KEY) {
     res.status(503).json({ error: "Open Dental API is not configured" });
     return;
   }
 
   const authHeader = buildAuthHeader();
-  if (!authHeader) {
-    res.status(503).json({ error: "Auth header could not be built" });
-    return;
-  }
+  if (!authHeader) { res.status(503).json({ error: "Auth header could not be built" }); return; }
 
   const patNum = typeof req.query.PatNum === "string" ? req.query.PatNum : "8280";
 
@@ -209,7 +204,6 @@ router.get("/test/refattaches", async (req, res) => {
 
     const refattaches = Array.isArray(parsed) ? parsed : [];
 
-    // Step 2 — follow the first ReferralNum to get the Referral record (PatNum lives there)
     let referralRecord: unknown = null;
     let referralFetchError: string | null = null;
     const firstAttach = refattaches[0] as Record<string, unknown> | undefined;
@@ -230,13 +224,10 @@ router.get("/test/refattaches", async (req, res) => {
     }
 
     res.status(response.status).json({
-      od_status:           response.status,
-      od_status_text:      response.statusText,
-      url:                 url.toString(),
-      patNum,
-      refattaches:         refattaches,
+      od_status: response.status, od_status_text: response.statusText,
+      url: url.toString(), patNum, refattaches,
       referring_referral_num: referralNum ?? null,
-      referral_record:     referralRecord,
+      referral_record: referralRecord,
       referral_fetch_error: referralFetchError,
     });
   } catch (err) {
@@ -245,19 +236,21 @@ router.get("/test/refattaches", async (req, res) => {
   }
 });
 
-// ── GET /api/opendental/patients/active ────────────────────────────────────
-// Paginates through ALL Open Dental patients in batches of 100 (Offset/Limit),
-// filters client-side for active (PatStatus === "Patient" | 0), and returns them.
-// Does NOT modify the database — call POST /import to actually enroll them.
-router.get("/patients/active", async (_req, res) => {
-  if (!OPEN_DENTAL_URL || !OPEN_DENTAL_KEY) {
-    res.status(503).json({ error: "Open Dental API is not configured (OPEN_DENTAL_URL / OPEN_DENTAL_KEY missing)" });
+// ── GET /api/opendental/patients/active?office_id= ─────────────────────────
+// Fetches all active patients from Open Dental for a specific office (or default).
+// Pass office_id to use that office's customer key; omit for the default key.
+router.get("/patients/active", async (req, res) => {
+  if (!OPEN_DENTAL_URL) {
+    res.status(503).json({ error: "Open Dental API is not configured (OPEN_DENTAL_URL missing)" });
     return;
   }
 
-  const authHeader = buildAuthHeader();
+  const officeIdParam = typeof req.query.office_id === "string" ? req.query.office_id : undefined;
+  const { officeId, customerKey, officeName } = await resolveOffice(officeIdParam);
+
+  const authHeader = buildAuthHeader(customerKey);
   if (!authHeader) {
-    res.status(503).json({ error: "Open Dental auth header could not be built" });
+    res.status(503).json({ error: "Open Dental auth header could not be built — customer key missing" });
     return;
   }
 
@@ -268,13 +261,12 @@ router.get("/patients/active", async (_req, res) => {
   let page   = 1;
 
   try {
-    // Paginate until OD returns fewer results than the batch size (last page).
     while (true) {
       const url = new URL("/api/v1/patients", OPEN_DENTAL_URL);
       url.searchParams.set("Limit",  String(BATCH_SIZE));
       url.searchParams.set("Offset", String(offset));
 
-      logger.info({ page, offset, url: url.toString() }, "Fetching patient page from Open Dental");
+      logger.info({ page, offset, officeId, url: url.toString() }, "Fetching patient page from Open Dental");
 
       const response = await fetch(url.toString(), {
         headers: { "Authorization": authHeader, "Content-Type": "application/json" },
@@ -298,25 +290,19 @@ router.get("/patients/active", async (_req, res) => {
       pages.push(pageInfo);
       logger.info(pageInfo, "Patient page received");
 
-      // If we got fewer records than the batch size, we've hit the last page.
       if (batch.length < BATCH_SIZE) break;
 
       offset += BATCH_SIZE;
       page++;
     }
 
-    // Filter client-side — OD REST API returns PatStatus as a string label.
-    // "Patient" = active (numeric 0 in some API versions).
-    const active = all.filter(p =>
-      p.PatStatus === 0 || p.PatStatus === "Patient"
-    );
+    const active = all.filter(p => p.PatStatus === 0 || p.PatStatus === "Patient");
 
     logger.info(
-      { pages_fetched: pages.length, od_total: all.length, active: active.length },
+      { pages_fetched: pages.length, od_total: all.length, active: active.length, officeId, officeName },
       "Pagination complete — filtered to active patients"
     );
 
-    // Normalise into a clean list
     const normalized = active
       .filter(p => p.PatNum && (p.FName || p.LName))
       .map(p => ({
@@ -329,34 +315,53 @@ router.get("/patients/active", async (_req, res) => {
       }));
 
     res.json({
-      patients:     normalized,
-      total:        normalized.length,
-      od_total:     all.length,
+      patients:      normalized,
+      total:         normalized.length,
+      od_total:      all.length,
       pages_fetched: pages.length,
       pages,
+      office_id:   officeId,
+      office_name: officeName,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    logger.error({ err }, "Failed to fetch OD patients");
+    logger.error({ err, officeId }, "Failed to fetch OD patients");
     res.status(502).json({ error: `Open Dental request failed: ${message}` });
   }
 });
 
 // ── POST /api/opendental/patients/import ───────────────────────────────────
-// Accepts the patient list from GET /patients/active and bulk-inserts them
-// into the referrers table, skipping any whose patient_id already exists.
+// Accepts the patient list from GET /patients/active and bulk-inserts referrers.
+// Pass office_id in the body to tag inserted referrers to that office.
 router.post("/patients/import", async (req, res) => {
-  const incoming = req.body as Array<{
-    patNum: string;
-    name: string;
-    firstName: string;
-    phone: string;
-    email?: string | null;
-  }>;
+  const body = req.body as {
+    patients: Array<{
+      patNum: string;
+      name: string;
+      firstName: string;
+      phone: string;
+      email?: string | null;
+    }>;
+    office_id?: string | null;
+  };
+
+  // Support both old format (bare array) and new format ({ patients, office_id })
+  const incoming = Array.isArray(req.body) ? req.body : (body.patients ?? []);
+  const officeId = Array.isArray(req.body) ? null : (body.office_id ?? null);
 
   if (!Array.isArray(incoming) || incoming.length === 0) {
-    res.status(400).json({ error: "Body must be a non-empty array of patients" });
+    res.status(400).json({ error: "Body must include a non-empty patients array" });
     return;
+  }
+
+  // Validate office_id if provided
+  let resolvedOfficeId: string | null = null;
+  if (officeId) {
+    const [office] = await db
+      .select({ id: officesTable.id })
+      .from(officesTable)
+      .where(eq(officesTable.id, officeId));
+    resolvedOfficeId = office?.id ?? null;
   }
 
   let imported = 0;
@@ -367,7 +372,6 @@ router.post("/patients/import", async (req, res) => {
     try {
       if (!p.patNum || !p.name) { skipped++; continue; }
 
-      // Check for existing referrer with this patient_id
       const [existing] = await db
         .select({ id: referrersTable.id })
         .from(referrersTable)
@@ -375,10 +379,8 @@ router.post("/patients/import", async (req, res) => {
 
       if (existing) { skipped++; continue; }
 
-      // Build referral code: FIRST4-LAST4(patNum)
       const referralCode = buildReferralCode(p.firstName || p.name.split(" ")[0] || "ANON", p.patNum);
 
-      // Check referral_code collision
       const [codeConflict] = await db
         .select({ id: referrersTable.id })
         .from(referrersTable)
@@ -394,6 +396,7 @@ router.post("/patients/import", async (req, res) => {
         phone:         p.phone || "od-import",
         email:         p.email || null,
         referral_code: finalCode,
+        office_id:     resolvedOfficeId,
       });
 
       imported++;
@@ -403,7 +406,7 @@ router.post("/patients/import", async (req, res) => {
     }
   }
 
-  logger.info({ imported, skipped, errors: errors.length }, "OD patient import complete");
+  logger.info({ imported, skipped, errors: errors.length, officeId: resolvedOfficeId }, "OD patient import complete");
 
   res.json({
     imported,

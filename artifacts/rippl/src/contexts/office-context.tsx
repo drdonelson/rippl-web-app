@@ -5,7 +5,7 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 export interface Office {
   id: string;
   name: string;
-  location: string;
+  location_code: string;
   active: boolean;
 }
 

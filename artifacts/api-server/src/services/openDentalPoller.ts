@@ -162,7 +162,7 @@ async function lookupReferringPatNum(
 
 export async function syncOpenDental(options?: {
   force?: boolean;
-  office?: { id: string; name: string; open_dental_customer_key: string };
+  office?: { id: string; name: string; customer_key: string };
 }): Promise<SyncResult> {
   const force    = options?.force ?? false;
   const office   = options?.office ?? null;
@@ -177,7 +177,7 @@ export async function syncOpenDental(options?: {
     return result;
   }
 
-  const customerKey = office?.open_dental_customer_key ?? OPEN_DENTAL_KEY;
+  const customerKey = office?.customer_key ?? OPEN_DENTAL_KEY;
   if (!customerKey) {
     const msg = office
       ? `Office "${office.name}" has no customer key configured`
