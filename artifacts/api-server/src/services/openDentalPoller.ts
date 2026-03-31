@@ -21,12 +21,45 @@ interface OpenDentalProcedureLog {
   [key: string]: unknown;
 }
 
+interface ProcDebug {
+  procNum: string;
+  patNum: string;
+  patientName: string | null;
+  inReferrersTable: boolean;
+  referrerId: number | null;
+  odReferralSourcePatNum: string | null;  // ReferralPatNum from OD patient chart
+  odPatientSnapshot: Record<string, unknown> | null;
+}
+
 interface SyncResult {
   od_total: number;      // Raw count returned by OD before procCode filter
   fetched: number;       // Count after client-side filter to procCode=REF-COMP
   inserted: number;
   skipped: number;
   errors: string[];
+  debug?: ProcDebug[];   // Per-procedure detail — only populated in force mode
+}
+
+// Fetch a single patient record from Open Dental by PatNum.
+// Returns the raw patient object or null on error.
+async function odFetchPatient(patNum: string): Promise<Record<string, unknown> | null> {
+  if (!OPEN_DENTAL_URL || !OPEN_DENTAL_KEY) return null;
+  try {
+    const url = new URL(`/api/v1/patients/${patNum}`, OPEN_DENTAL_URL);
+    const customerKey = OPEN_DENTAL_KEY.trim();
+    const developerKey = OPEN_DENTAL_DEVELOPER_KEY?.trim();
+    const auth = developerKey
+      ? `ODFHIR ${developerKey}/${customerKey}`
+      : `ODFHIR ${customerKey}`;
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: auth, "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return null;
+    return await res.json() as Record<string, unknown>;
+  } catch {
+    return null;
+  }
 }
 
 export async function syncOpenDental(options?: { force?: boolean }): Promise<SyncResult> {
@@ -96,6 +129,8 @@ export async function syncOpenDental(options?: { force?: boolean }): Promise<Syn
     return result;
   }
 
+  if (force) result.debug = [];
+
   // Process each REF-COMP completed procedure log
   // ProcNum is the only ID field — procedurelogs has no ProcLogNum
   for (const proc of procedures) {
@@ -122,6 +157,44 @@ export async function syncOpenDental(options?: { force?: boolean }): Promise<Syn
         .select()
         .from(referrersTable)
         .where(eq(referrersTable.patient_id, patNum));
+
+      // --- Force-mode debug: fetch OD patient chart and log everything ---
+      if (force) {
+        const odPatient = await odFetchPatient(patNum);
+
+        // OD stores the referring patient's PatNum in one of several possible fields
+        const odReferralSourcePatNum =
+          odPatient?.ReferralPatNum != null ? String(odPatient.ReferralPatNum) :
+          odPatient?.RefNum        != null ? String(odPatient.RefNum)         :
+          odPatient?.RefPatNum     != null ? String(odPatient.RefPatNum)      :
+          null;
+
+        // Build a clean snapshot — only string/number keys, drop nulls
+        const snapshot = odPatient
+          ? Object.fromEntries(
+              Object.entries(odPatient)
+                .filter(([, v]) => v !== null && v !== "" && v !== 0)
+                .slice(0, 30)            // cap at 30 fields for readability
+            ) as Record<string, unknown>
+          : null;
+
+        const entry: ProcDebug = {
+          procNum,
+          patNum,
+          patientName: proc.PatientName ?? null,
+          inReferrersTable: !!referrer,
+          referrerId: referrer?.id ?? null,
+          odReferralSourcePatNum,
+          odPatientSnapshot: snapshot,
+        };
+
+        result.debug!.push(entry);
+
+        logger.info(
+          { procNum, patNum, inReferrers: !!referrer, odReferralSourcePatNum, referrerId: referrer?.id ?? null },
+          "[force-debug] REF-COMP procedure"
+        );
+      }
 
       if (!referrer) {
         result.skipped++;

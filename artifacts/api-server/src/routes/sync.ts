@@ -30,6 +30,7 @@ router.post("/opendental", async (req, res) => {
     message:  result.fetched === 0
       ? `No REF-COMP completions found (${result.od_total} total completed procedures checked).`
       : `Found ${result.fetched} REF-COMP completion(s) — ${result.inserted} new referral event(s) created, ${result.skipped} already synced.${force ? " [force mode]" : ""}`,
+    ...(force && result.debug ? { debug: result.debug } : {}),
   });
 });
 
