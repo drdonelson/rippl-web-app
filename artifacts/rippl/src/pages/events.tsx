@@ -103,12 +103,13 @@ export default function Events() {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const initialTab = (params.get("tab") as TabId | null) ?? "all";
+  const initialReferrer = params.get("referrer") ?? "";
 
   const { data: rawEvents, isLoading } = useGetReferralEvents();
   const events = rawEvents as ReferralEvent[] | undefined;
   const { data: referrers } = useGetReferrers();
   const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(initialReferrer);
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
