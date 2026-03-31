@@ -19,7 +19,11 @@ interface OdPatient {
   WkPhone?:        string;
   WirelessPhone?:  string;
   Email?:          string;
-  PatStatus?:      number; // 0=Patient, 1=NonPatient, 2=Inactive, 3=Deceased, 4=Deleted
+  // OD REST API returns PatStatus as a string label, not a numeric code.
+  // String values: "Patient" (active=0), "NonPatient" (1), "Inactive" (2),
+  //                "Deceased" (3), "Archived" (4), "Prospect" (5)
+  // Numeric code 0 may also appear in some API versions.
+  PatStatus?:      string | number;
 }
 
 function buildAuthHeader(): string | null {
@@ -186,11 +190,11 @@ router.get("/patients/active", async (req, res) => {
   }
 
   try {
-    // PatStatus=0 → active patients only
+    // Fetch all patients — no PatStatus filter (OD rejects it as invalid).
+    // We filter client-side below.
     const url = new URL("/api/v1/patients", OPEN_DENTAL_URL);
-    url.searchParams.set("PatStatus", "0");
 
-    logger.info({ url: url.toString() }, "Fetching active patients from Open Dental");
+    logger.info({ url: url.toString() }, "Fetching all patients from Open Dental (will filter active client-side)");
 
     const response = await fetch(url.toString(), {
       headers: { "Authorization": authHeader, "Content-Type": "application/json" },
@@ -204,10 +208,18 @@ router.get("/patients/active", async (req, res) => {
     }
 
     const raw = await response.json() as OdPatient | OdPatient[];
-    const patients = Array.isArray(raw) ? raw : [raw];
+    const all = Array.isArray(raw) ? raw : [raw];
+
+    // Keep only active patients: PatStatus === 0 (numeric) or === "Patient" (string label).
+    // OD REST API returns the string form ("Patient", "NonPatient", "Inactive", etc.)
+    const active = all.filter(p =>
+      p.PatStatus === 0 || p.PatStatus === "Patient"
+    );
+
+    logger.info({ total: all.length, active: active.length }, "Filtered to active patients (PatStatus=0/Patient)");
 
     // Normalise into a clean list
-    const normalized = patients
+    const normalized = active
       .filter(p => p.PatNum && (p.FName || p.LName))
       .map(p => ({
         patNum:    String(p.PatNum),
@@ -218,9 +230,7 @@ router.get("/patients/active", async (req, res) => {
         email:     p.Email?.trim() || null,
       }));
 
-    logger.info({ count: normalized.length }, "Active patients fetched from OD");
-
-    res.json({ patients: normalized, total: normalized.length });
+    res.json({ patients: normalized, total: normalized.length, od_total: all.length });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     logger.error({ err }, "Failed to fetch OD patients");
