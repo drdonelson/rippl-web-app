@@ -22,14 +22,15 @@ interface OpenDentalProcedureLog {
 }
 
 interface SyncResult {
-  fetched: number;
+  od_total: number;      // Raw count returned by OD before procCode filter
+  fetched: number;       // Count after client-side filter to procCode=REF-COMP
   inserted: number;
   skipped: number;
   errors: string[];
 }
 
 export async function syncOpenDental(): Promise<SyncResult> {
-  const result: SyncResult = { fetched: 0, inserted: 0, skipped: 0, errors: [] };
+  const result: SyncResult = { od_total: 0, fetched: 0, inserted: 0, skipped: 0, errors: [] };
 
   if (!OPEN_DENTAL_URL || !OPEN_DENTAL_KEY) {
     const msg = "Open Dental not configured — set OPEN_DENTAL_URL and OPEN_DENTAL_KEY";
@@ -75,9 +76,18 @@ export async function syncOpenDental(): Promise<SyncResult> {
       throw new Error(`Open Dental API returned ${response.status}: ${body}`);
     }
 
-    procedures = await response.json() as OpenDentalProcedureLog[];
+    const all = await response.json() as OpenDentalProcedureLog[];
+    result.od_total = all.length;
+
+    // OD ignores the procCode query param server-side, so filter client-side.
+    // Only keep records whose procCode is exactly "REF-COMP".
+    procedures = all.filter(p => p.procCode === "REF-COMP");
     result.fetched = procedures.length;
-    logger.info({ count: procedures.length }, "Fetched procedure logs from Open Dental");
+
+    logger.info(
+      { od_total: result.od_total, ref_comp: result.fetched },
+      "Fetched procedure logs from Open Dental — filtered to REF-COMP"
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     result.errors.push(`Fetch failed: ${message}`);
@@ -85,7 +95,7 @@ export async function syncOpenDental(): Promise<SyncResult> {
     return result;
   }
 
-  // Process each completed procedure log
+  // Process each REF-COMP completed procedure log
   // ProcNum is the only ID field — procedurelogs has no ProcLogNum
   for (const proc of procedures) {
     const procNum = String(proc.ProcNum);
