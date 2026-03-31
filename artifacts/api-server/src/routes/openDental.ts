@@ -175,9 +175,10 @@ router.get("/test/procedures", async (_req, res) => {
 });
 
 // ── GET /api/opendental/patients/active ────────────────────────────────────
-// Fetches active patients from Open Dental (PatStatus=0) and returns them.
+// Paginates through ALL Open Dental patients in batches of 100 (Offset/Limit),
+// filters client-side for active (PatStatus === "Patient" | 0), and returns them.
 // Does NOT modify the database — call POST /import to actually enroll them.
-router.get("/patients/active", async (req, res) => {
+router.get("/patients/active", async (_req, res) => {
   if (!OPEN_DENTAL_URL || !OPEN_DENTAL_KEY) {
     res.status(503).json({ error: "Open Dental API is not configured (OPEN_DENTAL_URL / OPEN_DENTAL_KEY missing)" });
     return;
@@ -189,34 +190,60 @@ router.get("/patients/active", async (req, res) => {
     return;
   }
 
+  const BATCH_SIZE = 100;
+  const all: OdPatient[] = [];
+  const pages: Array<{ page: number; offset: number; fetched: number; running_total: number }> = [];
+  let offset = 0;
+  let page   = 1;
+
   try {
-    // Fetch all patients — no PatStatus filter (OD rejects it as invalid).
-    // We filter client-side below.
-    const url = new URL("/api/v1/patients", OPEN_DENTAL_URL);
+    // Paginate until OD returns fewer results than the batch size (last page).
+    while (true) {
+      const url = new URL("/api/v1/patients", OPEN_DENTAL_URL);
+      url.searchParams.set("Limit",  String(BATCH_SIZE));
+      url.searchParams.set("Offset", String(offset));
 
-    logger.info({ url: url.toString() }, "Fetching all patients from Open Dental (will filter active client-side)");
+      logger.info({ page, offset, url: url.toString() }, "Fetching patient page from Open Dental");
 
-    const response = await fetch(url.toString(), {
-      headers: { "Authorization": authHeader, "Content-Type": "application/json" },
-      signal: AbortSignal.timeout(20_000),
-    });
+      const response = await fetch(url.toString(), {
+        headers: { "Authorization": authHeader, "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(20_000),
+      });
 
-    if (!response.ok) {
-      const body = await response.text().catch(() => "");
-      res.status(502).json({ error: `Open Dental returned ${response.status}: ${body}` });
-      return;
+      if (!response.ok) {
+        const body = await response.text().catch(() => "");
+        res.status(502).json({
+          error: `Open Dental returned ${response.status} on page ${page}: ${body}`,
+          pages_fetched: pages,
+        });
+        return;
+      }
+
+      const raw = await response.json() as OdPatient | OdPatient[];
+      const batch = Array.isArray(raw) ? raw : [raw];
+      all.push(...batch);
+
+      const pageInfo = { page, offset, fetched: batch.length, running_total: all.length };
+      pages.push(pageInfo);
+      logger.info(pageInfo, "Patient page received");
+
+      // If we got fewer records than the batch size, we've hit the last page.
+      if (batch.length < BATCH_SIZE) break;
+
+      offset += BATCH_SIZE;
+      page++;
     }
 
-    const raw = await response.json() as OdPatient | OdPatient[];
-    const all = Array.isArray(raw) ? raw : [raw];
-
-    // Keep only active patients: PatStatus === 0 (numeric) or === "Patient" (string label).
-    // OD REST API returns the string form ("Patient", "NonPatient", "Inactive", etc.)
+    // Filter client-side — OD REST API returns PatStatus as a string label.
+    // "Patient" = active (numeric 0 in some API versions).
     const active = all.filter(p =>
       p.PatStatus === 0 || p.PatStatus === "Patient"
     );
 
-    logger.info({ total: all.length, active: active.length }, "Filtered to active patients (PatStatus=0/Patient)");
+    logger.info(
+      { pages_fetched: pages.length, od_total: all.length, active: active.length },
+      "Pagination complete — filtered to active patients"
+    );
 
     // Normalise into a clean list
     const normalized = active
@@ -230,7 +257,13 @@ router.get("/patients/active", async (req, res) => {
         email:     p.Email?.trim() || null,
       }));
 
-    res.json({ patients: normalized, total: normalized.length, od_total: all.length });
+    res.json({
+      patients:     normalized,
+      total:        normalized.length,
+      od_total:     all.length,
+      pages_fetched: pages.length,
+      pages,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     logger.error({ err }, "Failed to fetch OD patients");
