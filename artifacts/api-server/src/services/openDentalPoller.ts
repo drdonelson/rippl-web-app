@@ -10,14 +10,15 @@ const OPEN_DENTAL_URL = process.env.OPEN_DENTAL_URL;
 const OPEN_DENTAL_KEY = process.env.OPEN_DENTAL_CUSTOMER_KEY || process.env.OPEN_DENTAL_KEY;
 const OPEN_DENTAL_DEVELOPER_KEY = process.env.OPEN_DENTAL_DEVELOPER_KEY;
 
-interface OpenDentalProcedure {
-  ProcNum: number;
+interface OpenDentalProcedureLog {
+  ProcNum: number;        // Primary key — no ProcLogNum exists on this endpoint
   PatNum: number;
-  ProcCode: string;
-  ProcStatus: number; // 2 = Complete
+  procCode: string;       // lowercase 'c' — actual field name from OD response
+  ProcStatus: string;     // String letter code: "C" = Complete, "D" = Deleted, "EO" = Existing Other, etc.
   ProcDate: string;
   PatientName?: string;
   PatientPhone?: string;
+  [key: string]: unknown;
 }
 
 interface SyncResult {
@@ -37,12 +38,12 @@ export async function syncOpenDental(): Promise<SyncResult> {
     return result;
   }
 
-  // Fetch completed REF-COMP procedures from Open Dental
-  let procedures: OpenDentalProcedure[] = [];
+  // Fetch completed REF-COMP procedure logs from Open Dental
+  let procedures: OpenDentalProcedureLog[] = [];
   try {
-    const url = new URL("/api/v1/procedures", OPEN_DENTAL_URL);
-    url.searchParams.set("ProcCode", "REF-COMP");
-    url.searchParams.set("ProcStatus", "2"); // 2 = Complete
+    const url = new URL("/api/v1/procedurelogs", OPEN_DENTAL_URL);
+    url.searchParams.set("procCode", "REF-COMP");  // lowercase — actual OD field name
+    url.searchParams.set("ProcStatus", "C");         // "C" = Complete (string, not numeric)
 
     // Open Dental REST API authentication format:
     //   Authorization: ODFHIR {DeveloperKey}/{CustomerKey}
@@ -61,7 +62,7 @@ export async function syncOpenDental(): Promise<SyncResult> {
       headers["Authorization"] = `ODFHIR ${customerKey}`;
     }
 
-    logger.info({ url: url.toString(), twoKeyMode: !!developerKey }, "Calling Open Dental API");
+    logger.info({ url: url.toString(), twoKeyMode: !!developerKey }, "Calling Open Dental API (procedurelogs)");
 
     const response = await fetch(url.toString(), {
       method: "GET",
@@ -74,9 +75,9 @@ export async function syncOpenDental(): Promise<SyncResult> {
       throw new Error(`Open Dental API returned ${response.status}: ${body}`);
     }
 
-    procedures = await response.json() as OpenDentalProcedure[];
+    procedures = await response.json() as OpenDentalProcedureLog[];
     result.fetched = procedures.length;
-    logger.info({ count: procedures.length }, "Fetched procedures from Open Dental");
+    logger.info({ count: procedures.length }, "Fetched procedure logs from Open Dental");
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     result.errors.push(`Fetch failed: ${message}`);
@@ -84,7 +85,8 @@ export async function syncOpenDental(): Promise<SyncResult> {
     return result;
   }
 
-  // Process each completed procedure
+  // Process each completed procedure log
+  // ProcNum is the only ID field — procedurelogs has no ProcLogNum
   for (const proc of procedures) {
     const procNum = String(proc.ProcNum);
     const patNum = String(proc.PatNum);

@@ -82,6 +82,52 @@ router.get("/test", async (_req, res) => {
   }
 });
 
+// ── GET /api/opendental/test/procedurelogs ─────────────────────────────────
+// Probes GET /api/v1/procedurelogs with no filters — reveals field names and accepted params.
+router.get("/test/procedurelogs", async (req, res) => {
+  if (!OPEN_DENTAL_URL || !OPEN_DENTAL_KEY) {
+    res.status(503).json({ error: "Open Dental API is not configured" });
+    return;
+  }
+
+  const authHeader = buildAuthHeader();
+  if (!authHeader) {
+    res.status(503).json({ error: "Auth header could not be built" });
+    return;
+  }
+
+  try {
+    // Pass through any query params from the caller so we can experiment
+    const url = new URL("/api/v1/procedurelogs", OPEN_DENTAL_URL);
+    for (const [key, val] of Object.entries(req.query)) {
+      if (typeof val === "string") url.searchParams.set(key, val);
+    }
+    // Default: just limit to 3 results so the response is readable
+    if (!url.searchParams.has("Limit")) url.searchParams.set("Limit", "3");
+
+    logger.info({ url: url.toString() }, "Probing procedurelogs endpoint");
+
+    const response = await fetch(url.toString(), {
+      headers: { "Authorization": authHeader, "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(20_000),
+    });
+
+    const rawText = await response.text();
+    let parsed: unknown;
+    try { parsed = JSON.parse(rawText); } catch { parsed = rawText; }
+
+    res.status(response.status).json({
+      od_status: response.status,
+      od_status_text: response.statusText,
+      url: url.toString(),
+      raw: parsed,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(502).json({ error: `Request failed: ${message}` });
+  }
+});
+
 // ── GET /api/opendental/test/procedures ───────────────────────────────────
 // Hits GET /api/v1/procedures?ProcStatus=2 and returns the raw first 5 results.
 router.get("/test/procedures", async (_req, res) => {
