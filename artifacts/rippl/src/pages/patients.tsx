@@ -36,10 +36,15 @@ type SortDir = "asc" | "desc";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
-function getReferrerStatus(totalReferrals: number): { label: string; className: string } {
-  if (totalReferrals >= 5) return { label: "Super Referrer", className: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" };
-  if (totalReferrals >= 1) return { label: "Active", className: "bg-green-500/15 text-green-400 border-green-500/30" };
-  return { label: "New", className: "bg-muted/80 text-muted-foreground border-border" };
+function isValidPhone(phone: string | null | undefined): boolean {
+  if (!phone) return false;
+  return (phone.replace(/\D/g, "").length >= 7);
+}
+
+function StatusDot({ n }: { n: number }) {
+  if (n >= 5) return <Star className="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" />;
+  if (n >= 1) return <span className="w-2 h-2 rounded-full bg-primary shrink-0 inline-block" />;
+  return <span className="w-2 h-2 rounded-full bg-muted-foreground/30 shrink-0 inline-block" />;
 }
 
 async function fetchActivePatients() {
@@ -218,18 +223,23 @@ export default function Patients() {
     });
   }, [filteredReferrers, sortField, sortDir]);
 
-  const thSortBtn = (field: SortField, label: string) => (
-    <th className="px-5 py-4 font-semibold text-left">
+  const thSortBtn = (field: SortField, label: string, extraClass = "") => (
+    <th className={cn("px-4 py-3 font-semibold text-left", extraClass)}>
       <button
         onClick={() => handleSort(field)}
         className={cn(
-          "flex items-center gap-1.5 text-xs uppercase tracking-wider font-semibold transition-colors",
+          "flex items-center gap-1.5 text-xs uppercase tracking-wider font-semibold transition-colors whitespace-nowrap",
           sortField === field ? "text-primary" : "text-muted-foreground hover:text-foreground"
         )}
       >
         {label}
         <SortIcon field={field} sortField={sortField} sortDir={sortDir} />
       </button>
+    </th>
+  );
+  const thStatic = (label: string, extraClass = "") => (
+    <th className={cn("px-4 py-3 text-xs uppercase tracking-wider font-semibold text-muted-foreground whitespace-nowrap", extraClass)}>
+      {label}
     </th>
   );
 
@@ -388,73 +398,94 @@ export default function Patients() {
           <div className="bg-card border border-border rounded-2xl shadow-xl shadow-black/10 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
+                <colgroup>
+                  <col style={{ minWidth: "220px" }} />
+                  <col style={{ width: "72px" }} />
+                  <col style={{ width: "130px" }} />
+                  <col style={{ minWidth: "180px" }} />
+                  <col style={{ width: "110px" }} />
+                  <col style={{ width: "80px" }} />
+                  <col style={{ width: "72px" }} />
+                  <col style={{ width: "1px" }} />
+                </colgroup>
                 <thead>
                   <tr className="bg-muted/30 border-b border-border">
                     {thSortBtn("name", "Patient Name")}
-                    <th className="px-5 py-4 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Patient ID</th>
-                    <th className="px-5 py-4 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Phone</th>
-                    <th className="px-5 py-4 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Email</th>
-                    <th className="px-5 py-4 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Referral Code</th>
-                    {thSortBtn("total_referrals", "Referrals")}
-                    {thSortBtn("total_rewards_issued", "Rewards")}
-                    <th className="px-5 py-4 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Status</th>
-                    <th className="px-5 py-4 text-xs uppercase tracking-wider font-semibold text-muted-foreground text-right">Actions</th>
+                    {thStatic("ID")}
+                    {thStatic("Phone")}
+                    {thStatic("Email")}
+                    {thStatic("Ref. Code")}
+                    {thSortBtn("total_referrals", "Refs")}
+                    {thSortBtn("total_rewards_issued", "Rwds")}
+                    <th className="px-4 py-3 text-xs uppercase tracking-wider font-semibold text-muted-foreground text-right sticky right-0 bg-muted/30 border-l border-border whitespace-nowrap">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {sortedReferrers.map((referrer) => {
-                    const status = getReferrerStatus(referrer.total_referrals);
+                    const phone = (referrer as any).phone as string | null;
+                    const email = (referrer as any).email as string | null;
+                    const code  = (referrer as any).referral_code as string | null;
+                    const n     = referrer.total_referrals;
                     return (
                       <tr key={referrer.id} className="hover:bg-muted/10 transition-colors group">
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0">
-                              {referrer.name.charAt(0).toUpperCase()}
-                            </div>
-                            <span className="font-semibold text-foreground">{referrer.name}</span>
-                            {referrer.total_referrals >= 5 && (
-                              <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400 shrink-0" />
-                            )}
+                        {/* Patient Name + status dot */}
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center gap-2.5">
+                            <StatusDot n={n} />
+                            <span className="font-semibold text-foreground text-sm leading-tight">{referrer.name}</span>
                           </div>
                         </td>
-                        <td className="px-5 py-4 text-sm text-muted-foreground font-mono">{referrer.patient_id}</td>
-                        <td className="px-5 py-4 text-sm text-muted-foreground">{(referrer as any).phone || <span className="opacity-30">—</span>}</td>
-                        <td className="px-5 py-4 text-sm text-muted-foreground max-w-[180px] truncate">
-                          {(referrer as any).email || <span className="opacity-30">—</span>}
+                        {/* Patient ID */}
+                        <td className="px-4 py-2.5 text-xs text-muted-foreground font-mono tabular-nums">
+                          {referrer.patient_id}
                         </td>
-                        <td className="px-5 py-4">
-                          {(referrer as any).referral_code ? (
-                            <span className="font-mono text-xs px-2 py-1 rounded-lg bg-background border border-border text-primary">
-                              {(referrer as any).referral_code}
-                            </span>
-                          ) : <span className="opacity-30 text-sm">—</span>}
+                        {/* Phone */}
+                        <td className="px-4 py-2.5 text-sm text-muted-foreground whitespace-nowrap">
+                          {isValidPhone(phone) ? phone : <span className="opacity-30">—</span>}
                         </td>
-                        <td className="px-5 py-4 text-center">
-                          <span className="font-display font-bold text-foreground text-lg">{referrer.total_referrals}</span>
+                        {/* Email — truncate, full on hover tooltip */}
+                        <td className="px-4 py-2.5 max-w-0">
+                          {email
+                            ? <span
+                                title={email}
+                                className="block text-sm text-muted-foreground truncate overflow-hidden whitespace-nowrap"
+                              >{email}</span>
+                            : <span className="opacity-30 text-sm">—</span>}
                         </td>
-                        <td className="px-5 py-4 text-center">
-                          <span className="font-display font-bold text-foreground text-lg">{referrer.total_rewards_issued}</span>
+                        {/* Referral Code — single line, 11px */}
+                        <td className="px-4 py-2.5">
+                          {code
+                            ? <span className="font-mono px-1.5 py-0.5 rounded bg-background border border-border text-primary whitespace-nowrap overflow-hidden" style={{ fontSize: "11px" }}>
+                                {code}
+                              </span>
+                            : <span className="opacity-30 text-sm">—</span>}
                         </td>
-                        <td className="px-5 py-4">
-                          <span className={cn("px-2.5 py-1 rounded-full text-[11px] font-bold border whitespace-nowrap", status.className)}>
-                            {status.label}
-                          </span>
+                        {/* Referrals */}
+                        <td className="px-4 py-2.5 text-center">
+                          <span className="font-display font-bold text-foreground">{n}</span>
                         </td>
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-2 justify-end">
+                        {/* Rewards */}
+                        <td className="px-4 py-2.5 text-center">
+                          <span className="font-display font-bold text-foreground">{referrer.total_rewards_issued}</span>
+                        </td>
+                        {/* Actions — sticky right */}
+                        <td className="px-4 py-2.5 sticky right-0 bg-card border-l border-border">
+                          <div className="flex items-center gap-1.5">
                             <button
                               onClick={() => setQrModalReferrerId(referrer.id)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary hover:bg-muted text-foreground text-xs font-semibold rounded-lg transition-colors border border-border"
+                              className="flex items-center gap-1 px-2.5 py-1.5 bg-secondary hover:bg-muted text-foreground text-xs font-semibold rounded-lg transition-colors border border-border whitespace-nowrap"
                             >
-                              <QrCode className="w-3.5 h-3.5" />
-                              Get QR
+                              <QrCode className="w-3 h-3" />
+                              QR
                             </button>
                             <button
                               onClick={() => navigate(`/events?referrer=${encodeURIComponent(referrer.name)}`)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold rounded-lg transition-colors border border-primary/20"
+                              className="flex items-center gap-1 px-2.5 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold rounded-lg transition-colors border border-primary/20 whitespace-nowrap"
                             >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                              View Events
+                              <ExternalLink className="w-3 h-3" />
+                              Events
                             </button>
                           </div>
                         </td>
