@@ -174,6 +174,77 @@ router.get("/test/procedures", async (_req, res) => {
   }
 });
 
+// ── GET /api/opendental/test/refattaches ──────────────────────────────────
+// Hits GET /api/v1/refattaches?PatNum=8280 and returns the raw response so
+// we can confirm field names before updating the poller's extraction logic.
+// Pass ?PatNum=XXXX to override the default.
+router.get("/test/refattaches", async (req, res) => {
+  if (!OPEN_DENTAL_URL || !OPEN_DENTAL_KEY) {
+    res.status(503).json({ error: "Open Dental API is not configured" });
+    return;
+  }
+
+  const authHeader = buildAuthHeader();
+  if (!authHeader) {
+    res.status(503).json({ error: "Auth header could not be built" });
+    return;
+  }
+
+  const patNum = typeof req.query.PatNum === "string" ? req.query.PatNum : "8280";
+
+  try {
+    const url = new URL("/api/v1/refattaches", OPEN_DENTAL_URL);
+    url.searchParams.set("PatNum", patNum);
+
+    logger.info({ url: url.toString(), patNum }, "Probing refattaches endpoint");
+
+    const response = await fetch(url.toString(), {
+      headers: { "Authorization": authHeader, "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(15_000),
+    });
+
+    const rawText = await response.text();
+    let parsed: unknown;
+    try { parsed = JSON.parse(rawText); } catch { parsed = rawText; }
+
+    const refattaches = Array.isArray(parsed) ? parsed : [];
+
+    // Step 2 — follow the first ReferralNum to get the Referral record (PatNum lives there)
+    let referralRecord: unknown = null;
+    let referralFetchError: string | null = null;
+    const firstAttach = refattaches[0] as Record<string, unknown> | undefined;
+    const referralNum = firstAttach?.ReferralNum;
+
+    if (typeof referralNum === "number" && referralNum > 0) {
+      try {
+        const refUrl = new URL(`/api/v1/referrals/${referralNum}`, OPEN_DENTAL_URL);
+        const refResponse = await fetch(refUrl.toString(), {
+          headers: { "Authorization": authHeader, "Content-Type": "application/json" },
+          signal: AbortSignal.timeout(15_000),
+        });
+        const refText = await refResponse.text();
+        try { referralRecord = JSON.parse(refText); } catch { referralRecord = refText; }
+      } catch (refErr) {
+        referralFetchError = refErr instanceof Error ? refErr.message : String(refErr);
+      }
+    }
+
+    res.status(response.status).json({
+      od_status:           response.status,
+      od_status_text:      response.statusText,
+      url:                 url.toString(),
+      patNum,
+      refattaches:         refattaches,
+      referring_referral_num: referralNum ?? null,
+      referral_record:     referralRecord,
+      referral_fetch_error: referralFetchError,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(502).json({ error: `Request failed: ${message}` });
+  }
+});
+
 // ── GET /api/opendental/patients/active ────────────────────────────────────
 // Paginates through ALL Open Dental patients in batches of 100 (Offset/Limit),
 // filters client-side for active (PatStatus === "Patient" | 0), and returns them.

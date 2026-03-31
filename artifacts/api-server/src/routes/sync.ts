@@ -22,14 +22,15 @@ router.post("/opendental", async (req, res) => {
     endpoint: "/api/sync/opendental",
     force,
     success:  status === 200,
-    od_total:         result.od_total,
-    ref_comp_found:   result.fetched,
-    ref_comp_new:     result.inserted,
-    ref_comp_skipped: result.skipped,
+    od_total:              result.od_total,
+    ref_comp_found:        result.fetched,
+    ref_comp_new:          result.inserted,
+    ref_comp_skipped:      result.skipped,
+    ref_comp_unmatched:    result.unmatched,
     errors:   result.errors,
     message:  result.fetched === 0
       ? `No REF-COMP completions found (${result.od_total} total completed procedures checked).`
-      : `Found ${result.fetched} REF-COMP completion(s) — ${result.inserted} new referral event(s) created, ${result.skipped} already synced.${force ? " [force mode]" : ""}`,
+      : `Found ${result.fetched} REF-COMP completion(s) — ${result.inserted} new event(s) created, ${result.skipped} already synced, ${result.unmatched} unmatched (no referrer found).${force ? " [force mode]" : ""}`,
     ...(force && result.debug ? { debug: result.debug } : {}),
   });
 });
