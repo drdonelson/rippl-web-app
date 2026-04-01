@@ -7,6 +7,14 @@ const { Pool } = pg;
 let _pool: InstanceType<typeof Pool> | undefined;
 let _db: ReturnType<typeof drizzle<typeof schema>> | undefined;
 
+function sslConfig(url: string) {
+  // Local databases (Replit dev, localhost) do not need SSL.
+  // Remote databases (Supabase pooler, Render) use SSL with a self-signed
+  // certificate chain that Node rejects by default — disable verification.
+  if (url.includes("localhost") || url.includes("127.0.0.1")) return false;
+  return { rejectUnauthorized: false };
+}
+
 function init() {
   if (_db) return _db;
   if (!process.env.DATABASE_URL) {
@@ -14,7 +22,10 @@ function init() {
       "DATABASE_URL must be set. Did you forget to provision a database?",
     );
   }
-  _pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  _pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: sslConfig(process.env.DATABASE_URL),
+  });
   _db = drizzle(_pool, { schema });
   return _db;
 }
