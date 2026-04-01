@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { useGetReferrers, useCreateReferrer, useGetReferrerQr } from "@workspace/api-client-react";
+import { useGetReferrers, useCreateReferrer, useGetReferrerQr, getGetReferrerQrQueryKey } from "@workspace/api-client-react";
 import {
   Plus, QrCode, Search, Copy, Check, Download, RefreshCw,
   CheckCircle2, AlertTriangle, LayoutList, LayoutGrid,
@@ -244,7 +244,7 @@ export default function Patients() {
   const onSubmit = (data: FormValues) => createReferrer.mutate({ data });
 
   const { data: qrData } = useGetReferrerQr(qrModalReferrerId || "", {
-    query: { enabled: !!qrModalReferrerId }
+    query: { queryKey: getGetReferrerQrQueryKey(qrModalReferrerId || ""), enabled: !!qrModalReferrerId }
   });
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -325,7 +325,7 @@ export default function Patients() {
     return (referrers ?? []).filter(r => {
       // Office filter — only show patients from the selected office
       if (selectedOfficeId !== "all") {
-        const rOfficeId = (r as Record<string, unknown>).office_id as string | null;
+        const rOfficeId = (r as unknown as Record<string, unknown>).office_id as string | null;
         if (rOfficeId !== selectedOfficeId) return false;
       }
       return (

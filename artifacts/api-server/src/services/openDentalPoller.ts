@@ -295,7 +295,7 @@ export async function syncOpenDental(options?: {
           procNum,
           newPatientPatNum,
           newPatientName: proc.PatientName ?? null,
-          refattaches,
+          refattaches: refAttaches,
           referralRecord,
           referringPatNum,
           inReferrersTable: !!referrer,

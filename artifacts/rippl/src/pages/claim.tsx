@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useGetReferralByToken, useCreateReward } from "@workspace/api-client-react";
+import { useGetReferralByToken, useCreateReward, getGetReferralByTokenQueryKey } from "@workspace/api-client-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Droplets, Gift, CheckCircle2, ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,7 @@ export default function Claim() {
   const preselectedReward = searchParams.get("reward") || null;
   
   const { data, isLoading, error } = useGetReferralByToken(token, {
-    query: { enabled: !!token, retry: false }
+    query: { queryKey: getGetReferralByTokenQueryKey(token), enabled: !!token, retry: false }
   });
 
   const [selectedReward, setSelectedReward] = useState<string | null>(null);
