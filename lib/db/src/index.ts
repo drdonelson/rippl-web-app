@@ -7,12 +7,21 @@ const { Pool } = pg;
 let _pool: InstanceType<typeof Pool> | undefined;
 let _db: ReturnType<typeof drizzle<typeof schema>> | undefined;
 
-function sslConfig(url: string) {
-  // Local databases (Replit dev, localhost) do not need SSL.
-  // Remote databases (Supabase pooler, Render) use SSL with a self-signed
-  // certificate chain that Node rejects by default — disable verification.
-  if (url.includes("localhost") || url.includes("127.0.0.1")) return false;
-  return { rejectUnauthorized: false };
+/**
+ * Strip `sslmode` from the connection string so pg-connection-string cannot
+ * override the explicit `ssl` option we pass to the Pool constructor.
+ * In pg ≥ 8, the parsed sslmode (even "prefer") is treated as "verify-full"
+ * and takes precedence over the Pool constructor's ssl option — unless we
+ * remove it from the URL first.
+ */
+function stripSslMode(url: string): string {
+  try {
+    const u = new URL(url);
+    u.searchParams.delete("sslmode");
+    return u.toString();
+  } catch {
+    return url;
+  }
 }
 
 function init() {
@@ -22,10 +31,18 @@ function init() {
       "DATABASE_URL must be set. Did you forget to provision a database?",
     );
   }
-  _pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: sslConfig(process.env.DATABASE_URL),
-  });
+
+  const connectionString = stripSslMode(process.env.DATABASE_URL);
+
+  // In production (Render → Supabase pooler) we need SSL but must disable
+  // certificate verification because the pooler uses a self-signed chain.
+  // Locally (Replit dev) the postgres server has no SSL at all.
+  const ssl: pg.PoolConfig["ssl"] =
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : false;
+
+  _pool = new Pool({ connectionString, ssl });
   _db = drizzle(_pool, { schema });
   return _db;
 }
