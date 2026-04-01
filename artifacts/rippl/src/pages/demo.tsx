@@ -71,19 +71,19 @@ export default function Demo() {
           <div className="space-y-3 text-sm text-white/60">
             <div className="flex items-start gap-2.5">
               <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">✓</span>
-              <span>5 sample patients with referral QR codes</span>
+              <span>5 Nashville patients with referral QR codes</span>
             </div>
             <div className="flex items-start gap-2.5">
               <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">✓</span>
-              <span>8 referral events across all status stages</span>
+              <span>12 referral events across all status stages</span>
             </div>
             <div className="flex items-start gap-2.5">
               <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">✓</span>
-              <span>3 rewards already sent (gift card, credit, charity)</span>
+              <span>2 rewards sent — Amazon gift card &amp; in-house credit</span>
             </div>
             <div className="flex items-start gap-2.5">
               <span className="w-5 h-5 rounded-full bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">!</span>
-              <span>Session lasts 30 minutes · No real data is shown</span>
+              <span>Session lasts 30 minutes · No real patient data is shown</span>
             </div>
           </div>
 

@@ -16,9 +16,16 @@ function generateReferralCode(name: string): string {
 }
 
 router.get("/", async (req, res) => {
-  const { office_id } = req.query;
-  const conditions = office_id && typeof office_id === "string"
-    ? [eq(referrersTable.office_id, office_id)]
+  const user = req.authUser!;
+  // Non-super-admins are always scoped to their own practice
+  const rawOfficeId = typeof req.query.office_id === "string" && req.query.office_id !== "all"
+    ? req.query.office_id : undefined;
+  const effectiveOfficeId = user.role !== "super_admin" && user.practice_id
+    ? user.practice_id
+    : rawOfficeId;
+
+  const conditions = effectiveOfficeId
+    ? [eq(referrersTable.office_id, effectiveOfficeId)]
     : [];
   const referrers = await db
     .select()

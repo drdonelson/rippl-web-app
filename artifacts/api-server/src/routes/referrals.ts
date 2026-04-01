@@ -15,9 +15,14 @@ import { checkHouseholdDuplicate } from "../services/householdDuplicate";
 const router: IRouter = Router();
 
 router.get("/", async (req, res) => {
-  const officeId = typeof req.query.office_id === "string" && req.query.office_id !== "all"
+  const user = req.authUser!;
+  // Non-super-admins are always scoped to their own practice
+  const rawOfficeId = typeof req.query.office_id === "string" && req.query.office_id !== "all"
     ? req.query.office_id
     : null;
+  const officeId = user.role !== "super_admin" && user.practice_id
+    ? user.practice_id
+    : rawOfficeId;
 
   const officeFilter = officeId
     ? eq(referralEventsTable.office_id, officeId)

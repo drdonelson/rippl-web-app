@@ -6,9 +6,14 @@ import { eq, sql, and } from "drizzle-orm";
 const router: IRouter = Router();
 
 router.get("/", async (req, res) => {
-  const officeId = typeof req.query.office_id === "string" && req.query.office_id !== "all"
+  const user = req.authUser!;
+  // Non-super-admins are always scoped to their own practice — ignore client-supplied office_id
+  const rawOfficeId = typeof req.query.office_id === "string" && req.query.office_id !== "all"
     ? req.query.office_id
     : null;
+  const officeId = user.role !== "super_admin" && user.practice_id
+    ? user.practice_id
+    : rawOfficeId;
 
   try {
     const officeFilter = officeId
