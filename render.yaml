@@ -2,7 +2,7 @@ services:
   - type: web
     name: rippl
     env: node
-    buildCommand: npm install -g pnpm && pnpm install --no-frozen-lockfile && pnpm run build
+    buildCommand: npm install -g pnpm && pnpm install --no-frozen-lockfile && pnpm run build:prod
     startCommand: pnpm start
     envVars:
       - key: NODE_VERSION
