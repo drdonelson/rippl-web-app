@@ -1,6 +1,7 @@
-import express, { type Express } from "express";
+import express, { type Express, type Request, type Response } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
+import path from "path";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
@@ -30,5 +31,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+
+// Serve Rippl frontend static files (production only — dev uses the Vite server)
+if (process.env.NODE_ENV === "production") {
+  const ripplDist = path.resolve(import.meta.dirname, "../../rippl/dist/public");
+  app.use(express.static(ripplDist));
+  app.get("*", (_req: Request, res: Response) => {
+    res.sendFile(path.join(ripplDist, "index.html"));
+  });
+}
 
 export default app;
