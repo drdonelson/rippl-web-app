@@ -48,19 +48,17 @@ function StatusDot({ n }: { n: number }) {
   return <span className="w-2 h-2 rounded-full bg-muted-foreground/30 shrink-0 inline-block" />;
 }
 
-async function fetchActivePatients(officeId?: string | null) {
-  const url = new URL(`${BASE}/api/opendental/patients/active`, window.location.origin);
-  if (officeId) url.searchParams.set("office_id", officeId);
-  return customFetch<{ patients: unknown[]; total: number; office_name?: string | null }>(url.toString());
-}
-
-async function importPatients(patients: unknown[], officeId?: string | null) {
-  return customFetch<{ imported: number; skipped: number; total: number; errors: string[] }>(
-    `${BASE}/api/opendental/patients/import`,
+async function bulkImportFromOD(officeId?: string | null) {
+  return customFetch<{
+    imported: number; skipped: number; total: number;
+    od_total: number; pages_fetched: number; has_more: boolean;
+    office_name?: string | null; errors: string[];
+  }>(
+    `${BASE}/api/opendental/patients/bulk-import`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ patients, office_id: officeId ?? null }),
+      body: JSON.stringify({ office_id: officeId ?? null }),
     }
   );
 }
@@ -110,13 +108,8 @@ function OfficeImportRow({ officeName, active, phase, onImport, onReset }: Offic
         </div>
 
         <div className="flex items-center gap-3 flex-shrink-0">
-          {phase.state === "fetching" && (
-            <span className="text-xs text-muted-foreground animate-pulse hidden sm:inline">Connecting…</span>
-          )}
-          {phase.state === "importing" && (
-            <span className="text-xs text-muted-foreground tabular-nums hidden sm:inline">
-              {phase.current} / {phase.total}
-            </span>
+          {(phase.state === "fetching" || phase.state === "importing") && (
+            <span className="text-xs text-muted-foreground animate-pulse hidden sm:inline">Importing…</span>
           )}
           {phase.state === "done" && (
             <span className="flex items-center gap-1 text-xs text-emerald-400">
@@ -125,9 +118,9 @@ function OfficeImportRow({ officeName, active, phase, onImport, onReset }: Offic
             </span>
           )}
           {phase.state === "error" && (
-            <span className="flex items-center gap-1 text-xs text-destructive max-w-[160px] truncate" title={phase.message}>
+            <span className="flex items-center gap-1 text-xs text-destructive max-w-[240px]" title={phase.message}>
               <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-              {phase.message}
+              <span className="truncate">{phase.message}</span>
             </span>
           )}
           {(phase.state === "done" || phase.state === "error") && (
@@ -262,37 +255,11 @@ export default function Patients() {
   const handleImportOffice = async (officeKey: string, officeId: string | null) => {
     const phase = getImportPhase(officeKey);
     if (phase.state === "fetching" || phase.state === "importing") return;
+
+    // Single server-side call: fetches from OD and imports in one pass
     setOfficeImportPhase(officeKey, { state: "fetching" });
     try {
-      const { patients, total } = await fetchActivePatients(officeId);
-      if (total === 0) {
-        setOfficeImportPhase(officeKey, { state: "done", imported: 0, skipped: 0, total: 0 });
-        return;
-      }
-
-      let importResult: { imported: number; skipped: number; total: number } | null = null;
-      let importDone = false;
-      setOfficeImportPhase(officeKey, { state: "importing", total, current: 0 });
-
-      const importPromise = importPatients(patients, officeId).then(result => {
-        importResult = result; importDone = true; return result;
-      });
-
-      await new Promise<void>(resolve => {
-        const tick = () => {
-          setOfficeImportPhase(officeKey, prev => {
-            if (prev.state !== "importing") return prev;
-            const next = Math.min(prev.current + Math.max(1, Math.floor(total / 40)), total);
-            return { state: "importing", total, current: next };
-          });
-          if (!importDone) {
-            animFrameRefs.current.set(officeKey, setTimeout(tick, 30));
-          } else { resolve(); }
-        };
-        animFrameRefs.current.set(officeKey, setTimeout(tick, 30));
-      });
-
-      const result = await importPromise;
+      const result = await bulkImportFromOD(officeId);
       queryClient.invalidateQueries({ queryKey: ["/api/referrers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
       setOfficeImportPhase(officeKey, {
@@ -302,7 +269,8 @@ export default function Patients() {
         total: result.total,
       });
     } catch (err) {
-      setOfficeImportPhase(officeKey, { state: "error", message: err instanceof Error ? err.message : String(err) });
+      const message = err instanceof Error ? err.message : String(err);
+      setOfficeImportPhase(officeKey, { state: "error", message });
     }
   };
 
