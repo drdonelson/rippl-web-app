@@ -3,35 +3,13 @@ import { db } from "@workspace/db";
 import { referrersTable, officesTable } from "@workspace/db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { logger } from "../lib/logger";
-import crypto from "node:crypto";
 
 const router: IRouter = Router();
 
-// ── In-memory job store ────────────────────────────────────────────────────
-export interface ImportJob {
-  id: string;
-  office_id: string | null;
-  status: "running" | "done" | "error";
-  imported: number;
-  skipped: number;
-  total_od: number;
-  pages_fetched: number;
-  error: string | null;
-  started_at: string;
-  finished_at: string | null;
-}
-
-const jobs = new Map<string, ImportJob>();
-
-function scheduleCleanup(jobId: string) {
-  setTimeout(() => jobs.delete(jobId), 30 * 60 * 1000);
-}
-
-// ── Open Dental helpers ────────────────────────────────────────────────────
 const OPEN_DENTAL_URL           = process.env.OPEN_DENTAL_URL;
 const DEFAULT_CUSTOMER_KEY      = process.env.OPEN_DENTAL_CUSTOMER_KEY || process.env.OPEN_DENTAL_KEY;
 const OPEN_DENTAL_DEVELOPER_KEY = process.env.OPEN_DENTAL_DEVELOPER_KEY;
-const BATCH_SIZE = 100;
+const OD_PAGE_SIZE = 100;
 
 interface OdPatient {
   PatNum:         number;
@@ -71,130 +49,31 @@ async function resolveCustomerKey(officeId: string | null): Promise<string | nul
   return office?.customer_key ?? DEFAULT_CUSTOMER_KEY ?? null;
 }
 
-// ── Background import runner (fire-and-forget, no HTTP timeout risk) ───────
-async function runImportJob(job: ImportJob, authHeader: string): Promise<void> {
-  let odOffset = 0;
-  let page     = 1;
-
-  try {
-    while (true) {
-      const url = new URL("/api/v1/patients", OPEN_DENTAL_URL!);
-      url.searchParams.set("Limit",  String(BATCH_SIZE));
-      url.searchParams.set("Offset", String(odOffset));
-
-      logger.info({ job_id: job.id, page, odOffset, office_id: job.office_id },
-        "import-job: fetching patient page");
-
-      const response = await fetch(url.toString(), {
-        headers: { Authorization: authHeader, "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(20_000),
-      });
-
-      if (!response.ok) {
-        const errBody = await response.text().catch(() => "");
-        throw new Error(`Open Dental returned ${response.status} on page ${page}: ${errBody}`);
-      }
-
-      const raw  = await response.json() as OdPatient | OdPatient[];
-      const batch = Array.isArray(raw) ? raw : [raw];
-
-      const active = batch.filter(p => p.PatStatus === 0 || p.PatStatus === "Patient");
-      const normalized = active
-        .filter(p => p.PatNum && (p.FName || p.LName))
-        .map(p => ({
-          patNum:    String(p.PatNum),
-          name:      [p.FName, p.LName].filter(Boolean).join(" ").trim(),
-          firstName: p.Preferred?.trim() || p.FName?.trim() || "",
-          phone:     getBestPhone(p),
-          email:     p.Email?.trim() || null,
-        }));
-
-      if (normalized.length > 0) {
-        const patNums = normalized.map(p => p.patNum);
-
-        const existingRows = await db
-          .select({ patient_id: referrersTable.patient_id })
-          .from(referrersTable)
-          .where(inArray(referrersTable.patient_id, patNums));
-
-        const existingSet = new Set(existingRows.map(r => r.patient_id));
-        const toInsert    = normalized.filter(p => !existingSet.has(p.patNum));
-        job.skipped      += normalized.length - toInsert.length;
-
-        if (toInsert.length > 0) {
-          const codes = toInsert.map(p =>
-            buildReferralCode(p.firstName || p.name.split(" ")[0] || "ANON", p.patNum)
-          );
-
-          const conflictRows = await db
-            .select({ referral_code: referrersTable.referral_code })
-            .from(referrersTable)
-            .where(inArray(referrersTable.referral_code, codes));
-
-          const conflictSet = new Set(conflictRows.map(r => r.referral_code));
-
-          const rows = toInsert.map((p, i) => {
-            const code      = codes[i];
-            const finalCode = conflictSet.has(code)
-              ? `${code.slice(0, 4)}-${Math.floor(Math.random() * 9000 + 1000)}`
-              : code;
-            return {
-              patient_id:    p.patNum,
-              name:          p.name,
-              phone:         p.phone || "od-import",
-              email:         p.email || null,
-              referral_code: finalCode,
-              office_id:     job.office_id,
-            };
-          });
-
-          await db.insert(referrersTable).values(rows).onConflictDoNothing();
-          job.imported += toInsert.length;
-        }
-      }
-
-      job.total_od     += batch.length;
-      job.pages_fetched = page;
-
-      logger.info(
-        { job_id: job.id, page, batch: batch.length, active: active.length, imported: job.imported, skipped: job.skipped },
-        "import-job: page complete",
-      );
-
-      if (batch.length < BATCH_SIZE) break;
-
-      odOffset += BATCH_SIZE;
-      page++;
-    }
-
-    job.status      = "done";
-    job.finished_at = new Date().toISOString();
-
-    logger.info(
-      { job_id: job.id, imported: job.imported, skipped: job.skipped, total_od: job.total_od, pages: job.pages_fetched },
-      "import-job: done",
-    );
-  } catch (err) {
-    job.status      = "error";
-    job.error       = err instanceof Error ? err.message : String(err);
-    job.finished_at = new Date().toISOString();
-    logger.error({ job_id: job.id, err }, "import-job: failed");
-  }
-
-  scheduleCleanup(job.id);
-}
-
-// ── POST /api/import/patients ─────────────────────────────────────────────
-// Starts a background import job. Returns { job_id } immediately (202).
-// Poll GET /api/import/status/:job_id for progress.
-router.post("/patients", async (req, res) => {
+// ── POST /api/import/patients/chunk ──────────────────────────────────────────
+// Synchronous chunked import — fetches one bounded slice of patients from
+// Open Dental, upserts active patients, and returns progress so the client can
+// call again with next_offset until done === true.
+//
+// Body:  { office_id?: string | null, offset?: number, limit?: number }
+//   offset  – OD row offset to start from (default 0)
+//   limit   – patients to fetch this call (default 500, max 500 = 5 OD pages)
+//
+// Response: { imported, skipped, next_offset, total_fetched, done }
+//   done === true when OD returned fewer rows than requested (no more pages)
+//
+// Each call fetches at most 5 pages × 100 = 500 patients from OD and should
+// complete well under Render's 30 s request timeout.
+router.post("/patients/chunk", async (req, res) => {
   if (!OPEN_DENTAL_URL) {
     res.status(503).json({ error: "Open Dental API not configured (OPEN_DENTAL_URL missing)" });
     return;
   }
 
-  const body     = req.body as { office_id?: string | null };
-  const officeId = typeof body.office_id === "string" ? body.office_id : null;
+  const body        = req.body as { office_id?: string | null; offset?: number; limit?: number };
+  const officeId    = typeof body.office_id === "string" ? body.office_id : null;
+  const startOffset = Math.max(0, Number(body.offset ?? 0));
+  const limit       = Math.min(500, Math.max(1, Number(body.limit ?? 500)));
+  const pagesToFetch = Math.ceil(limit / OD_PAGE_SIZE);
 
   if (officeId) {
     const [office] = await db
@@ -214,45 +93,122 @@ router.post("/patients", async (req, res) => {
     return;
   }
 
-  const job: ImportJob = {
-    id:            crypto.randomUUID(),
-    office_id:     officeId,
-    status:        "running",
-    imported:      0,
-    skipped:       0,
-    total_od:      0,
-    pages_fetched: 0,
-    error:         null,
-    started_at:    new Date().toISOString(),
-    finished_at:   null,
-  };
+  // ── Fetch up to pagesToFetch pages from Open Dental ───────────────────
+  const allPatients: OdPatient[] = [];
+  let odOffset = startOffset;
+  let done     = false;
 
-  jobs.set(job.id, job);
+  try {
+    for (let page = 0; page < pagesToFetch; page++) {
+      const url = new URL("/api/v1/patients", OPEN_DENTAL_URL!);
+      url.searchParams.set("Limit",  String(OD_PAGE_SIZE));
+      url.searchParams.set("Offset", String(odOffset));
 
-  // Fire and forget — runs in background without blocking the HTTP response
-  runImportJob(job, authHeader).catch(err => {
-    logger.error({ err, job_id: job.id }, "import-job: unhandled runner error");
-    if (job.status === "running") {
-      job.status      = "error";
-      job.error       = err instanceof Error ? err.message : String(err);
-      job.finished_at = new Date().toISOString();
-      scheduleCleanup(job.id);
+      logger.info({ page: page + 1, odOffset, officeId }, "import-chunk: fetching OD page");
+
+      const response = await fetch(url.toString(), {
+        headers: { Authorization: authHeader, "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(15_000),
+      });
+
+      if (!response.ok) {
+        const errBody = await response.text().catch(() => "");
+        res.status(502).json({
+          error: `Open Dental returned ${response.status} at offset ${odOffset}: ${errBody}`,
+        });
+        return;
+      }
+
+      const raw   = await response.json() as OdPatient | OdPatient[];
+      const batch = Array.isArray(raw) ? raw : [raw];
+      allPatients.push(...batch);
+
+      logger.info({ page: page + 1, fetched: batch.length, running_total: allPatients.length },
+        "import-chunk: page done");
+
+      if (batch.length < OD_PAGE_SIZE) {
+        done = true; // OD has no more rows — this was the last page
+        break;
+      }
+
+      odOffset += OD_PAGE_SIZE;
     }
-  });
-
-  logger.info({ job_id: job.id, office_id: officeId }, "import-job: started");
-
-  res.status(202).json({ job_id: job.id });
-});
-
-// ── GET /api/import/status/:job_id ────────────────────────────────────────
-router.get("/status/:job_id", (req, res) => {
-  const job = jobs.get(req.params.job_id);
-  if (!job) {
-    res.status(404).json({ error: "Job not found or expired (jobs are kept for 30 minutes after completion)" });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(502).json({ error: `Open Dental request failed: ${message}` });
     return;
   }
-  res.json(job);
+
+  const totalFetched = allPatients.length;
+  const nextOffset   = startOffset + totalFetched;
+
+  // ── Filter to active patients only ────────────────────────────────────
+  const active     = allPatients.filter(p => p.PatStatus === 0 || p.PatStatus === "Patient");
+  const normalized = active
+    .filter(p => p.PatNum && (p.FName || p.LName))
+    .map(p => ({
+      patNum:    String(p.PatNum),
+      name:      [p.FName, p.LName].filter(Boolean).join(" ").trim(),
+      firstName: p.Preferred?.trim() || p.FName?.trim() || "",
+      phone:     getBestPhone(p),
+      email:     p.Email?.trim() || null,
+    }));
+
+  if (normalized.length === 0) {
+    res.json({ imported: 0, skipped: 0, next_offset: nextOffset, total_fetched: totalFetched, done });
+    return;
+  }
+
+  // ── Upsert into referrers table ───────────────────────────────────────
+  const patNums      = normalized.map(p => p.patNum);
+  const existingRows = await db
+    .select({ patient_id: referrersTable.patient_id })
+    .from(referrersTable)
+    .where(inArray(referrersTable.patient_id, patNums));
+
+  const existingSet = new Set(existingRows.map(r => r.patient_id));
+  const toInsert    = normalized.filter(p => !existingSet.has(p.patNum));
+  const skipped     = normalized.length - toInsert.length;
+
+  let imported = 0;
+
+  if (toInsert.length > 0) {
+    const codes = toInsert.map(p =>
+      buildReferralCode(p.firstName || p.name.split(" ")[0] || "ANON", p.patNum)
+    );
+
+    const conflictRows = await db
+      .select({ referral_code: referrersTable.referral_code })
+      .from(referrersTable)
+      .where(inArray(referrersTable.referral_code, codes));
+
+    const conflictSet = new Set(conflictRows.map(r => r.referral_code));
+
+    const rows = toInsert.map((p, i) => {
+      const code      = codes[i];
+      const finalCode = conflictSet.has(code)
+        ? `${code.slice(0, 4)}-${Math.floor(Math.random() * 9000 + 1000)}`
+        : code;
+      return {
+        patient_id:    p.patNum,
+        name:          p.name,
+        phone:         p.phone || "od-import",
+        email:         p.email || null,
+        referral_code: finalCode,
+        office_id:     officeId,
+      };
+    });
+
+    await db.insert(referrersTable).values(rows).onConflictDoNothing();
+    imported = toInsert.length;
+  }
+
+  logger.info(
+    { imported, skipped, total_fetched: totalFetched, next_offset: nextOffset, done, officeId },
+    "import-chunk: complete",
+  );
+
+  res.json({ imported, skipped, next_offset: nextOffset, total_fetched: totalFetched, done });
 });
 
 export default router;

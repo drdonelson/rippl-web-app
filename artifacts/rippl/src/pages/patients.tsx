@@ -27,9 +27,8 @@ type FormValues = z.infer<typeof formSchema>;
 
 type ImportPhase =
   | { state: "idle" }
-  | { state: "fetching" }
-  | { state: "importing"; total: number; current: number }
-  | { state: "done"; imported: number; skipped: number; total: number }
+  | { state: "importing"; current: number }
+  | { state: "done"; imported: number; skipped: number }
   | { state: "error"; message: string };
 
 type ViewMode = "list" | "grid";
@@ -49,31 +48,24 @@ function StatusDot({ n }: { n: number }) {
   return <span className="w-2 h-2 rounded-full bg-muted-foreground/30 shrink-0 inline-block" />;
 }
 
-// ── Import job API helpers ────────────────────────────────────────────────
-interface JobStatus {
-  id: string;
-  status: "running" | "done" | "error";
-  imported: number;
-  skipped: number;
-  total_od: number;
-  pages_fetched: number;
-  error: string | null;
+// ── Chunked import API helper ─────────────────────────────────────────────
+interface ChunkResult {
+  imported:      number;
+  skipped:       number;
+  next_offset:   number;
+  total_fetched: number;
+  done:          boolean;
 }
 
-async function startImportJob(officeId: string | null): Promise<string> {
-  const result = await customFetch<{ job_id: string }>(
-    `${BASE}/api/import/patients`,
+async function importChunk(officeId: string | null, offset: number): Promise<ChunkResult> {
+  return customFetch<ChunkResult>(
+    `${BASE}/api/import/patients/chunk`,
     {
-      method: "POST",
+      method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ office_id: officeId }),
+      body:    JSON.stringify({ office_id: officeId, offset, limit: 500 }),
     }
   );
-  return result.job_id;
-}
-
-async function getJobStatus(jobId: string): Promise<JobStatus> {
-  return customFetch<JobStatus>(`${BASE}/api/import/status/${jobId}`);
 }
 
 interface OfficeImportRowProps {
@@ -87,7 +79,7 @@ interface OfficeImportRowProps {
 }
 
 function OfficeImportRow({ officeName, active, phase, onImport, onReset }: OfficeImportRowProps) {
-  const isWorking = phase.state === "fetching" || phase.state === "importing";
+  const isWorking = phase.state === "importing";
   const displayName = officeName.replace("Hallmark Dental – ", "").replace("Hallmark Dental - ", "");
 
   if (!active) {
@@ -121,14 +113,9 @@ function OfficeImportRow({ officeName, active, phase, onImport, onReset }: Offic
         </div>
 
         <div className="flex items-center gap-3 flex-shrink-0">
-          {phase.state === "fetching" && (
-            <span className="text-xs text-muted-foreground animate-pulse hidden sm:inline">Starting…</span>
-          )}
-          {phase.state === "importing" && (
+          {phase.state === "importing" && phase.current > 0 && (
             <span className="text-xs text-muted-foreground tabular-nums hidden sm:inline">
-              {phase.total > 0
-                ? `${phase.current} of ~${phase.total} imported`
-                : `${phase.current} imported…`}
+              {phase.current.toLocaleString()} imported…
             </span>
           )}
           {phase.state === "done" && (
@@ -159,12 +146,9 @@ function OfficeImportRow({ officeName, active, phase, onImport, onReset }: Offic
         </div>
       </div>
 
-      {phase.state === "importing" && phase.total > 0 && (
+      {phase.state === "importing" && (
         <div className="mt-2 h-1 bg-border rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary rounded-full transition-all duration-75"
-            style={{ width: `${Math.min(100, (phase.current / phase.total) * 100)}%` }}
-          />
+          <div className="h-full w-full bg-primary/60 rounded-full animate-pulse" />
         </div>
       )}
     </div>
@@ -213,7 +197,8 @@ export default function Patients() {
 
   // Per-office import state: officeId (or "default") → ImportPhase
   const [importPhases, setImportPhases] = useState<Map<string, ImportPhase>>(new Map());
-  const animFrameRefs = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  // cancelRefs: set { cancelled: true } to abort an in-flight import loop
+  const cancelRefs = useRef<Map<string, { cancelled: boolean }>>(new Map());
 
   const getImportPhase = (key: string): ImportPhase =>
     importPhases.get(key) ?? { state: "idle" };
@@ -274,73 +259,60 @@ export default function Patients() {
 
   const handleImportOffice = useCallback(async (officeKey: string, officeId: string | null) => {
     const phase = getImportPhase(officeKey);
-    if (phase.state === "fetching" || phase.state === "importing") return;
+    if (phase.state === "importing") return;
 
-    setOfficeImportPhase(officeKey, { state: "fetching" });
+    // Register a cancellation flag so resetOfficeImport can stop the loop
+    const cancelRef = { cancelled: false };
+    cancelRefs.current.set(officeKey, cancelRef);
+
+    setOfficeImportPhase(officeKey, { state: "importing", current: 0 });
+
+    let offset      = 0;
+    let accImported = 0;
+    let accSkipped  = 0;
 
     try {
-      // Fire the background job — returns immediately with a job_id
-      const jobId = await startImportJob(officeId);
+      while (!cancelRef.cancelled) {
+        const result = await importChunk(officeId, offset);
 
-      // Transition to importing state and start polling
-      setOfficeImportPhase(officeKey, { state: "importing", total: 0, current: 0 });
+        if (cancelRef.cancelled) break;
 
-      const POLL_MS = 3000;
+        accImported += result.imported;
+        accSkipped  += result.skipped;
+        offset       = result.next_offset;
 
-      const poll = async () => {
-        try {
-          const status = await getJobStatus(jobId);
-
-          if (status.status === "running") {
-            setOfficeImportPhase(officeKey, {
-              state: "importing",
-              total:   status.total_od,
-              current: status.imported,
-            });
-            animFrameRefs.current.set(officeKey, setTimeout(poll, POLL_MS));
-
-          } else if (status.status === "done") {
-            setOfficeImportPhase(officeKey, {
-              state:    "done",
-              imported: status.imported,
-              skipped:  status.skipped,
-              total:    status.total_od,
-            });
-            queryClient.invalidateQueries({ queryKey: ["/api/referrers"] });
-            queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
-            toast.success(`Import complete — ${status.imported} patients added`, {
-              description: status.skipped > 0
-                ? `${status.skipped} already existed and were skipped.`
-                : "All patients are new enrollees.",
-              duration: 6000,
-            });
-
-          } else {
-            const msg = status.error ?? "Import failed";
-            setOfficeImportPhase(officeKey, { state: "error", message: msg });
-            toast.error("Import failed", { description: msg, duration: 8000 });
-          }
-        } catch (pollErr) {
-          const msg = pollErr instanceof Error ? pollErr.message : String(pollErr);
-          setOfficeImportPhase(officeKey, { state: "error", message: msg });
-          toast.error("Import check failed", { description: msg, duration: 8000 });
+        if (result.done) {
+          setOfficeImportPhase(officeKey, {
+            state:    "done",
+            imported: accImported,
+            skipped:  accSkipped,
+          });
+          queryClient.invalidateQueries({ queryKey: ["/api/referrers"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+          toast.success(`Import complete — ${accImported.toLocaleString()} patients added`, {
+            description: accSkipped > 0
+              ? `${accSkipped.toLocaleString()} already existed and were skipped.`
+              : "All patients are new enrollees.",
+            duration: 6000,
+          });
+          break;
         }
-      };
 
-      // First poll after 3 seconds
-      animFrameRefs.current.set(officeKey, setTimeout(poll, POLL_MS));
-
+        // More chunks remain — update counter and continue immediately
+        setOfficeImportPhase(officeKey, { state: "importing", current: accImported });
+      }
     } catch (err) {
+      if (cancelRef.cancelled) return;
       const message = err instanceof Error ? err.message : String(err);
       setOfficeImportPhase(officeKey, { state: "error", message });
-      toast.error("Failed to start import", { description: message, duration: 8000 });
+      toast.error("Import failed", { description: message, duration: 8000 });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryClient]);
 
   const resetOfficeImport = (key: string) => {
-    const timer = animFrameRefs.current.get(key);
-    if (timer) { clearTimeout(timer); animFrameRefs.current.delete(key); }
+    const ref = cancelRefs.current.get(key);
+    if (ref) { ref.cancelled = true; cancelRefs.current.delete(key); }
     setOfficeImportPhase(key, { state: "idle" });
   };
 
