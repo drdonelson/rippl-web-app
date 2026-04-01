@@ -32,4 +32,3 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
-TANGO_CUSTOMER_ID = "G32251981"
