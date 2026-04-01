@@ -41,11 +41,17 @@ interface DashboardStats {
 }
 
 function useDashboard(officeId: string) {
-  const params = officeId !== "all" ? `?office_id=${officeId}` : "";
   return useQuery<DashboardStats>({
     queryKey: ["/api/dashboard", officeId],
-    queryFn: () => customFetch<DashboardStats>(`${BASE}/api/dashboard${params}`),
+    // Derive params from queryKey so the exact key that triggered the fetch
+    // drives the URL — eliminates any stale-closure issues.
+    queryFn: ({ queryKey }) => {
+      const id = queryKey[1] as string;
+      const qs = id && id !== "all" ? `?office_id=${encodeURIComponent(id)}` : "";
+      return customFetch<DashboardStats>(`${BASE}/api/dashboard${qs}`);
+    },
     refetchInterval: 30_000,
+    staleTime: 0,
   });
 }
 

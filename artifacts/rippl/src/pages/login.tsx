@@ -72,7 +72,7 @@ export default function Login() {
                 onChange={e => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                placeholder="you@hallmarkdds.com"
+                placeholder="you@yourpractice.com"
                 className={cn(
                   "w-full bg-white/5 border rounded-xl px-4 py-3 text-white placeholder:text-white/30",
                   "focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 transition-all",
@@ -129,7 +129,7 @@ export default function Login() {
         </div>
 
         <p className="text-center text-white/30 text-xs mt-6">
-          © {new Date().getFullYear()} Rippl · Hallmark Dental
+          © 2026 Rippl — Made by dentists, for dentists.
         </p>
       </div>
     </div>
