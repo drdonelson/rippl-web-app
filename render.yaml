@@ -2,7 +2,7 @@ services:
   - type: web
     name: rippl
     env: node
-    buildCommand: npm install -g pnpm && pnpm install --no-frozen-lockfile && pnpm run build:prod
+    buildCommand: "npm install -g pnpm && pnpm install --no-frozen-lockfile && pnpm -r --filter '!@workspace/mockup-sandbox' --if-present run build"
     startCommand: pnpm start
     envVars:
       - key: NODE_VERSION
