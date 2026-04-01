@@ -3,7 +3,7 @@ import { useGetReferrers, useCreateReferrer, useGetReferrerQr } from "@workspace
 import {
   Plus, QrCode, Search, Copy, Check, Download, RefreshCw,
   CheckCircle2, AlertTriangle, LayoutList, LayoutGrid,
-  ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Star, MapPin,
+  ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Star, MapPin, Lock,
 } from "lucide-react";
 import QRCode from "qrcode";
 import { Modal } from "@/components/ui/modal";
@@ -84,20 +84,36 @@ interface OfficeImportRowProps {
 
 function OfficeImportRow({ officeName, active, phase, onImport, onReset }: OfficeImportRowProps) {
   const isWorking = phase.state === "fetching" || phase.state === "importing";
+  const displayName = officeName.replace("Hallmark Dental – ", "").replace("Hallmark Dental - ", "");
+
+  if (!active) {
+    return (
+      <div className="py-3 first:pt-0 last:pb-0">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <MapPin className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0" />
+            <span className="text-sm font-medium text-muted-foreground/60 truncate">{displayName}</span>
+          </div>
+          <div className="relative group flex-shrink-0">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/40 text-muted-foreground/50 text-xs font-semibold cursor-default select-none">
+              <Lock className="w-3 h-3" />
+              Locked
+            </div>
+            <div className="absolute bottom-full right-0 mb-2 px-2.5 py-1.5 bg-popover border border-border rounded-lg text-xs text-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-20 shadow-lg">
+              Add Customer Key in settings to activate this location
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-3 first:pt-0 last:pb-0">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2.5 min-w-0">
           <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-          <span className="text-sm font-medium text-foreground truncate">
-            {officeName.replace("Hallmark Dental – ", "")}
-          </span>
-          {!active && (
-            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-muted text-muted-foreground flex-shrink-0">
-              INACTIVE
-            </span>
-          )}
+          <span className="text-sm font-medium text-foreground truncate">{displayName}</span>
         </div>
 
         <div className="flex items-center gap-3 flex-shrink-0">
@@ -128,8 +144,7 @@ function OfficeImportRow({ officeName, active, phase, onImport, onReset }: Offic
           )}
           <button
             onClick={onImport}
-            disabled={isWorking || !active}
-            title={!active ? "Office is inactive — customer key not yet configured" : undefined}
+            disabled={isWorking}
             className="px-3 py-1.5 bg-secondary hover:bg-muted text-foreground text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isWorking ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
@@ -188,7 +203,7 @@ export default function Patients() {
   };
 
   // Office context
-  const { offices } = useOffice();
+  const { offices, selectedOfficeId } = useOffice();
 
   // Per-office import state: officeId (or "default") → ImportPhase
   const [importPhases, setImportPhases] = useState<Map<string, ImportPhase>>(new Map());
@@ -307,13 +322,20 @@ export default function Patients() {
   // Filter
   const filteredReferrers = useMemo(() => {
     const term = searchTerm.toLowerCase();
-    return (referrers ?? []).filter(r =>
-      r.name.toLowerCase().includes(term) ||
-      (r.email && r.email.toLowerCase().includes(term)) ||
-      (r.referral_code && r.referral_code.toLowerCase().includes(term)) ||
-      r.patient_id.toLowerCase().includes(term)
-    );
-  }, [referrers, searchTerm]);
+    return (referrers ?? []).filter(r => {
+      // Office filter — only show patients from the selected office
+      if (selectedOfficeId !== "all") {
+        const rOfficeId = (r as Record<string, unknown>).office_id as string | null;
+        if (rOfficeId !== selectedOfficeId) return false;
+      }
+      return (
+        r.name.toLowerCase().includes(term) ||
+        (r.email && r.email.toLowerCase().includes(term)) ||
+        (r.referral_code && r.referral_code.toLowerCase().includes(term)) ||
+        r.patient_id.toLowerCase().includes(term)
+      );
+    });
+  }, [referrers, searchTerm, selectedOfficeId]);
 
   // Sort (list view)
   const sortedReferrers = useMemo(() => {
@@ -430,18 +452,23 @@ export default function Patients() {
               onReset={() => resetOfficeImport("default")}
             />
           ) : (
-            offices.map(office => (
-              <OfficeImportRow
-                key={office.id}
-                officeKey={office.id}
-                officeName={office.name}
-                officeId={office.id}
-                active={office.active}
-                phase={getImportPhase(office.id)}
-                onImport={() => handleImportOffice(office.id, office.id)}
-                onReset={() => resetOfficeImport(office.id)}
-              />
-            ))
+            (() => {
+              const visibleOffices = selectedOfficeId === "all"
+                ? offices
+                : offices.filter(o => o.id === selectedOfficeId);
+              return visibleOffices.map(office => (
+                <OfficeImportRow
+                  key={office.id}
+                  officeKey={office.id}
+                  officeName={office.name}
+                  officeId={office.id}
+                  active={office.active}
+                  phase={getImportPhase(office.id)}
+                  onImport={() => handleImportOffice(office.id, office.id)}
+                  onReset={() => resetOfficeImport(office.id)}
+                />
+              ));
+            })()
           )}
         </div>
       </div>

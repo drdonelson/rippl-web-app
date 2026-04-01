@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { referrersTable } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import {
   CreateReferrerBody,
   GetReferrerQrParams,
@@ -16,7 +16,15 @@ function generateReferralCode(name: string): string {
 }
 
 router.get("/", async (req, res) => {
-  const referrers = await db.select().from(referrersTable).orderBy(referrersTable.created_at);
+  const { office_id } = req.query;
+  const conditions = office_id && typeof office_id === "string"
+    ? [eq(referrersTable.office_id, office_id)]
+    : [];
+  const referrers = await db
+    .select()
+    .from(referrersTable)
+    .where(conditions.length ? and(...conditions) : undefined)
+    .orderBy(referrersTable.created_at);
   res.json(referrers);
 });
 
