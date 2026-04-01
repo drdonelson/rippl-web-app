@@ -4,6 +4,7 @@ import { Users, UserPlus, Gift, Trophy, ArrowRight, Activity, CheckCircle2, Clip
 import { format } from "date-fns";
 import { Link } from "wouter";
 import { useOffice } from "@/contexts/office-context";
+import { customFetch } from "@workspace/api-client-react";
 
 interface AdminTask {
   id: string;
@@ -43,7 +44,7 @@ function useDashboard(officeId: string) {
   const params = officeId !== "all" ? `?office_id=${officeId}` : "";
   return useQuery<DashboardStats>({
     queryKey: ["/api/dashboard", officeId],
-    queryFn: () => fetch(`${BASE}/api/dashboard${params}`).then(r => r.json()),
+    queryFn: () => customFetch<DashboardStats>(`${BASE}/api/dashboard${params}`),
     refetchInterval: 30_000,
   });
 }
@@ -51,7 +52,7 @@ function useDashboard(officeId: string) {
 function useAdminTasks() {
   return useQuery<AdminTask[]>({
     queryKey: ["/api/admin-tasks"],
-    queryFn: () => fetch(`${BASE}/api/admin-tasks`).then(r => r.json()),
+    queryFn: () => customFetch<AdminTask[]>(`${BASE}/api/admin-tasks`),
     refetchInterval: 30_000,
   });
 }
@@ -60,7 +61,7 @@ function useCompleteTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      fetch(`${BASE}/api/admin-tasks/${id}/complete`, { method: "PATCH" }).then(r => r.json()),
+      customFetch(`${BASE}/api/admin-tasks/${id}/complete`, { method: "PATCH" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/admin-tasks"] }),
   });
 }

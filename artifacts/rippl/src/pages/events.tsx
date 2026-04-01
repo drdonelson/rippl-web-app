@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { useGetReferrers, useCreateReward, useUpdateReferralStatus } from "@workspace/api-client-react";
+import { useGetReferrers, useCreateReward, useUpdateReferralStatus, customFetch } from "@workspace/api-client-react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Gift, Search, MoreHorizontal, CheckCircle2, ChevronDown, ShieldAlert, ShieldCheck, Plus, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
@@ -26,7 +26,7 @@ function useReferralEvents(officeId: string) {
   const params = officeId !== "all" ? `?office_id=${officeId}` : "";
   return useQuery<ReferralEvent[]>({
     queryKey: ["/api/referrals", officeId],
-    queryFn: () => fetch(`${BASE}/api/referrals${params}`).then(r => r.json()),
+    queryFn: () => customFetch<ReferralEvent[]>(`${BASE}/api/referrals${params}`),
     refetchInterval: 30_000,
   });
 }
@@ -35,11 +35,11 @@ function useLogReferral(onSuccess: () => void) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: LogReferralValues) =>
-      fetch(`${BASE}/api/referrals`, {
+      customFetch(`${BASE}/api/referrals`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }).then(r => r.json()),
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/referrals"] });
       qc.invalidateQueries({ queryKey: ["/api/dashboard"] });

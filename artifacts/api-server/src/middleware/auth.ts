@@ -78,16 +78,21 @@ export async function getProfileHandler(req: Request, res: Response) {
     return;
   }
 
-  const [profile] = await db
-    .select()
-    .from(userProfilesTable)
-    .where(eq(userProfilesTable.id, userId))
-    .limit(1);
+  try {
+    const [profile] = await db
+      .select()
+      .from(userProfilesTable)
+      .where(eq(userProfilesTable.id, userId))
+      .limit(1);
 
-  if (!profile) {
-    res.status(404).json({ error: "Profile not found" });
-    return;
+    if (!profile) {
+      res.status(404).json({ error: "Profile not found. Contact your administrator." });
+      return;
+    }
+
+    res.json(profile);
+  } catch (err) {
+    console.error("[auth/profile] DB error:", err);
+    res.status(500).json({ error: "Failed to load profile. Please try again." });
   }
-
-  res.json(profile);
 }

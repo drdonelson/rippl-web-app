@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { useGetReferrers, useCreateReferrer, useGetReferrerQr, getGetReferrerQrQueryKey } from "@workspace/api-client-react";
+import { useGetReferrers, useCreateReferrer, useGetReferrerQr, getGetReferrerQrQueryKey, customFetch } from "@workspace/api-client-react";
 import {
   Plus, QrCode, Search, Copy, Check, Download, RefreshCw,
   CheckCircle2, AlertTriangle, LayoutList, LayoutGrid,
@@ -51,25 +51,18 @@ function StatusDot({ n }: { n: number }) {
 async function fetchActivePatients(officeId?: string | null) {
   const url = new URL(`${BASE}/api/opendental/patients/active`, window.location.origin);
   if (officeId) url.searchParams.set("office_id", officeId);
-  const res = await fetch(url.toString());
-  if (!res.ok) {
-    const json = await res.json().catch(() => ({}));
-    throw new Error(json.error || `HTTP ${res.status}`);
-  }
-  return res.json() as Promise<{ patients: unknown[]; total: number; office_name?: string | null }>;
+  return customFetch<{ patients: unknown[]; total: number; office_name?: string | null }>(url.toString());
 }
 
 async function importPatients(patients: unknown[], officeId?: string | null) {
-  const res = await fetch(`${BASE}/api/opendental/patients/import`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ patients, office_id: officeId ?? null }),
-  });
-  if (!res.ok) {
-    const json = await res.json().catch(() => ({}));
-    throw new Error(json.error || `HTTP ${res.status}`);
-  }
-  return res.json() as Promise<{ imported: number; skipped: number; total: number; errors: string[] }>;
+  return customFetch<{ imported: number; skipped: number; total: number; errors: string[] }>(
+    `${BASE}/api/opendental/patients/import`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ patients, office_id: officeId ?? null }),
+    }
+  );
 }
 
 interface OfficeImportRowProps {
