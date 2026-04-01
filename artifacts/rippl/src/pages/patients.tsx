@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { toast } from "sonner";
 import { useGetReferrers, useCreateReferrer, useGetReferrerQr, getGetReferrerQrQueryKey, customFetch } from "@workspace/api-client-react";
 import {
   Plus, QrCode, Search, Copy, Check, Download, RefreshCw,
@@ -26,9 +27,8 @@ type FormValues = z.infer<typeof formSchema>;
 
 type ImportPhase =
   | { state: "idle" }
-  | { state: "fetching" }
-  | { state: "importing"; total: number; current: number }
-  | { state: "done"; imported: number; skipped: number; total: number }
+  | { state: "importing"; current: number }
+  | { state: "done"; imported: number; skipped: number }
   | { state: "error"; message: string };
 
 type ViewMode = "list" | "grid";
@@ -48,19 +48,22 @@ function StatusDot({ n }: { n: number }) {
   return <span className="w-2 h-2 rounded-full bg-muted-foreground/30 shrink-0 inline-block" />;
 }
 
-async function fetchActivePatients(officeId?: string | null) {
-  const url = new URL(`${BASE}/api/opendental/patients/active`, window.location.origin);
-  if (officeId) url.searchParams.set("office_id", officeId);
-  return customFetch<{ patients: unknown[]; total: number; office_name?: string | null }>(url.toString());
+// ── Chunked import API helper ─────────────────────────────────────────────
+interface ChunkResult {
+  imported:      number;
+  skipped:       number;
+  next_offset:   number;
+  total_fetched: number;
+  done:          boolean;
 }
 
-async function importPatients(patients: unknown[], officeId?: string | null) {
-  return customFetch<{ imported: number; skipped: number; total: number; errors: string[] }>(
-    `${BASE}/api/opendental/patients/import`,
+async function importChunk(officeId: string | null, offset: number): Promise<ChunkResult> {
+  return customFetch<ChunkResult>(
+    `${BASE}/api/import/patients/chunk`,
     {
-      method: "POST",
+      method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ patients, office_id: officeId ?? null }),
+      body:    JSON.stringify({ office_id: officeId, offset, limit: 500 }),
     }
   );
 }
@@ -76,7 +79,7 @@ interface OfficeImportRowProps {
 }
 
 function OfficeImportRow({ officeName, active, phase, onImport, onReset }: OfficeImportRowProps) {
-  const isWorking = phase.state === "fetching" || phase.state === "importing";
+  const isWorking = phase.state === "importing";
   const displayName = officeName.replace("Hallmark Dental – ", "").replace("Hallmark Dental - ", "");
 
   if (!active) {
@@ -110,12 +113,9 @@ function OfficeImportRow({ officeName, active, phase, onImport, onReset }: Offic
         </div>
 
         <div className="flex items-center gap-3 flex-shrink-0">
-          {phase.state === "fetching" && (
-            <span className="text-xs text-muted-foreground animate-pulse hidden sm:inline">Connecting…</span>
-          )}
-          {phase.state === "importing" && (
+          {phase.state === "importing" && phase.current > 0 && (
             <span className="text-xs text-muted-foreground tabular-nums hidden sm:inline">
-              {phase.current} / {phase.total}
+              {phase.current.toLocaleString()} imported…
             </span>
           )}
           {phase.state === "done" && (
@@ -125,9 +125,9 @@ function OfficeImportRow({ officeName, active, phase, onImport, onReset }: Offic
             </span>
           )}
           {phase.state === "error" && (
-            <span className="flex items-center gap-1 text-xs text-destructive max-w-[160px] truncate" title={phase.message}>
+            <span className="flex items-center gap-1 text-xs text-destructive max-w-[240px]" title={phase.message}>
               <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-              {phase.message}
+              <span className="truncate">{phase.message}</span>
             </span>
           )}
           {(phase.state === "done" || phase.state === "error") && (
@@ -146,12 +146,9 @@ function OfficeImportRow({ officeName, active, phase, onImport, onReset }: Offic
         </div>
       </div>
 
-      {phase.state === "importing" && phase.total > 0 && (
+      {phase.state === "importing" && (
         <div className="mt-2 h-1 bg-border rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary rounded-full transition-all duration-75"
-            style={{ width: `${Math.min(100, (phase.current / phase.total) * 100)}%` }}
-          />
+          <div className="h-full w-full bg-primary/60 rounded-full animate-pulse" />
         </div>
       )}
     </div>
@@ -200,7 +197,8 @@ export default function Patients() {
 
   // Per-office import state: officeId (or "default") → ImportPhase
   const [importPhases, setImportPhases] = useState<Map<string, ImportPhase>>(new Map());
-  const animFrameRefs = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  // cancelRefs: set { cancelled: true } to abort an in-flight import loop
+  const cancelRefs = useRef<Map<string, { cancelled: boolean }>>(new Map());
 
   const getImportPhase = (key: string): ImportPhase =>
     importPhases.get(key) ?? { state: "idle" };
@@ -259,56 +257,62 @@ export default function Patients() {
     }
   };
 
-  const handleImportOffice = async (officeKey: string, officeId: string | null) => {
+  const handleImportOffice = useCallback(async (officeKey: string, officeId: string | null) => {
     const phase = getImportPhase(officeKey);
-    if (phase.state === "fetching" || phase.state === "importing") return;
-    setOfficeImportPhase(officeKey, { state: "fetching" });
+    if (phase.state === "importing") return;
+
+    // Register a cancellation flag so resetOfficeImport can stop the loop
+    const cancelRef = { cancelled: false };
+    cancelRefs.current.set(officeKey, cancelRef);
+
+    setOfficeImportPhase(officeKey, { state: "importing", current: 0 });
+
+    let offset      = 0;
+    let accImported = 0;
+    let accSkipped  = 0;
+
     try {
-      const { patients, total } = await fetchActivePatients(officeId);
-      if (total === 0) {
-        setOfficeImportPhase(officeKey, { state: "done", imported: 0, skipped: 0, total: 0 });
-        return;
-      }
+      while (!cancelRef.cancelled) {
+        const result = await importChunk(officeId, offset);
 
-      let importResult: { imported: number; skipped: number; total: number } | null = null;
-      let importDone = false;
-      setOfficeImportPhase(officeKey, { state: "importing", total, current: 0 });
+        if (cancelRef.cancelled) break;
 
-      const importPromise = importPatients(patients, officeId).then(result => {
-        importResult = result; importDone = true; return result;
-      });
+        accImported += result.imported;
+        accSkipped  += result.skipped;
+        offset       = result.next_offset;
 
-      await new Promise<void>(resolve => {
-        const tick = () => {
-          setOfficeImportPhase(officeKey, prev => {
-            if (prev.state !== "importing") return prev;
-            const next = Math.min(prev.current + Math.max(1, Math.floor(total / 40)), total);
-            return { state: "importing", total, current: next };
+        if (result.done) {
+          setOfficeImportPhase(officeKey, {
+            state:    "done",
+            imported: accImported,
+            skipped:  accSkipped,
           });
-          if (!importDone) {
-            animFrameRefs.current.set(officeKey, setTimeout(tick, 30));
-          } else { resolve(); }
-        };
-        animFrameRefs.current.set(officeKey, setTimeout(tick, 30));
-      });
+          queryClient.invalidateQueries({ queryKey: ["/api/referrers"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+          toast.success(`Import complete — ${accImported.toLocaleString()} patients added`, {
+            description: accSkipped > 0
+              ? `${accSkipped.toLocaleString()} already existed and were skipped.`
+              : "All patients are new enrollees.",
+            duration: 6000,
+          });
+          break;
+        }
 
-      const result = await importPromise;
-      queryClient.invalidateQueries({ queryKey: ["/api/referrers"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
-      setOfficeImportPhase(officeKey, {
-        state: "done",
-        imported: result.imported,
-        skipped: result.skipped,
-        total: result.total,
-      });
+        // More chunks remain — update counter and continue immediately
+        setOfficeImportPhase(officeKey, { state: "importing", current: accImported });
+      }
     } catch (err) {
-      setOfficeImportPhase(officeKey, { state: "error", message: err instanceof Error ? err.message : String(err) });
+      if (cancelRef.cancelled) return;
+      const message = err instanceof Error ? err.message : String(err);
+      setOfficeImportPhase(officeKey, { state: "error", message });
+      toast.error("Import failed", { description: message, duration: 8000 });
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryClient]);
 
   const resetOfficeImport = (key: string) => {
-    const timer = animFrameRefs.current.get(key);
-    if (timer) { clearTimeout(timer); animFrameRefs.current.delete(key); }
+    const ref = cancelRefs.current.get(key);
+    if (ref) { ref.cancelled = true; cancelRefs.current.delete(key); }
     setOfficeImportPhase(key, { state: "idle" });
   };
 

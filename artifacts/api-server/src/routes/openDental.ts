@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { referrersTable, officesTable } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -415,5 +415,6 @@ router.post("/patients/import", async (req, res) => {
     errors: errors.slice(0, 20),
   });
 });
+
 
 export default router;
