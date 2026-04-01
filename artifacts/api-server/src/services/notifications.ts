@@ -7,7 +7,7 @@ const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
 const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "noreply@hallmarkdental.com";
+const SENDGRID_FROM_EMAIL = "hello@joinrippl.com";
 
 function getTwilioClient() {
   if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
@@ -29,7 +29,8 @@ export async function sendRewardNotification(
   referrerPhone: string,
   referrerEmail: string | null | undefined,
   newPatientName: string,
-  claimToken: string
+  claimToken: string,
+  officeName: string = "Hallmark Dental"
 ) {
   const claimUrl = `${APP_URL}/claim?ref=${claimToken}`;
   const smsBody = `Hi ${referrerName} 👋 You started a Rippl — ${newPatientName} just completed their visit at Hallmark Dental. Claim your reward here: ${claimUrl}`;
@@ -59,9 +60,9 @@ export async function sendRewardNotification(
       const sg = getSendGridClient();
       await sg.send({
         to: referrerEmail,
-        from: SENDGRID_FROM_EMAIL,
+        from: { email: SENDGRID_FROM_EMAIL, name: `${officeName} via Rippl` },
         subject: `You started a Rippl 🎊 — claim your reward, ${referrerName}!`,
-        html: buildEmailHtml(referrerName, newPatientName, claimUrl),
+        html: buildEmailHtml(referrerName, newPatientName, claimUrl, officeName),
         // No text fallback — HTML only
         trackingSettings: {
           clickTracking: { enable: false, enableText: false },
@@ -81,8 +82,8 @@ export async function sendRewardNotification(
   return results;
 }
 
-function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: string): string {
-  const practice = "Hallmark Dental";
+function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: string, officeName: string): string {
+  const practice = officeName;
 
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">

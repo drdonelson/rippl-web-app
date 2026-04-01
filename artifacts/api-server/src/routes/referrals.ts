@@ -117,7 +117,8 @@ router.patch("/:id/status", async (req, res) => {
         referrer.phone,
         referrer.email ?? null,
         event.new_patient_name,
-        referrer.referral_code
+        referrer.referral_code,
+        event.office ?? "Hallmark Dental"
       ).then((result) => {
         req.log.info({ result }, "Reward notification result");
       }).catch((err) => {

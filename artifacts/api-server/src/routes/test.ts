@@ -16,7 +16,8 @@ router.post("/notification", async (req, res) => {
     testPhone,
     testEmail,
     "Jane Smith",
-    "TEST-TOKEN"
+    "TEST-TOKEN",
+    req.body.office_name || "Hallmark Dental"
   );
 
   if (result.errors.length > 0 && !result.sms && !result.email) {

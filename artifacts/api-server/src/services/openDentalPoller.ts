@@ -363,7 +363,8 @@ export async function syncOpenDental(options?: {
         referrer.phone,
         referrer.email ?? null,
         newEvent.new_patient_name,
-        referrer.referral_code
+        referrer.referral_code,
+        office?.name ?? "Hallmark Dental"
       ).then((notifResult) => {
         logger.info({ notifResult, procNum }, "Notification sent for synced referral");
       }).catch((err) => {
