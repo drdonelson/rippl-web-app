@@ -1,0 +1,60 @@
+"Add a complete authentication system to this app using Supabase Auth. Here are the full requirements:
+Login Page (/ root URL)
+
+Dark navy background matching the app (#0a1628)
+Centered card with Rippl logo at top in teal
+Email and password fields
+Teal Login button
+Tagline below logo: 'Referral rewards for dental practices'
+After successful login redirect to /dashboard
+If user is already logged in redirect straight to /dashboard
+
+Three user roles stored in a user_profiles table:
+
+super_admin — sees all practices, all data, can manage everything
+practice_admin — sees only their own practice data, filtered by practice_id
+demo — read only access to a sandbox practice with realistic fake data
+
+Create the user_profiles table in Supabase:
+sqlcreate table user_profiles (
+  id uuid references auth.users(id) primary key,
+  role text check (role in ('super_admin','practice_admin','demo')),
+  practice_id uuid references offices(id),
+  full_name text,
+  created_at timestamp default now()
+);
+Route protection:
+
+All routes except / and /demo require authentication
+Unauthenticated users are redirected to /
+practice_admin users cannot see other practices' data
+super_admin sees everything with no filters
+
+Add logout button to nav header — top right, shows user email, click to sign out and return to login page
+Demo page (/demo):
+
+Separate login page at /demo with a 'Try Demo' button — no password needed, one click access
+Creates a temporary demo session
+Shows realistic fake data: 5 fake patients, 8 fake referral events across different statuses, 3 rewards sent
+Shows a yellow banner at the top: 'You are viewing a demo — no real patient data is shown'
+Demo session expires after 30 minutes
+
+Create the super admin account automatically:
+
+Email: hello@joinrippl.com
+Check if it exists first — if not create it with a temporary password RipplAdmin2026!
+Assign role super_admin in user_profiles
+
+Practice admin onboarding (/onboard):
+
+Simple form: Practice Name, Doctor Name, Email, Password, Open Dental Customer Key
+On submit: creates Supabase auth user, creates office record, creates user_profile with role practice_admin
+Only accessible by super_admin or via a secret invite link
+
+API route protection:
+
+All backend API routes check for a valid Supabase session token in the Authorization header
+Routes return 401 if no valid session
+practice_admin routes automatically filter by their practice_id
+
+Use @supabase/supabase-js for auth. Store the session in localStorage. After building show me the login page and confirm the super admin account was created."

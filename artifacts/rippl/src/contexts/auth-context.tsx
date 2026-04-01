@@ -1,0 +1,128 @@
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import type { Session, User } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
+import { setAuthTokenGetter } from "@workspace/api-client-react";
+
+const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+
+export type UserRole = "super_admin" | "practice_admin" | "demo";
+
+export interface UserProfile {
+  id: string;
+  role: UserRole;
+  practice_id: string | null;
+  full_name: string | null;
+}
+
+interface AuthContextValue {
+  session: Session | null;
+  user: User | null;
+  profile: UserProfile | null;
+  isLoading: boolean;
+  isDemo: boolean;
+  login: (email: string, password: string) => Promise<{ error: string | null }>;
+  loginAsDemo: () => Promise<{ error: string | null }>;
+  logout: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextValue>({
+  session: null,
+  user: null,
+  profile: null,
+  isLoading: true,
+  isDemo: false,
+  login: async () => ({ error: null }),
+  loginAsDemo: async () => ({ error: null }),
+  logout: async () => {},
+});
+
+async function fetchProfile(userId: string, accessToken?: string): Promise<UserProfile | null> {
+  try {
+    const headers: Record<string, string> = { "x-user-id": userId };
+    if (accessToken) headers["authorization"] = `Bearer ${accessToken}`;
+    const res = await fetch(`${BASE}/api/auth/profile`, { headers });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadProfile = useCallback(async (sess: Session | null) => {
+    if (!sess?.user) {
+      setProfile(null);
+      return;
+    }
+    const p = await fetchProfile(sess.user.id, sess.access_token);
+    setProfile(p);
+  }, []);
+
+  useEffect(() => {
+    // Wire the Supabase access token into the shared API client
+    setAuthTokenGetter(async () => {
+      const { data } = await supabase.auth.getSession();
+      return data.session?.access_token ?? null;
+    });
+
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      loadProfile(data.session).finally(() => setIsLoading(false));
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
+      setSession(sess);
+      loadProfile(sess);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      setAuthTokenGetter(null);
+    };
+  }, [loadProfile]);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: error.message };
+    return { error: null };
+  }, []);
+
+  const loginAsDemo = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: "demo@joinrippl.com",
+      password: "RipplDemo2026!",
+    });
+    if (error) return { error: error.message };
+    return { error: null };
+  }, []);
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
+    setProfile(null);
+  }, []);
+
+  const isDemo = profile?.role === "demo";
+
+  return (
+    <AuthContext.Provider value={{
+      session,
+      user: session?.user ?? null,
+      profile,
+      isLoading,
+      isDemo,
+      login,
+      loginAsDemo,
+      logout,
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
+}

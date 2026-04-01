@@ -40,10 +40,13 @@ artifacts-monorepo/
 ## Application: Rippl
 
 ### Frontend Pages
-- **Dashboard** (`/`) — Stat cards (total referrals, exams completed, rewards issued, active referrers), recent activity feed, top referrers leaderboard
+- **Login** (`/`) — Supabase auth sign-in; redirects authenticated users to `/dashboard`
+- **Demo** (`/demo`) — Public demo entry point; signs in as `demo@joinrippl.com` automatically
+- **Onboard** (`/onboard`) — Super-admin only: create new staff accounts
+- **Dashboard** (`/dashboard`) — Stat cards (total referrals, exams completed, rewards issued, active referrers), recent activity feed, top referrers leaderboard
 - **Referral Events** (`/events`) — Table of all referral events with status badges and "Send Reward" action for completed exams
 - **Patients & QR** (`/patients`) — Grid of referrer cards with QR code generation
-- **Reward Claim** (`/claim?ref=[code]`) — Public-facing mobile-friendly reward selection page
+- **Reward Claim** (`/claim?ref=[code]`) — Public-facing mobile-friendly reward selection page (no auth required)
 
 ### Backend API Routes
 - `GET /api/dashboard` — Dashboard stats
@@ -81,6 +84,19 @@ artifacts-monorepo/
 - **Post-visit onboarding SMS** — fires 2h after exam completion for new patients; creates referrer record with `FIRST4-LAST4` code; guarded by `onboarding_sms_sent` flag
 - **Tango gift card auto-fulfillment** — uses UTID `U453114` (Reward Link US); account must be funded; fallback admin_task on failure
 - **Launch email blast** — `POST /api/launch/email-blast` queues personalized emails at 50/hr rate; `GET /api/launch/status` tracks progress; `POST /api/launch/test` sends preview
+
+### Authentication (Supabase)
+
+- **Provider**: Supabase Auth (email + password)
+- **Frontend client**: `artifacts/rippl/src/lib/supabase.ts` — uses `__SUPABASE_URL__` and `__SUPABASE_ANON_KEY__` injected by Vite `define`
+- **Auth context**: `artifacts/rippl/src/contexts/auth-context.tsx` — manages session, profile, `setAuthTokenGetter` for API client
+- **Protected route**: `artifacts/rippl/src/components/protected-route.tsx` — redirects unauthenticated to `/`
+- **Backend middleware**: `artifacts/api-server/src/middleware/auth.ts` — `requireAuth` verifies JWT via Supabase service role
+- **Profile table**: `lib/db/src/schema/user_profiles.ts` — `id` (Supabase UUID), `role` (super_admin | practice_admin | demo), `practice_id` FK, `full_name`
+- **Accounts**: `hello@joinrippl.com` (super_admin), `demo@joinrippl.com` (demo)
+- **Public routes**: `/api/auth/*`, `/api/test`, `/api/launch`, `/api/offices`, `/api/claim` — no auth required
+- **Protected routes**: all other `/api/*` routes require `Authorization: Bearer <supabase-token>`
+- **Secrets**: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 
 ### Important: Zod imports in api-server
 `api-server` routes must use `import { z } from "zod"` (not `zod/v4`). The api-server esbuild bundle does not include zod directly — prefer manual validation or import from `@workspace/api-zod`.

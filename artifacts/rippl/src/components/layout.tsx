@@ -1,12 +1,13 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { LayoutDashboard, CalendarDays, Users, Droplets, ChevronDown, MapPin } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Users, Droplets, ChevronDown, MapPin, LogOut, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useOffice } from "@/contexts/office-context";
+import { useAuth } from "@/contexts/auth-context";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/events", label: "Referral Events", icon: CalendarDays },
   { href: "/patients", label: "Patients & QR", icon: Users },
 ];
@@ -55,6 +56,7 @@ function OfficePicker({ compact = false }: { compact?: boolean }) {
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { selectedOffice, selectedOfficeId } = useOffice();
+  const { user, profile, logout, isDemo } = useAuth();
 
   const subtitleText = selectedOfficeId === "all"
     ? "All Locations"
@@ -117,13 +119,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div className="p-6 mt-auto">
-          <div className="bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-2xl p-5 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-10 -mt-10" />
-            <h4 className="font-display font-semibold text-foreground mb-1">Need help?</h4>
-            <p className="text-sm text-muted-foreground mb-4">Contact support for assistance with rewards.</p>
-            <button className="w-full py-2.5 bg-background hover:bg-muted rounded-lg text-sm font-semibold transition-colors border border-border">
-              Support Center
+        <div className="p-4 mt-auto border-t border-border">
+          {/* User info + logout */}
+          <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl group">
+            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 text-xs font-bold text-primary uppercase">
+              {(profile?.full_name ?? user?.email ?? "?")[0]}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-foreground truncate">{profile?.full_name ?? "Admin"}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
+            </div>
+            <button
+              onClick={logout}
+              title="Sign out"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+            >
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -141,6 +152,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <OfficePicker compact />
           </div>
         </div>
+
+        {/* Demo banner */}
+        {isDemo && (
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-yellow-500/15 border-b border-yellow-500/30 text-yellow-300 text-xs font-medium shrink-0">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-yellow-400" />
+            You are viewing a demo — no real patient data is shown
+            <button
+              onClick={logout}
+              className="ml-auto flex items-center gap-1 text-yellow-400 hover:text-yellow-200 transition-colors font-semibold"
+            >
+              <LogOut className="w-3 h-3" /> Exit demo
+            </button>
+          </div>
+        )}
 
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -z-10" />
 

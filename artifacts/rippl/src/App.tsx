@@ -9,7 +9,12 @@ import Dashboard from "@/pages/dashboard";
 import Events from "@/pages/events";
 import Patients from "@/pages/patients";
 import Claim from "@/pages/claim";
+import Login from "@/pages/login";
+import Demo from "@/pages/demo";
+import Onboard from "@/pages/onboard";
+import ProtectedRoute from "@/components/protected-route";
 import { OfficeProvider } from "@/contexts/office-context";
+import { AuthProvider } from "@/contexts/auth-context";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,19 +28,26 @@ const queryClient = new QueryClient({
 function Router() {
   return (
     <Switch>
-      {/* Public Routes without Sidebar */}
+      {/* Public routes — no sidebar */}
+      <Route path="/" component={Login} />
+      <Route path="/demo" component={Demo} />
       <Route path="/claim" component={Claim} />
-      
-      {/* Internal App Routes with Sidebar Layout */}
+
+      {/* Onboarding — no sidebar, auth-protected inside component */}
+      <Route path="/onboard" component={Onboard} />
+
+      {/* Protected internal app routes with sidebar */}
       <Route>
-        <Layout>
-          <Switch>
-            <Route path="/" component={Dashboard} />
-            <Route path="/events" component={Events} />
-            <Route path="/patients" component={Patients} />
-            <Route component={NotFound} />
-          </Switch>
-        </Layout>
+        <ProtectedRoute>
+          <Layout>
+            <Switch>
+              <Route path="/dashboard" component={Dashboard} />
+              <Route path="/events" component={Events} />
+              <Route path="/patients" component={Patients} />
+              <Route component={NotFound} />
+            </Switch>
+          </Layout>
+        </ProtectedRoute>
       </Route>
     </Switch>
   );
@@ -45,12 +57,14 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <OfficeProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
-        </OfficeProvider>
+        <AuthProvider>
+          <OfficeProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+          </OfficeProvider>
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

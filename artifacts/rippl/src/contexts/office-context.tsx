@@ -37,7 +37,7 @@ export function OfficeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetch(`${BASE}/api/offices`)
       .then(r => r.json())
-      .then((data: Office[]) => setOffices(data))
+      .then((data: unknown) => setOffices(Array.isArray(data) ? data as Office[] : []))
       .catch(() => setOffices([]))
       .finally(() => setIsLoading(false));
   }, []);

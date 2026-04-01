@@ -10,19 +10,27 @@ import adminTasksRouter from "./adminTasks";
 import launchRouter from "./launch";
 import openDentalRouter from "./openDental";
 import officesRouter from "./offices";
+import authRouter from "./auth";
+import { requireAuth } from "../middleware/auth";
 
 const router: IRouter = Router();
 
+// Always-public routes
 router.use(healthRouter);
-router.use("/referrers", referrersRouter);
-router.use("/referrals", referralsRouter);
-router.use("/rewards", rewardsRouter);
-router.use("/dashboard", dashboardRouter);
-router.use("/test", testRouter);
-router.use("/sync", syncRouter);
-router.use("/admin-tasks", adminTasksRouter);
 router.use("/launch", launchRouter);
-router.use("/opendental", openDentalRouter);
+router.use("/auth", authRouter);
+router.use("/test", testRouter);
+
+// Semi-public routes (non-sensitive data)
 router.use("/offices", officesRouter);
+
+// Protected routes — require valid Supabase session
+router.use("/referrers", requireAuth, referrersRouter);
+router.use("/referrals", requireAuth, referralsRouter);
+router.use("/rewards", requireAuth, rewardsRouter);
+router.use("/dashboard", requireAuth, dashboardRouter);
+router.use("/sync", requireAuth, syncRouter);
+router.use("/admin-tasks", requireAuth, adminTasksRouter);
+router.use("/opendental", requireAuth, openDentalRouter);
 
 export default router;
