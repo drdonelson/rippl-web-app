@@ -11,6 +11,7 @@ import launchRouter from "./launch";
 import openDentalRouter from "./openDental";
 import officesRouter from "./offices";
 import authRouter from "./auth";
+import importJobsRouter from "./importJobs";
 import { requireAuth } from "../middleware/auth";
 
 const router: IRouter = Router();
@@ -32,5 +33,6 @@ router.use("/dashboard", requireAuth, dashboardRouter);
 router.use("/sync", requireAuth, syncRouter);
 router.use("/admin-tasks", requireAuth, adminTasksRouter);
 router.use("/opendental", requireAuth, openDentalRouter);
+router.use("/import", requireAuth, importJobsRouter);
 
 export default router;

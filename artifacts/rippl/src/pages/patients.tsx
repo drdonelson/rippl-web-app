@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { toast } from "sonner";
 import { useGetReferrers, useCreateReferrer, useGetReferrerQr, getGetReferrerQrQueryKey, customFetch } from "@workspace/api-client-react";
 import {
   Plus, QrCode, Search, Copy, Check, Download, RefreshCw,
@@ -48,19 +49,31 @@ function StatusDot({ n }: { n: number }) {
   return <span className="w-2 h-2 rounded-full bg-muted-foreground/30 shrink-0 inline-block" />;
 }
 
-async function bulkImportFromOD(officeId?: string | null) {
-  return customFetch<{
-    imported: number; skipped: number; total: number;
-    od_total: number; pages_fetched: number; has_more: boolean;
-    office_name?: string | null; errors: string[];
-  }>(
-    `${BASE}/api/opendental/patients/bulk-import`,
+// ── Import job API helpers ────────────────────────────────────────────────
+interface JobStatus {
+  id: string;
+  status: "running" | "done" | "error";
+  imported: number;
+  skipped: number;
+  total_od: number;
+  pages_fetched: number;
+  error: string | null;
+}
+
+async function startImportJob(officeId: string | null): Promise<string> {
+  const result = await customFetch<{ job_id: string }>(
+    `${BASE}/api/import/patients`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ office_id: officeId ?? null }),
+      body: JSON.stringify({ office_id: officeId }),
     }
   );
+  return result.job_id;
+}
+
+async function getJobStatus(jobId: string): Promise<JobStatus> {
+  return customFetch<JobStatus>(`${BASE}/api/import/status/${jobId}`);
 }
 
 interface OfficeImportRowProps {
@@ -108,8 +121,15 @@ function OfficeImportRow({ officeName, active, phase, onImport, onReset }: Offic
         </div>
 
         <div className="flex items-center gap-3 flex-shrink-0">
-          {(phase.state === "fetching" || phase.state === "importing") && (
-            <span className="text-xs text-muted-foreground animate-pulse hidden sm:inline">Importing…</span>
+          {phase.state === "fetching" && (
+            <span className="text-xs text-muted-foreground animate-pulse hidden sm:inline">Starting…</span>
+          )}
+          {phase.state === "importing" && (
+            <span className="text-xs text-muted-foreground tabular-nums hidden sm:inline">
+              {phase.total > 0
+                ? `${phase.current} of ~${phase.total} imported`
+                : `${phase.current} imported…`}
+            </span>
           )}
           {phase.state === "done" && (
             <span className="flex items-center gap-1 text-xs text-emerald-400">
@@ -252,27 +272,71 @@ export default function Patients() {
     }
   };
 
-  const handleImportOffice = async (officeKey: string, officeId: string | null) => {
+  const handleImportOffice = useCallback(async (officeKey: string, officeId: string | null) => {
     const phase = getImportPhase(officeKey);
     if (phase.state === "fetching" || phase.state === "importing") return;
 
-    // Single server-side call: fetches from OD and imports in one pass
     setOfficeImportPhase(officeKey, { state: "fetching" });
+
     try {
-      const result = await bulkImportFromOD(officeId);
-      queryClient.invalidateQueries({ queryKey: ["/api/referrers"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
-      setOfficeImportPhase(officeKey, {
-        state: "done",
-        imported: result.imported,
-        skipped: result.skipped,
-        total: result.total,
-      });
+      // Fire the background job — returns immediately with a job_id
+      const jobId = await startImportJob(officeId);
+
+      // Transition to importing state and start polling
+      setOfficeImportPhase(officeKey, { state: "importing", total: 0, current: 0 });
+
+      const POLL_MS = 3000;
+
+      const poll = async () => {
+        try {
+          const status = await getJobStatus(jobId);
+
+          if (status.status === "running") {
+            setOfficeImportPhase(officeKey, {
+              state: "importing",
+              total:   status.total_od,
+              current: status.imported,
+            });
+            animFrameRefs.current.set(officeKey, setTimeout(poll, POLL_MS));
+
+          } else if (status.status === "done") {
+            setOfficeImportPhase(officeKey, {
+              state:    "done",
+              imported: status.imported,
+              skipped:  status.skipped,
+              total:    status.total_od,
+            });
+            queryClient.invalidateQueries({ queryKey: ["/api/referrers"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+            toast.success(`Import complete — ${status.imported} patients added`, {
+              description: status.skipped > 0
+                ? `${status.skipped} already existed and were skipped.`
+                : "All patients are new enrollees.",
+              duration: 6000,
+            });
+
+          } else {
+            const msg = status.error ?? "Import failed";
+            setOfficeImportPhase(officeKey, { state: "error", message: msg });
+            toast.error("Import failed", { description: msg, duration: 8000 });
+          }
+        } catch (pollErr) {
+          const msg = pollErr instanceof Error ? pollErr.message : String(pollErr);
+          setOfficeImportPhase(officeKey, { state: "error", message: msg });
+          toast.error("Import check failed", { description: msg, duration: 8000 });
+        }
+      };
+
+      // First poll after 3 seconds
+      animFrameRefs.current.set(officeKey, setTimeout(poll, POLL_MS));
+
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setOfficeImportPhase(officeKey, { state: "error", message });
+      toast.error("Failed to start import", { description: message, duration: 8000 });
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryClient]);
 
   const resetOfficeImport = (key: string) => {
     const timer = animFrameRefs.current.get(key);
