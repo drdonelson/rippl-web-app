@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: rippl
+    env: node
+    buildCommand: npm install -g pnpm && pnpm install && pnpm run build
+    startCommand: pnpm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.0
