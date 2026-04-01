@@ -1,9 +1,9 @@
 /**
  * startup.ts — runs once at server boot in production.
  *
- * Ensures the two first-class Supabase accounts always have matching rows in
- * the user_profiles table.  If the rows are missing (e.g. fresh Render DB),
- * they are auto-created so the app works without manual DB seeding.
+ * Best-effort seed of user_profiles for known bootstrap accounts.
+ * This is a convenience backup only — the real self-healing logic lives
+ * in requireAuth / getProfileHandler which auto-create profiles on first login.
  */
 
 import { supabaseAdmin } from "./lib/supabase";
@@ -22,23 +22,41 @@ const SEED_USERS: Array<{
 ];
 
 export async function seedDefaultProfiles(): Promise<void> {
+  const supabaseUrl = process.env.SUPABASE_URL ?? "";
+  const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+
+  if (!supabaseUrl || !serviceKey) {
+    logger.warn(
+      { hasUrl: !!supabaseUrl, hasKey: !!serviceKey },
+      "[startup] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set — " +
+      "seeder skipped. Profiles will be auto-created on first login instead."
+    );
+    return;
+  }
+
   try {
-    // Fetch all Supabase auth users (returns up to 1000 by default)
+    logger.info("[startup] Fetching Supabase auth users to seed default profiles…");
+
     const listResult = await supabaseAdmin.auth.admin.listUsers();
     if (listResult.error) {
-      logger.warn({ error: listResult.error.message }, "[startup] Could not list Supabase users — skipping profile seed");
+      logger.warn(
+        { error: listResult.error.message },
+        "[startup] Could not list Supabase users — seeder skipped. " +
+        "Check SUPABASE_SERVICE_ROLE_KEY permissions. Profiles auto-created on first login."
+      );
       return;
     }
+
     const users = listResult.data.users;
+    logger.info({ count: users.length }, "[startup] Supabase returned auth users");
 
     for (const seed of SEED_USERS) {
       const authUser = users.find(u => u.email === seed.email);
       if (!authUser) {
-        logger.warn({ email: seed.email }, "[startup] Supabase auth user not found — skipping");
+        logger.warn({ email: seed.email }, "[startup] Auth user not found in Supabase — will be seeded on first login");
         continue;
       }
 
-      // Check if a profile row already exists
       const [existing] = await db
         .select({ id: userProfilesTable.id })
         .from(userProfilesTable)
@@ -50,20 +68,16 @@ export async function seedDefaultProfiles(): Promise<void> {
         continue;
       }
 
-      // Create the missing profile
-      await db.insert(userProfilesTable).values({
-        id:          authUser.id,
-        role:        seed.role,
-        practice_id: null,
-        full_name:   seed.full_name,
-      });
+      await db
+        .insert(userProfilesTable)
+        .values({ id: authUser.id, role: seed.role, practice_id: null, full_name: seed.full_name })
+        .onConflictDoNothing();
 
       logger.info({ email: seed.email, role: seed.role, id: authUser.id }, "[startup] Created missing user profile");
     }
+
+    logger.info("[startup] Profile seed complete");
   } catch (err) {
-    // Non-fatal — log clearly but do not crash the server.
-    // If the user_profiles table doesn't exist yet (schema not pushed), this
-    // will log the error so the engineer knows exactly what to fix.
-    logger.error({ err }, "[startup] seedDefaultProfiles failed — check DB schema and user_profiles table");
+    logger.error({ err }, "[startup] seedDefaultProfiles failed — profiles will be auto-created on first login");
   }
 }
