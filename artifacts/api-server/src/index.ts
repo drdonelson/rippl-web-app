@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { startOpenDentalPoller } from "./services/openDentalPoller";
+import { seedDefaultProfiles } from "./startup";
 
 const rawPort = process.env["PORT"];
 
@@ -23,6 +24,11 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+
+  // Seed required user profiles (non-fatal if it fails)
+  seedDefaultProfiles().catch(err => {
+    logger.error({ err }, "[startup] seedDefaultProfiles threw unexpectedly");
+  });
 
   // Start background polling service
   startOpenDentalPoller();

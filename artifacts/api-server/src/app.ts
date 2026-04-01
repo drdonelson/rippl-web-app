@@ -1,4 +1,4 @@
-import express, { type Express, type Request, type Response } from "express";
+import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import path from "path";
@@ -40,5 +40,14 @@ if (process.env.NODE_ENV === "production") {
     res.sendFile(path.join(ripplDist, "index.html"));
   });
 }
+
+// Global error handler — must be last, must have 4 parameters
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
+  logger.error({ err, url: req.url, method: req.method }, "[server] Unhandled error");
+  if (!res.headersSent) {
+    res.status(500).json({ error: "Internal server error", message: err.message });
+  }
+});
 
 export default app;

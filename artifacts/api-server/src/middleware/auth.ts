@@ -29,20 +29,31 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   const token = authHeader.slice(7);
 
   try {
+    // Step 1: validate JWT with Supabase
     const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
     if (error || !user) {
+      req.log.warn({ supabaseError: error?.message }, "[auth] Supabase getUser rejected token");
       res.status(401).json({ error: "Invalid or expired session" });
       return;
     }
 
-    // Look up user profile
-    const [profile] = await db
-      .select()
-      .from(userProfilesTable)
-      .where(eq(userProfilesTable.id, user.id))
-      .limit(1);
+    // Step 2: look up user_profiles row
+    let profile;
+    try {
+      const [row] = await db
+        .select()
+        .from(userProfilesTable)
+        .where(eq(userProfilesTable.id, user.id))
+        .limit(1);
+      profile = row;
+    } catch (dbErr) {
+      req.log.error({ err: dbErr, userId: user.id }, "[auth] DB error querying user_profiles — table may not exist");
+      res.status(500).json({ error: "Authentication error: database unavailable" });
+      return;
+    }
 
     if (!profile) {
+      req.log.warn({ userId: user.id, email: user.email }, "[auth] No user_profiles row — user not onboarded");
       res.status(403).json({ error: "No profile found for this user. Contact your administrator." });
       return;
     }
@@ -56,7 +67,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
     next();
   } catch (err) {
-    console.error("[auth] Error verifying token:", err);
+    req.log.error({ err }, "[auth] Unexpected error in requireAuth");
     res.status(500).json({ error: "Authentication error" });
   }
 }
