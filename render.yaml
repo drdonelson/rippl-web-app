@@ -9,3 +9,33 @@ services:
         value: 22.22.0
       - key: NODE_ENV
         value: production
+
+      # ── Supabase — required at BUILD TIME (Vite bakes them into the frontend bundle)
+      # ── AND at runtime (API server reads them via process.env).
+      # ── Set these in the Render dashboard → Environment → add the four vars below.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_DB_PASSWORD
+        sync: false
+
+      # ── Open Dental integration
+      - key: OPEN_DENTAL_URL
+        sync: false
+      - key: OPEN_DENTAL_KEY
+        sync: false
+
+      # ── SendGrid (outbound email)
+      - key: SENDGRID_API_KEY
+        sync: false
+
+      # ── Database (Render PostgreSQL or external)
+      - key: DATABASE_URL
+        sync: false
+
+      # ── Frontend base path (leave as "/" for root deployment)
+      - key: BASE_PATH
+        value: /

@@ -48,6 +48,16 @@ async function fetchProfile(userId: string, accessToken?: string): Promise<UserP
   }
 }
 
+// ── Register the token getter at MODULE LOAD TIME ────────────────────────────
+// This runs before any component renders, which means even components that
+// fire API calls during their very first render will have a valid token getter.
+// Without this, useEffect (which runs post-render) would be too late, causing
+// the first batch of requests to fire with no Authorization header → 401.
+setAuthTokenGetter(async () => {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
+});
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -63,12 +73,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Wire the Supabase access token into the shared API client
-    setAuthTokenGetter(async () => {
-      const { data } = await supabase.auth.getSession();
-      return data.session?.access_token ?? null;
-    });
-
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       loadProfile(data.session).finally(() => setIsLoading(false));
