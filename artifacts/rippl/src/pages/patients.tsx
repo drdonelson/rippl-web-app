@@ -206,8 +206,6 @@ export default function Patients() {
   // before profile loads (when isDemo is still false at first render).
   const queryEnabled = !authIsLoading && !isDemo;
 
-  console.log("[Patients] isDemo:", isDemo, "authIsLoading:", authIsLoading, "role:", profile?.role);
-
   const { data: fetchedReferrers, isLoading: referrersLoading } = useGetReferrers({ query: { enabled: queryEnabled } });
   const referrers = isDemo ? DEMO_REFERRERS : fetchedReferrers;
   const isLoading = isDemo ? false : referrersLoading;
@@ -317,23 +315,34 @@ export default function Patients() {
     query: { queryKey: getGetReferrerQrQueryKey(qrModalReferrerId || ""), enabled: !!qrModalReferrerId && !isDemo }
   });
 
-  // For demo mode: compute QR URL from demo referrer's code (no API call needed)
-  const demoQrReferrer = isDemo ? DEMO_REFERRERS.find(r => r.id === qrModalReferrerId) : null;
-  const demoQrUrl = demoQrReferrer
-    ? `${window.location.origin}${BASE}/refer?ref=${demoQrReferrer.referral_code}`
-    : null;
-  const effectiveQrUrl = isDemo ? demoQrUrl : qrData?.referral_url;
+  // Stable base URL — computed once, never triggers re-render
+  const baseUrl = useMemo(() => window.location.origin, []);
+
+  // Full referral URL — only recomputed when the modal selection or fetched data changes
+  const effectiveQrUrl = useMemo(() => {
+    if (isDemo) {
+      if (!qrModalReferrerId) return null;
+      const dr = DEMO_REFERRERS.find(r => r.id === qrModalReferrerId);
+      return dr ? `${baseUrl}${BASE}/refer?ref=${dr.referral_code}` : null;
+    }
+    return qrData?.referral_url ?? null;
+  }, [isDemo, qrModalReferrerId, baseUrl, qrData?.referral_url]);
+
+  // Log auth state once per change, not on every render
+  useEffect(() => {
+    console.log("[Patients] isDemo:", isDemo, "authIsLoading:", authIsLoading, "role:", profile?.role);
+  }, [isDemo, authIsLoading, profile?.role]);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // QR canvas — only fires when the URL changes (once per modal open)
   useEffect(() => {
-    if (effectiveQrUrl && canvasRef.current) {
-      console.log("[Patients] QR URL →", effectiveQrUrl);
-      QRCode.toCanvas(canvasRef.current, effectiveQrUrl, {
-        width: 256, margin: 2,
-        color: { dark: '#0a1628', light: '#ffffff' }
-      });
-    }
+    if (!effectiveQrUrl || !canvasRef.current) return;
+    console.log("[Patients] QR URL →", effectiveQrUrl);
+    QRCode.toCanvas(canvasRef.current, effectiveQrUrl, {
+      width: 256, margin: 2,
+      color: { dark: '#0a1628', light: '#ffffff' }
+    });
   }, [effectiveQrUrl]);
 
   const copyLink = () => {
@@ -453,6 +462,15 @@ export default function Patients() {
       {label}
     </th>
   );
+
+  // Render guard — all hooks above this line; early return is safe here
+  if (authIsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-muted-foreground text-sm tracking-wide">Loading…</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
