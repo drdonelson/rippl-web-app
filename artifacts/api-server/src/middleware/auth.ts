@@ -5,11 +5,18 @@ import { userProfilesTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import type { UserProfile } from "@workspace/db/schema";
 
+export type StaffRole = "staff_brentwood" | "staff_lewisburg" | "staff_greenbrier";
+export type UserRole = "super_admin" | "practice_admin" | "demo" | StaffRole;
+
 export interface AuthUser {
   id: string;
   email: string | undefined;
-  role: "super_admin" | "practice_admin" | "demo";
+  role: UserRole;
   practice_id: string | null;
+}
+
+export function isStaff(user: AuthUser): boolean {
+  return user.role.startsWith("staff_");
 }
 
 declare global {
@@ -22,7 +29,7 @@ declare global {
 
 // Known first-party accounts that should always have a profile.
 // These are auto-created on first login so the app never requires manual seeding.
-const BOOTSTRAP_PROFILES: Record<string, { role: "super_admin" | "practice_admin" | "demo"; full_name: string }> = {
+const BOOTSTRAP_PROFILES: Record<string, { role: UserRole; full_name: string }> = {
   "hello@joinrippl.com": { role: "super_admin",  full_name: "Rippl Admin"   },
   "demo@joinrippl.com":  { role: "demo",          full_name: "Demo Account"  },
 };

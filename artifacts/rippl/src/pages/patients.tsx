@@ -15,12 +15,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useOffice, type Office } from "@/contexts/office-context";
+import { useAuth } from "@/contexts/auth-context";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name is required"),
   patient_id: z.string().min(1, "Patient ID is required"),
   phone: z.string().min(10, "Valid phone is required"),
   email: z.string().email("Valid email is required").optional().or(z.literal('')),
+  office_id: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -226,8 +228,27 @@ export default function Patients() {
     }
   };
 
+  // Auth context (for staff-role restrictions)
+  const { isStaff, profile } = useAuth();
+
   // Office context
   const { offices, selectedOfficeId } = useOffice();
+
+  // Determine which single office patients will be tagged to during import.
+  // • Specific office selected → use that office.
+  // • "All Locations" selected → default to Brentwood; fall back to first active office.
+  const importTargetOffice = useMemo((): Office | null => {
+    if (!offices.length) return null;
+    if (selectedOfficeId !== "all") {
+      return offices.find(o => o.id === selectedOfficeId) ?? null;
+    }
+    return (
+      offices.find(o => o.active && o.name.toLowerCase().includes("brentwood")) ??
+      offices.find(o => o.active) ??
+      offices[0] ??
+      null
+    );
+  }, [offices, selectedOfficeId]);
 
   // Per-office import state: officeId (or "default") → ImportPhase
   const [importPhases, setImportPhases] = useState<Map<string, ImportPhase>>(new Map());
@@ -254,6 +275,22 @@ export default function Patients() {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(formSchema)
   });
+
+  const openAddModal = () => {
+    // Staff are always locked to their assigned office.
+    // All other roles default to the currently-selected (or Brentwood) office.
+    const defaultOfficeId = isStaff && profile?.practice_id
+      ? profile.practice_id
+      : importTargetOffice?.id ?? "";
+    reset({
+      name: "",
+      patient_id: "",
+      phone: "",
+      email: "",
+      office_id: defaultOfficeId,
+    });
+    setIsAddModalOpen(true);
+  };
 
   const createReferrer = useCreateReferrer({
     mutation: {
@@ -447,7 +484,7 @@ export default function Patients() {
           </div>
 
           <button
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={openAddModal}
             className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-semibold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
@@ -458,21 +495,41 @@ export default function Patients() {
 
       {/* ── Import from Open Dental ───────────────────────────────────── */}
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <Download className="w-4.5 h-4.5 text-primary" />
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Download className="w-4.5 h-4.5 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-foreground text-sm">Import from Open Dental</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Pull active patients and enroll them as referrers. Existing patients are skipped automatically.
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="font-semibold text-foreground text-sm">Import from Open Dental</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Pull active patients per office and enroll them as referrers. Existing patients are skipped automatically.
-            </p>
-          </div>
+
+          {/* ── Target office badge — visible before import starts ── */}
+          {importTargetOffice && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 border border-primary/20 flex-shrink-0 self-start">
+              <MapPin className="w-3 h-3 text-primary flex-shrink-0" />
+              <span className="text-xs text-primary font-medium whitespace-nowrap">
+                {(() => {
+                  const d = importTargetOffice.name.lastIndexOf("–");
+                  return d !== -1
+                    ? importTargetOffice.name.slice(d + 2).trim()
+                    : importTargetOffice.name;
+                })()}
+                {selectedOfficeId === "all" && (
+                  <span className="text-primary/60 font-normal"> (default)</span>
+                )}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="divide-y divide-border">
-          {offices.length === 0 ? (
-            /* Fallback: single import when offices haven't loaded yet */
+          {!importTargetOffice ? (
+            /* Fallback: offices not loaded yet */
             <OfficeImportRow
               officeKey="default"
               officeName="Open Dental"
@@ -483,23 +540,16 @@ export default function Patients() {
               onReset={() => resetOfficeImport("default")}
             />
           ) : (
-            (() => {
-              const visibleOffices = selectedOfficeId === "all"
-                ? offices
-                : offices.filter(o => o.id === selectedOfficeId);
-              return visibleOffices.map(office => (
-                <OfficeImportRow
-                  key={office.id}
-                  officeKey={office.id}
-                  officeName={office.name}
-                  officeId={office.id}
-                  active={office.active}
-                  phase={getImportPhase(office.id)}
-                  onImport={() => handleImportOffice(office.id, office.id)}
-                  onReset={() => resetOfficeImport(office.id)}
-                />
-              ));
-            })()
+            <OfficeImportRow
+              key={importTargetOffice.id}
+              officeKey={importTargetOffice.id}
+              officeName={importTargetOffice.name}
+              officeId={importTargetOffice.id}
+              active={importTargetOffice.active}
+              phase={getImportPhase(importTargetOffice.id)}
+              onImport={() => handleImportOffice(importTargetOffice.id, importTargetOffice.id)}
+              onReset={() => resetOfficeImport(importTargetOffice.id)}
+            />
           )}
         </div>
       </div>
@@ -729,6 +779,36 @@ export default function Patients() {
             />
             {errors.email && <p className="text-destructive text-xs mt-1">{errors.email.message}</p>}
           </div>
+          {offices.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                Location
+                {isStaff && <Lock className="w-3 h-3 text-muted-foreground" />}
+              </label>
+              <select
+                {...register("office_id")}
+                disabled={isStaff}
+                className={cn(
+                  "w-full px-4 py-2.5 bg-background border border-border rounded-xl transition-all text-foreground",
+                  isStaff
+                    ? "opacity-60 cursor-not-allowed"
+                    : "focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                )}
+              >
+                {offices.map(office => {
+                  const d = office.name.lastIndexOf("–");
+                  const displayName = d !== -1 ? office.name.slice(d + 2).trim() : office.name;
+                  return (
+                    <option key={office.id} value={office.id}>{displayName}</option>
+                  );
+                })}
+              </select>
+              {isStaff && (
+                <p className="text-muted-foreground text-xs mt-1">Locked to your assigned location.</p>
+              )}
+              {errors.office_id && <p className="text-destructive text-xs mt-1">{errors.office_id.message}</p>}
+            </div>
+          )}
           <div className="pt-4 flex gap-3">
             <button
               type="button"

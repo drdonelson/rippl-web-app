@@ -6,6 +6,7 @@ import {
   CreateReferrerBody,
   GetReferrerQrParams,
 } from "@workspace/api-zod";
+import { isStaff } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -36,7 +37,18 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
+  const user = req.authUser!;
   const body = CreateReferrerBody.parse(req.body);
+
+  // Staff can only create patients tagged to their own assigned office.
+  if (isStaff(user)) {
+    if (!user.practice_id) {
+      res.status(403).json({ error: "Your staff account has no assigned office." });
+      return;
+    }
+    body.office_id = user.practice_id;
+  }
+
   const referral_code = generateReferralCode(body.name);
   const [referrer] = await db.insert(referrersTable).values({
     ...body,

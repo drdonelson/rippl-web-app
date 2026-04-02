@@ -1,23 +1,40 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Droplets, Eye, EyeOff, Loader2 } from "lucide-react";
-import { useAuth } from "@/contexts/auth-context";
+import { Droplets, Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
+import { useAuth, staffOfficeLabel } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 
 export default function Login() {
-  const { login, session, isLoading } = useAuth();
+  const { login, session, isLoading, profile } = useAuth();
   const [, navigate] = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loginSuccess, setLoginSuccess] = useState(false);
+  const [loginLabel, setLoginLabel] = useState<string | null>(null);
 
+  // Navigate if user is already logged in before submitting the form
   useEffect(() => {
-    if (!isLoading && session) {
+    if (!isLoading && session && !loginSuccess) {
       navigate("/dashboard");
     }
-  }, [session, isLoading, navigate]);
+  }, [session, isLoading, loginSuccess, navigate]);
+
+  // After a successful login attempt, wait for the profile to load then navigate.
+  // For staff accounts, briefly show the office label before redirecting.
+  useEffect(() => {
+    if (!loginSuccess || !profile) return;
+    const label = staffOfficeLabel(profile.role);
+    if (!label) {
+      navigate("/dashboard");
+      return;
+    }
+    setLoginLabel(`Logged in as ${label}`);
+    const t = setTimeout(() => navigate("/dashboard"), 1800);
+    return () => clearTimeout(t);
+  }, [loginSuccess, profile, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +45,7 @@ export default function Login() {
     if (err) {
       setError("Invalid email or password. Please try again.");
     } else {
-      navigate("/dashboard");
+      setLoginSuccess(true);
     }
   };
 
@@ -114,9 +131,23 @@ export default function Login() {
               </p>
             )}
 
+            {loginLabel && (
+              <div className="flex items-center gap-2 py-2 px-3 bg-teal-500/10 border border-teal-500/20 rounded-lg">
+                <CheckCircle2 className="w-4 h-4 text-teal-400 flex-shrink-0" />
+                <span className="text-teal-300 text-sm font-medium">{loginLabel}</span>
+              </div>
+            )}
+
+            {loginSuccess && !loginLabel && (
+              <div className="flex items-center justify-center gap-2 py-2">
+                <Loader2 className="w-4 h-4 text-teal-400 animate-spin" />
+                <span className="text-white/50 text-sm">Signing in…</span>
+              </div>
+            )}
+
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || loginSuccess}
               className="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-teal-500/20 hover:shadow-teal-500/30 flex items-center justify-center gap-2 mt-2"
             >
               {submitting ? (

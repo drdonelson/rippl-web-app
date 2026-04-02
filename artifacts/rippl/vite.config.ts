@@ -8,15 +8,23 @@ const rawPort = process.env.PORT ?? "3000";
 const port = Number(rawPort);
 const basePath = process.env.BASE_PATH ?? "/";
 
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
+
+console.log("Build env check:", {
+  hasSupabaseUrl: !!supabaseUrl,
+  hasSupabaseKey: !!supabaseKey,
+});
+
+if (!supabaseUrl || !supabaseKey) {
+  console.warn("WARNING: Supabase credentials missing at build time — auth will fail in production");
+}
+
 export default defineConfig({
   base: basePath,
   define: {
-    __SUPABASE_URL__: JSON.stringify(
-      process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL ?? ""
-    ),
-    __SUPABASE_ANON_KEY__: JSON.stringify(
-      process.env.VITE_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY ?? ""
-    ),
+    __SUPABASE_URL__: JSON.stringify(supabaseUrl),
+    __SUPABASE_ANON_KEY__: JSON.stringify(supabaseKey),
   },
   plugins: [
     react(),
@@ -36,17 +44,48 @@ export default defineConfig({
         ]
       : []),
   ],
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime",
+      "@tanstack/react-query",
+      // Force workspace package's transitive deps into the shared bundle
+      "@workspace/api-client-react > @tanstack/react-query",
+    ],
+  },
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),
       "@assets": path.resolve(import.meta.dirname, "..", "..", "attached_assets"),
     },
-    dedupe: ["react", "react-dom"],
+    dedupe: ["react", "react-dom", "@tanstack/react-query"],
   },
   root: path.resolve(import.meta.dirname),
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-query": ["@tanstack/react-query"],
+          "vendor-supabase": ["@supabase/supabase-js"],
+          "vendor-ui": [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-dropdown-menu",
+            "@radix-ui/react-tabs",
+            "@radix-ui/react-tooltip",
+            "@radix-ui/react-select",
+            "@radix-ui/react-popover",
+          ],
+          "vendor-motion": ["framer-motion"],
+          "vendor-charts": ["recharts"],
+          "vendor-utils": ["date-fns", "zod", "wouter"],
+        },
+      },
+    },
   },
   server: {
     port,

@@ -57,4 +57,53 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
   }
 });
 
+// POST /api/auth/onboard-staff — create a staff account and assign it to an existing office
+router.post("/onboard-staff", requireAuth, requireSuperAdmin, async (req, res) => {
+  const { email, password, full_name, office_id } = req.body;
+
+  if (!email || !password || !office_id) {
+    res.status(400).json({ error: "Missing required fields: email, password, office_id" });
+    return;
+  }
+
+  try {
+    // 1. Verify the office exists
+    const [office] = await db.select().from(officesTable).where(eq(officesTable.id, office_id));
+    if (!office) {
+      res.status(400).json({ error: "Office not found" });
+      return;
+    }
+
+    // 2. Derive staff role from the office location_code
+    const role = `staff_${office.location_code}`;
+
+    // 3. Create Supabase auth user
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+
+    if (authError || !authData.user) {
+      res.status(400).json({ error: authError?.message ?? "Failed to create auth user" });
+      return;
+    }
+
+    const userId = authData.user.id;
+
+    // 4. Create user_profile with staff role + assigned office as practice_id
+    await db.insert(userProfilesTable).values({
+      id: userId,
+      role,
+      practice_id: office.id,
+      full_name: full_name || null,
+    });
+
+    res.status(201).json({ success: true, role, office_id: office.id });
+  } catch (err) {
+    console.error("[onboard-staff] Error:", err);
+    res.status(500).json({ error: "Failed to create staff account" });
+  }
+});
+
 export default router;

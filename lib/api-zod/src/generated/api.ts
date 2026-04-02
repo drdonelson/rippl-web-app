@@ -39,6 +39,7 @@ export const CreateReferrerBody = zod.object({
   name: zod.string(),
   phone: zod.string(),
   email: zod.string().optional(),
+  office_id: zod.string().optional(),
 });
 
 /**

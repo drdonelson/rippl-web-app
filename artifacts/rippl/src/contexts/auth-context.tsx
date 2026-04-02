@@ -5,7 +5,14 @@ import { setAuthTokenGetter } from "@workspace/api-client-react";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
-export type UserRole = "super_admin" | "practice_admin" | "demo";
+export type StaffRole = "staff_brentwood" | "staff_lewisburg" | "staff_greenbrier";
+export type UserRole = "super_admin" | "practice_admin" | "demo" | StaffRole;
+
+export function staffOfficeLabel(role: UserRole): string | null {
+  if (!role.startsWith("staff_")) return null;
+  const loc = role.replace("staff_", "");
+  return `${loc.charAt(0).toUpperCase() + loc.slice(1)} Staff`;
+}
 
 export interface UserProfile {
   id: string;
@@ -20,6 +27,7 @@ interface AuthContextValue {
   profile: UserProfile | null;
   isLoading: boolean;
   isDemo: boolean;
+  isStaff: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
   loginAsDemo: () => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
@@ -31,6 +39,7 @@ const AuthContext = createContext<AuthContextValue>({
   profile: null,
   isLoading: true,
   isDemo: false,
+  isStaff: false,
   login: async () => ({ error: null }),
   loginAsDemo: async () => ({ error: null }),
   logout: async () => {},
@@ -110,6 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const isDemo = profile?.role === "demo";
+  const isStaff = (profile?.role ?? "").startsWith("staff_");
 
   return (
     <AuthContext.Provider value={{
@@ -118,6 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       profile,
       isLoading,
       isDemo,
+      isStaff,
       login,
       loginAsDemo,
       logout,
