@@ -6,6 +6,7 @@ import {
   Plus, QrCode, Search, Copy, Check, Download, RefreshCw,
   CheckCircle2, AlertTriangle, LayoutList, LayoutGrid,
   ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Star, MapPin, Lock,
+  Send, Loader2, Phone, Mail,
 } from "lucide-react";
 import QRCode from "qrcode";
 import { Modal } from "@/components/ui/modal";
@@ -278,6 +279,17 @@ export default function Patients() {
   const [qrModalReferrerId, setQrModalReferrerId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Send Referral Link modal
+  const [sendLinkModalReferrerId, setSendLinkModalReferrerId] = useState<string | null>(null);
+  const [sendChannelSms, setSendChannelSms] = useState(true);
+  const [sendChannelEmail, setSendChannelEmail] = useState(false);
+  const [sendCustomMessage, setSendCustomMessage] = useState("");
+  const [sendLoading, setSendLoading] = useState(false);
+  const [sendResult, setSendResult] = useState<null | {
+    sms?: { status: string; reason?: string };
+    email?: { status: string; reason?: string };
+  }>(null);
+
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(formSchema)
   });
@@ -327,6 +339,63 @@ export default function Patients() {
     }
     return qrData?.referral_url ?? null;
   }, [isDemo, qrModalReferrerId, baseUrl, qrData?.referral_url]);
+
+  // Send-link modal — referrer lookup from already-loaded list (no extra query)
+  const sendLinkReferrer = useMemo(() => {
+    if (!sendLinkModalReferrerId) return null;
+    const list = (isDemo ? DEMO_REFERRERS : (fetchedReferrers ?? [])) as Array<Record<string, unknown>>;
+    return list.find(r => r.id === sendLinkModalReferrerId) ?? null;
+  }, [sendLinkModalReferrerId, isDemo, fetchedReferrers]);
+
+  const sendLinkUrl = useMemo(() => {
+    if (!sendLinkReferrer) return null;
+    const code = sendLinkReferrer.referral_code as string | null;
+    if (!code) return null;
+    return `${baseUrl}${BASE}/refer?ref=${encodeURIComponent(code)}`;
+  }, [sendLinkReferrer, baseUrl]);
+
+  const openSendLinkModal = (referrerId: string) => {
+    setSendLinkModalReferrerId(referrerId);
+    setSendChannelSms(true);
+    setSendChannelEmail(false);
+    setSendCustomMessage("");
+    setSendResult(null);
+  };
+
+  const handleSendLink = async () => {
+    if (!sendLinkModalReferrerId) return;
+    const channels: string[] = [];
+    if (sendChannelSms) channels.push("sms");
+    if (sendChannelEmail) channels.push("email");
+    if (!channels.length) { toast.error("Select at least one channel."); return; }
+    setSendLoading(true);
+    setSendResult(null);
+    try {
+      const res = await customFetch(`/api/referrers/${sendLinkModalReferrerId}/send-link`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channels, customMessage: sendCustomMessage.trim() || undefined }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        toast.error((err as { error?: string }).error || "Send failed");
+        return;
+      }
+      const data = await res.json() as {
+        sms?: { status: string; reason?: string };
+        email?: { status: string; reason?: string };
+      };
+      setSendResult(data);
+      const name = (sendLinkReferrer?.name as string)?.split(" ")[0] ?? "patient";
+      const delivered = [data.sms?.status === "sent" && "SMS", data.email?.status === "sent" && "email"].filter(Boolean).join(" & ");
+      if (delivered) toast.success(`Referral link sent to ${name} via ${delivered}.`);
+      else toast.warning("Message sent but no channels confirmed delivery.");
+    } catch {
+      toast.error("Network error. Check your connection and try again.");
+    } finally {
+      setSendLoading(false);
+    }
+  };
 
   // Log auth state once per change, not on every render
   useEffect(() => {
@@ -704,14 +773,24 @@ export default function Patients() {
                           <div className="flex items-center gap-1.5">
                             <button
                               onClick={() => setQrModalReferrerId(referrer.id)}
+                              title="Get QR Code"
                               className="flex items-center gap-1 px-2.5 py-1.5 bg-secondary hover:bg-muted text-foreground text-xs font-semibold rounded-lg transition-colors border border-border whitespace-nowrap"
                             >
                               <QrCode className="w-3 h-3" />
                               QR
                             </button>
                             <button
-                              onClick={() => navigate(`/events?referrer=${encodeURIComponent(referrer.name)}`)}
+                              onClick={() => openSendLinkModal(referrer.id)}
+                              title="Send Referral Link"
                               className="flex items-center gap-1 px-2.5 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold rounded-lg transition-colors border border-primary/20 whitespace-nowrap"
+                            >
+                              <Send className="w-3 h-3" />
+                              Send
+                            </button>
+                            <button
+                              onClick={() => navigate(`/events?referrer=${encodeURIComponent(referrer.name)}`)}
+                              title="View Events"
+                              className="flex items-center gap-1 px-2.5 py-1.5 bg-secondary hover:bg-muted text-foreground text-xs font-semibold rounded-lg transition-colors border border-border whitespace-nowrap"
                             >
                               <ExternalLink className="w-3 h-3" />
                               Events
@@ -757,13 +836,22 @@ export default function Patients() {
                 </div>
               </div>
 
-              <button
-                onClick={() => setQrModalReferrerId(referrer.id)}
-                className="mt-auto w-full py-3 bg-secondary group-hover:bg-primary group-hover:text-primary-foreground text-foreground rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
-              >
-                <QrCode className="w-5 h-5" />
-                Get QR Code
-              </button>
+              <div className="mt-auto flex gap-2">
+                <button
+                  onClick={() => setQrModalReferrerId(referrer.id)}
+                  className="flex-1 py-2.5 bg-secondary group-hover:bg-muted text-foreground rounded-xl font-semibold transition-all flex items-center justify-center gap-2 text-sm"
+                >
+                  <QrCode className="w-4 h-4" />
+                  QR Code
+                </button>
+                <button
+                  onClick={() => openSendLinkModal(referrer.id)}
+                  className="flex-1 py-2.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl font-semibold transition-all flex items-center justify-center gap-2 text-sm border border-primary/20"
+                >
+                  <Send className="w-4 h-4" />
+                  Send Link
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -908,8 +996,198 @@ export default function Patients() {
               <ExternalLink className="w-4 h-4" />
               Open Link
             </a>
+            {qrModalReferrerId && (
+              <button
+                onClick={() => {
+                  setQrModalReferrerId(null);
+                  openSendLinkModal(qrModalReferrerId);
+                }}
+                className="flex items-center justify-center gap-2 w-full py-2.5 bg-secondary hover:bg-muted text-foreground border border-border rounded-xl text-sm font-semibold transition-colors"
+              >
+                <Send className="w-4 h-4" />
+                Send Referral Link
+              </button>
+            )}
           </div>
         </div>
+      </Modal>
+
+      {/* ── Send Referral Link Modal ──────────────────────────────────── */}
+      <Modal
+        isOpen={!!sendLinkModalReferrerId}
+        onClose={() => setSendLinkModalReferrerId(null)}
+        title="Send Referral Link"
+        description={`Send ${sendLinkReferrer?.name as string ?? "this patient"} their unique referral link by SMS or email.`}
+      >
+        {sendResult ? (
+          /* ── Result view ── */
+          <div className="space-y-4">
+            <div className="space-y-2">
+              {sendResult.sms && (
+                <div className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium",
+                  sendResult.sms.status === "sent"
+                    ? "bg-green-500/10 border-green-500/20 text-green-400"
+                    : "bg-red-500/10 border-red-500/20 text-red-400"
+                )}>
+                  <Phone className="w-4 h-4 flex-shrink-0" />
+                  <span>
+                    SMS: {sendResult.sms.status === "sent" ? "Delivered" : `Failed — ${sendResult.sms.reason ?? "unknown error"}`}
+                  </span>
+                </div>
+              )}
+              {sendResult.email && (
+                <div className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium",
+                  sendResult.email.status === "sent"
+                    ? "bg-green-500/10 border-green-500/20 text-green-400"
+                    : sendResult.email.status === "skipped"
+                      ? "bg-muted/50 border-border text-muted-foreground"
+                      : "bg-red-500/10 border-red-500/20 text-red-400"
+                )}>
+                  <Mail className="w-4 h-4 flex-shrink-0" />
+                  <span>
+                    Email: {
+                      sendResult.email.status === "sent" ? "Delivered"
+                      : sendResult.email.status === "skipped" ? "No email on file"
+                      : `Failed — ${sendResult.email.reason ?? "unknown error"}`
+                    }
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => setSendResult(null)}
+                className="flex-1 py-2.5 px-4 bg-muted hover:bg-muted/80 text-foreground rounded-xl font-semibold transition-colors text-sm"
+              >
+                Send Again
+              </button>
+              <button
+                onClick={() => setSendLinkModalReferrerId(null)}
+                className="flex-1 py-2.5 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-semibold transition-colors text-sm"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* ── Compose view ── */
+          <div className="space-y-5">
+            {/* Referral URL preview */}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1.5">Referral Link</p>
+              <div className="flex gap-2">
+                <input
+                  readOnly
+                  value={sendLinkUrl ?? "Loading…"}
+                  className="flex-1 px-3 py-2 bg-background border border-border rounded-xl text-xs text-muted-foreground font-mono truncate outline-none"
+                />
+                <button
+                  onClick={() => sendLinkUrl && navigator.clipboard.writeText(sendLinkUrl)}
+                  title="Copy link"
+                  className="p-2 bg-secondary hover:bg-muted text-foreground rounded-xl transition-colors border border-border"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Channel selector */}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-2">Send via</p>
+              <div className="flex gap-2">
+                {/* SMS toggle */}
+                {(() => {
+                  const phone = sendLinkReferrer?.phone as string | null;
+                  const hasPhone = isValidPhone(phone);
+                  return (
+                    <button
+                      type="button"
+                      disabled={!hasPhone}
+                      onClick={() => setSendChannelSms(v => !v)}
+                      className={cn(
+                        "flex-1 flex flex-col items-center gap-1.5 py-3 px-3 rounded-xl border font-medium text-sm transition-all",
+                        sendChannelSms && hasPhone
+                          ? "bg-primary/10 border-primary/40 text-primary"
+                          : !hasPhone
+                            ? "opacity-40 cursor-not-allowed bg-muted border-border text-muted-foreground"
+                            : "bg-muted/40 border-border text-muted-foreground hover:border-border/80"
+                      )}
+                    >
+                      <Phone className="w-4 h-4" />
+                      <span>SMS</span>
+                      <span className="text-xs font-normal opacity-70 truncate max-w-full px-1">
+                        {hasPhone ? phone : "No phone"}
+                      </span>
+                    </button>
+                  );
+                })()}
+
+                {/* Email toggle */}
+                {(() => {
+                  const email = sendLinkReferrer?.email as string | null;
+                  const hasEmail = !!email;
+                  return (
+                    <button
+                      type="button"
+                      disabled={!hasEmail}
+                      onClick={() => setSendChannelEmail(v => !v)}
+                      className={cn(
+                        "flex-1 flex flex-col items-center gap-1.5 py-3 px-3 rounded-xl border font-medium text-sm transition-all",
+                        sendChannelEmail && hasEmail
+                          ? "bg-primary/10 border-primary/40 text-primary"
+                          : !hasEmail
+                            ? "opacity-40 cursor-not-allowed bg-muted border-border text-muted-foreground"
+                            : "bg-muted/40 border-border text-muted-foreground hover:border-border/80"
+                      )}
+                    >
+                      <Mail className="w-4 h-4" />
+                      <span>Email</span>
+                      <span className="text-xs font-normal opacity-70 truncate max-w-full px-1">
+                        {hasEmail ? email : "No email"}
+                      </span>
+                    </button>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Editable message */}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1.5">
+                Message <span className="font-normal opacity-60">(optional — leave blank for default)</span>
+              </p>
+              <textarea
+                value={sendCustomMessage}
+                onChange={e => setSendCustomMessage(e.target.value)}
+                rows={3}
+                placeholder={`Hi ${(sendLinkReferrer?.name as string ?? "").split(" ")[0] || "[Patient]"} — thanks for being a Hallmark Dental patient! Share your personal link with anyone looking for a great dentist…`}
+                className="w-full px-4 py-2.5 bg-background border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => setSendLinkModalReferrerId(null)}
+                className="flex-1 py-3 px-4 bg-muted hover:bg-muted/80 text-foreground rounded-xl font-semibold transition-colors text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendLink}
+                disabled={sendLoading || (!sendChannelSms && !sendChannelEmail)}
+                className="flex-1 py-3 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-semibold shadow-lg shadow-primary/20 transition-colors text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {sendLoading
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>
+                  : <><Send className="w-4 h-4" /> Send Link</>
+                }
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

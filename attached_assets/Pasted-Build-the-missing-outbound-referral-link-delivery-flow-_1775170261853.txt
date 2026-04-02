@@ -1,0 +1,173 @@
+Build the missing outbound referral-link delivery flow on top of the existing Rippl referral landing system.
+
+IMPORTANT CONTEXT
+The /refer flow already exists and is working.
+Referral URLs already use:
+${APP_URL}/refer?ref=${referralCode}
+
+The current gap is outbound delivery:
+after an appointment, Hallmark Dental should be able to send the patient their own unique referral link by SMS and/or email so they can share it with friends/family.
+
+GOAL
+Create both:
+1. manual send from the admin/patients UI
+2. configurable automatic send after qualifying appointments or completed visits
+
+PART 1 — PATIENT REFERRAL LINK DELIVERY
+Every active patient/referrer must have:
+- referral_code
+- referral URL:
+  ${APP_URL}/refer?ref=${referralCode}
+
+If a patient does not yet have a referral_code, generate one before sending.
+
+PART 2 — MANUAL SEND FROM UI
+On the Patients & QR page, add a new action:
+- Send Referral Link
+
+This action should open a modal with:
+- patient name
+- referral URL preview
+- checkboxes or segmented toggle for:
+  - SMS
+  - Email
+  - Both
+- patient phone
+- patient email
+- editable message preview
+- Send button
+
+If phone or email is missing, disable that channel clearly.
+
+PART 3 — BACKEND SEND ROUTE
+Create a backend route:
+POST /api/referrers/:id/send-link
+
+Request body:
+{
+  "channels": ["sms"] | ["email"] | ["sms","email"],
+  "customMessage": optional string
+}
+
+Behavior:
+- load the referrer/patient
+- ensure referral_code exists
+- build referral URL
+- send via selected channels
+- log delivery result(s)
+- return success/failure per channel
+
+PART 4 — DELIVERY LOGGING
+Create a new table if needed:
+referral_link_deliveries
+
+Columns:
+- id
+- referrer_id
+- referral_code
+- channel
+- recipient
+- message_body
+- status
+- provider_message_id
+- sent_at
+- created_at
+
+Statuses:
+- pending
+- sent
+- failed
+
+Log every send attempt.
+
+PART 5 — SMS CONTENT
+Default SMS copy:
+
+“Thanks for visiting Hallmark Dental. If you know a friend or family member looking for a dentist, share your personal link: [REFERRAL_URL]”
+
+Requirements:
+- lightweight
+- mobile friendly
+- no reward promise language unless already approved
+- avoid hardcoding office-specific language unless patient office is known
+
+PART 6 — EMAIL CONTENT
+Build a polished patient-facing email template.
+
+Subject:
+Your Hallmark Dental referral link
+
+Body should include:
+- friendly thank-you headline
+- short explanation that they can share their personal link with friends/family
+- primary CTA button:
+  Share My Link
+- visible referral URL
+- optional secondary CTA:
+  View My QR Code
+- clean, patient-facing branding
+
+The button should point to the patient’s unique referral URL.
+Do not send them to /claim.
+
+PART 7 — AUTOMATIC TRIGGERS
+Add a configurable automatic send system.
+
+Create a simple config-based trigger model for now:
+- enabled/disabled
+- trigger after completed appointment
+- trigger after exam completed
+- trigger after any manually selected completed visit type
+
+Implementation can be conservative for now:
+- start with manual trigger fully working
+- then add a service/helper for automatic sends that can be called later by appointment completion logic
+
+If automatic trigger wiring to Open Dental is not clean yet, create the service and hook points now so it is ready:
+sendReferralLinkToPatient(referrerId, channels, reason)
+
+PART 8 — OFFICE-SPECIFIC BOOKING LINKS
+Create or update office config so each office has its own booking URL:
+- Brentwood
+- Lewisburg
+- Greenbrier
+
+The /refer landing page should use the selected office’s booking URL.
+When redirecting to booking:
+- append the referral code when possible
+- preserve referral attribution in localStorage/sessionStorage before redirect
+
+Use this structure in config:
+- BRENTWOOD_BOOKING_URL
+- LEWISBURG_BOOKING_URL
+- GREENBRIER_BOOKING_URL
+
+If a booking URL is missing for an office, Book Online should gracefully fall back to the appointment request form.
+
+PART 9 — SAFETY / DUPLICATE CONTROL
+Do not auto-send repeatedly to the same patient on every visit without protection.
+
+Add basic guardrails:
+- do not auto-send again within a configurable cooldown window (example: 90 days)
+- allow manual resend anytime by staff
+- surface most recent send date in UI if available
+
+PART 10 — UI FEEDBACK
+On Patients & QR page, show:
+- last referral link sent date
+- last channel used
+- quick actions:
+  - Copy Link
+  - Open Link
+  - Get QR Code
+  - Send Referral Link
+
+PART 11 — VERIFY
+After building, summarize:
+1. files changed
+2. routes added
+3. DB tables added
+4. how manual send works
+5. how automatic trigger hook works
+6. where booking URLs are configured
+7. how referral attribution survives the booking redirect
