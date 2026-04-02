@@ -103,7 +103,8 @@ interface OfficeImportRowProps {
 
 function OfficeImportRow({ officeName, active, phase, onImport, onReset }: OfficeImportRowProps) {
   const isWorking = phase.state === "importing";
-  const displayName = officeName.replace("Hallmark Dental – ", "").replace("Hallmark Dental - ", "");
+  const _dash = officeName.lastIndexOf("–");
+  const displayName = _dash !== -1 ? officeName.slice(_dash + 2).trim() : officeName;
 
   if (!active) {
     return (

@@ -162,7 +162,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           const dash = name.lastIndexOf("–");
           return dash !== -1 ? name.slice(dash + 2).trim() : name;
         })()
-      : "Hallmark Dental";
+      : isDemo ? "Smile Care Dental" : "Hallmark Dental";
 
   const closeMobile = () => setMobileOpen(false);
 
