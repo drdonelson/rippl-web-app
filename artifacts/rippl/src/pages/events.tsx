@@ -530,11 +530,7 @@ export default function Events() {
                   const shortName = dash !== -1 ? o.name.slice(dash + 2).trim() : o.name;
                   return <option key={o.id} value={o.name}>{shortName}</option>;
                 }) : (
-                  <>
-                    <option value="Hallmark Dental – Brentwood">Brentwood</option>
-                    <option value="Hallmark Dental – Lewisburg">Lewisburg</option>
-                    <option value="Hallmark Dental – Greenbrier">Greenbrier</option>
-                  </>
+                  <option value="" disabled>No offices loaded</option>
                 )}
               </select>
               {logErrors.office && <p className="text-destructive text-xs mt-1">{logErrors.office.message}</p>}

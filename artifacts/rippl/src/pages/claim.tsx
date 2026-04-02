@@ -5,7 +5,7 @@ import { Droplets, Gift, CheckCircle2, ChevronRight, Loader2 } from "lucide-reac
 import { cn } from "@/lib/utils";
 
 const REWARDS = [
-  { id: "in-house-credit", title: "$100 Account Credit", value: "$100", type: "In-House", icon: "💎", desc: "Applied directly to your next visit at Hallmark Dental", gradient: "from-blue-600 to-indigo-600" },
+  { id: "in-house-credit", title: "$100 Account Credit", value: "$100", type: "In-House", icon: "💎", desc: "Applied directly to your next dental visit as an account credit", gradient: "from-blue-600 to-indigo-600" },
   { id: "amazon-gift-card", title: "$50 Gift Card", value: "$50", type: "Your Choice", icon: "📦", desc: "Choose from Amazon, Target, Starbucks & more — sent to your email", gradient: "from-orange-500 to-amber-500" },
   { id: "charity-donation", title: "$50 Charity Donation", value: "$50", type: "Charity", icon: "💛", desc: "We donate on your behalf to a cause you care about", gradient: "from-yellow-400 to-amber-500" },
 ];
@@ -63,7 +63,7 @@ export default function Claim() {
             <Gift className="w-8 h-8" />
           </div>
           <h2 className="text-2xl font-display font-bold text-foreground mb-2">Invalid or Expired Link</h2>
-          <p className="text-muted-foreground">This referral link appears to be invalid or has already been claimed. Please contact Hallmark Dental for assistance.</p>
+          <p className="text-muted-foreground">This referral link appears to be invalid or has already been claimed. Please contact your dental practice for assistance.</p>
         </div>
       </div>
     );
@@ -107,7 +107,7 @@ export default function Claim() {
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20">
             <Droplets className="w-6 h-6 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-display font-bold text-foreground tracking-tight">Hallmark Dental</h1>
+          <h1 className="text-2xl font-display font-bold text-foreground tracking-tight">{data.referral.office}</h1>
         </div>
 
         <AnimatePresence mode="wait">
@@ -131,7 +131,7 @@ export default function Claim() {
                 Your reward is on its way. We truly appreciate you recommending {data.referral.new_patient_name} to our practice!
               </p>
               <div className="p-4 bg-background rounded-2xl border border-border">
-                <p className="text-sm font-medium text-foreground">A confirmation has been sent to Hallmark Dental.</p>
+                <p className="text-sm font-medium text-foreground">A confirmation has been sent to {data.referral.office}.</p>
               </div>
             </motion.div>
           ) : (
@@ -233,7 +233,7 @@ export default function Claim() {
               </AnimatePresence>
 
               <p className="text-center text-xs text-muted-foreground mt-auto">
-                By claiming a reward, you agree to Hallmark Dental's referral program terms and conditions.
+                By claiming a reward, you agree to {data.referral.office}'s referral program terms and conditions.
               </p>
             </motion.div>
           )}

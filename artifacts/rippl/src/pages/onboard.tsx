@@ -116,7 +116,7 @@ export default function Onboard() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-white/70 mb-1.5">Practice Name</label>
-              <input name="practice_name" value={form.practice_name} onChange={handleChange} required placeholder="Hallmark Dental – Springfield" className={inputClass} />
+              <input name="practice_name" value={form.practice_name} onChange={handleChange} required placeholder="My Practice – Nashville" className={inputClass} />
             </div>
             <div>
               <label className="block text-sm font-medium text-white/70 mb-1.5">Doctor Name</label>
@@ -124,7 +124,7 @@ export default function Onboard() {
             </div>
             <div>
               <label className="block text-sm font-medium text-white/70 mb-1.5">Admin Email</label>
-              <input name="email" type="email" value={form.email} onChange={handleChange} required placeholder="jane@hallmarkdds.com" className={inputClass} />
+              <input name="email" type="email" value={form.email} onChange={handleChange} required placeholder="admin@mypractice.com" className={inputClass} />
             </div>
             <div>
               <label className="block text-sm font-medium text-white/70 mb-1.5">Temporary Password</label>
