@@ -1,0 +1,97 @@
+Update the existing demo account to fully support the new referral workflow WITHOUT duplicating or replacing existing demo data.
+
+IMPORTANT
+- DO NOT create a second demo dataset
+- DO NOT overwrite existing demo patients, referrers, or events
+- REUSE all existing demo data
+- ONLY extend it to support the new features (QR → /refer → leads → booking → send link)
+
+GOAL
+Make the demo behave exactly like the live system, using the current demo data as the source of truth.
+
+PART 1 — USE EXISTING DEMO DATA
+Audit the current demo dataset and identify:
+- existing demo patients/referrers
+- existing referral codes
+- existing events
+
+Then:
+- reuse those records
+- only add missing fields if needed:
+  - referral_code (if missing)
+  - referrer_id
+  - office
+  - last_link_sent_at
+  - status fields
+
+DO NOT create duplicate demo users.
+
+---
+
+PART 2 — EXTEND (NOT REPLACE)
+If something is missing:
+- extend the existing objects instead of recreating them
+
+Example:
+If a demo patient exists but has no referral_code:
+→ add referral_code to that patient
+
+If demo events exist but lack status:
+→ add status field
+
+---
+
+PART 3 — DEMO /REFER COMPATIBILITY
+Make sure existing demo referral codes work with /refer.
+
+- map existing demo referral codes → demo referrers
+- if needed, create a lookup layer that uses current demo data
+
+DO NOT generate a new set of demo codes unless absolutely required.
+
+---
+
+PART 4 — DEMO SEND FLOW
+Extend existing demo patients to support:
+- Send Referral Link button
+- last_link_sent_at
+- delivery logs (in-memory or demo-safe storage)
+
+DO NOT create new demo patients just for this.
+
+---
+
+PART 5 — DEMO LEADS
+If demo leads do not exist yet:
+- create a demo leads store
+
+BUT:
+- connect it to EXISTING demo referrers via referral_code
+- do not create duplicate referrers
+
+---
+
+PART 6 — DEMO BOOKING FLOW
+Keep demo booking behavior consistent with new system:
+
+- reuse existing office structure if present
+- do not introduce duplicate office configs
+- simulate booking without hitting real URLs if demo mode
+
+---
+
+PART 7 — NO DUPLICATION GUARANTEE
+Before adding anything new:
+- check if equivalent demo data already exists
+- if it exists → extend it
+- if it does not → add minimal required data only
+
+---
+
+PART 8 — VERIFY
+After updating, summarize:
+1. which existing demo structures were reused
+2. which fields were added (not replaced)
+3. confirm no duplicate demo patients/referrers were created
+4. confirm demo referral codes still match original dataset
+5. confirm demo flow now works end-to-end (QR → /refer → lead → booking → send link)

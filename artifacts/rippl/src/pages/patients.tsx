@@ -370,6 +370,21 @@ export default function Patients() {
     if (!channels.length) { toast.error("Select at least one channel."); return; }
     setSendLoading(true);
     setSendResult(null);
+
+    // ── Demo mode: simulate a send without any real SMS/email ─────────────────
+    if (isDemo) {
+      await new Promise(r => setTimeout(r, 900)); // simulate network delay
+      const simulatedResult: { sms?: { status: string }; email?: { status: string } } = {};
+      if (sendChannelSms) simulatedResult.sms = { status: "sent" };
+      if (sendChannelEmail) simulatedResult.email = { status: "sent" };
+      setSendResult(simulatedResult);
+      const name = (sendLinkReferrer?.name as string)?.split(" ")[0] ?? "patient";
+      const delivered = [sendChannelSms && "SMS", sendChannelEmail && "email"].filter(Boolean).join(" & ");
+      toast.success(`Demo: referral link sent to ${name} via ${delivered}.`);
+      setSendLoading(false);
+      return;
+    }
+
     try {
       const res = await customFetch(`/api/referrers/${sendLinkModalReferrerId}/send-link`, {
         method: "POST",

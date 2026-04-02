@@ -6,10 +6,36 @@ import { eq } from "drizzle-orm";
 
 const router: IRouter = Router();
 
+// ── Demo code intercept ───────────────────────────────────────────────────────
+// These codes match DEMO_REFERRERS in the frontend demo-data.ts.
+// When a demo QR code is scanned the /refer page calls GET /:code. Since demo
+// referrers don't exist in the real DB, we short-circuit here and return mock
+// data so the /refer page renders correctly without a 404.
+
+const DEMO_CODE_LOOKUP: Record<string, {
+  referrer_id: string;
+  referrer_name: string;
+  referral_code: string;
+  office_name: string;
+}> = {
+  MIKE1001: { referrer_id: "demo-r1", referrer_name: "Mike",     referral_code: "MIKE1001", office_name: "Brentwood" },
+  LISA1002: { referrer_id: "demo-r2", referrer_name: "Lisa",     referral_code: "LISA1002", office_name: "Lewisburg" },
+  ROBE1003: { referrer_id: "demo-r3", referrer_name: "Robert",   referral_code: "ROBE1003", office_name: "Greenbrier" },
+  JENN1004: { referrer_id: "demo-r4", referrer_name: "Jennifer", referral_code: "JENN1004", office_name: "Brentwood" },
+  DAVI1005: { referrer_id: "demo-r5", referrer_name: "David",    referral_code: "DAVI1005", office_name: "Lewisburg" },
+};
+
 router.get("/:code", async (req, res) => {
   const code = req.params.code?.trim();
   if (!code) {
     res.status(400).json({ error: "Referral code is required" });
+    return;
+  }
+
+  // Short-circuit: return demo data without a DB hit
+  const demoMatch = DEMO_CODE_LOOKUP[code.toUpperCase()];
+  if (demoMatch) {
+    res.json(demoMatch);
     return;
   }
 
