@@ -12,6 +12,7 @@ import openDentalRouter from "./openDental";
 import officesRouter from "./offices";
 import authRouter from "./auth";
 import importJobsRouter from "./importJobs";
+import referralRouter from "./referral";
 import { requireAuth } from "../middleware/auth";
 
 const router: IRouter = Router();
@@ -21,6 +22,7 @@ router.use(healthRouter);
 router.use("/launch", launchRouter);
 router.use("/auth", authRouter);
 router.use("/test", testRouter);
+router.use("/referral", referralRouter);
 
 // Semi-public routes (non-sensitive data)
 router.use("/offices", officesRouter);

@@ -15,6 +15,7 @@ const Dashboard = lazy(() => import("@/pages/dashboard"));
 const Events    = lazy(() => import("@/pages/events"));
 const Patients  = lazy(() => import("@/pages/patients"));
 const Claim     = lazy(() => import("@/pages/claim"));
+const Refer     = lazy(() => import("@/pages/refer"));
 const Demo      = lazy(() => import("@/pages/demo"));
 const Onboard   = lazy(() => import("@/pages/onboard"));
 const NotFound  = lazy(() => import("@/pages/not-found"));
@@ -42,6 +43,7 @@ function Router() {
         <Route path="/" component={Login} />
         <Route path="/demo" component={Demo} />
         <Route path="/claim" component={Claim} />
+        <Route path="/refer" component={Refer} />
 
         {/* Onboarding — no sidebar, auth-protected inside component */}
         <Route path="/onboard" component={Onboard} />

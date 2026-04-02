@@ -1,0 +1,103 @@
+Fix the demo experience and the patient QR referral flow.
+
+PART 1 — DEMO MODE MUST BE FULLY SELF-CONTAINED
+
+The demo should never depend on live Open Dental, Supabase reads, or real API results for its visible dashboard experience.
+
+Do the following:
+
+1. Find the global isDemo logic and confirm it is derived reliably from the logged-in demo user/profile.
+2. Add console logs in all relevant pages/components:
+   - Dashboard
+   - Referral Events
+   - Patients & QR
+   - any shared auth/provider file
+   Log:
+   console.log('isDemo:', isDemo, 'role:', profile?.role)
+
+3. Ensure the demo data intercept happens BEFORE any fetch, query hook, or API call runs.
+   - If isDemo is true, immediately return hardcoded demo data.
+   - Do not call live endpoints first and then overwrite.
+   - This applies to dashboard stats, referral events, patients/referrers, and leaderboards.
+
+4. Search the full codebase for:
+   - isDemo
+   - role === 'demo'
+   - profile?.role
+   - /api/dashboard
+   - /api/referrals
+   - /api/referrers
+   Show every place where demo logic is used or missing.
+
+5. On the Patients page, remove all live-import/Open Dental UI for demo users.
+   Wrap every import/Open Dental panel/button/CTA with:
+   {!isDemo && (...)}
+
+6. Make the demo experience use stable hardcoded records that always render:
+   - demo dashboard stats
+   - demo referral events
+   - demo patients
+   - demo QR links
+   so the demo always looks polished even if backend services fail.
+
+PART 2 — QR CODE MUST GO SOMEWHERE REAL
+
+Right now clicking a patient QR code does not direct anywhere useful. Fix the referral flow end to end.
+
+Requirements:
+
+1. Every patient/referrer must have a valid referral URL in this format:
+   ${APP_URL}/refer?ref=${referralCode}
+
+2. On the Patients & QR page:
+   - show the referral URL as visible text under the QR code
+   - add a “Copy Link” button
+   - add an “Open Link” button
+   - make the QR image itself clickable and open the referral URL in a new tab
+
+3. Build the public route:
+   /refer?ref=REFERRAL_CODE
+
+4. The /refer page should:
+   - validate the referral code
+   - show a polished Hallmark/Rippl landing page
+   - say something like:
+     “You were invited by a Hallmark Dental patient.”
+   - include CTA buttons:
+     - Request Appointment
+     - Call Office
+   - store the referral code in localStorage/sessionStorage so attribution persists
+
+5. If there is already an online booking page, redirect there while preserving the referral code.
+   If not, create a simple referral capture form with:
+   - first name
+   - last name
+   - phone
+   - email
+   - preferred office
+   - hidden referral code
+   Then POST to a referral lead endpoint.
+
+6. Add backend route(s) as needed:
+   - GET /api/referral/:code to validate and return referrer info
+   - POST /api/referral-leads to save inbound lead/referral attribution
+
+7. Prevent broken URLs:
+   - normalize APP_URL so there are no double slashes
+   - do not generate //claim or malformed paths
+   - confirm URLs work in both local/dev and deployed mode
+
+8. Add a quick test panel or console output that prints the exact referral URL being generated for each patient.
+
+9. After fixing, test these manually and show results:
+   - demo user sees demo QR and demo landing page
+   - real user sees real QR and real landing page
+   - clicking QR image opens /refer?ref=...
+   - Open Link button works
+   - Copy Link button copies the correct URL
+
+At the end, summarize:
+- what was broken
+- what was fixed
+- which files were changed
+- the exact final referral URL format

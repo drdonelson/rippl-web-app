@@ -65,7 +65,7 @@ router.get("/:id/qr", async (req, res) => {
     return;
   }
   const domain = process.env.REPLIT_DOMAINS?.split(",")[0] || "localhost:3001";
-  const referral_url = `https://${domain}/claim?ref=${referrer.referral_code}`;
+  const referral_url = `https://${domain}/refer?ref=${referrer.referral_code}`;
   res.json({ referral_url, referral_code: referrer.referral_code });
 });
 

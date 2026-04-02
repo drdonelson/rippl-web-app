@@ -200,11 +200,13 @@ function SortIcon({ field, sortField, sortDir }: { field: SortField; sortField: 
 }
 
 export default function Patients() {
-  const { isDemo, isLoading: authIsLoading } = useAuth();
+  const { isDemo, isLoading: authIsLoading, isStaff, profile } = useAuth();
 
   // Gate queries until auth is fully resolved — prevents API calls from firing
   // before profile loads (when isDemo is still false at first render).
   const queryEnabled = !authIsLoading && !isDemo;
+
+  console.log("[Patients] isDemo:", isDemo, "authIsLoading:", authIsLoading, "role:", profile?.role);
 
   const { data: fetchedReferrers, isLoading: referrersLoading } = useGetReferrers({ query: { enabled: queryEnabled } });
   const referrers = isDemo ? DEMO_REFERRERS : fetchedReferrers;
@@ -236,9 +238,6 @@ export default function Patients() {
       setSortDir(field === "name" ? "asc" : "desc");
     }
   };
-
-  // Auth context (for staff-role restrictions)
-  const { isStaff, profile } = useAuth();
 
   // Office context
   const { offices, selectedOfficeId } = useOffice();
@@ -315,23 +314,31 @@ export default function Patients() {
   const onSubmit = (data: FormValues) => createReferrer.mutate({ data });
 
   const { data: qrData } = useGetReferrerQr(qrModalReferrerId || "", {
-    query: { queryKey: getGetReferrerQrQueryKey(qrModalReferrerId || ""), enabled: !!qrModalReferrerId }
+    query: { queryKey: getGetReferrerQrQueryKey(qrModalReferrerId || ""), enabled: !!qrModalReferrerId && !isDemo }
   });
+
+  // For demo mode: compute QR URL from demo referrer's code (no API call needed)
+  const demoQrReferrer = isDemo ? DEMO_REFERRERS.find(r => r.id === qrModalReferrerId) : null;
+  const demoQrUrl = demoQrReferrer
+    ? `${window.location.origin}${BASE}/refer?ref=${demoQrReferrer.referral_code}`
+    : null;
+  const effectiveQrUrl = isDemo ? demoQrUrl : qrData?.referral_url;
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (qrData?.referral_url && canvasRef.current) {
-      QRCode.toCanvas(canvasRef.current, qrData.referral_url, {
+    if (effectiveQrUrl && canvasRef.current) {
+      console.log("[Patients] QR URL →", effectiveQrUrl);
+      QRCode.toCanvas(canvasRef.current, effectiveQrUrl, {
         width: 256, margin: 2,
         color: { dark: '#0a1628', light: '#ffffff' }
       });
     }
-  }, [qrData]);
+  }, [effectiveQrUrl]);
 
   const copyLink = () => {
-    if (qrData?.referral_url) {
-      navigator.clipboard.writeText(qrData.referral_url);
+    if (effectiveQrUrl) {
+      navigator.clipboard.writeText(effectiveQrUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -844,24 +851,45 @@ export default function Patients() {
         title="Patient QR Code"
       >
         <div className="flex flex-col items-center">
-          <div className="bg-white p-4 rounded-2xl shadow-inner mb-6">
+          {/* Clickable QR canvas — opens referral URL in new tab */}
+          <a
+            href={effectiveQrUrl ?? "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Open referral link"
+            className="block bg-white p-4 rounded-2xl shadow-inner mb-2 hover:opacity-90 transition-opacity cursor-pointer"
+            onClick={e => { if (!effectiveQrUrl) e.preventDefault(); }}
+          >
             <canvas ref={canvasRef} className="rounded-lg w-64 h-64 mx-auto" />
-          </div>
+          </a>
+          <p className="text-xs text-muted-foreground mb-5">Click QR to open link</p>
+
           <div className="w-full space-y-3">
-            <p className="text-sm font-medium text-foreground text-center mb-2">Share this link directly:</p>
+            <p className="text-sm font-medium text-foreground text-center">Share this link directly:</p>
             <div className="flex gap-2">
               <input
                 readOnly
-                value={qrData?.referral_url || "Loading..."}
+                value={effectiveQrUrl || (isDemo ? "Loading demo…" : "Loading...")}
                 className="flex-1 px-4 py-2.5 bg-background border border-border rounded-xl text-sm text-muted-foreground outline-none font-mono truncate"
               />
               <button
                 onClick={copyLink}
+                title="Copy link"
                 className="p-3 bg-secondary hover:bg-muted text-foreground rounded-xl transition-colors"
               >
                 {copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}
               </button>
             </div>
+            <a
+              href={effectiveQrUrl ?? "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={e => { if (!effectiveQrUrl) e.preventDefault(); }}
+              className="flex items-center justify-center gap-2 w-full py-2.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-xl text-sm font-semibold transition-colors"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Open Link
+            </a>
           </div>
         </div>
       </Modal>
