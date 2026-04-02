@@ -41,6 +41,7 @@ router.get("/:code", async (req, res) => {
   }
 
   res.json({
+    referrer_id: referrer.id,
     referrer_name: referrer.name.split(" ")[0],
     referral_code: referrer.referral_code,
     office_name: office_name ?? "Hallmark Dental",
@@ -48,7 +49,18 @@ router.get("/:code", async (req, res) => {
 });
 
 router.post("/leads", async (req, res) => {
-  const { first_name, last_name, phone, email, office_preference, referral_code } = req.body as Record<string, string | undefined>;
+  const {
+    first_name,
+    last_name,
+    phone,
+    email,
+    office_preference,
+    referral_code,
+    referrer_id,
+    contact_preference,
+    message,
+    source,
+  } = req.body as Record<string, string | undefined>;
 
   if (!first_name || !last_name || !phone) {
     res.status(400).json({ error: "first_name, last_name, and phone are required" });
@@ -62,6 +74,10 @@ router.post("/leads", async (req, res) => {
     email: email?.trim() || null,
     office_preference: office_preference?.trim() || null,
     referral_code: referral_code?.trim() || null,
+    referrer_id: referrer_id?.trim() || null,
+    contact_preference: contact_preference?.trim() || null,
+    message: message?.trim() || null,
+    source: source?.trim() || "qr_landing_page",
   }).returning();
 
   res.status(201).json({ success: true, id: lead.id });

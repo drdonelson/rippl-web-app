@@ -1,0 +1,207 @@
+Create a complete patient referral landing flow for Rippl and make the QR codes point to it.
+
+GOAL
+Each patient QR code must open a real Hallmark Dental referral landing page that preserves the referring patient attribution all the way through lead capture and booking.
+
+CORE FLOW
+QR URL format:
+https://joinrippl.com/refer?ref=REFERRAL_CODE
+
+When someone scans the QR:
+1. Open /refer?ref=CODE
+2. Validate the referral code
+3. Identify the referring patient
+4. Store the referral code in localStorage and sessionStorage
+5. Show a polished Hallmark Dental landing page
+6. Let the new patient either:
+   - request an appointment via a short form
+   - call the office
+   - continue to online booking
+7. Preserve referral attribution even if front desk forgets to ask later
+
+PART 1 — MAKE ALL QR CODES POINT TO /refer
+Update every QR generation path so it uses:
+${APP_URL}/refer?ref=${referralCode}
+
+This includes:
+- demo QR URLs
+- real QR URLs from the API
+- modal QR preview
+- copy link
+- open link
+- clickable QR image
+
+Do not point QR codes to /claim.
+That route is only for existing referrers claiming appreciation gifts.
+
+PART 2 — BUILD THE PUBLIC LANDING PAGE
+Create a polished public route:
+Route: /refer
+File: pages/refer.tsx (or equivalent existing route file)
+
+The page should:
+- be mobile-first and look polished on iPhone Safari
+- use Hallmark Dental branding
+- have a clean hero section
+- if referral code is valid:
+  headline: “[Referrer First Name] invited you to Hallmark Dental”
+  subheadline: “A trusted recommendation is the best way to find a dental home.”
+- if referral code is invalid or missing:
+  headline: “Welcome to Hallmark Dental”
+  subheadline: “We’d love to help you get started.”
+- show office selection cards/buttons for:
+  - Brentwood
+  - Lewisburg
+  - Greenbrier
+- show 3 clear CTA paths:
+  1. Request Appointment
+  2. Call Office
+  3. Book Online
+
+Landing page sections:
+- Hero
+- Office selection
+- Why patients choose Hallmark Dental
+- Short referral/appointment form
+- Call / Book buttons
+- Small trust section / testimonial area placeholder
+
+PART 3 — PRESERVE REFERRAL ATTRIBUTION
+When /refer loads:
+- parse ?ref=
+- validate via GET /api/referral/:code
+- if valid, store:
+  localStorage.setItem('rippl_referral_code', code)
+  sessionStorage.setItem('rippl_referral_code', code)
+
+Also store returned metadata if available:
+- referrer first name
+- referrer id
+- default office
+
+If the user selects an office or submits a form, keep the referral code attached.
+
+PART 4 — LEAD CAPTURE FORM
+On the landing page create a form with:
+- first name
+- last name
+- phone
+- email
+- preferred office
+- preferred contact method
+- optional message
+- hidden referral code
+
+On submit:
+POST /api/referral/leads
+
+Payload should include:
+- referral_code
+- first_name
+- last_name
+- phone
+- email
+- office_preference
+- contact_preference
+- message
+- source: 'qr_landing_page'
+- referrer_id if available
+
+After successful submit:
+- show confirmation screen
+- say:
+  “Thank you — your request has been sent to Hallmark Dental.”
+- keep the referral attribution saved
+
+PART 5 — BOOK ONLINE PATH
+Add a Book Online button.
+Implement it safely as follows:
+
+1. If a real online booking URL exists in env/config for an office:
+   redirect to that booking link AND append referral code when possible:
+   ?ref=CODE or &ref=CODE
+
+2. If no real booking URL exists yet:
+   route Book Online to the same appointment request form section and scroll there
+   Do NOT leave it broken.
+
+Also add a comment/config structure so each office can later have:
+- BRENTWOOD_BOOKING_URL
+- LEWISBURG_BOOKING_URL
+- GREENBRIER_BOOKING_URL
+
+PART 6 — CALL OFFICE PATH
+Add call buttons per office:
+- Brentwood
+- Lewisburg
+- Greenbrier
+
+If office-specific phone numbers already exist in config, use them.
+If not, create placeholders in config/constants for each office.
+
+Use tel: links.
+
+PART 7 — BACKEND SUPPORT
+Ensure these backend routes exist and work:
+
+1. GET /api/referral/:code
+- validate referral code
+- return:
+  - valid: true/false
+  - referrer id
+  - referrer first name
+  - office if known
+
+2. POST /api/referral/leads
+- save lead with attribution
+- return success response
+
+If needed, extend the referral_leads table to include:
+- contact_preference
+- message
+- source
+- referrer_id
+- office_preference
+- created_at
+
+PART 8 — FRONT DESK FAILSAFE / ATTRIBUTION BACKUP
+Create this behavior:
+- if a referral lead is submitted from /refer, the attribution is considered captured even if front desk later forgets to ask
+- store it in referral_leads and make it visible in admin later
+- front desk can still confirm manually, but it should no longer depend on memory
+
+PART 9 — SAFARI / MOBILE SAFETY
+Because mobile Safari has already been unstable on this project:
+- keep the /refer page lightweight
+- avoid heavy canvas usage
+- no unnecessary loops
+- no repeated fetches
+- no repeated state writes in effects
+- ensure page performs well on iPhone
+
+PART 10 — POLISH
+Design style:
+- clean, modern, trustworthy
+- Hallmark Dental feel
+- dark navy + teal accents only if already consistent with current app; otherwise use clean light patient-facing branding
+- cards, rounded buttons, readable typography, strong spacing
+- no developer/test language visible to patients
+
+PART 11 — VERIFY
+After building, verify and summarize:
+1. exact QR URL format now in use
+2. exact /refer page behavior with:
+   - valid referral code
+   - invalid code
+   - no code
+3. whether referral attribution is stored before booking
+4. which files changed
+5. whether Book Online is real redirect or falls back to form
+6. whether mobile was tested
+
+IMPORTANT
+The landing page should be patient-facing and polished, not admin-facing.
+The main purpose is:
+- preserve referrer attribution
+- let new patients book or request appointment
+- avoid losing referral source if front desk forgets
