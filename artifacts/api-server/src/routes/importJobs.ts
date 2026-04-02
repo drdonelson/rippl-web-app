@@ -11,7 +11,7 @@ const DEFAULT_CUSTOMER_KEY      = process.env.OPEN_DENTAL_CUSTOMER_KEY || proces
 const OPEN_DENTAL_DEVELOPER_KEY = process.env.OPEN_DENTAL_DEVELOPER_KEY;
 
 const OD_PAGE_SIZE    = 100;   // Max rows per OD API page
-const CHUNK_LIMIT_MAX = 200;   // Max patients per chunk call (2 OD pages)
+const CHUNK_LIMIT_MAX = 100;   // Max patients per chunk call (1 OD page — guaranteed fast)
 const OD_FETCH_MS     = 25_000; // Timeout per individual OD page fetch
 
 interface OdPatient {
@@ -53,13 +53,13 @@ async function resolveCustomerKey(officeId: string | null): Promise<string | nul
 }
 
 // ── POST /api/import/patients/chunk ──────────────────────────────────────────
-// Synchronous chunked import. Fetches 2 pages of 100 patients (200 total max)
-// from Open Dental starting at `offset`, immediately upserts active patients,
-// and returns progress so the client can call again with next_offset.
+// Synchronous chunked import. Fetches 1 page of 100 patients from Open Dental
+// starting at `offset`, immediately upserts active patients, and returns
+// progress so the client can call again with next_offset.
 //
 // Body:  { office_id?: string | null, offset?: number, limit?: number }
 //   offset  – OD row offset (default 0)
-//   limit   – patients to fetch (default 200, capped at 200 = 2 OD pages)
+//   limit   – patients to fetch (default 100, capped at 100 = 1 OD page)
 //
 // Response: { imported, skipped, next_offset, total_fetched, done }
 //   done === true when OD returned fewer rows than limit (no more pages)

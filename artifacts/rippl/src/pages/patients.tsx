@@ -29,7 +29,7 @@ type ImportPhase =
   | { state: "idle" }
   | { state: "importing"; current: number }
   | { state: "done"; imported: number; skipped: number }
-  | { state: "error"; message: string };
+  | { state: "error"; message: string; partialImported: number };
 
 type ViewMode = "list" | "grid";
 type SortField = "name" | "total_referrals" | "total_rewards_issued";
@@ -48,7 +48,7 @@ function StatusDot({ n }: { n: number }) {
   return <span className="w-2 h-2 rounded-full bg-muted-foreground/30 shrink-0 inline-block" />;
 }
 
-// ── Chunked import API helper ─────────────────────────────────────────────
+// ── Chunked import API helpers ────────────────────────────────────────────
 interface ChunkResult {
   imported:      number;
   skipped:       number;
@@ -58,15 +58,37 @@ interface ChunkResult {
 }
 
 async function importChunk(officeId: string | null, offset: number): Promise<ChunkResult> {
-  return customFetch<ChunkResult>(
-    `${BASE}/api/import/patients/chunk`,
-    {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ office_id: officeId, offset, limit: 200 }),
-      signal:  AbortSignal.timeout(25_000),
+  const controller = new AbortController();
+  const timeoutId  = setTimeout(() => controller.abort(), 25_000);
+  try {
+    const result = await customFetch<ChunkResult>(
+      `${BASE}/api/import/patients/chunk`,
+      {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ office_id: officeId, offset, limit: 100 }),
+        signal:  controller.signal,
+      }
+    );
+    clearTimeout(timeoutId);
+    return result;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
+}
+
+async function fetchChunkWithRetry(officeId: string | null, offset: number): Promise<ChunkResult> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      return await importChunk(officeId, offset);
+    } catch (err) {
+      if (attempt === 1) throw err;
+      await new Promise<void>(r => setTimeout(r, 2_000));
     }
-  );
+  }
+  // unreachable — TypeScript requires a return
+  throw new Error("Import failed after 2 attempts");
 }
 
 interface OfficeImportRowProps {
@@ -128,10 +150,18 @@ function OfficeImportRow({ officeName, active, phase, onImport, onReset }: Offic
             </span>
           )}
           {phase.state === "error" && (
-            <span className="flex items-center gap-1 text-xs text-destructive max-w-[240px]" title={phase.message}>
+            <button
+              onClick={onImport}
+              className="flex items-center gap-1 text-xs text-destructive max-w-[240px] hover:text-destructive/80 transition-colors text-left"
+              title={phase.message}
+            >
               <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-              <span className="truncate">{phase.message}</span>
-            </span>
+              <span className="truncate">
+                {phase.partialImported > 0
+                  ? `Imported ${phase.partialImported.toLocaleString()} patients before error — tap to resume`
+                  : phase.message}
+              </span>
+            </button>
           )}
           {(phase.state === "done" || phase.state === "error") && (
             <button onClick={onReset} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-colors" title="Reset">
@@ -276,13 +306,16 @@ export default function Patients() {
 
     try {
       while (!cancelRef.cancelled) {
-        const result = await importChunk(officeId, offset);
+        const result = await fetchChunkWithRetry(officeId, offset);
 
         if (cancelRef.cancelled) break;
 
         accImported += result.imported;
         accSkipped  += result.skipped;
         offset       = result.next_offset;
+
+        // Update progress counter after every chunk
+        setOfficeImportPhase(officeKey, { state: "importing", current: accImported });
 
         if (result.done) {
           setOfficeImportPhase(officeKey, {
@@ -300,14 +333,11 @@ export default function Patients() {
           });
           break;
         }
-
-        // More chunks remain — update counter and continue immediately
-        setOfficeImportPhase(officeKey, { state: "importing", current: accImported });
       }
     } catch (err) {
       if (cancelRef.cancelled) return;
       const message = err instanceof Error ? err.message : String(err);
-      setOfficeImportPhase(officeKey, { state: "error", message });
+      setOfficeImportPhase(officeKey, { state: "error", message, partialImported: accImported });
       toast.error("Import failed", { description: message, duration: 8000 });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
