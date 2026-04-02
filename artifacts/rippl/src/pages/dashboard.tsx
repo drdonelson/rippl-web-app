@@ -75,15 +75,22 @@ function useCompleteTask() {
 }
 
 export default function Dashboard() {
-  const { isDemo } = useAuth();
+  const { isDemo, isLoading: authIsLoading, profile } = useAuth();
   const { selectedOfficeId } = useOffice();
 
-  const { data: fetchedStats, isLoading, error } = useDashboard(selectedOfficeId, !isDemo);
-  const { data: adminTasks = [] } = useAdminTasks(!isDemo);
+  // Gate queries on auth being fully loaded AND user not being demo.
+  // Without !authIsLoading, queries fire before profile resolves (isDemo=false
+  // on first render) and bypass the hardcoded demo data entirely.
+  const queryEnabled = !authIsLoading && !isDemo;
+
+  console.log("[Dashboard] isDemo:", isDemo, "authIsLoading:", authIsLoading, "role:", profile?.role);
+
+  const { data: fetchedStats, isLoading, error } = useDashboard(selectedOfficeId, queryEnabled);
+  const { data: adminTasks = [] } = useAdminTasks(queryEnabled);
   const completeTask = useCompleteTask();
 
   const stats: DashboardStats | undefined = isDemo ? DEMO_STATS : fetchedStats;
-  const loading = isDemo ? false : isLoading;
+  const loading = !isDemo && (authIsLoading || isLoading);
 
   if (loading) {
     return (

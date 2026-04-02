@@ -118,10 +118,15 @@ export default function Events() {
   const initialTab = (params.get("tab") as TabId | null) ?? "all";
   const initialReferrer = params.get("referrer") ?? "";
 
-  const { isDemo } = useAuth();
+  const { isDemo, isLoading: authIsLoading } = useAuth();
   const { selectedOfficeId, offices } = useOffice();
-  const { data: fetchedEvents, isLoading } = useReferralEvents(selectedOfficeId, !isDemo);
-  const { data: fetchedReferrers } = useGetReferrers({ query: { enabled: !isDemo } });
+
+  // Gate queries until auth is fully resolved — prevents API calls from firing
+  // before profile loads (when isDemo is still false at first render).
+  const queryEnabled = !authIsLoading && !isDemo;
+
+  const { data: fetchedEvents, isLoading } = useReferralEvents(selectedOfficeId, queryEnabled);
+  const { data: fetchedReferrers } = useGetReferrers({ query: { enabled: queryEnabled } });
 
   const events = isDemo ? (DEMO_EVENTS as ReferralEvent[]) : fetchedEvents;
   const referrers = isDemo ? DEMO_REFERRERS : fetchedReferrers;

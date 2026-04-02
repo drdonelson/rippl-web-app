@@ -200,8 +200,13 @@ function SortIcon({ field, sortField, sortDir }: { field: SortField; sortField: 
 }
 
 export default function Patients() {
-  const { isDemo } = useAuth();
-  const { data: fetchedReferrers, isLoading: referrersLoading } = useGetReferrers({ query: { enabled: !isDemo } });
+  const { isDemo, isLoading: authIsLoading } = useAuth();
+
+  // Gate queries until auth is fully resolved — prevents API calls from firing
+  // before profile loads (when isDemo is still false at first render).
+  const queryEnabled = !authIsLoading && !isDemo;
+
+  const { data: fetchedReferrers, isLoading: referrersLoading } = useGetReferrers({ query: { enabled: queryEnabled } });
   const referrers = isDemo ? DEMO_REFERRERS : fetchedReferrers;
   const isLoading = isDemo ? false : referrersLoading;
   const queryClient = useQueryClient();
@@ -498,7 +503,7 @@ export default function Patients() {
       </div>
 
       {/* ── Import from Open Dental — hidden for demo users ─────────── */}
-      {!isDemo && <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+      {!isDemo && !authIsLoading && <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
