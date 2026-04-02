@@ -17,8 +17,23 @@ const NAV_ITEMS = [
 
 function OfficePicker({ compact = false }: { compact?: boolean }) {
   const { offices, selectedOfficeId, setSelectedOfficeId, isLoading } = useOffice();
+  const { isDemo } = useAuth();
 
   if (isLoading) return null;
+
+  // Demo users see a static, non-interactive "Demo Practice" badge
+  if (isDemo) {
+    return (
+      <div className={cn("relative", compact ? "w-full" : "")}>
+        <div className="relative flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2 cursor-default select-none">
+          <MapPin className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
+          <span className={cn("font-medium text-yellow-300", compact ? "text-xs" : "text-sm")}>
+            Demo Practice
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   const allOption = { id: "all", name: "All Locations", location_code: "all", active: true };
   const options   = [allOption, ...offices];

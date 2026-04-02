@@ -1,0 +1,43 @@
+Good catch — let me give you the full status first, then fix the demo issue.
+
+Current app status:
+FeatureStatusProduction deploy at joinrippl.com✅ LiveLogin / logout✅ WorkingOpen Dental poller — all 3 offices✅ RunningPatients & QR list view✅ WorkingReferral Events with tabs/sorting✅ WorkingClickable dashboard tiles✅ WorkingMulti-office support✅ WorkingStaff roles per office✅ Builtdeploy.sh push workflow✅ WorkingCode splitting / faster load⏳ Just deployed — pendingPatNum composite key fix❌ Not done yetPagination for 900+ patients❌ Not done yetDemo page fake data only❌ Needs fixGreenbrier + Lewisburg eConnector❌ Need site visitsTrademark filing❌ PendingTennessee Board response⏳ Awaiting
+
+Fix the demo page now — tell Replit Agent:
+
+"Fix the demo experience at /demo. Currently demo users can see all three real office locations in the dropdown and no data appears. Fix this:
+
+Demo users should only see one location in the dropdown called 'Demo Practice' — not Brentwood, Greenbrier, or Lewisburg
+Demo users should see realistic fake data — not real Hallmark Dental data and not empty tables. Hardcode this demo data that shows when role === 'demo':
+
+Dashboard stats:
+
+Total Referrals: 24
+Exams Completed: 18
+Rewards Issued: 12
+Active Referrers: 47
+
+Referral Events (8 fake entries):
+
+Sarah Johnson referred by Mike Thompson — Exam Completed — 2 days ago
+James Wilson referred by Lisa Chen — Reward Sent — 4 days ago
+Emily Davis referred by Robert Kim — Exam Completed — 5 days ago
+Michael Brown referred by Jennifer Martinez — Booked — 1 week ago
+Ashley Taylor referred by David Wilson — Reward Sent — 1 week ago
+Christopher Anderson referred by Amanda White — Exam Completed — 2 weeks ago
+Jessica Thomas referred by Ryan Johnson — Lead — 2 weeks ago
+Daniel Jackson referred by Stephanie Brown — Reward Sent — 3 weeks ago
+
+Patients (5 fake referrers):
+
+Mike Thompson — MIKE-1001 — 3 referrals — 2 rewards
+Lisa Chen — LISA-1002 — 2 referrals — 2 rewards
+Robert Kim — ROBE-1003 — 4 referrals — 3 rewards
+Jennifer Martinez — JENN-1004 — 1 referral — 0 rewards
+David Wilson — DAVI-1005 — 2 referrals — 1 reward
+
+
+Keep the yellow demo banner at the top: 'You are viewing a demo — no real patient data is shown'
+The demo dropdown should show 'Demo Practice' and be non-functional — no real office switching
+All demo data should be hardcoded in the frontend — no real API calls for demo users except to verify the session
+Push to GitHub after using deploy.sh"

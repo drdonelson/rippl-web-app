@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { useGetReferrers, useCreateReferrer, useGetReferrerQr, getGetReferrerQrQueryKey, customFetch } from "@workspace/api-client-react";
+import { DEMO_REFERRERS } from "@/lib/demo-data";
 import {
   Plus, QrCode, Search, Copy, Check, Download, RefreshCw,
   CheckCircle2, AlertTriangle, LayoutList, LayoutGrid,
@@ -199,7 +200,10 @@ function SortIcon({ field, sortField, sortDir }: { field: SortField; sortField: 
 }
 
 export default function Patients() {
-  const { data: referrers, isLoading } = useGetReferrers();
+  const { isDemo } = useAuth();
+  const { data: fetchedReferrers, isLoading: referrersLoading } = useGetReferrers({ query: { enabled: !isDemo } });
+  const referrers = isDemo ? DEMO_REFERRERS : fetchedReferrers;
+  const isLoading = isDemo ? false : referrersLoading;
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
@@ -493,8 +497,8 @@ export default function Patients() {
         </div>
       </div>
 
-      {/* ── Import from Open Dental ───────────────────────────────────── */}
-      <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+      {/* ── Import from Open Dental — hidden for demo users ─────────── */}
+      {!isDemo && <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -552,7 +556,7 @@ export default function Patients() {
             />
           )}
         </div>
-      </div>
+      </div>}
 
       {/* ── Loading skeleton ───────────────────────────────────────────── */}
       {isLoading ? (

@@ -10,6 +10,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSearch } from "wouter";
 import { useOffice } from "@/contexts/office-context";
+import { useAuth } from "@/contexts/auth-context";
+import { DEMO_EVENTS, DEMO_REFERRERS } from "@/lib/demo-data";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -22,12 +24,13 @@ const logReferralSchema = z.object({
 });
 type LogReferralValues = z.infer<typeof logReferralSchema>;
 
-function useReferralEvents(officeId: string) {
+function useReferralEvents(officeId: string, enabled: boolean) {
   const params = officeId !== "all" ? `?office_id=${officeId}` : "";
   return useQuery<ReferralEvent[]>({
     queryKey: ["/api/referrals", officeId],
     queryFn: () => customFetch<ReferralEvent[]>(`${BASE}/api/referrals${params}`),
-    refetchInterval: 30_000,
+    enabled,
+    refetchInterval: enabled ? 30_000 : false,
   });
 }
 
@@ -115,9 +118,13 @@ export default function Events() {
   const initialTab = (params.get("tab") as TabId | null) ?? "all";
   const initialReferrer = params.get("referrer") ?? "";
 
+  const { isDemo } = useAuth();
   const { selectedOfficeId, offices } = useOffice();
-  const { data: events, isLoading } = useReferralEvents(selectedOfficeId);
-  const { data: referrers } = useGetReferrers();
+  const { data: fetchedEvents, isLoading } = useReferralEvents(selectedOfficeId, !isDemo);
+  const { data: fetchedReferrers } = useGetReferrers({ query: { enabled: !isDemo } });
+
+  const events = isDemo ? (DEMO_EVENTS as ReferralEvent[]) : fetchedEvents;
+  const referrers = isDemo ? DEMO_REFERRERS : fetchedReferrers;
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState(initialReferrer);
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);

@@ -4,7 +4,9 @@ import { Users, UserPlus, Gift, Trophy, ArrowRight, Activity, CheckCircle2, Clip
 import { format } from "date-fns";
 import { Link } from "wouter";
 import { useOffice } from "@/contexts/office-context";
+import { useAuth } from "@/contexts/auth-context";
 import { customFetch } from "@workspace/api-client-react";
+import { DEMO_STATS } from "@/lib/demo-data";
 
 interface AdminTask {
   id: string;
@@ -40,26 +42,26 @@ interface DashboardStats {
   }[];
 }
 
-function useDashboard(officeId: string) {
+function useDashboard(officeId: string, enabled: boolean) {
   return useQuery<DashboardStats>({
     queryKey: ["/api/dashboard", officeId],
-    // Derive params from queryKey so the exact key that triggered the fetch
-    // drives the URL — eliminates any stale-closure issues.
     queryFn: ({ queryKey }) => {
       const id = queryKey[1] as string;
       const qs = id && id !== "all" ? `?office_id=${encodeURIComponent(id)}` : "";
       return customFetch<DashboardStats>(`${BASE}/api/dashboard${qs}`);
     },
-    refetchInterval: 30_000,
+    enabled,
+    refetchInterval: enabled ? 30_000 : false,
     staleTime: 0,
   });
 }
 
-function useAdminTasks() {
+function useAdminTasks(enabled: boolean) {
   return useQuery<AdminTask[]>({
     queryKey: ["/api/admin-tasks"],
     queryFn: () => customFetch<AdminTask[]>(`${BASE}/api/admin-tasks`),
-    refetchInterval: 30_000,
+    enabled,
+    refetchInterval: enabled ? 30_000 : false,
   });
 }
 
@@ -73,12 +75,17 @@ function useCompleteTask() {
 }
 
 export default function Dashboard() {
+  const { isDemo } = useAuth();
   const { selectedOfficeId } = useOffice();
-  const { data: stats, isLoading, error } = useDashboard(selectedOfficeId);
-  const { data: adminTasks = [] } = useAdminTasks();
+
+  const { data: fetchedStats, isLoading, error } = useDashboard(selectedOfficeId, !isDemo);
+  const { data: adminTasks = [] } = useAdminTasks(!isDemo);
   const completeTask = useCompleteTask();
 
-  if (isLoading) {
+  const stats: DashboardStats | undefined = isDemo ? DEMO_STATS : fetchedStats;
+  const loading = isDemo ? false : isLoading;
+
+  if (loading) {
     return (
       <div className="space-y-8 animate-pulse">
         <div>
@@ -94,7 +101,7 @@ export default function Dashboard() {
     );
   }
 
-  if (error || !stats) {
+  if (!isDemo && (error || !stats)) {
     return (
       <div className="bg-destructive/10 border border-destructive/20 text-destructive p-6 rounded-2xl">
         <h3 className="font-bold text-lg mb-1">Failed to load dashboard</h3>
@@ -102,6 +109,8 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  if (!stats) return null;
 
   const statCards = [
     { label: "Total Referrals",  value: stats.total_referrals,  icon: Users,    color: "text-blue-400",   bg: "bg-blue-400/10",   border: "border-blue-400/20",   href: "/events" },
@@ -137,8 +146,8 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Pending Admin Tasks */}
-      {adminTasks.length > 0 && (
+      {/* Pending Admin Tasks — hidden in demo mode */}
+      {!isDemo && adminTasks.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <ClipboardList className="w-5 h-5 text-yellow-400" />
