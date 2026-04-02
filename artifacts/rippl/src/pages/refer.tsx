@@ -4,7 +4,7 @@ import {
   MapPin, MessageSquare, Star, ChevronRight, ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { OFFICE_CONFIG, getOffice, phoneHref, type OfficeConfig } from "@/lib/office-config";
+import { OFFICE_CONFIG, getOffice, phoneHref, buildBookingUrl, type OfficeConfig } from "@/lib/office-config";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
@@ -98,6 +98,7 @@ function OfficeCard({
 
 export default function Refer() {
   const formRef = useRef<HTMLDivElement>(null);
+  const officeSectionRef = useRef<HTMLDivElement>(null);
 
   // Parse query string once via lazy state initializer — stable across renders
   const [refCode] = useState<string>(() => {
@@ -112,7 +113,8 @@ export default function Refer() {
   const [infoLoading, setInfoLoading] = useState(!!refCode);
 
   // Form state
-  const [selectedOffice, setSelectedOffice] = useState<string>(OFFICE_CONFIG[0].key);
+  // "" means no office chosen yet — user must tap a card before Book Online works
+  const [selectedOffice, setSelectedOffice] = useState<string>("");
   const [firstName, setFirstName]       = useState("");
   const [lastName, setLastName]         = useState("");
   const [phone, setPhone]               = useState("");
@@ -181,7 +183,7 @@ export default function Refer() {
           last_name: lastName.trim(),
           phone: phone.trim(),
           email: email.trim() || undefined,
-          office_preference: selectedOffice,
+          office_preference: selectedOffice || undefined,
           referral_code: refCode || referrerInfo?.referral_code || undefined,
           referrer_id: referrerInfo?.referrer_id || undefined,
           contact_preference: contactPref,
@@ -199,16 +201,36 @@ export default function Refer() {
     }
   };
 
-  // ── Book Online: fallback to form scroll ──────────────────────────────────
-  // When a real booking URL is added to OFFICE_CONFIG, this will redirect there.
+  // ── Book Online ───────────────────────────────────────────────────────────
+  // Requires an office to be selected. Appends &rippl_ref=CODE to the booking
+  // URL so attribution is preserved on the external PMS site. Persists the
+  // referral code to storage before navigating away.
   const handleBookOnline = () => {
+    // 1. Require explicit office selection
+    if (!selectedOffice) {
+      officeSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+
     const office = getOffice(selectedOffice);
+    const code = refCode || referrerInfo?.referral_code || undefined;
+
+    // 2. Persist referral code before any navigation
+    if (code) {
+      try {
+        localStorage.setItem("rippl_referral_code", code);
+        sessionStorage.setItem("rippl_referral_code", code);
+      } catch {}
+    }
+
+    // 3. Redirect to booking URL with rippl_ref appended, or fall back to form
     if (office?.bookingUrl) {
-      const url = new URL(office.bookingUrl);
-      const code = refCode || referrerInfo?.referral_code;
-      if (code) url.searchParams.set("ref", code);
-      window.open(url.toString(), "_blank", "noopener");
+      const finalUrl = code
+        ? buildBookingUrl(office.bookingUrl, code)
+        : office.bookingUrl;
+      window.open(finalUrl, "_blank", "noopener");
     } else {
+      // No booking URL configured — graceful fallback to appointment request form
       formRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   };
@@ -331,7 +353,7 @@ export default function Refer() {
         </div>
 
         {/* ── Office selection ───────────────────────────────────────────── */}
-        <div className="bg-[#0f2040] border border-white/10 rounded-3xl p-6 shadow-xl">
+        <div ref={officeSectionRef} className="bg-[#0f2040] border border-white/10 rounded-3xl p-6 shadow-xl">
           <h2 className="text-base font-bold text-white mb-1">Choose your location</h2>
           <p className="text-white/40 text-xs mb-4">Select the office that's most convenient for you.</p>
           <div className="space-y-2">
