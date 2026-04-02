@@ -63,7 +63,8 @@ async function importChunk(officeId: string | null, offset: number): Promise<Chu
     {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ office_id: officeId, offset, limit: 500 }),
+      body:    JSON.stringify({ office_id: officeId, offset, limit: 200 }),
+      signal:  AbortSignal.timeout(25_000),
     }
   );
 }
@@ -113,9 +114,11 @@ function OfficeImportRow({ officeName, active, phase, onImport, onReset }: Offic
         </div>
 
         <div className="flex items-center gap-3 flex-shrink-0">
-          {phase.state === "importing" && phase.current > 0 && (
+          {phase.state === "importing" && (
             <span className="text-xs text-muted-foreground tabular-nums hidden sm:inline">
-              {phase.current.toLocaleString()} imported…
+              {phase.current > 0
+                ? `Importing… ${phase.current.toLocaleString()} patients added so far`
+                : "Importing…"}
             </span>
           )}
           {phase.state === "done" && (
