@@ -7,3 +7,6 @@ export * from "./launch_emails";
 export * from "./user_profiles";
 export * from "./referral_leads";
 export * from "./referral_link_deliveries";
+export * from "./local_partners";
+export * from "./partner_reward_tiers";
+export * from "./reward_claims";

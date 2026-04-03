@@ -15,6 +15,10 @@ export const referrersTable = pgTable("referrers", {
   onboarding_sms_sent: boolean("onboarding_sms_sent").notNull().default(false),
   office_id: text("office_id").references(() => officesTable.id), // nullable — pre-multi-location referrers have no office
   created_at: timestamp("created_at").notNull().defaultNow(),
+  // Tier / reward value
+  tier: text("tier").default("starter"),
+  tier_unlocked_at: timestamp("tier_unlocked_at"),
+  reward_value: integer("reward_value").default(35),
 });
 
 export const insertReferrerSchema = createInsertSchema(referrersTable).omit({ id: true, created_at: true });
