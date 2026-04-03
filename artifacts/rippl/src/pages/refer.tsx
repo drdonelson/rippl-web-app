@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Droplets, Phone, Calendar, CheckCircle2, Loader2,
-  MapPin, MessageSquare, Star, ChevronRight, ArrowRight,
+  MapPin, MessageSquare, Star, ArrowRight, ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { OFFICE_CONFIG, getOffice, phoneHref, buildBookingUrl, type OfficeConfig } from "@/lib/office-config";
+import {
+  OFFICE_CONFIG,
+  getOffice,
+  phoneHref,
+  buildBookingUrl,
+  type OfficeConfig,
+} from "@/lib/office-config";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
@@ -12,11 +18,13 @@ function buildApiUrl(path: string) {
   return `${window.location.origin}${BASE}${path}`;
 }
 
-// ── Attribution helpers ───────────────────────────────────────────────────────
-// Persists referral attribution across sessions so even if the front desk
-// forgets to ask, the lead record already has the referrer attached.
+// ── Attribution helpers ────────────────────────────────────────────────────────
 
-function saveAttribution(code: string, referrerId: string | null, referrerName: string | null) {
+function saveAttribution(
+  code: string,
+  referrerId: string | null,
+  referrerName: string | null,
+) {
   try {
     const payload = JSON.stringify({ code, referrerId, referrerName });
     localStorage.setItem("rippl_referral_code", code);
@@ -27,10 +35,14 @@ function saveAttribution(code: string, referrerId: string | null, referrerName: 
 }
 
 function loadStoredCode(): string | null {
-  try { return localStorage.getItem("rippl_referral_code"); } catch { return null; }
+  try {
+    return localStorage.getItem("rippl_referral_code");
+  } catch {
+    return null;
+  }
 }
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────────
 
 interface ReferrerInfo {
   referrer_id: string;
@@ -39,7 +51,7 @@ interface ReferrerInfo {
   office_name: string;
 }
 
-// ── Trust statements ──────────────────────────────────────────────────────────
+// ── Trust statements ───────────────────────────────────────────────────────────
 
 const TRUST_ITEMS = [
   { title: "Family-friendly care", body: "All ages welcome — from first teeth to full smile makeovers." },
@@ -48,7 +60,7 @@ const TRUST_ITEMS = [
   { title: "3 convenient locations", body: "Brentwood, Lewisburg, and Greenbrier — always close to home." },
 ];
 
-// ── Testimonials (placeholder — replace with real patient quotes) ─────────────
+// ── Testimonials ───────────────────────────────────────────────────────────────
 
 const TESTIMONIALS = [
   {
@@ -61,73 +73,107 @@ const TESTIMONIALS = [
   },
 ];
 
-// ── Office card component ─────────────────────────────────────────────────────
+// ── Office booking card ────────────────────────────────────────────────────────
+// Entire card is clickable → directly opens booking for that office.
+// Phone link is nested and stops propagation so tapping the number calls instead.
 
-function OfficeCard({
-  office, selected, onClick,
-}: { office: OfficeConfig; selected: boolean; onClick: () => void }) {
+function OfficeBookingCard({
+  office,
+  onBook,
+}: {
+  office: OfficeConfig;
+  onBook: (key: string) => void;
+}) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "w-full text-left flex items-center gap-4 p-4 rounded-2xl border transition-all duration-150",
-        selected
-          ? "bg-teal-500/10 border-teal-400/40 shadow-sm shadow-teal-500/10"
-          : "bg-white/3 border-white/8 hover:border-white/20 hover:bg-white/5"
-      )}
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onBook(office.key)}
+      onKeyDown={e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onBook(office.key);
+        }
+      }}
+      className="group relative flex flex-col gap-4 p-5 rounded-2xl border border-white/8 bg-white/3 hover:bg-teal-500/5 hover:border-teal-400/25 active:bg-teal-500/8 active:scale-[0.99] transition-all duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/40 select-none"
     >
-      <div className={cn(
-        "w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors",
-        selected ? "bg-teal-500/20" : "bg-white/5"
-      )}>
-        <MapPin className={cn("w-4 h-4", selected ? "text-teal-400" : "text-white/40")} />
+      {/* Header row */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-white text-base leading-snug">
+            Hallmark Dental
+          </p>
+          <p className="text-teal-300 font-semibold text-sm leading-tight mt-0.5">
+            {office.label}
+          </p>
+          <p className="text-white/35 text-xs mt-1 leading-relaxed">{office.address}</p>
+        </div>
+        <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-400/20 flex items-center justify-center flex-shrink-0 group-hover:bg-teal-500/20 transition-colors mt-0.5">
+          <MapPin className="w-4 h-4 text-teal-400" />
+        </div>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className={cn("font-semibold text-sm leading-tight", selected ? "text-teal-300" : "text-white")}>
-          Hallmark Dental — {office.label}
-        </p>
-        <p className="text-xs text-white/40 mt-0.5">{office.address}</p>
+
+      {/* Book CTA row */}
+      <div className="flex items-center justify-between pt-1 border-t border-white/6">
+        <span className="flex items-center gap-1.5 text-sm font-bold text-teal-400 group-hover:text-teal-300 group-hover:gap-2.5 transition-all duration-150">
+          Book Online
+          <ArrowRight className="w-3.5 h-3.5" />
+        </span>
+
+        {/* Call link — stops propagation so it doesn't trigger booking */}
+        <a
+          href={phoneHref(office.phone)}
+          onClick={e => e.stopPropagation()}
+          onKeyDown={e => e.stopPropagation()}
+          className="flex items-center gap-1.5 text-xs text-white/35 hover:text-teal-400 hover:bg-teal-400/8 active:bg-teal-400/12 px-2.5 py-1.5 rounded-lg transition-colors"
+          aria-label={`Call ${office.label} at ${office.phone}`}
+        >
+          <Phone className="w-3 h-3" />
+          {office.phone}
+        </a>
       </div>
-      {selected && <ChevronRight className="w-4 h-4 text-teal-400 flex-shrink-0" />}
-    </button>
+    </div>
   );
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+// ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function Refer() {
   const formRef = useRef<HTMLDivElement>(null);
-  const officeSectionRef = useRef<HTMLDivElement>(null);
 
-  // Parse query string once via lazy state initializer — stable across renders
+  // Parse query string once via lazy initializer — stable across renders
   const [refCode] = useState<string>(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       return params.get("ref")?.trim() || "";
-    } catch { return ""; }
+    } catch {
+      return "";
+    }
   });
 
   // Referrer state
   const [referrerInfo, setReferrerInfo] = useState<ReferrerInfo | null>(null);
   const [infoLoading, setInfoLoading] = useState(!!refCode);
 
-  // Form state
-  // "" means no office chosen yet — user must tap a card before Book Online works
+  // Office selection (used by the fallback form)
   const [selectedOffice, setSelectedOffice] = useState<string>("");
-  const [firstName, setFirstName]       = useState("");
-  const [lastName, setLastName]         = useState("");
-  const [phone, setPhone]               = useState("");
-  const [email, setEmail]               = useState("");
-  const [contactPref, setContactPref]   = useState("phone");
-  const [message, setMessage]           = useState("");
-  const [submitting, setSubmitting]     = useState(false);
-  const [submitted, setSubmitted]       = useState(false);
-  const [formError, setFormError]       = useState("");
 
-  // ── On mount: validate referral code, store attribution ──────────────────
+  // Fallback form visibility
+  const [showForm, setShowForm] = useState(false);
+
+  // Form fields
+  const [firstName, setFirstName]     = useState("");
+  const [lastName, setLastName]       = useState("");
+  const [phone, setPhone]             = useState("");
+  const [email, setEmail]             = useState("");
+  const [contactPref, setContactPref] = useState("phone");
+  const [message, setMessage]         = useState("");
+  const [submitting, setSubmitting]   = useState(false);
+  const [submitted, setSubmitted]     = useState(false);
+  const [formError, setFormError]     = useState("");
+
+  // ── On mount: validate referral code, store attribution ─────────────────────
   useEffect(() => {
-    // Recover stored code if URL has none
     let code = refCode;
     if (!code) {
       const stored = loadStoredCode();
@@ -139,33 +185,69 @@ export default function Refer() {
       return;
     }
 
-    // Persist code immediately before fetch resolves
+    // Persist immediately before fetch resolves
     try {
       localStorage.setItem("rippl_referral_code", code);
       sessionStorage.setItem("rippl_referral_code", code);
     } catch {}
 
     fetch(buildApiUrl(`/api/referral/${encodeURIComponent(code)}`))
-      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(r => (r.ok ? r.json() : Promise.reject(r.status)))
       .then((data: ReferrerInfo) => {
         setReferrerInfo(data);
-        // Store full attribution metadata
         saveAttribution(code, data.referrer_id, data.referrer_name);
-        // Pre-select office if referrer's office matches one of our config keys
-        const matchedOffice = OFFICE_CONFIG.find(o =>
-          data.office_name?.toLowerCase().includes(o.key.toLowerCase())
+        // Pre-select office from referrer's home location
+        const matched = OFFICE_CONFIG.find(o =>
+          data.office_name?.toLowerCase().includes(o.key.toLowerCase()),
         );
-        if (matchedOffice) setSelectedOffice(matchedOffice.key);
+        if (matched) setSelectedOffice(matched.key);
         setInfoLoading(false);
       })
-      .catch(() => {
-        // Invalid code — graceful fallback, attribution not stored
-        setInfoLoading(false);
-      });
+      .catch(() => setInfoLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Form submit ───────────────────────────────────────────────────────────
+  // ── Book online handler (called when a tile is clicked) ──────────────────────
+  const handleBookOffice = (officeKey: string) => {
+    const office = getOffice(officeKey);
+    const code = refCode || referrerInfo?.referral_code || undefined;
+
+    // Track selection for the form's location preference
+    setSelectedOffice(officeKey);
+
+    // Always persist attribution before leaving the page
+    if (code) {
+      try {
+        localStorage.setItem("rippl_referral_code", code);
+        sessionStorage.setItem("rippl_referral_code", code);
+      } catch {}
+    }
+
+    if (office?.bookingUrl) {
+      const finalUrl = code
+        ? buildBookingUrl(office.bookingUrl, code)
+        : office.bookingUrl;
+      window.open(finalUrl, "_blank", "noopener");
+    } else {
+      // No booking URL configured — reveal the fallback form
+      setShowForm(true);
+      setTimeout(
+        () => formRef.current?.scrollIntoView({ behavior: "smooth" }),
+        80,
+      );
+    }
+  };
+
+  // ── Open fallback form ────────────────────────────────────────────────────────
+  const openFallbackForm = () => {
+    setShowForm(true);
+    setTimeout(
+      () => formRef.current?.scrollIntoView({ behavior: "smooth" }),
+      80,
+    );
+  };
+
+  // ── Form submit ───────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
@@ -201,45 +283,10 @@ export default function Refer() {
     }
   };
 
-  // ── Book Online ───────────────────────────────────────────────────────────
-  // Requires an office to be selected. Appends &rippl_ref=CODE to the booking
-  // URL so attribution is preserved on the external PMS site. Persists the
-  // referral code to storage before navigating away.
-  const handleBookOnline = () => {
-    // 1. Require explicit office selection
-    if (!selectedOffice) {
-      officeSectionRef.current?.scrollIntoView({ behavior: "smooth" });
-      return;
-    }
-
-    const office = getOffice(selectedOffice);
-    const code = refCode || referrerInfo?.referral_code || undefined;
-
-    // 2. Persist referral code before any navigation
-    if (code) {
-      try {
-        localStorage.setItem("rippl_referral_code", code);
-        sessionStorage.setItem("rippl_referral_code", code);
-      } catch {}
-    }
-
-    // 3. Redirect to booking URL with rippl_ref appended, or fall back to form
-    if (office?.bookingUrl) {
-      const finalUrl = code
-        ? buildBookingUrl(office.bookingUrl, code)
-        : office.bookingUrl;
-      window.open(finalUrl, "_blank", "noopener");
-    } else {
-      // No booking URL configured — graceful fallback to appointment request form
-      formRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
-  const officeName = referrerInfo?.office_name || "Hallmark Dental";
   const referrerName = referrerInfo?.referrer_name;
   const selectedOfficeConfig = getOffice(selectedOffice);
 
-  // ── Loading state ─────────────────────────────────────────────────────────
+  // ── Loading ───────────────────────────────────────────────────────────────────
   if (infoLoading) {
     return (
       <div className="min-h-screen bg-[#0a1628] flex items-center justify-center">
@@ -248,7 +295,7 @@ export default function Refer() {
     );
   }
 
-  // ── Success state ─────────────────────────────────────────────────────────
+  // ── Success (form submitted) ───────────────────────────────────────────────────
   if (submitted) {
     return (
       <div className="min-h-screen bg-[#0a1628] flex items-center justify-center p-4">
@@ -258,9 +305,11 @@ export default function Refer() {
           </div>
           <h2 className="text-2xl font-bold text-white mb-3">You're all set!</h2>
           <p className="text-white/60 mb-4 leading-relaxed">
-            Your request has been sent to <span className="text-white font-semibold">
-              Hallmark Dental — {selectedOffice}
-            </span>. Our team will reach out shortly to get you scheduled.
+            Your request has been sent to{" "}
+            <span className="text-white font-semibold">
+              Hallmark Dental{selectedOffice ? ` — ${selectedOffice}` : ""}
+            </span>
+            . Our team will reach out shortly to get you scheduled.
           </p>
           {referrerName && (
             <p className="text-sm text-teal-400 font-medium">
@@ -270,8 +319,11 @@ export default function Refer() {
           <div className="mt-6 pt-6 border-t border-white/10">
             <p className="text-xs text-white/30">
               Questions? Call us at{" "}
-              <a href={phoneHref(selectedOfficeConfig?.phone || "")} className="text-teal-400 underline underline-offset-2">
-                {selectedOfficeConfig?.phone}
+              <a
+                href={phoneHref(selectedOfficeConfig?.phone || OFFICE_CONFIG[0].phone)}
+                className="text-teal-400 underline underline-offset-2"
+              >
+                {selectedOfficeConfig?.phone || OFFICE_CONFIG[0].phone}
               </a>
             </p>
           </div>
@@ -280,20 +332,21 @@ export default function Refer() {
     );
   }
 
-  // ── Main page ─────────────────────────────────────────────────────────────
+  // ── Main page ─────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#0a1628] flex flex-col">
 
-      {/* Ambient glows — CSS only, no canvas, Safari-safe */}
+      {/* Ambient glows */}
       <div aria-hidden className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-[28rem] h-[28rem] bg-teal-500/4 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 -left-32 w-72 h-72 bg-teal-500/3 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-[36rem] h-[36rem] bg-teal-500/4 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 -left-32 w-80 h-80 bg-teal-500/3 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-teal-500/2 rounded-full blur-3xl" />
       </div>
 
-      <main className="relative z-10 flex-1 max-w-lg mx-auto w-full px-4 pt-10 pb-16 space-y-5">
+      <main className="relative z-10 flex-1 w-full max-w-5xl mx-auto px-4 sm:px-8 pt-10 pb-16">
 
-        {/* ── Logo / Brand ──────────────────────────────────────────────── */}
-        <div className="flex items-center gap-3 mb-2">
+        {/* ── Logo / Brand ─────────────────────────────────────────────────── */}
+        <div className="flex items-center gap-3 mb-8">
           <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center shadow-lg shadow-teal-500/20 flex-shrink-0">
             <Droplets className="w-6 h-6 text-white" />
           </div>
@@ -303,97 +356,71 @@ export default function Refer() {
           </div>
         </div>
 
-        {/* ── Hero card ─────────────────────────────────────────────────── */}
-        <div className="bg-[#0f2040] border border-white/10 rounded-3xl p-7 shadow-2xl">
+        {/* ── Hero ─────────────────────────────────────────────────────────── */}
+        <div className="mb-8 max-w-2xl">
           {referrerName ? (
             <>
-              <span className="inline-block text-teal-400 text-xs font-semibold tracking-widest uppercase mb-3 px-3 py-1 bg-teal-400/8 rounded-full border border-teal-400/20">
+              <span className="inline-block text-teal-400 text-xs font-semibold tracking-widest uppercase mb-4 px-3 py-1 bg-teal-400/8 rounded-full border border-teal-400/20">
                 Personal Invitation
               </span>
-              <h1 className="text-2xl font-bold text-white mb-2 leading-tight">
-                {referrerName} invited you to<br />Hallmark Dental
+              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3 leading-tight">
+                {referrerName} thinks<br className="hidden sm:block" /> you'll love us
               </h1>
-              <p className="text-white/55 text-sm leading-relaxed">
-                A trusted recommendation is the best way to find a dental home. Request an appointment below — we'll reach out to get you scheduled.
+              <p className="text-white/55 text-base leading-relaxed">
+                Pick the location closest to you and book your first visit online — it only takes a minute.
               </p>
             </>
           ) : (
             <>
-              <span className="inline-block text-teal-400 text-xs font-semibold tracking-widest uppercase mb-3 px-3 py-1 bg-teal-400/8 rounded-full border border-teal-400/20">
+              <span className="inline-block text-teal-400 text-xs font-semibold tracking-widest uppercase mb-4 px-3 py-1 bg-teal-400/8 rounded-full border border-teal-400/20">
                 New Patient Welcome
               </span>
-              <h1 className="text-2xl font-bold text-white mb-2 leading-tight">
-                Welcome to Hallmark Dental
+              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3 leading-tight">
+                Book your first visit<br className="hidden sm:block" /> at Hallmark Dental
               </h1>
-              <p className="text-white/55 text-sm leading-relaxed">
-                We'd love to help you get started. Request an appointment below and our team will reach out shortly.
+              <p className="text-white/55 text-base leading-relaxed">
+                Choose your nearest location below and book online in seconds.
               </p>
             </>
           )}
-
-          {/* CTA buttons */}
-          <div className="flex gap-3 mt-6">
-            <button
-              type="button"
-              onClick={() => formRef.current?.scrollIntoView({ behavior: "smooth" })}
-              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-teal-500 hover:bg-teal-400 active:bg-teal-600 text-white rounded-2xl font-semibold transition-colors text-sm shadow-lg shadow-teal-500/20"
-            >
-              <Calendar className="w-4 h-4" />
-              Request Appointment
-            </button>
-            <button
-              type="button"
-              onClick={handleBookOnline}
-              className="flex items-center justify-center gap-2 py-3 px-4 bg-white/5 hover:bg-white/10 active:bg-white/8 border border-white/10 text-white rounded-2xl font-semibold transition-colors text-sm"
-            >
-              <ArrowRight className="w-4 h-4 text-teal-400" />
-              Book Online
-            </button>
-          </div>
         </div>
 
-        {/* ── Office selection ───────────────────────────────────────────── */}
-        <div ref={officeSectionRef} className="bg-[#0f2040] border border-white/10 rounded-3xl p-6 shadow-xl">
-          <h2 className="text-base font-bold text-white mb-1">Choose your location</h2>
-          <p className="text-white/40 text-xs mb-4">Select the office that's most convenient for you.</p>
-          <div className="space-y-2">
+        {/* ── Office selection ─────────────────────────────────────────────── */}
+        <div className="mb-3">
+          <h2 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-4">
+            Choose your location
+          </h2>
+
+          {/* Cards: single column on mobile, 3-up on desktop */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {OFFICE_CONFIG.map(office => (
-              <OfficeCard
+              <OfficeBookingCard
                 key={office.key}
                 office={office}
-                selected={selectedOffice === office.key}
-                onClick={() => setSelectedOffice(office.key)}
+                onBook={handleBookOffice}
               />
             ))}
           </div>
-
-          {/* Per-office call buttons */}
-          <div className="mt-5 pt-5 border-t border-white/8">
-            <p className="text-xs text-white/35 mb-3 font-medium">Call us directly</p>
-            <div className="space-y-2">
-              {OFFICE_CONFIG.map(office => (
-                <a
-                  key={office.key}
-                  href={phoneHref(office.phone)}
-                  className="flex items-center justify-between w-full px-4 py-3 bg-white/3 hover:bg-white/6 active:bg-white/8 border border-white/8 rounded-xl transition-colors"
-                >
-                  <span className="text-sm text-white/80 font-medium">
-                    {office.label}
-                  </span>
-                  <span className="flex items-center gap-2 text-sm text-teal-400 font-semibold">
-                    <Phone className="w-3.5 h-3.5" />
-                    {office.phone}
-                  </span>
-                </a>
-              ))}
-            </div>
-          </div>
         </div>
 
-        {/* ── Why Hallmark Dental ────────────────────────────────────────── */}
-        <div className="bg-[#0f2040] border border-white/10 rounded-3xl p-6 shadow-xl">
+        {/* ── Fallback CTA ─────────────────────────────────────────────────── */}
+        <div className="mb-10">
+          {!showForm ? (
+            <button
+              type="button"
+              onClick={openFallbackForm}
+              className="flex items-center gap-2 text-sm text-white/40 hover:text-white/70 transition-colors group pt-4"
+            >
+              <span>Prefer us to reach out to you instead?</span>
+              <ChevronDown className="w-3.5 h-3.5 group-hover:translate-y-0.5 transition-transform" />
+            </button>
+          ) : null}
+        </div>
+
+        {/* ── Why Hallmark Dental ──────────────────────────────────────────── */}
+        <div className="bg-[#0f2040] border border-white/10 rounded-3xl p-6 shadow-xl mb-5">
           <h2 className="text-base font-bold text-white mb-4">Why patients choose us</h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {TRUST_ITEMS.map(item => (
               <div key={item.title} className="bg-white/3 rounded-2xl p-4 border border-white/5">
                 <p className="text-sm font-semibold text-teal-300 mb-1 leading-tight">{item.title}</p>
@@ -403,8 +430,8 @@ export default function Refer() {
           </div>
         </div>
 
-        {/* ── Testimonials ──────────────────────────────────────────────── */}
-        <div className="space-y-3">
+        {/* ── Testimonials ─────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
           {TESTIMONIALS.map(t => (
             <div
               key={t.author}
@@ -421,168 +448,184 @@ export default function Refer() {
           ))}
         </div>
 
-        {/* ── Appointment request form ───────────────────────────────────── */}
-        <div ref={formRef} id="appt-form" className="bg-[#0f2040] border border-white/10 rounded-3xl p-7 shadow-2xl scroll-mt-4">
-          <h2 className="text-lg font-bold text-white mb-1">Request an Appointment</h2>
-          <p className="text-white/45 text-sm mb-6">Fill in your info and we'll reach out within one business day.</p>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name row */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-white/55 mb-1.5">First Name *</label>
-                <input
-                  value={firstName}
-                  onChange={e => setFirstName(e.target.value)}
-                  placeholder="Jane"
-                  autoComplete="given-name"
-                  className="w-full px-4 py-2.5 bg-[#0a1628] border border-white/10 rounded-xl text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-teal-400/50 transition-colors"
-                />
+        {/* ── Fallback appointment request form ────────────────────────────── */}
+        {showForm && (
+          <div
+            ref={formRef}
+            id="appt-form"
+            className="bg-[#0f2040] border border-white/10 rounded-3xl p-7 shadow-2xl scroll-mt-4 mb-5"
+          >
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-9 h-9 rounded-xl bg-teal-500/10 flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-teal-400" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-white/55 mb-1.5">Last Name *</label>
-                <input
-                  value={lastName}
-                  onChange={e => setLastName(e.target.value)}
-                  placeholder="Doe"
-                  autoComplete="family-name"
-                  className="w-full px-4 py-2.5 bg-[#0a1628] border border-white/10 rounded-xl text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-teal-400/50 transition-colors"
-                />
+                <h2 className="text-lg font-bold text-white leading-tight">Request an Appointment</h2>
+                <p className="text-white/40 text-xs mt-0.5">We'll reach out within one business day.</p>
               </div>
             </div>
 
-            {/* Phone */}
-            <div>
-              <label className="block text-xs font-medium text-white/55 mb-1.5">Phone Number *</label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={e => setPhone(e.target.value)}
-                placeholder="(615) 555-0100"
-                autoComplete="tel"
-                className="w-full px-4 py-2.5 bg-[#0a1628] border border-white/10 rounded-xl text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-teal-400/50 transition-colors"
-              />
-            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Name */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-white/55 mb-1.5">First Name *</label>
+                  <input
+                    value={firstName}
+                    onChange={e => setFirstName(e.target.value)}
+                    placeholder="Jane"
+                    autoComplete="given-name"
+                    className="w-full px-4 py-2.5 bg-[#0a1628] border border-white/10 rounded-xl text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-teal-400/50 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-white/55 mb-1.5">Last Name *</label>
+                  <input
+                    value={lastName}
+                    onChange={e => setLastName(e.target.value)}
+                    placeholder="Doe"
+                    autoComplete="family-name"
+                    className="w-full px-4 py-2.5 bg-[#0a1628] border border-white/10 rounded-xl text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-teal-400/50 transition-colors"
+                  />
+                </div>
+              </div>
 
-            {/* Email */}
-            <div>
-              <label className="block text-xs font-medium text-white/55 mb-1.5">Email <span className="text-white/25">(optional)</span></label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="jane@example.com"
-                autoComplete="email"
-                className="w-full px-4 py-2.5 bg-[#0a1628] border border-white/10 rounded-xl text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-teal-400/50 transition-colors"
-              />
-            </div>
+              {/* Phone */}
+              <div>
+                <label className="block text-xs font-medium text-white/55 mb-1.5">Phone Number *</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  placeholder="(615) 555-0100"
+                  autoComplete="tel"
+                  className="w-full px-4 py-2.5 bg-[#0a1628] border border-white/10 rounded-xl text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-teal-400/50 transition-colors"
+                />
+              </div>
 
-            {/* Preferred office */}
-            <div>
-              <label className="block text-xs font-medium text-white/55 mb-1.5">
-                <MapPin className="w-3 h-3 inline mr-1 text-teal-400" />
-                Preferred Location
-              </label>
-              <select
-                value={selectedOffice}
-                onChange={e => setSelectedOffice(e.target.value)}
-                className="w-full px-4 py-2.5 bg-[#0a1628] border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-teal-400/50 transition-colors"
+              {/* Email */}
+              <div>
+                <label className="block text-xs font-medium text-white/55 mb-1.5">
+                  Email <span className="text-white/25">(optional)</span>
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="jane@example.com"
+                  autoComplete="email"
+                  className="w-full px-4 py-2.5 bg-[#0a1628] border border-white/10 rounded-xl text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-teal-400/50 transition-colors"
+                />
+              </div>
+
+              {/* Preferred location */}
+              <div>
+                <label className="block text-xs font-medium text-white/55 mb-1.5">
+                  <MapPin className="w-3 h-3 inline mr-1 text-teal-400" />
+                  Preferred Location
+                </label>
+                <select
+                  value={selectedOffice}
+                  onChange={e => setSelectedOffice(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-[#0a1628] border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-teal-400/50 transition-colors"
+                >
+                  <option value="">No preference</option>
+                  {OFFICE_CONFIG.map(o => (
+                    <option key={o.key} value={o.key}>
+                      Hallmark Dental — {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Contact preference */}
+              <div>
+                <label className="block text-xs font-medium text-white/55 mb-2">
+                  Best way to reach you
+                </label>
+                <div className="flex gap-2">
+                  {[
+                    { value: "phone", label: "Phone call" },
+                    { value: "text", label: "Text" },
+                    { value: "email", label: "Email" },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setContactPref(opt.value)}
+                      className={cn(
+                        "flex-1 py-2 rounded-xl text-xs font-semibold border transition-colors",
+                        contactPref === opt.value
+                          ? "bg-teal-500/15 border-teal-400/40 text-teal-300"
+                          : "bg-white/3 border-white/8 text-white/50 hover:border-white/20",
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Message */}
+              <div>
+                <label className="block text-xs font-medium text-white/55 mb-1.5">
+                  <MessageSquare className="w-3 h-3 inline mr-1 text-teal-400" />
+                  Anything we should know?{" "}
+                  <span className="text-white/25">(optional)</span>
+                </label>
+                <textarea
+                  value={message}
+                  onChange={e => setMessage(e.target.value)}
+                  placeholder="Insurance info, concerns, scheduling needs…"
+                  rows={3}
+                  className="w-full px-4 py-2.5 bg-[#0a1628] border border-white/10 rounded-xl text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-teal-400/50 transition-colors resize-none"
+                />
+              </div>
+
+              <input
+                type="hidden"
+                name="referral_code"
+                value={refCode || referrerInfo?.referral_code || ""}
+              />
+
+              {formError && <p className="text-red-400 text-sm">{formError}</p>}
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className={cn(
+                  "w-full py-4 rounded-2xl font-bold text-white text-sm transition-all shadow-lg shadow-teal-500/20",
+                  submitting
+                    ? "bg-teal-500/50 cursor-not-allowed"
+                    : "bg-teal-500 hover:bg-teal-400 active:bg-teal-600",
+                )}
               >
-                {OFFICE_CONFIG.map(o => (
-                  <option key={o.key} value={o.key}>Hallmark Dental — {o.label}</option>
-                ))}
-              </select>
-            </div>
+                {submitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Sending…
+                  </span>
+                ) : (
+                  "Send My Request"
+                )}
+              </button>
 
-            {/* Preferred contact method */}
-            <div>
-              <label className="block text-xs font-medium text-white/55 mb-2">Best way to reach you</label>
-              <div className="flex gap-2">
-                {[
-                  { value: "phone", label: "Phone call" },
-                  { value: "text", label: "Text" },
-                  { value: "email", label: "Email" },
-                ].map(opt => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setContactPref(opt.value)}
-                    className={cn(
-                      "flex-1 py-2 rounded-xl text-xs font-semibold border transition-colors",
-                      contactPref === opt.value
-                        ? "bg-teal-500/15 border-teal-400/40 text-teal-300"
-                        : "bg-white/3 border-white/8 text-white/50 hover:border-white/20"
-                    )}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Message */}
-            <div>
-              <label className="block text-xs font-medium text-white/55 mb-1.5">
-                <MessageSquare className="w-3 h-3 inline mr-1 text-teal-400" />
-                Anything we should know? <span className="text-white/25">(optional)</span>
-              </label>
-              <textarea
-                value={message}
-                onChange={e => setMessage(e.target.value)}
-                placeholder="Insurance info, concerns, scheduling needs…"
-                rows={3}
-                className="w-full px-4 py-2.5 bg-[#0a1628] border border-white/10 rounded-xl text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-teal-400/50 transition-colors resize-none"
-              />
-            </div>
-
-            {/* Hidden referral code — always rendered so form data is complete */}
-            <input type="hidden" name="referral_code" value={refCode || referrerInfo?.referral_code || ""} />
-
-            {formError && (
-              <p className="text-red-400 text-sm">{formError}</p>
-            )}
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className={cn(
-                "w-full py-4 rounded-2xl font-bold text-white text-sm transition-all shadow-lg shadow-teal-500/20",
-                submitting
-                  ? "bg-teal-500/50 cursor-not-allowed"
-                  : "bg-teal-500 hover:bg-teal-400 active:bg-teal-600"
-              )}
-            >
-              {submitting ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Sending…
-                </span>
-              ) : "Send My Request"}
-            </button>
-
-            {/* Alternative CTAs below form */}
-            <div className="flex gap-3 pt-1">
+              {/* Secondary call-to-call option below form */}
               <a
-                href={phoneHref(selectedOfficeConfig?.phone || OFFICE_CONFIG[0].phone)}
-                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-white/4 hover:bg-white/8 border border-white/10 text-white rounded-2xl font-semibold transition-colors text-sm"
+                href={phoneHref(
+                  selectedOfficeConfig?.phone || OFFICE_CONFIG[0].phone,
+                )}
+                className="flex items-center justify-center gap-2 py-3 px-4 bg-white/4 hover:bg-white/8 border border-white/10 text-white/70 hover:text-white rounded-2xl font-semibold transition-colors text-sm w-full"
               >
                 <Phone className="w-4 h-4 text-teal-400" />
-                Call Instead
+                Call us instead
               </a>
-              <button
-                type="button"
-                onClick={handleBookOnline}
-                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-white/4 hover:bg-white/8 border border-white/10 text-white rounded-2xl font-semibold transition-colors text-sm"
-              >
-                <Calendar className="w-4 h-4 text-teal-400" />
-                Book Online
-              </button>
-            </div>
-          </form>
-        </div>
+            </form>
+          </div>
+        )}
 
-        {/* ── Footer ────────────────────────────────────────────────────── */}
-        <p className="text-center text-xs text-white/20 pt-2">
+        {/* ── Footer ───────────────────────────────────────────────────────── */}
+        <p className="text-center text-xs text-white/20 pt-4">
           © {new Date().getFullYear()} Hallmark Dental · Powered by Rippl
         </p>
 

@@ -1,0 +1,73 @@
+Redesign the /refer landing page to simplify the user flow and make online booking the clear primary action.
+
+GOAL
+The page should feel intuitive and conversion-focused:
+1. patient sees they were referred
+2. patient chooses office
+3. patient books online immediately
+
+The current page has too many competing CTAs and too much going on.
+
+MAKE THESE CHANGES
+
+1. PRIMARY FLOW
+- Make office selection the main action on the page
+- Each office tile should be fully clickable
+- Clicking an office tile should immediately redirect to that office’s booking URL
+- Preserve rippl_ref attribution before redirect
+
+2. CTA HIERARCHY
+- Remove the large top-level “Request Appointment” CTA from the hero
+- Keep only one clear primary action: Book Online through office selection
+- Keep call as a secondary action
+- Move the appointment request form into a fallback/secondary path
+
+3. OFFICE TILES
+For each office tile:
+- show office name
+- city
+- phone
+- clear visual “Book Online →” indicator
+- make it obvious the whole tile is clickable
+- on hover/active state, reinforce that clicking opens booking
+
+4. FALLBACK REQUEST FORM
+- Do not show the full request form by default near the top
+- Replace it with a smaller link or button:
+  “Prefer us to reach out to you instead?”
+- When clicked, expand/reveal the request form
+- Keep the form available for users who do not want to self-schedule
+
+5. CALL ACTION
+- Keep a small call button or call link on each office card
+- This should not compete visually with booking
+- Booking remains primary
+
+6. PAGE STRUCTURE
+Reorganize page sections to:
+- hero
+- office selection cards
+- optional fallback request form
+- trust/testimonials lower on page
+
+7. DESKTOP IMPROVEMENT
+Improve desktop layout so it does not look like a narrow mobile page floating in empty space.
+Use a more balanced desktop layout:
+- wider container
+- office cards in a row or grid on desktop
+- better use of horizontal space
+Keep mobile clean and strong.
+
+8. KEEP ATTRIBUTION
+Do not break existing referral attribution.
+Still:
+- validate ref code
+- store rippl_referral_code in localStorage/sessionStorage
+- append rippl_ref to booking URLs
+
+9. VERIFY
+After updating, summarize:
+- what CTAs were removed or demoted
+- how office tile click behavior works
+- how the fallback request form works
+- how desktop layout was improved
