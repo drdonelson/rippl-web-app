@@ -30,7 +30,7 @@ interface AuthContextValue {
   isStaff: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
   loginAsDemo: () => Promise<{ error: string | null }>;
-  logout: () => Promise<void>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -42,7 +42,7 @@ const AuthContext = createContext<AuthContextValue>({
   isStaff: false,
   login: async () => ({ error: null }),
   loginAsDemo: async () => ({ error: null }),
-  logout: async () => {},
+  logout: () => {},
 });
 
 async function fetchProfile(userId: string, accessToken?: string): Promise<UserProfile | null> {
@@ -113,9 +113,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: null };
   }, []);
 
-  const logout = useCallback(async () => {
-    await supabase.auth.signOut();
+  const logout = useCallback(() => {
+    // Clear local state immediately so route guards redirect on next render
+    setSession(null);
     setProfile(null);
+    // Invalidate the Supabase session server-side in the background
+    void supabase.auth.signOut();
   }, []);
 
   const isDemo = profile?.role === "demo";
