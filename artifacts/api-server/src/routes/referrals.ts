@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { referralEventsTable, referrersTable, adminTasksTable } from "@workspace/db/schema";
+import { referralEventsTable, referrersTable, adminTasksTable, rewardClaimsTable } from "@workspace/db/schema";
 import { eq, sql, and } from "drizzle-orm";
 import {
   CreateReferralBody,
@@ -140,13 +140,29 @@ router.patch("/:id/status", async (req, res) => {
         req.log.error({ err: tierErr }, "Failed to update referrer tier");
       }
 
+      // ── Generate one-time claim token ───────────────────────────────────
+      let claimToken: string = referrer.referral_code; // fallback
+      try {
+        claimToken = crypto.randomUUID();
+        await db.insert(rewardClaimsTable).values({
+          claim_token:       claimToken,
+          referral_event_id: id,
+          referrer_id:       referrer.id,
+          reward_value:      newTierData.rewardValue,
+          status:            "pending",
+        });
+      } catch (claimErr) {
+        req.log.error({ err: claimErr }, "Failed to create reward_claims record — using referral_code as fallback token");
+        claimToken = referrer.referral_code;
+      }
+
       req.log.info({ referralId: id, referrerId: referrer.id }, "Exam completed — sending reward notification to referrer");
       sendRewardNotification(
         referrer.name,
         referrer.phone,
         referrer.email ?? null,
         event.new_patient_name,
-        referrer.referral_code,
+        claimToken,
         event.office ?? "Hallmark Dental"
       ).then((result) => {
         req.log.info({ result }, "Reward notification result");

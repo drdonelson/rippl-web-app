@@ -9,7 +9,7 @@ export const rewardClaimsTable = pgTable("reward_claims", {
   // referral_event_id and referrer_id are text to match their existing PK types
   referral_event_id: text("referral_event_id").references(() => referralEventsTable.id),
   referrer_id: text("referrer_id").references(() => referrersTable.id),
-  reward_type: text("reward_type").notNull(),
+  reward_type: text("reward_type"),
   reward_value: integer("reward_value").notNull(),
   platform_fee: integer("platform_fee").default(0),
   partner_id: uuid("partner_id").references(() => localPartnersTable.id),

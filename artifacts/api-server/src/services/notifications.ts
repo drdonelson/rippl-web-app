@@ -32,7 +32,7 @@ export async function sendRewardNotification(
   claimToken: string,
   officeName: string = "Hallmark Dental"
 ) {
-  const claimUrl = `${APP_URL}/claim?ref=${claimToken}`;
+  const claimUrl = `${APP_URL}/claim?token=${claimToken}`;
   const smsBody = `Hi ${referrerName} 👋 You started a Rippl — ${newPatientName} just completed their visit at Hallmark Dental. Claim your reward here: ${claimUrl}`;
 
   const results: { sms?: string; email?: string; errors: string[] } = { errors: [] };

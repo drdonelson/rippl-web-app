@@ -1,5 +1,5 @@
 import { db } from "@workspace/db";
-import { referralEventsTable, referrersTable, officesTable } from "@workspace/db/schema";
+import { referralEventsTable, referrersTable, officesTable, rewardClaimsTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { sendRewardNotification } from "./notifications";
@@ -387,13 +387,29 @@ export async function syncOpenDental(options?: {
         logger.error({ err: tierErr }, "Failed to update referrer tier");
       }
 
+      // ── Generate one-time claim token ────────────────────────────────────
+      let claimToken: string = referrer.referral_code; // fallback — never leaks if insert fails
+      try {
+        claimToken = crypto.randomUUID();
+        await db.insert(rewardClaimsTable).values({
+          claim_token:       claimToken,
+          referral_event_id: newEvent.id,
+          referrer_id:       referrer.id,
+          reward_value:      newTierData.rewardValue,
+          status:            "pending",
+        });
+      } catch (claimErr) {
+        logger.error({ err: claimErr }, "Failed to create reward_claims record — using referral_code as fallback token");
+        claimToken = referrer.referral_code;
+      }
+
       // Notify the referrer
       sendRewardNotification(
         referrer.name,
         referrer.phone,
         referrer.email ?? null,
         newEvent.new_patient_name,
-        referrer.referral_code,
+        claimToken,
         office?.name ?? "Hallmark Dental"
       ).then((notifResult) => {
         logger.info({ notifResult, procNum }, "Notification sent for synced referral");

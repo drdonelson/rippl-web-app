@@ -12,6 +12,7 @@ export const localPartnersTable = pgTable("local_partners", {
   logo_url: text("logo_url"),
   active: boolean("active").default(true),
   redemption_type: text("redemption_type").default("pin"),
+  office_id: text("office_id"),
   created_at: timestamp("created_at").defaultNow(),
 });
 
