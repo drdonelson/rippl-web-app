@@ -11,6 +11,7 @@ import {
 import { sendRewardNotification } from "../services/notifications";
 import { scheduleOnboardingSms } from "../services/onboardingSms";
 import { checkHouseholdDuplicate } from "../services/householdDuplicate";
+import { calculateTier } from "../lib/tierUtils";
 
 const router: IRouter = Router();
 
@@ -116,6 +117,29 @@ router.patch("/:id/status", async (req, res) => {
 
   if (body.status === "Exam Completed") {
     if (referrer) {
+      // ── Update referrer tier ─────────────────────────────────────────────
+      try {
+        const newTotal    = (referrer.total_referrals ?? 0) + 1;
+        const oldTier     = referrer.tier ?? "starter";
+        const newTierData = calculateTier(newTotal);
+
+        await db
+          .update(referrersTable)
+          .set({
+            total_referrals: newTotal,
+            tier: newTierData.name,
+            reward_value: newTierData.rewardValue,
+            ...(newTierData.name !== oldTier ? { tier_unlocked_at: new Date() } : {}),
+          })
+          .where(eq(referrersTable.id, referrer.id));
+
+        if (newTierData.name !== oldTier) {
+          req.log.info({ referrerId: referrer.id, oldTier, newTier: newTierData.name }, "Tier upgraded");
+        }
+      } catch (tierErr) {
+        req.log.error({ err: tierErr }, "Failed to update referrer tier");
+      }
+
       req.log.info({ referralId: id, referrerId: referrer.id }, "Exam completed — sending reward notification to referrer");
       sendRewardNotification(
         referrer.name,

@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { useOffice, type Office } from "@/contexts/office-context";
 import { useAuth } from "@/contexts/auth-context";
 import { getPublicAppUrl, buildReferralUrl } from "@/lib/app-url";
+import { getTierConfig, getTierTooltip } from "@/lib/tier-config";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -199,6 +200,29 @@ function SortIcon({ field, sortField, sortDir }: { field: SortField; sortField: 
   return sortDir === "asc"
     ? <ArrowUp className="w-3.5 h-3.5 text-primary" />
     : <ArrowDown className="w-3.5 h-3.5 text-primary" />;
+}
+
+function TierBadge({ tier, totalReferrals }: { tier: string | null | undefined; totalReferrals: number }) {
+  const config = getTierConfig(tier);
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold border ${config.bg} ${config.color} ${config.border}`}
+      title={getTierTooltip(tier, totalReferrals)}
+    >
+      {config.emoji} {config.label}
+    </span>
+  );
+}
+
+function TierProgress({ tier, totalReferrals }: { tier: string | null | undefined; totalReferrals: number }) {
+  const config = getTierConfig(tier);
+  if (!config.nextTierAt) return null;
+  const pct = Math.min(((totalReferrals - config.minReferrals) / (config.nextTierAt - config.minReferrals)) * 100, 100);
+  return (
+    <div className="w-full h-1 bg-border rounded-full overflow-hidden mt-1.5" title={getTierTooltip(tier, totalReferrals)}>
+      <div className={`h-full rounded-full transition-all ${config.progressBg}`} style={{ width: `${pct}%` }} />
+    </div>
+  );
 }
 
 export default function Patients() {
@@ -731,6 +755,7 @@ export default function Patients() {
               <div className="divide-y divide-border">
                 {mobileSortedReferrers.map((referrer) => {
                   const code = (referrer as any).referral_code as string | null;
+                  const tier = (referrer as any).tier as string | null;
                   const n    = referrer.total_referrals;
                   return (
                     <div key={referrer.id} className="px-4 py-3 flex items-center justify-between gap-3">
@@ -738,15 +763,15 @@ export default function Patients() {
                         <StatusDot n={n} />
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-foreground truncate">{referrer.name}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
+                          <div className="mt-0.5 flex items-center gap-2 flex-wrap">
+                            <TierBadge tier={tier} totalReferrals={n} />
                             {code && (
                               <span className="font-mono px-1 py-0.5 rounded bg-background border border-border text-primary" style={{ fontSize: "10px" }}>
                                 {code}
                               </span>
                             )}
-                            <span className="tabular-nums">{n} ref{n !== 1 ? "s" : ""}</span>
-                            <span className="tabular-nums">{referrer.total_rewards_issued} reward{referrer.total_rewards_issued !== 1 ? "s" : ""}</span>
-                          </p>
+                            <span className="text-xs text-muted-foreground tabular-nums">{n} ref{n !== 1 ? "s" : ""}</span>
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -817,14 +842,21 @@ export default function Patients() {
                     const phone = (referrer as any).phone as string | null;
                     const email = (referrer as any).email as string | null;
                     const code  = (referrer as any).referral_code as string | null;
+                    const tier  = (referrer as any).tier as string | null;
                     const n     = referrer.total_referrals;
                     return (
                       <tr key={referrer.id} className="hover:bg-muted/10 transition-colors group">
-                        {/* Patient Name + status dot */}
+                        {/* Patient Name + status dot + tier */}
                         <td className="px-4 py-2.5">
                           <div className="flex items-center gap-2.5">
                             <StatusDot n={n} />
-                            <span className="font-semibold text-foreground text-sm leading-tight">{referrer.name}</span>
+                            <div>
+                              <span className="font-semibold text-foreground text-sm leading-tight">{referrer.name}</span>
+                              <div className="mt-0.5">
+                                <TierBadge tier={tier} totalReferrals={n} />
+                                <TierProgress tier={tier} totalReferrals={n} />
+                              </div>
+                            </div>
                           </div>
                         </td>
                         {/* Patient ID */}
@@ -910,6 +942,9 @@ export default function Patients() {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-xl font-semibold text-foreground">{referrer.name}</h3>
+                  <div className="mt-1.5">
+                    <TierBadge tier={(referrer as any).tier} totalReferrals={referrer.total_referrals} />
+                  </div>
                   <p className="text-sm text-muted-foreground font-mono mt-1">ID: {referrer.patient_id}</p>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg">
@@ -921,6 +956,7 @@ export default function Patients() {
                 <div className="bg-background rounded-xl p-3 border border-border">
                   <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Referrals</p>
                   <p className="text-2xl font-display font-bold text-foreground">{referrer.total_referrals}</p>
+                  <TierProgress tier={(referrer as any).tier} totalReferrals={referrer.total_referrals} />
                 </div>
                 <div className="bg-background rounded-xl p-3 border border-border">
                   <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Rewards</p>

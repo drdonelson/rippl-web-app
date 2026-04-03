@@ -3,6 +3,7 @@ import { referralEventsTable, referrersTable, officesTable } from "@workspace/db
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { sendRewardNotification } from "./notifications";
+import { calculateTier } from "../lib/tierUtils";
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const OPEN_DENTAL_URL = process.env.OPEN_DENTAL_URL;
@@ -356,6 +357,35 @@ export async function syncOpenDental(options?: {
         { procNum, newPatientPatNum, referringPatNum, referrerId: referrer.id, force },
         "Synced new referral event from Open Dental"
       );
+
+      // ── Update referrer tier ──────────────────────────────────────────────
+      try {
+        const [current] = await db
+          .select({ total_referrals: referrersTable.total_referrals, tier: referrersTable.tier })
+          .from(referrersTable)
+          .where(eq(referrersTable.id, referrer.id))
+          .limit(1);
+
+        const newTotal    = (current?.total_referrals ?? 0) + 1;
+        const oldTier     = current?.tier ?? "starter";
+        const newTierData = calculateTier(newTotal);
+
+        await db
+          .update(referrersTable)
+          .set({
+            total_referrals: newTotal,
+            tier: newTierData.name,
+            reward_value: newTierData.rewardValue,
+            ...(newTierData.name !== oldTier ? { tier_unlocked_at: new Date() } : {}),
+          })
+          .where(eq(referrersTable.id, referrer.id));
+
+        if (newTierData.name !== oldTier) {
+          logger.info({ referrerId: referrer.id, oldTier, newTier: newTierData.name }, "Tier upgraded");
+        }
+      } catch (tierErr) {
+        logger.error({ err: tierErr }, "Failed to update referrer tier");
+      }
 
       // Notify the referrer
       sendRewardNotification(
