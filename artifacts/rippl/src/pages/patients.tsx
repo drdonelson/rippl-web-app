@@ -18,6 +18,7 @@ import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useOffice, type Office } from "@/contexts/office-context";
 import { useAuth } from "@/contexts/auth-context";
+import { getPublicAppUrl, buildReferralUrl } from "@/lib/app-url";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -327,18 +328,15 @@ export default function Patients() {
     query: { queryKey: getGetReferrerQrQueryKey(qrModalReferrerId || ""), enabled: !!qrModalReferrerId && !isDemo }
   });
 
-  // Stable base URL — computed once, never triggers re-render
-  const baseUrl = useMemo(() => window.location.origin, []);
-
   // Full referral URL — only recomputed when the modal selection or fetched data changes
   const effectiveQrUrl = useMemo(() => {
     if (isDemo) {
       if (!qrModalReferrerId) return null;
       const dr = DEMO_REFERRERS.find(r => r.id === qrModalReferrerId);
-      return dr ? `${baseUrl}${BASE}/refer?ref=${dr.referral_code}` : null;
+      return dr ? buildReferralUrl(dr.referral_code, BASE) : null;
     }
     return qrData?.referral_url ?? null;
-  }, [isDemo, qrModalReferrerId, baseUrl, qrData?.referral_url]);
+  }, [isDemo, qrModalReferrerId, qrData?.referral_url]);
 
   // Send-link modal — referrer lookup from already-loaded list (no extra query)
   const sendLinkReferrer = useMemo(() => {
@@ -351,8 +349,8 @@ export default function Patients() {
     if (!sendLinkReferrer) return null;
     const code = sendLinkReferrer.referral_code as string | null;
     if (!code) return null;
-    return `${baseUrl}${BASE}/refer?ref=${encodeURIComponent(code)}`;
-  }, [sendLinkReferrer, baseUrl]);
+    return buildReferralUrl(code, BASE);
+  }, [sendLinkReferrer]);
 
   const openSendLinkModal = (referrerId: string) => {
     setSendLinkModalReferrerId(referrerId);

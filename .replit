@@ -32,3 +32,4 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
+PUBLIC_APP_URL = "https://joinrippl.com"
