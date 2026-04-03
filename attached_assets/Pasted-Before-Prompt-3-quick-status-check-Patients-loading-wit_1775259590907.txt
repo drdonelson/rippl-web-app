@@ -1,0 +1,78 @@
+Before Prompt 3 — quick status check:
+
+✅ Patients loading with correct office names
+✅ Login working
+✅ Demo working
+✅ Send link email working
+✅ Tier columns in database
+
+One thing to confirm first — do you see tier badges on the patients list? Should show 🌱 next to each patient name since they all have 0 referrals (starter tier).
+
+If yes — here's Prompt 3 — Reward Claim Page Redesign:
+Tell Replit Agent:
+
+"Redesign the reward claim page at /claim?token=XXX. This is the patient-facing page they see when they earn a referral reward.
+Layout:
+Dark navy background matching the app. Rippl logo at top.
+Header section:
+
+Patient first name: 'Congratulations [Name]! 🎉'
+Their tier badge with emoji and label: '🌱 First Rippl' or '🌊 Rippler' etc
+Their reward value: 'You've earned a $35 reward'
+Progress message from getProgressMessage(): '2 more referrals to unlock Rippler 🌊'
+
+Four reward option cards:
+Card 1 — Amazon Gift Card (highlighted as MOST POPULAR):
+
+Amazon logo
+'$35 Amazon Gift Card'
+'Delivered instantly to your email'
+'No account needed'
+Green SELECT button
+Dropdown below to choose: Amazon, Visa Prepaid, Target, Starbucks
+
+Card 2 — Local Business Reward (only show if active local partner exists for this office):
+
+Business name and category
+'$35 at [Business Name]'
+'Show this screen to redeem in store'
+SELECT button
+
+Card 3 — In-House Dental Credit:
+
+Tooth emoji icon
+'$100 credit toward your next treatment' (always $100 — highest value)
+'Applied to your account within 24 hours'
+'Most valuable option'
+SELECT button
+
+Card 4 — Charitable Donation:
+
+Heart emoji icon
+'Donate $35 to [charity name] in your name'
+"We'll send you a confirmation email'
+SELECT button
+
+On card selection:
+
+Show confirmation screen: 'Are you sure you want [reward type]?'
+Confirm button → fires the reward
+For gift card: POST to /api/rewards/claim with token and reward_type → Tango delivers instantly
+For in-house credit: POST to /api/rewards/claim → creates admin_task → show 'Your credit will be applied within 24 hours'
+For charity: POST to /api/rewards/claim → creates admin_task → show confirmation
+For local business: POST to /api/rewards/claim → generates 4-digit PIN → show PIN on screen
+
+After claiming:
+
+Show success screen with reward details
+'Share Rippl with another friend' CTA button that copies their referral link
+Progress bar showing how many referrals to next tier
+
+Token validation:
+
+If token is invalid → show 'This reward link is invalid or expired'
+If already claimed → show 'This reward has already been claimed on [date]'
+If expired (30 days) → show 'This reward expired on [date]'
+
+The claim page should work on mobile — patients will open this from their phone.
+Do not push yet — show me the component structure first."
