@@ -639,7 +639,7 @@ export default function Refer() {
 
         {/* ── Footer ───────────────────────────────────────────────────────── */}
         <p className="text-center text-xs text-white/20 pt-4">
-          © {new Date().getFullYear()} Hallmark Dental · Powered by Rippl
+          © {new Date().getFullYear()} {isDemoPage ? "Demo Office" : "Hallmark Dental"} · Powered by Rippl
         </p>
 
       </main>
