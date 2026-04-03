@@ -3,7 +3,7 @@ import { logger } from "../lib/logger";
 
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "hello@joinrippl.com";
-const REFERRAL_BASE_URL = "https://joinrippl.com";
+const REFERRAL_BASE_URL = (process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://www.joinrippl.com").replace(/\/$/, "");
 
 function getSgClient() {
   if (!SENDGRID_API_KEY) throw new Error("SENDGRID_API_KEY not configured");

@@ -54,7 +54,7 @@ router.post("/onboarding-sms", async (req, res) => {
     success: true,
     smsSid: result.smsSid,
     message: `Onboarding SMS sent to ${phone}. Check the device.`,
-    preview: `Hi ${firstName} — welcome to Hallmark Dental! We're so glad you came in. If you know anyone who could use a great dentist, share your personal link and earn a reward when they become a patient: https://joinrippl.com/refer?ref=${code} 🦷`,
+    preview: `Hi ${firstName} — welcome to Hallmark Dental! We're so glad you came in. If you know anyone who could use a great dentist, share your personal link and earn a reward when they become a patient: https://www.joinrippl.com/refer?ref=${code} 🦷`,
   });
 });
 

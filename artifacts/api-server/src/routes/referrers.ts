@@ -67,7 +67,7 @@ router.get("/:id/qr", async (req, res) => {
   }
 
   // Resolve the public base URL using the priority chain:
-  //   1. PUBLIC_APP_URL  — canonical production domain (https://joinrippl.com)
+  //   1. PUBLIC_APP_URL  — canonical production domain (https://www.joinrippl.com)
   //   2. APP_URL         — legacy secret, same purpose
   //   3. REPLIT_DOMAINS  — Replit dev preview (works in dev, not on Render)
   //   4. Hard-coded joinrippl.com — last resort so localhost never leaks into QR codes
@@ -75,7 +75,7 @@ router.get("/:id/qr", async (req, res) => {
     process.env.PUBLIC_APP_URL ||
     process.env.APP_URL ||
     (process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}` : "") ||
-    "https://joinrippl.com"
+    "https://www.joinrippl.com"
   ).replace(/\/$/, "");
 
   const referral_url = `${publicAppUrl}/refer?ref=${encodeURIComponent(referrer.referral_code)}`;

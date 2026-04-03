@@ -11,7 +11,7 @@ const basePath = process.env.BASE_PATH ?? "/";
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
 
-// PUBLIC_APP_URL — the live public domain (e.g. https://joinrippl.com).
+// PUBLIC_APP_URL — the live public domain (e.g. https://www.joinrippl.com).
 // Falls back to APP_URL if PUBLIC_APP_URL is not set, then to empty string.
 const publicAppUrl = (
   process.env.PUBLIC_APP_URL ||
@@ -35,7 +35,7 @@ export default defineConfig({
     __SUPABASE_URL__: JSON.stringify(supabaseUrl),
     __SUPABASE_ANON_KEY__: JSON.stringify(supabaseKey),
     // Bakes the public app URL into the frontend bundle at build time.
-    // Set PUBLIC_APP_URL (or APP_URL) to "https://joinrippl.com" in env vars.
+    // Set PUBLIC_APP_URL (or APP_URL) to "https://www.joinrippl.com" in env vars.
     __PUBLIC_APP_URL__: JSON.stringify(publicAppUrl),
   },
   plugins: [

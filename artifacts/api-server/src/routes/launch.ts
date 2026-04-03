@@ -283,7 +283,7 @@ router.post("/test", async (req, res) => {
   res.json({
     success: true,
     message: `Preview launch email sent to ${email}. Check inbox.`,
-    previewUrl: `https://joinrippl.com/refer?ref=${referralCode}`,
+    previewUrl: `${(process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://www.joinrippl.com").replace(/\/$/, "")}/refer?ref=${referralCode}`,
   });
 });
 

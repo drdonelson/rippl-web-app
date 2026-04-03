@@ -8,7 +8,7 @@ const TWILIO_ACCOUNT_SID  = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH_TOKEN   = process.env.TWILIO_AUTH_TOKEN;
 const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
 
-const REFERRAL_BASE_URL = "https://joinrippl.com";
+const REFERRAL_BASE_URL = (process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://www.joinrippl.com").replace(/\/$/, "");
 const ONBOARDING_DELAY_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 function getTwilioClient() {
