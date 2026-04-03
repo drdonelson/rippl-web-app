@@ -2,7 +2,7 @@ import sgMail from "@sendgrid/mail";
 import { logger } from "../lib/logger";
 
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-const FROM_EMAIL = "frontdesk@hallmarkdds.com";
+const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "hello@joinrippl.com";
 const REFERRAL_BASE_URL = "https://joinrippl.com";
 
 function getSgClient() {
