@@ -114,10 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    // Clear local state immediately so route guards redirect on next render
-    setSession(null);
     setProfile(null);
-    // Invalidate the Supabase session server-side in the background
     void supabase.auth.signOut();
   }, []);
 
