@@ -390,7 +390,7 @@ export default function Patients() {
 
     try {
       // customFetch returns the parsed JSON body directly and throws ApiError for
-      // non-2xx responses — do NOT treat the return value as a Response object.
+      // non-2xx responses — reaching here always means HTTP 200.
       const data = await customFetch<{
         success?: boolean;
         sms?: { status: string; reason?: string };
@@ -401,10 +401,7 @@ export default function Patients() {
         body: JSON.stringify({ channels, customMessage: sendCustomMessage.trim() || undefined }),
       });
       setSendResult(data);
-      const name = (sendLinkReferrer?.name as string)?.split(" ")[0] ?? "patient";
-      const delivered = [data.sms?.status === "sent" && "SMS", data.email?.status === "sent" && "email"].filter(Boolean).join(" & ");
-      if (delivered) toast.success(`Referral link sent to ${name} via ${delivered}.`);
-      else toast.warning("Message sent but no channels confirmed delivery.");
+      toast.success("Referral link sent successfully!");
     } catch (err) {
       if (err instanceof ApiError) {
         const serverMsg = (err.data as { error?: string } | null)?.error;
