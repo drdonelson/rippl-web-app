@@ -18,6 +18,8 @@ const Claim     = lazy(() => import("@/pages/claim"));
 const Refer     = lazy(() => import("@/pages/refer"));
 const Demo      = lazy(() => import("@/pages/demo"));
 const Onboard   = lazy(() => import("@/pages/onboard"));
+const Privacy   = lazy(() => import("@/pages/privacy"));
+const Terms     = lazy(() => import("@/pages/terms"));
 const NotFound  = lazy(() => import("@/pages/not-found"));
 
 const queryClient = new QueryClient({
@@ -44,6 +46,8 @@ function Router() {
         <Route path="/demo" component={Demo} />
         <Route path="/claim" component={Claim} />
         <Route path="/refer" component={Refer} />
+        <Route path="/privacy" component={Privacy} />
+        <Route path="/terms" component={Terms} />
 
         {/* Onboarding — no sidebar, auth-protected inside component */}
         <Route path="/onboard" component={Onboard} />
