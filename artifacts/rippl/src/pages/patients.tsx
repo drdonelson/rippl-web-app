@@ -230,6 +230,11 @@ export default function Patients() {
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
+  // Mobile Safari: cap visible rows to avoid OOM on large lists.
+  // Users can expand with "Show all" if needed.
+  const MOBILE_ROW_LIMIT = 50;
+  const [showAllMobile, setShowAllMobile] = useState(false);
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -410,17 +415,13 @@ export default function Patients() {
     }
   };
 
-  // Log auth state once per change, not on every render
-  useEffect(() => {
-    console.log("[Patients] isDemo:", isDemo, "authIsLoading:", authIsLoading, "role:", profile?.role);
-  }, [isDemo, authIsLoading, profile?.role]);
+  // (auth state logged removed — was causing extra effect tracking on mobile)
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // QR canvas — only fires when the URL changes (once per modal open)
   useEffect(() => {
     if (!effectiveQrUrl || !canvasRef.current) return;
-    console.log("[Patients] QR URL →", effectiveQrUrl);
     QRCode.toCanvas(canvasRef.current, effectiveQrUrl, {
       width: 256, margin: 2,
       color: { dark: '#0a1628', light: '#ffffff' }
@@ -524,6 +525,13 @@ export default function Patients() {
       }
     });
   }, [filteredReferrers, sortField, sortDir]);
+
+  // Mobile: cap rows to MOBILE_ROW_LIMIT to prevent Safari OOM on large lists.
+  // The full sortedReferrers is still used on desktop (sm+) table view.
+  const mobileSortedReferrers = useMemo(
+    () => showAllMobile ? sortedReferrers : sortedReferrers.slice(0, MOBILE_ROW_LIMIT),
+    [sortedReferrers, showAllMobile],
+  );
 
   const thSortBtn = (field: SortField, label: string, extraClass = "") => (
     <th className={cn("px-4 py-3 font-semibold text-left", extraClass)}>
@@ -706,7 +714,70 @@ export default function Patients() {
       ) : viewMode === "list" ? (
         /* ── LIST VIEW ──────────────────────────────────────────────────── */
         <>
-          <div className="bg-card border border-border rounded-2xl shadow-xl shadow-black/10 overflow-hidden">
+          {/* ── Mobile card list — replaces the 8-column table on small screens ── */}
+          {/* Prevents mobile Safari from crashing on wide tables with many rows   */}
+          <div className="block sm:hidden bg-card border border-border rounded-2xl shadow-xl shadow-black/10 overflow-hidden">
+            {mobileSortedReferrers.length === 0 ? (
+              <p className="py-12 text-center text-muted-foreground text-sm">No patients match your search.</p>
+            ) : (
+              <div className="divide-y divide-border">
+                {mobileSortedReferrers.map((referrer) => {
+                  const code = (referrer as any).referral_code as string | null;
+                  const n    = referrer.total_referrals;
+                  return (
+                    <div key={referrer.id} className="px-4 py-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <StatusDot n={n} />
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-foreground truncate">{referrer.name}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
+                            {code && (
+                              <span className="font-mono px-1 py-0.5 rounded bg-background border border-border text-primary" style={{ fontSize: "10px" }}>
+                                {code}
+                              </span>
+                            )}
+                            <span className="tabular-nums">{n} ref{n !== 1 ? "s" : ""}</span>
+                            <span className="tabular-nums">{referrer.total_rewards_issued} reward{referrer.total_rewards_issued !== 1 ? "s" : ""}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <button
+                          onClick={() => setQrModalReferrerId(referrer.id)}
+                          title="Get QR Code"
+                          className="flex items-center gap-1 px-2.5 py-1.5 bg-secondary hover:bg-muted text-foreground text-xs font-semibold rounded-lg transition-colors border border-border"
+                        >
+                          <QrCode className="w-3 h-3" />
+                          QR
+                        </button>
+                        <button
+                          onClick={() => openSendLinkModal(referrer.id)}
+                          title="Send Referral Link"
+                          className="flex items-center gap-1 px-2.5 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold rounded-lg transition-colors border border-primary/20"
+                        >
+                          <Send className="w-3 h-3" />
+                          Send
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {!showAllMobile && sortedReferrers.length > MOBILE_ROW_LIMIT && (
+              <div className="py-4 text-center border-t border-border">
+                <button
+                  onClick={() => setShowAllMobile(true)}
+                  className="text-sm text-primary hover:underline font-medium"
+                >
+                  Show all {sortedReferrers.length} patients
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* ── Desktop table — hidden on mobile to prevent Safari OOM crash ── */}
+          <div className="hidden sm:block bg-card border border-border rounded-2xl shadow-xl shadow-black/10 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <colgroup>

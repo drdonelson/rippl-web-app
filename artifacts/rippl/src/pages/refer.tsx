@@ -11,6 +11,8 @@ import {
   buildBookingUrl,
   type OfficeConfig,
 } from "@/lib/office-config";
+import { useAuth } from "@/contexts/auth-context";
+import { DEMO_CODES } from "@/lib/demo-data";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
@@ -141,6 +143,10 @@ function OfficeBookingCard({
 export default function Refer() {
   const formRef = useRef<HTMLDivElement>(null);
 
+  // Auth context — safe on public pages; isDemo is true only for the demo account.
+  // Must be called before any early returns (Rules of Hooks).
+  const { isDemo } = useAuth();
+
   // Parse query string once via lazy initializer — stable across renders
   const [refCode] = useState<string>(() => {
     try {
@@ -157,6 +163,11 @@ export default function Refer() {
 
   // Office selection (used by the fallback form)
   const [selectedOffice, setSelectedOffice] = useState<string>("");
+
+  // isDemoPage — true when the demo staff account is viewing this page OR when
+  // a known demo referral code is in the URL. Drives the "DEMO OFFICE" branding.
+  // Real patients never trigger this: their referral codes aren't in DEMO_CODES.
+  const isDemoPage = isDemo || DEMO_CODES.has(refCode);
 
   // Fallback form visibility
   const [showForm, setShowForm] = useState(false);
@@ -351,7 +362,9 @@ export default function Refer() {
             <Droplets className="w-6 h-6 text-white" />
           </div>
           <div>
-            <p className="text-xs text-teal-400 font-medium tracking-wider uppercase">Hallmark Dental</p>
+            <p className="text-xs text-teal-400 font-medium tracking-wider uppercase">
+              {isDemoPage ? "Demo Office" : "Hallmark Dental"}
+            </p>
             <p className="text-sm text-white/50">Powered by Rippl</p>
           </div>
         </div>
@@ -363,8 +376,8 @@ export default function Refer() {
               <span className="inline-block text-teal-400 text-xs font-semibold tracking-widest uppercase mb-4 px-3 py-1 bg-teal-400/8 rounded-full border border-teal-400/20">
                 Personal Invitation
               </span>
-              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3 leading-tight">
-                {referrerName} thinks<br className="hidden sm:block" /> you'll love us
+              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3 leading-tight sm:whitespace-nowrap">
+                {referrerName} thinks you'll love us
               </h1>
               <p className="text-white/55 text-base leading-relaxed">
                 Pick the location closest to you and book your first visit online — it only takes a minute.
@@ -375,8 +388,8 @@ export default function Refer() {
               <span className="inline-block text-teal-400 text-xs font-semibold tracking-widest uppercase mb-4 px-3 py-1 bg-teal-400/8 rounded-full border border-teal-400/20">
                 New Patient Welcome
               </span>
-              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3 leading-tight">
-                Book your first visit<br className="hidden sm:block" /> at Hallmark Dental
+              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3 leading-tight sm:whitespace-nowrap">
+                Book your first visit at Hallmark Dental
               </h1>
               <p className="text-white/55 text-base leading-relaxed">
                 Choose your nearest location below and book online in seconds.

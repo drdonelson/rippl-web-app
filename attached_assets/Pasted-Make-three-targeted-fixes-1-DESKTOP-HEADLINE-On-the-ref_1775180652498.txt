@@ -1,0 +1,66 @@
+Make three targeted fixes:
+
+1. DESKTOP HEADLINE
+On the /refer landing page, keep the personalized headline on one line on desktop.
+
+Requirements:
+- For valid referral codes, render:
+  “Lisa thinks you’ll love us”
+  on one line on desktop-sized screens
+- It may wrap on smaller mobile screens if necessary
+- Do this cleanly with responsive typography/layout, not by shrinking it too much
+- Keep the current improved landing page design
+
+2. DEMO-ONLY TOP BRANDING
+On the /refer landing page, show demo branding only when the app is in demo mode.
+
+Requirements:
+- If isDemo is true:
+  top branding should say:
+  “DEMO OFFICE”
+  and still show “Powered by Rippl”
+- If isDemo is false:
+  keep the real branding, e.g. Hallmark Dental
+- This should affect only the demo account / demo flow
+- Do not change live patient-facing branding
+
+Determine demo mode from the same stable demo logic already used elsewhere in the app. Reuse existing isDemo/auth logic if possible.
+
+3. MOBILE SAFARI CRASH ON IMPORT PATIENTS
+The Import Patients tab/page is crashing on mobile Safari with “A problem repeatedly occurred.”
+Debug and fix this specifically as a mobile Safari stability/performance issue.
+
+Focus on:
+- pages/patients.tsx
+- any Import Patients tab/component/modal
+- any Open Dental import preview/table/list
+
+Check and fix:
+- repeated useEffect/state update loops
+- rendering too many rows at once
+- expensive mapping/rendering on initial mount
+- duplicate queries/fetches
+- desktop-only UI rendering on mobile
+- large tables causing Safari memory crashes
+
+Required fixes:
+- lazy-load or paginate imported patient rows if large
+- on mobile, do not render huge full tables at once
+- use a compact list/card preview on small screens instead of a heavy table if needed
+- ensure import data fetch runs once, not repeatedly
+- remove unnecessary console logs in render paths
+- make sure the page loads on iPhone Safari without crashing
+
+Verification:
+- /refer desktop headline stays on one line
+- demo mode shows DEMO OFFICE in top branding
+- live mode still shows Hallmark Dental
+- Import Patients page/tab opens on mobile Safari without crash
+- importing/previewing patients is still functional
+
+At the end summarize:
+- files changed
+- exact headline/layout change
+- how demo branding is detected
+- exact root cause of the mobile crash
+- what was done to make Import Patients mobile-safe
