@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { toast } from "sonner";
-import { useGetReferrers, useCreateReferrer, useGetReferrerQr, getGetReferrerQrQueryKey, customFetch } from "@workspace/api-client-react";
+import { useGetReferrers, useCreateReferrer, useGetReferrerQr, getGetReferrerQrQueryKey, customFetch, ApiError } from "@workspace/api-client-react";
 import { DEMO_REFERRERS } from "@/lib/demo-data";
 import {
   Plus, QrCode, Search, Copy, Check, Download, RefreshCw,
@@ -389,27 +389,29 @@ export default function Patients() {
     }
 
     try {
-      const res = await customFetch(`/api/referrers/${sendLinkModalReferrerId}/send-link`, {
+      // customFetch returns the parsed JSON body directly and throws ApiError for
+      // non-2xx responses — do NOT treat the return value as a Response object.
+      const data = await customFetch<{
+        success?: boolean;
+        sms?: { status: string; reason?: string };
+        email?: { status: string; reason?: string };
+      }>(`/api/referrers/${sendLinkModalReferrerId}/send-link`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ channels, customMessage: sendCustomMessage.trim() || undefined }),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        toast.error((err as { error?: string }).error || "Send failed");
-        return;
-      }
-      const data = await res.json() as {
-        sms?: { status: string; reason?: string };
-        email?: { status: string; reason?: string };
-      };
       setSendResult(data);
       const name = (sendLinkReferrer?.name as string)?.split(" ")[0] ?? "patient";
       const delivered = [data.sms?.status === "sent" && "SMS", data.email?.status === "sent" && "email"].filter(Boolean).join(" & ");
       if (delivered) toast.success(`Referral link sent to ${name} via ${delivered}.`);
       else toast.warning("Message sent but no channels confirmed delivery.");
-    } catch {
-      toast.error("Network error. Check your connection and try again.");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        const serverMsg = (err.data as { error?: string } | null)?.error;
+        toast.error(serverMsg ?? err.message);
+      } else {
+        toast.error("Network error. Check your connection and try again.");
+      }
     } finally {
       setSendLoading(false);
     }
