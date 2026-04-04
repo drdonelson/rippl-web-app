@@ -60,8 +60,8 @@ router.post("/opendental", requireSyncAuth, async (req, res) => {
     ref_comp_unmatched:    totals.unmatched,
     errors:   totals.errors,
     message:  totals.fetched === 0
-      ? `No REF-COMP completions found across ${results.length} office(s) (${totals.od_total} total procedures checked).`
-      : `Found ${totals.fetched} REF-COMP completion(s) — ${totals.inserted} new event(s) created, ${totals.skipped} already synced, ${totals.unmatched} unmatched.${force ? " [force mode]" : ""}`,
+      ? `No R0150 (REF-COMP) completions found across ${results.length} office(s) (${totals.od_total} total procedures checked).`
+      : `Found ${totals.fetched} R0150 (REF-COMP) completion(s) — ${totals.inserted} new event(s) created, ${totals.skipped} already synced, ${totals.unmatched} unmatched.${force ? " [force mode]" : ""}`,
     ...(force ? { per_office: results.map(r => ({ ...r })) } : {}),
   });
 });

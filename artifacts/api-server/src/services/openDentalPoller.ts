@@ -370,7 +370,7 @@ export async function syncOpenDental(options?: {
   let procedures: OpenDentalProcedureLog[] = [];
   try {
     const url = new URL("/api/v1/procedurelogs", OPEN_DENTAL_URL);
-    url.searchParams.set("procCode", "REF-COMP");
+    url.searchParams.set("procCode", "R0150");
     url.searchParams.set("ProcStatus", "C");
 
     logger.info({ url: url.toString() }, "Calling Open Dental API (procedurelogs)");
@@ -390,12 +390,12 @@ export async function syncOpenDental(options?: {
     result.od_total = all.length;
 
     // OD ignores the procCode query param server-side — filter client-side
-    procedures = all.filter(p => p.procCode === "REF-COMP");
+    procedures = all.filter(p => p.procCode === "R0150");
     result.fetched = procedures.length;
 
     logger.info(
       { od_total: result.od_total, ref_comp: result.fetched },
-      "Fetched procedure logs from Open Dental — filtered to REF-COMP"
+      "Fetched procedure logs from Open Dental — filtered to R0150 (REF-COMP)"
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -479,7 +479,7 @@ export async function syncOpenDental(options?: {
           referrerId: referrer?.id ?? null,
         };
         result.debug!.push(entry);
-        logger.info(entry, "[force-debug] REF-COMP procedure");
+        logger.info(entry, "[force-debug] R0150 (REF-COMP) procedure");
       }
 
       // ── Referrer not found in our DB ──────────────────────────────────────
@@ -535,6 +535,8 @@ export async function syncOpenDental(options?: {
       );
 
       // ── Update referrer tier ──────────────────────────────────────────────
+      // Hoisted so newTierData is always defined for the claim + notification blocks below
+      let newTierData = calculateTier((referrer.total_referrals ?? 0) + 1);
       try {
         const [current] = await db
           .select({ total_referrals: referrersTable.total_referrals, tier: referrersTable.tier })
@@ -542,9 +544,9 @@ export async function syncOpenDental(options?: {
           .where(eq(referrersTable.id, referrer.id))
           .limit(1);
 
-        const newTotal    = (current?.total_referrals ?? 0) + 1;
-        const oldTier     = current?.tier ?? "starter";
-        const newTierData = calculateTier(newTotal);
+        const newTotal = (current?.total_referrals ?? 0) + 1;
+        const oldTier  = current?.tier ?? "starter";
+        newTierData    = calculateTier(newTotal);
 
         await db
           .update(referrersTable)
