@@ -68,6 +68,7 @@ export async function sendAmazonRewardLink(
     },
   };
 
+  logger.info({ customerIdentifier: TANGO_CUSTOMER_ID }, "Tango customer identifier being used");
   logger.info({ externalRefId, recipientEmail: recipient.email, amount: amountDollars }, "Sending Tango reward link");
 
   try {
