@@ -24,6 +24,14 @@ export function getTierConfig(tierName: string | null | undefined): TierDisplay 
   return TIER_CONFIG.find(t => t.name === tierName) ?? TIER_CONFIG[0]
 }
 
+export function getProgressMessage(tierName: string | null | undefined, totalReferrals: number): string {
+  const config = getTierConfig(tierName)
+  if (!config.nextTierAt) return `You've reached the highest tier! 🏆`
+  const remaining = config.nextTierAt - totalReferrals
+  const nextEmoji = TIER_CONFIG.find(t => t.label === config.nextTierLabel)?.emoji ?? ''
+  return `${remaining} more referral${remaining !== 1 ? 's' : ''} to unlock ${config.nextTierLabel} ${nextEmoji}`
+}
+
 export function getTierTooltip(tierName: string | null | undefined, totalReferrals: number): string {
   const config = getTierConfig(tierName)
   if (!config.nextTierAt) {
