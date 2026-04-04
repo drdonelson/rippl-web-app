@@ -47,18 +47,21 @@ router.get("/by-token/:token", async (req, res) => {
     db.select().from(referrersTable)
       .where(eq(referrersTable.id, claim.referrer_id!))
       .then(r => r[0] ?? null),
-    db.select().from(referralEventsTable)
-      .where(eq(referralEventsTable.id, claim.referral_event_id!))
-      .then(r => r[0] ?? null),
+    claim.referral_event_id
+      ? db.select().from(referralEventsTable)
+          .where(eq(referralEventsTable.id, claim.referral_event_id))
+          .then(r => r[0] ?? null)
+      : Promise.resolve(null),
   ]);
 
   let localPartner = null;
-  if (referral?.office_id) {
+  const officeId = referral?.office_id ?? null;
+  if (officeId) {
     const [partner] = await db
       .select()
       .from(localPartnersTable)
       .where(and(
-        eq(localPartnersTable.office_id, referral.office_id),
+        eq(localPartnersTable.office_id, officeId),
         eq(localPartnersTable.active, true),
       ))
       .limit(1);

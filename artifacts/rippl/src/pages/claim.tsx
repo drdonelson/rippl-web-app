@@ -325,7 +325,7 @@ export default function Claim() {
     lewisburg:  "Hallmark Dental – Lewisburg",
     greenbrier: "Hallmark Dental – Greenbrier",
   };
-  const office = OFFICE_NAMES[referral.office] ?? referral.office ?? "Hallmark Dental";
+  const office = OFFICE_NAMES[referral?.office ?? ""] ?? referral?.office ?? "Hallmark Dental";
 
   // ── Success ───────────────────────────────────────────────────────────────
   if (phase === "success" && result) {
@@ -518,7 +518,7 @@ export default function Claim() {
             {getProgressMessage(referrer.tier, referrer.total_referrals)}
           </p>
           <p className="text-slate-500 text-xs mt-1">
-            {referral.new_patient_name} just completed their visit — pick your reward below.
+            {referral?.new_patient_name ?? "a friend"} just completed their visit — pick your reward below.
           </p>
         </div>
 
