@@ -34,7 +34,7 @@ router.use("/referrers", requireAuth, referrersRouter);
 router.use("/referrals", requireAuth, referralsRouter);
 router.use("/rewards", requireAuth, rewardsRouter);
 router.use("/dashboard", requireAuth, dashboardRouter);
-router.use("/sync", requireAuth, syncRouter);
+router.use("/sync", syncRouter);
 router.use("/admin-tasks", requireAuth, adminTasksRouter);
 router.use("/opendental", requireAuth, openDentalRouter);
 router.use("/import", requireAuth, importJobsRouter);

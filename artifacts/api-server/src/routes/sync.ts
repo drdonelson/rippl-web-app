@@ -1,10 +1,31 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { syncAllOffices } from "../services/openDentalPoller";
+import { requireAuth } from "../middleware/auth";
 
 const router: IRouter = Router();
 
+// Dual-auth: accept either X-Sync-Secret header OR a valid Supabase Bearer token.
+// This lets automated scripts (cron, Render deploy hooks, etc.) call the sync
+// endpoint without a user session, while still protecting it from anonymous access.
+function requireSyncAuth(req: Request, res: Response, next: NextFunction) {
+  const secret = process.env.SYNC_SECRET;
+  const provided = req.headers["x-sync-secret"];
+
+  if (secret && provided && provided === secret) {
+    // Secret-key path — skip Supabase auth entirely
+    return next();
+  }
+
+  if (!secret) {
+    req.log?.warn("SYNC_SECRET is not configured — falling back to Supabase auth only");
+  }
+
+  // Fall through to standard Supabase Bearer-token auth
+  requireAuth(req, res, next);
+}
+
 // POST /api/sync/opendental — manually trigger an Open Dental sync across all active offices
-router.post("/opendental", async (req, res) => {
+router.post("/opendental", requireSyncAuth, async (req, res) => {
   const force = req.body?.force === true;
   req.log.info({ force }, "Manual Open Dental sync triggered");
 
