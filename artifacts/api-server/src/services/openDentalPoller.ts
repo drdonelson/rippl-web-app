@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { sendRewardNotification } from "./notifications";
 import { calculateTier } from "../lib/tierUtils";
+import { scheduleOnboardingSms } from "./onboardingSms";
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const OPEN_DENTAL_URL = process.env.OPEN_DENTAL_URL;
@@ -44,6 +45,27 @@ interface OdReferral {
   PatNum?: number;         // Referring patient's PatNum (0 if not a patient)
   LName?: string;
   FName?: string;
+  [key: string]: unknown;
+}
+
+// Appointment record returned by GET /api/v1/appointments
+interface OdAppointment {
+  AptNum: number;
+  PatNum: number;
+  AptDateTime: string;
+  AptStatus: number;      // 2 = Complete
+  [key: string]: unknown;
+}
+
+// Patient record returned by GET /api/v1/patients/{PatNum}
+interface OdPatient {
+  PatNum: number;
+  FName: string;
+  LName: string;
+  HmPhone: string;        // Home phone
+  WirelessPhone: string;  // Mobile / wireless phone (preferred for SMS)
+  Email: string;
+  MedicaidID: string;     // Non-empty = Medicaid patient — excluded per Anti-Kickback
   [key: string]: unknown;
 }
 
@@ -160,6 +182,160 @@ async function lookupReferringPatNum(
 
   return { refAttaches, referralRecord, referringPatNum };
 }
+
+// ── Appointment-based onboarding helpers ──────────────────────────────────────
+
+/**
+ * GET /api/v1/appointments?Status=2&dateStart=...&dateEnd=...
+ * Returns completed appointments in the given date window.
+ */
+async function fetchCompletedAppointments(
+  headers: Record<string, string>,
+  dateStart: string,
+  dateEnd: string
+): Promise<OdAppointment[]> {
+  const url = new URL("/api/v1/appointments", OPEN_DENTAL_URL!);
+  url.searchParams.set("Status", "2");           // 2 = Complete in Open Dental
+  url.searchParams.set("dateStart", dateStart);
+  url.searchParams.set("dateEnd", dateEnd);
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers,
+    signal: AbortSignal.timeout(15_000),
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`appointments returned ${response.status}: ${body}`);
+  }
+
+  const data = await response.json();
+  return Array.isArray(data) ? (data as OdAppointment[]) : [];
+}
+
+/**
+ * GET /api/v1/patients/{PatNum}
+ * Returns the full patient record including contact info and MedicaidID.
+ */
+async function fetchOdPatient(
+  patNum: number,
+  headers: Record<string, string>
+): Promise<OdPatient | null> {
+  const url = new URL(`/api/v1/patients/${patNum}`, OPEN_DENTAL_URL!);
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers,
+    signal: AbortSignal.timeout(10_000),
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`patients/${patNum} returned ${response.status}: ${body}`);
+  }
+
+  const data = await response.json();
+  return (data as OdPatient) ?? null;
+}
+
+/**
+ * Post-visit onboarding sweep.
+ *
+ * Fetches completed appointments for yesterday + today, then for each
+ * unique patient who hasn't yet received an onboarding message, schedules
+ * the 2-hour delayed SMS via the existing scheduleOnboardingSms() function.
+ *
+ * Exclusions (per Anti-Kickback / opt-out rules):
+ *   - Patients with no phone number on file
+ *   - Medicaid patients (MedicaidID !== "")
+ *   - Patients already flagged onboarding_sms_sent = true
+ */
+async function runOnboardingSweep(
+  headers: Record<string, string>,
+  officeId: string
+): Promise<void> {
+  const dateEnd   = new Date().toISOString().split("T")[0];
+  const dateStart = new Date(Date.now() - 86_400_000).toISOString().split("T")[0];
+
+  logger.info({ officeId, dateStart, dateEnd }, "[onboarding-sweep] Starting appointment sweep");
+
+  let appointments: OdAppointment[] = [];
+  try {
+    appointments = await fetchCompletedAppointments(headers, dateStart, dateEnd);
+  } catch (err) {
+    logger.error({ err, officeId }, "[onboarding-sweep] Failed to fetch appointments — aborting sweep");
+    return;
+  }
+
+  // Deduplicate PatNums within this poll run (one patient can have multiple appointments)
+  const seenPatNums = new Set<number>();
+  let newOnboardings = 0;
+
+  for (const apt of appointments) {
+    const patNum = apt.PatNum;
+    if (!patNum || seenPatNums.has(patNum)) continue;
+    seenPatNums.add(patNum);
+
+    try {
+      // Fetch patient details from OD to get contact info + Medicaid status
+      const patient = await fetchOdPatient(patNum, headers);
+      if (!patient) continue;
+
+      // Prefer wireless/mobile phone for SMS; fall back to home phone
+      const phone = (patient.WirelessPhone || patient.HmPhone || "").trim();
+
+      // Must have a phone number — scheduleOnboardingSms is SMS-primary
+      if (!phone) continue;
+
+      // Exclude Medicaid patients (Anti-Kickback compliance)
+      if (patient.MedicaidID && patient.MedicaidID.trim() !== "") {
+        logger.debug({ patNum, officeId }, "[onboarding-sweep] Skipping Medicaid patient");
+        continue;
+      }
+
+      // Check our referrers table by phone — skip if already onboarded
+      const existing = await db
+        .select({ onboarding_sms_sent: referrersTable.onboarding_sms_sent })
+        .from(referrersTable)
+        .where(eq(referrersTable.phone, phone));
+
+      if (existing.length > 0 && existing[0].onboarding_sms_sent) {
+        logger.debug({ patNum, officeId }, "[onboarding-sweep] Already onboarded — skipping");
+        continue;
+      }
+
+      const fullName = `${patient.FName ?? ""} ${patient.LName ?? ""}`.trim() || "Patient";
+
+      // Hand off to the existing service — it handles referrer creation,
+      // the 2-hour setTimeout, and setting onboarding_sms_sent = true on delivery.
+      await scheduleOnboardingSms({
+        newPatientName:  fullName,
+        newPatientPhone: phone,
+        referralEventId: `apt-${apt.AptNum}`,
+      });
+
+      logger.info(
+        { patNum, officeId, fullName },
+        "[onboarding-sweep] Post-visit onboarding scheduled"
+      );
+
+      newOnboardings++;
+    } catch (err) {
+      logger.error(
+        { err, patNum, officeId },
+        "[onboarding-sweep] Error processing patient — continuing"
+      );
+    }
+  }
+
+  logger.info(
+    { officeId, appointmentsFound: appointments.length, newOnboardings },
+    "Appointment onboarding sweep complete"
+  );
+}
+
+// ── Main sync ─────────────────────────────────────────────────────────────────
 
 export async function syncOpenDental(options?: {
   force?: boolean;
@@ -426,6 +602,16 @@ export async function syncOpenDental(options?: {
   }
 
   logger.info(result, "Open Dental sync complete");
+
+  // ── Step 3: Post-visit onboarding sweep ───────────────────────────────────
+  // Runs after REF-COMP processing. Errors here are isolated — they never
+  // affect the SyncResult returned to the caller.
+  try {
+    await runOnboardingSweep(headers, office?.id ?? "default");
+  } catch (err) {
+    logger.error({ err }, "[onboarding-sweep] Uncaught sweep error — REF-COMP results unaffected");
+  }
+
   return result;
 }
 
