@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Droplets, CheckCircle2, Loader2, AlertTriangle, Clock, Gift, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getTierConfig, getProgressMessage, TIER_CONFIG } from "@/lib/tier-config";
+import InsuranceCards from "@/components/insurance-cards";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 const PUBLIC_APP_URL = "https://www.joinrippl.com";
@@ -403,7 +404,7 @@ export default function Claim() {
             <button
               onClick={handleCopy}
               className={cn(
-                "w-full py-3.5 rounded-2xl font-semibold text-sm transition-all",
+                "w-full py-3.5 rounded-2xl font-semibold text-sm transition-all mb-1",
                 copied
                   ? "bg-teal-600 text-white"
                   : "bg-teal-500/20 border border-teal-500/40 text-teal-400 hover:bg-teal-500/30",
@@ -411,7 +412,10 @@ export default function Claim() {
             >
               {copied ? "✓ Link Copied!" : "📤 Share Rippl with another friend"}
             </button>
-            <p className="text-slate-600 text-xs mt-2">Copies your personal referral link</p>
+            <p className="text-slate-600 text-xs mt-1 mb-6">Copies your personal referral link</p>
+
+            {/* Insurance / Financial */}
+            <InsuranceCards officeKey={referral?.office} className="w-full text-left" />
           </motion.div>
         </div>
       </div>

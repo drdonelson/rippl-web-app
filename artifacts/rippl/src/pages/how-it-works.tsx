@@ -3,6 +3,7 @@ import { Droplets, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { TIER_CONFIG } from "@/lib/tier-config";
+import InsuranceCards from "@/components/insurance-cards";
 
 const STEPS = [
   {
@@ -208,6 +209,9 @@ export default function HowItWorks() {
             ))}
           </div>
         </motion.section>
+
+        {/* ── Insurance / Financial ────────────────────────────────────────── */}
+        <InsuranceCards />
 
         {/* ── Footer CTA ──────────────────────────────────────────────────── */}
         <motion.div
