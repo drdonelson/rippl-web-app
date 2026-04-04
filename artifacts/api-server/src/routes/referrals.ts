@@ -141,7 +141,7 @@ router.patch("/:id/status", async (req, res) => {
       }
 
       // ── Generate one-time claim token ───────────────────────────────────
-      let claimToken: string = referrer.referral_code; // fallback
+      let claimToken: string = referrer.referral_code; // last-resort fallback
       try {
         claimToken = crypto.randomUUID();
         await db.insert(rewardClaimsTable).values({
@@ -152,8 +152,23 @@ router.patch("/:id/status", async (req, res) => {
           status:            "pending",
         });
       } catch (claimErr) {
-        req.log.error({ err: claimErr }, "Failed to create reward_claims record — using referral_code as fallback token");
-        claimToken = referrer.referral_code;
+        // Insert failed (likely duplicate referral_event_id) — look up the existing claim token
+        try {
+          const [existing] = await db
+            .select({ claim_token: rewardClaimsTable.claim_token })
+            .from(rewardClaimsTable)
+            .where(eq(rewardClaimsTable.referral_event_id, id));
+          if (existing?.claim_token) {
+            claimToken = existing.claim_token;
+            req.log.info({ claimToken, referralId: id }, "Using existing claim token for event");
+          } else {
+            req.log.error({ err: claimErr }, "Failed to create reward_claims record and no existing token found — falling back to referral_code");
+            claimToken = referrer.referral_code;
+          }
+        } catch {
+          req.log.error({ err: claimErr }, "Failed to create or look up reward_claims record — falling back to referral_code");
+          claimToken = referrer.referral_code;
+        }
       }
 
       req.log.info({ referralId: id, referrerId: referrer.id }, "Exam completed — sending reward notification to referrer");

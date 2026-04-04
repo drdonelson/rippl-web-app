@@ -593,7 +593,7 @@ export async function syncOpenDental(options?: {
       }
 
       // ── Generate one-time claim token ────────────────────────────────────
-      let claimToken: string = referrer.referral_code; // fallback — never leaks if insert fails
+      let claimToken: string = referrer.referral_code; // last-resort fallback
       try {
         claimToken = crypto.randomUUID();
         await db.insert(rewardClaimsTable).values({
@@ -604,8 +604,23 @@ export async function syncOpenDental(options?: {
           status:            "pending",
         });
       } catch (claimErr) {
-        logger.error({ err: claimErr }, "Failed to create reward_claims record — using referral_code as fallback token");
-        claimToken = referrer.referral_code;
+        // Insert failed (likely duplicate referral_event_id) — look up the existing claim token
+        try {
+          const [existing] = await db
+            .select({ claim_token: rewardClaimsTable.claim_token })
+            .from(rewardClaimsTable)
+            .where(eq(rewardClaimsTable.referral_event_id, newEvent.id));
+          if (existing?.claim_token) {
+            claimToken = existing.claim_token;
+            logger.info({ claimToken, eventId: newEvent.id }, "Using existing claim token for event");
+          } else {
+            logger.error({ err: claimErr }, "Failed to create reward_claims record and no existing token found — falling back to referral_code");
+            claimToken = referrer.referral_code;
+          }
+        } catch {
+          logger.error({ err: claimErr }, "Failed to create or look up reward_claims record — falling back to referral_code");
+          claimToken = referrer.referral_code;
+        }
       }
 
       // Notify the referrer
