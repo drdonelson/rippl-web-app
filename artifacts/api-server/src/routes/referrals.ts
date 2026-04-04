@@ -163,7 +163,8 @@ router.patch("/:id/status", async (req, res) => {
         referrer.email ?? null,
         event.new_patient_name,
         claimToken,
-        event.office ?? "Hallmark Dental"
+        event.office ?? "Hallmark Dental",
+        newTierData.rewardValue
       ).then((result) => {
         req.log.info({ result }, "Reward notification result");
       }).catch((err) => {

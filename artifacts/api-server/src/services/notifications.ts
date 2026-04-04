@@ -30,7 +30,8 @@ export async function sendRewardNotification(
   referrerEmail: string | null | undefined,
   newPatientName: string,
   claimToken: string,
-  officeName: string = "Hallmark Dental"
+  officeName: string = "Hallmark Dental",
+  rewardValue: number = 50
 ) {
   const claimUrl = `${APP_URL}/claim?token=${claimToken}`;
   const smsBody = `Hi ${referrerName} 👋 You started a Rippl — ${newPatientName} just completed their visit at Hallmark Dental. Claim your reward here: ${claimUrl}`;
@@ -61,8 +62,8 @@ export async function sendRewardNotification(
       await sg.send({
         to: referrerEmail,
         from: { email: SENDGRID_FROM_EMAIL, name: `${officeName} via Rippl` },
-        subject: `You started a Rippl 🎊 — claim your reward, ${referrerName}!`,
-        html: buildEmailHtml(referrerName, newPatientName, claimUrl, officeName),
+        subject: `You started a Rippl 🎊`,
+        html: buildEmailHtml(referrerName, newPatientName, claimUrl, officeName, rewardValue),
         // No text fallback — HTML only
         trackingSettings: {
           clickTracking: { enable: false, enableText: false },
@@ -82,8 +83,10 @@ export async function sendRewardNotification(
   return results;
 }
 
-function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: string, officeName: string): string {
+function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: string, officeName: string, rewardValue: number = 50): string {
   const practice = officeName;
+  const font     = "system-ui,-apple-system,sans-serif";
+  const rv       = rewardValue;
 
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
@@ -92,32 +95,31 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>You started a Rippl &#x1F38A;</title>
 </head>
-<body style="margin:0;padding:0;background-color:#0a1628;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<body style="margin:0;padding:0;background-color:#060e1a;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
 
   <!-- OUTER WRAPPER -->
-  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#060e1a;">
     <tr>
       <td align="center" style="padding:40px 16px;">
 
         <!-- CARD -->
-        <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;width:100%;background-color:#0f1f38;border:1px solid #1e3a5f;">
+        <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;width:100%;background-color:#0a1628;border:1px solid #1e3352;">
 
           <!-- ── HEADER ── -->
           <tr>
-            <td align="center" style="padding:36px 40px 28px;background-color:#0a1628;border-bottom:1px solid #1e3a5f;">
-              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:32px;font-weight:700;color:#0d9488;letter-spacing:2px;line-height:1;">Rippl</p>
-              <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#64748b;">Hallmark Dental</p>
+            <td align="center" style="padding:36px 40px 28px;background-color:#060e1a;border-bottom:1px solid #1e3352;">
+              <p style="margin:0;font-family:${font};font-size:32px;font-weight:700;color:#2dd4bf;letter-spacing:2px;line-height:1;">Rippl</p>
+              <p style="margin:8px 0 0;font-family:${font};font-size:11px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#64748b;">Hallmark Dental</p>
             </td>
           </tr>
 
           <!-- ── HERO ── -->
           <tr>
             <td align="center" style="padding:40px 40px 8px;background-color:#0f1f38;">
-              <p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;font-size:28px;font-weight:700;color:#ffffff;line-height:1.3;">You started a Rippl &#x1F38A;</p>
-              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:16px;color:#94a3b8;line-height:1.7;">
-                Hi <span style="color:#ffffff;font-weight:700;">${escHtml(referrerName)}</span> &#8212;<br/>
-                <span style="color:#ffffff;font-weight:700;">${escHtml(newPatientName)}</span> just completed their visit at<br/>
-                <span style="color:#0d9488;font-weight:700;">${escHtml(practice)}</span>.<br/><br/>
+              <p style="margin:0 0 16px;font-family:${font};font-size:28px;font-weight:700;color:#f8fafc;line-height:1.3;">You started a Rippl &#x1F38A;</p>
+              <p style="margin:0;font-family:${font};font-size:16px;color:#94a3b8;line-height:1.7;">
+                Hi <span style="color:#f8fafc;font-weight:700;">${escHtml(referrerName)}</span> &#8212;<br/>
+                <span style="color:#f8fafc;font-weight:700;">${escHtml(newPatientName)}</span> just completed their visit at Hallmark Dental.<br/><br/>
                 As a thank you for your referral, choose your reward below.
               </p>
             </td>
@@ -125,10 +127,10 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
 
           <!-- DIVIDER -->
           <tr>
-            <td style="padding:32px 40px 0;">
+            <td style="padding:32px 40px 0;background-color:#0f1f38;">
               <table border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
-                  <td style="height:1px;background-color:#1e3a5f;font-size:0;line-height:0;">&nbsp;</td>
+                  <td style="height:1px;background-color:#1e3352;font-size:0;line-height:0;">&nbsp;</td>
                 </tr>
               </table>
             </td>
@@ -136,59 +138,59 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
 
           <!-- CHOOSE YOUR REWARD LABEL -->
           <tr>
-            <td align="center" style="padding:24px 40px 16px;">
-              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#64748b;">Choose your reward</p>
+            <td align="center" style="padding:24px 40px 16px;background-color:#0f1f38;">
+              <p style="margin:0;font-family:${font};font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#64748b;">Choose your reward</p>
             </td>
           </tr>
 
-          <!-- ── 3 REWARD CARDS (each is a fully clickable anchor wrapping td content) ── -->
+          <!-- ── 3 REWARD CARDS ── -->
           <tr>
-            <td style="padding:0 32px 32px;">
+            <td style="padding:0 32px 32px;background-color:#0f1f38;">
               <table border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
 
                   <!-- $100 In-House Credit -->
                   <td width="33%" valign="top" style="padding:0 6px 0 0;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:2px solid #1e3a5f;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:2px solid #1e3352;">
                       <tr>
                         <td align="center" style="padding:0;">
                           <a href="${claimUrl}?reward=in-house-credit" target="_blank" style="display:block;text-decoration:none;color:inherit;padding:20px 12px;">
-                            <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1;">&#x1F48E;</p>
-                            <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#0d9488;line-height:1;">$100</p>
-                            <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#ffffff;line-height:1.3;">In-House Credit</p>
-                            <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;line-height:1.5;">Applied to your next visit</p>
+                            <p style="margin:0 0 8px;font-family:${font};font-size:26px;line-height:1;">&#x1F48E;</p>
+                            <p style="margin:0 0 4px;font-family:${font};font-size:22px;font-weight:700;color:#2dd4bf;line-height:1;">$100</p>
+                            <p style="margin:0 0 6px;font-family:${font};font-size:12px;font-weight:700;color:#f8fafc;line-height:1.3;">In-House Credit</p>
+                            <p style="margin:0;font-family:${font};font-size:11px;color:#64748b;line-height:1.5;">Applied to your next visit</p>
                           </a>
                         </td>
                       </tr>
                     </table>
                   </td>
 
-                  <!-- $50 Amazon Gift Card -->
+                  <!-- Gift Card -->
                   <td width="33%" valign="top" style="padding:0 3px;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:2px solid #1e3a5f;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:2px solid #1e3352;">
                       <tr>
                         <td align="center" style="padding:0;">
                           <a href="${claimUrl}?reward=amazon-gift-card" target="_blank" style="display:block;text-decoration:none;color:inherit;padding:20px 12px;">
-                            <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1;">&#x1F4E6;</p>
-                            <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#0d9488;line-height:1;">$50</p>
-                            <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#ffffff;line-height:1.3;">Amazon Gift Card</p>
-                            <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;line-height:1.5;">Sent to your email</p>
+                            <p style="margin:0 0 8px;font-family:${font};font-size:26px;line-height:1;">&#x1F381;</p>
+                            <p style="margin:0 0 4px;font-family:${font};font-size:22px;font-weight:700;color:#2dd4bf;line-height:1;">$${rv}</p>
+                            <p style="margin:0 0 6px;font-family:${font};font-size:12px;font-weight:700;color:#f8fafc;line-height:1.3;">Gift Card</p>
+                            <p style="margin:0;font-family:${font};font-size:11px;color:#64748b;line-height:1.5;">Sent to your email</p>
                           </a>
                         </td>
                       </tr>
                     </table>
                   </td>
 
-                  <!-- $50 Charity Donation -->
+                  <!-- Charity Donation -->
                   <td width="33%" valign="top" style="padding:0 0 0 6px;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:2px solid #1e3a5f;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:2px solid #1e3352;">
                       <tr>
                         <td align="center" style="padding:0;">
                           <a href="${claimUrl}?reward=charity-donation" target="_blank" style="display:block;text-decoration:none;color:inherit;padding:20px 12px;">
-                            <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1;">&#x1F49B;</p>
-                            <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#0d9488;line-height:1;">$50</p>
-                            <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#ffffff;line-height:1.3;">Charity Donation</p>
-                            <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;line-height:1.5;">We donate on your behalf</p>
+                            <p style="margin:0 0 8px;font-family:${font};font-size:26px;line-height:1;">&#x1F49B;</p>
+                            <p style="margin:0 0 4px;font-family:${font};font-size:22px;font-weight:700;color:#2dd4bf;line-height:1;">$${rv}</p>
+                            <p style="margin:0 0 6px;font-family:${font};font-size:12px;font-weight:700;color:#f8fafc;line-height:1.3;">Charity Donation</p>
+                            <p style="margin:0;font-family:${font};font-size:11px;color:#64748b;line-height:1.5;">We donate on your behalf</p>
                           </a>
                         </td>
                       </tr>
@@ -202,29 +204,29 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
 
           <!-- FALLBACK LINK -->
           <tr>
-            <td align="center" style="padding:0 40px 32px;">
-              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#475569;line-height:1.6;">
+            <td align="center" style="padding:0 40px 16px;background-color:#0a1628;">
+              <p style="margin:0;font-family:${font};font-size:12px;color:#475569;line-height:1.6;">
                 Cards not clickable? Visit:<br/>
-                <a href="${claimUrl}" target="_blank" style="color:#0d9488;text-decoration:underline;word-break:break-all;">${escHtml(claimUrl)}</a>
+                <a href="${claimUrl}" target="_blank" style="color:#2dd4bf;text-decoration:underline;word-break:break-all;">${escHtml(claimUrl)}</a>
               </p>
             </td>
           </tr>
 
           <!-- HOW IT WORKS LINK -->
           <tr>
-            <td align="center" style="padding:0 40px 24px;">
-              <a href="https://www.joinrippl.com/how-it-works" target="_blank" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0d9488;text-decoration:none;">
-                Learn how the referral program works →
+            <td align="center" style="padding:0 40px 24px;background-color:#0a1628;">
+              <a href="https://www.joinrippl.com/how-it-works" target="_blank" style="font-family:${font};font-size:13px;color:#2dd4bf;text-decoration:none;">
+                Learn how the referral program works &#8594;
               </a>
             </td>
           </tr>
 
           <!-- DIVIDER -->
           <tr>
-            <td style="padding:0 40px;">
+            <td style="padding:0 40px;background-color:#0a1628;">
               <table border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
-                  <td style="height:1px;background-color:#1e3a5f;font-size:0;line-height:0;">&nbsp;</td>
+                  <td style="height:1px;background-color:#1e3352;font-size:0;line-height:0;">&nbsp;</td>
                 </tr>
               </table>
             </td>
@@ -232,9 +234,9 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
 
           <!-- ── FOOTER ── -->
           <tr>
-            <td align="center" style="padding:24px 40px 28px;background-color:#0a1628;">
-              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#475569;line-height:1.7;">
-                Sent with <span style="color:#0d9488;font-weight:700;">Rippl</span> by ${escHtml(practice)}<br/>
+            <td align="center" style="padding:24px 40px 28px;background-color:#060e1a;">
+              <p style="margin:0;font-family:${font};font-size:12px;color:#475569;line-height:1.7;">
+                Sent with <span style="color:#2dd4bf;font-weight:700;">Rippl</span> by Hallmark Dental<br/>
                 You&#39;re receiving this because you referred a patient to our practice.
               </p>
             </td>

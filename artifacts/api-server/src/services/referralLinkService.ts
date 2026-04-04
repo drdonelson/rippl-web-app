@@ -88,87 +88,88 @@ function escHtml(s: string): string {
 function buildEmailHtml(referrerName: string, referralUrl: string): string {
   const firstName = escHtml(referrerName.split(" ")[0]);
   const safeUrl   = escHtml(referralUrl);
+  const font      = "system-ui,-apple-system,sans-serif";
 
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Your Hallmark Dental referral link</title>
+  <title>Your personal referral link is ready</title>
 </head>
-<body style="margin:0;padding:0;background-color:#0a1628;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<body style="margin:0;padding:0;background-color:#060e1a;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
 
-  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#060e1a;">
     <tr>
       <td align="center" style="padding:40px 16px;">
 
-        <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;width:100%;background-color:#0f1f38;border:1px solid #1e3a5f;border-radius:12px;overflow:hidden;">
+        <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;width:100%;background-color:#0a1628;border:1px solid #1e3352;">
 
           <!-- HEADER -->
           <tr>
-            <td align="center" style="padding:32px 40px 24px;background-color:#0a1628;border-bottom:1px solid #1e3a5f;">
-              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:28px;font-weight:700;color:#0d9488;letter-spacing:2px;line-height:1;">Rippl</p>
-              <p style="margin:6px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#64748b;">Hallmark Dental</p>
+            <td align="center" style="padding:32px 40px 24px;background-color:#060e1a;border-bottom:1px solid #1e3352;">
+              <p style="margin:0;font-family:${font};font-size:28px;font-weight:700;color:#2dd4bf;letter-spacing:2px;line-height:1;">Rippl</p>
+              <p style="margin:6px 0 0;font-family:${font};font-size:11px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#64748b;">Hallmark Dental</p>
             </td>
           </tr>
 
           <!-- HERO -->
           <tr>
             <td align="center" style="padding:40px 40px 8px;background-color:#0f1f38;">
-              <p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;font-size:26px;font-weight:700;color:#ffffff;line-height:1.3;">
+              <p style="margin:0 0 16px;font-family:${font};font-size:26px;font-weight:700;color:#f8fafc;line-height:1.3;">
                 Your personal referral link is ready
               </p>
-              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:16px;color:#94a3b8;line-height:1.7;">
-                Hi <span style="color:#ffffff;font-weight:700;">${firstName}</span> &#8212;<br/>
-                Thanks for being a Hallmark Dental patient. If you have a friend or family member looking for a great dental home, share your link below and we'll take great care of them.
+              <p style="margin:0;font-family:${font};font-size:16px;color:#94a3b8;line-height:1.7;">
+                Hi <span style="color:#f8fafc;font-weight:700;">${firstName}</span> &#8212;<br/>
+                Thanks for being a Hallmark Dental patient. Share your link with friends and family and earn rewards when they complete their first visit.
               </p>
             </td>
           </tr>
 
           <!-- DIVIDER -->
           <tr>
-            <td style="padding:32px 40px 0;">
+            <td style="padding:32px 40px 0;background-color:#0f1f38;">
               <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                <tr><td style="height:1px;background-color:#1e3a5f;font-size:0;line-height:0;">&nbsp;</td></tr>
+                <tr><td style="height:1px;background-color:#1e3352;font-size:0;line-height:0;">&nbsp;</td></tr>
               </table>
             </td>
           </tr>
 
           <!-- PRIMARY CTA -->
           <tr>
-            <td align="center" style="padding:36px 40px 16px;">
+            <td align="center" style="padding:36px 40px 16px;background-color:#0f1f38;">
               <a href="${safeUrl}"
                 target="_blank"
-                style="display:inline-block;background-color:#0d9488;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;text-decoration:none;padding:16px 48px;border-radius:8px;letter-spacing:0.5px;">
-                Share My Link
+                style="display:inline-block;background-color:#2dd4bf;color:#060e1a;font-family:${font};font-size:16px;font-weight:700;text-decoration:none;padding:16px 48px;border-radius:8px;letter-spacing:0.5px;">
+                Share My Link &#8594;
               </a>
             </td>
           </tr>
 
           <!-- VISIBLE URL -->
           <tr>
-            <td align="center" style="padding:0 40px 24px;">
-              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#475569;line-height:1.8;">
-                Or copy this link directly:<br/>
-                <a href="${safeUrl}" target="_blank" style="color:#0d9488;text-decoration:underline;word-break:break-all;">${safeUrl}</a>
+            <td align="center" style="padding:0 40px 32px;background-color:#0f1f38;">
+              <p style="margin:0;font-family:${font};font-size:12px;color:#475569;line-height:1.8;">
+                Or copy this link:<br/>
+                <a href="${safeUrl}" target="_blank" style="color:#2dd4bf;text-decoration:underline;word-break:break-all;">${safeUrl}</a>
               </p>
             </td>
           </tr>
 
           <!-- DIVIDER -->
           <tr>
-            <td style="padding:0 40px;">
+            <td style="padding:0 40px;background-color:#0a1628;">
               <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                <tr><td style="height:1px;background-color:#1e3a5f;font-size:0;line-height:0;">&nbsp;</td></tr>
+                <tr><td style="height:1px;background-color:#1e3352;font-size:0;line-height:0;">&nbsp;</td></tr>
               </table>
             </td>
           </tr>
 
           <!-- FOOTER -->
           <tr>
-            <td align="center" style="padding:24px 40px 28px;background-color:#0a1628;">
-              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#475569;line-height:1.7;">
-                Sent with <span style="color:#0d9488;font-weight:700;">Rippl</span> by Hallmark Dental<br/>
+            <td align="center" style="padding:24px 40px 28px;background-color:#060e1a;">
+              <p style="margin:0;font-family:${font};font-size:12px;color:#475569;line-height:1.7;">
+                Sent with <span style="color:#2dd4bf;font-weight:700;">Rippl</span> by Hallmark Dental<br/>
                 You&#39;re receiving this because you&#39;re enrolled in our referral program.
               </p>
             </td>
@@ -309,7 +310,7 @@ export async function sendReferralLinkToPatient(
         await sg.send({
           to: email,
           from: { email: SENDGRID_FROM_EMAIL, name: "Hallmark Dental via Rippl" },
-          subject: "Your Hallmark Dental referral link",
+          subject: "Your personal referral link is ready 🔗",
           html: buildEmailHtml(referrer.name, referralUrl),
           trackingSettings: {
             clickTracking: { enable: false, enableText: false },

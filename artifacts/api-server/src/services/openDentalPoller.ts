@@ -410,7 +410,8 @@ export async function syncOpenDental(options?: {
         referrer.email ?? null,
         newEvent.new_patient_name,
         claimToken,
-        office?.name ?? "Hallmark Dental"
+        office?.name ?? "Hallmark Dental",
+        newTierData.rewardValue
       ).then((notifResult) => {
         logger.info({ notifResult, procNum }, "Notification sent for synced referral");
       }).catch((err) => {
