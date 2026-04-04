@@ -11,6 +11,18 @@ const TANGO_EMAIL_TEMPLATE  = process.env.TANGO_EMAIL_TEMPLATE_ID?.trim() ?? "E8
 const REWARD_LINK_UTID = "U453114";
 const CENTS_PER_DOLLAR = 100;
 
+// Log which Tango env vars are present at startup (values never logged)
+logger.info(
+  {
+    hasPlatformName:  !!TANGO_PLATFORM_NAME,
+    hasPlatformKey:   !!TANGO_PLATFORM_KEY,
+    hasAccountId:     !!TANGO_ACCOUNT_ID,
+    hasCustomerId:    !!TANGO_CUSTOMER_ID,
+    emailTemplateId:  TANGO_EMAIL_TEMPLATE,
+  },
+  "Tango config check",
+);
+
 interface TangoRecipient {
   email: string;
   firstName: string;
