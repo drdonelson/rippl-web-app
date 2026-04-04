@@ -210,6 +210,15 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
             </td>
           </tr>
 
+          <!-- HOW IT WORKS LINK -->
+          <tr>
+            <td align="center" style="padding:0 40px 24px;">
+              <a href="https://www.joinrippl.com/how-it-works" target="_blank" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0d9488;text-decoration:none;">
+                Learn how the referral program works →
+              </a>
+            </td>
+          </tr>
+
           <!-- DIVIDER -->
           <tr>
             <td style="padding:0 40px;">
