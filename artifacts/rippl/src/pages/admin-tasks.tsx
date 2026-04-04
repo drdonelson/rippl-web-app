@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckSquare, Loader2, AlertTriangle, CheckCircle2, Clock, Building2, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/auth-context";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
@@ -65,10 +66,12 @@ function formatDate(iso: string): string {
 export default function AdminTasksPage() {
   const qc = useQueryClient();
   const [completing, setCompleting] = useState<string | null>(null);
+  const { session, isLoading: authLoading } = useAuth();
 
   const { data: tasks, isLoading, isError } = useQuery<AdminTask[]>({
     queryKey: ["admin-tasks"],
     queryFn: fetchTasks,
+    enabled: !authLoading && !!session,
   });
 
   const mutation = useMutation({
