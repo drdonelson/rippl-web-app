@@ -40,6 +40,7 @@ type ImportPhase =
 type ViewMode = "list" | "grid";
 type SortField = "name" | "total_referrals" | "total_rewards_issued";
 type SortDir = "asc" | "desc";
+type ContactFilter = "all" | "not_contacted" | "contacted" | "active";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
@@ -48,10 +49,25 @@ function isValidPhone(phone: string | null | undefined): boolean {
   return (phone.replace(/\D/g, "").length >= 7);
 }
 
-function StatusDot({ n }: { n: number }) {
-  if (n >= 5) return <Star className="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" />;
-  if (n >= 1) return <span className="w-2 h-2 rounded-full bg-primary shrink-0 inline-block" />;
-  return <span className="w-2 h-2 rounded-full bg-muted-foreground/30 shrink-0 inline-block" />;
+function StatusDot({ n, onboarded }: { n: number; onboarded: boolean }) {
+  if (n >= 1) return (
+    <Star
+      className="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0"
+      title="Active referrer — has sent referrals"
+    />
+  );
+  if (onboarded) return (
+    <span
+      className="w-2 h-2 rounded-full bg-primary shrink-0 inline-block"
+      title="Contacted — referral link sent"
+    />
+  );
+  return (
+    <span
+      className="w-2 h-2 rounded-full bg-muted-foreground/30 shrink-0 inline-block"
+      title="Not yet contacted"
+    />
+  );
 }
 
 // ── Chunked import API helpers ────────────────────────────────────────────
@@ -253,6 +269,9 @@ export default function Patients() {
   // Sort state (list view only)
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  // Contact status filter
+  const [contactFilter, setContactFilter] = useState<ContactFilter>("all");
 
   // Mobile Safari: cap visible rows to avoid OOM on large lists.
   // Users can expand with "Show all" if needed.
@@ -479,6 +498,8 @@ export default function Patients() {
       });
       setSendResult(data);
       toast.success("Referral link sent successfully!");
+      // Refetch referrer list so the status dot updates without a manual refresh
+      queryClient.invalidateQueries({ queryKey: ["/api/referrers"] });
     } catch (err) {
       if (err instanceof ApiError) {
         const serverMsg = (err.data as { error?: string } | null)?.error;
@@ -580,6 +601,14 @@ export default function Patients() {
         const rOfficeId = (r as unknown as Record<string, unknown>).office_id as string | null;
         if (rOfficeId !== selectedOfficeId) return false;
       }
+
+      // Contact status filter
+      const onboarded    = !!((r as unknown as Record<string, unknown>).onboarding_sms_sent);
+      const hasReferrals = r.total_referrals > 0;
+      if (contactFilter === "not_contacted" && onboarded)   return false;
+      if (contactFilter === "contacted"     && !onboarded)  return false;
+      if (contactFilter === "active"        && !hasReferrals) return false;
+
       return (
         r.name.toLowerCase().includes(term) ||
         (r.email && r.email.toLowerCase().includes(term)) ||
@@ -587,7 +616,7 @@ export default function Patients() {
         r.patient_id.toLowerCase().includes(term)
       );
     });
-  }, [referrers, searchTerm, selectedOfficeId]);
+  }, [referrers, searchTerm, selectedOfficeId, contactFilter]);
 
   // Sort (list view)
   const sortedReferrers = useMemo(() => {
@@ -780,6 +809,33 @@ export default function Patients() {
         </div>
       </div>}
 
+      {/* ── Contact status filter tabs ─────────────────────────────────── */}
+      {!isLoading && (referrers ?? []).length > 0 && (
+        <div className="flex items-center gap-1 p-1 bg-card border border-border rounded-xl self-start flex-wrap">
+          {(
+            [
+              { key: "all",           label: "All" },
+              { key: "not_contacted", label: "Not yet contacted" },
+              { key: "contacted",     label: "Contacted" },
+              { key: "active",        label: "Active referrers" },
+            ] as { key: ContactFilter; label: string }[]
+          ).map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setContactFilter(key)}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 whitespace-nowrap",
+                contactFilter === key
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* ── Loading skeleton ───────────────────────────────────────────── */}
       {isLoading ? (
         viewMode === "grid" ? (
@@ -824,13 +880,14 @@ export default function Patients() {
             ) : (
               <div className="divide-y divide-border">
                 {mobileSortedReferrers.map((referrer) => {
-                  const code = (referrer as any).referral_code as string | null;
-                  const tier = (referrer as any).tier as string | null;
-                  const n    = referrer.total_referrals;
+                  const code      = (referrer as any).referral_code as string | null;
+                  const tier      = (referrer as any).tier as string | null;
+                  const n         = referrer.total_referrals;
+                  const onboarded = !!((referrer as any).onboarding_sms_sent);
                   return (
                     <div key={referrer.id} className="px-4 py-3 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <StatusDot n={n} />
+                        <StatusDot n={n} onboarded={onboarded} />
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-foreground truncate">{referrer.name}</p>
                           <div className="mt-0.5 flex items-center gap-2 flex-wrap">
@@ -909,17 +966,18 @@ export default function Patients() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {sortedReferrers.map((referrer) => {
-                    const phone = (referrer as any).phone as string | null;
-                    const email = (referrer as any).email as string | null;
-                    const code  = (referrer as any).referral_code as string | null;
-                    const tier  = (referrer as any).tier as string | null;
-                    const n     = referrer.total_referrals;
+                    const phone     = (referrer as any).phone as string | null;
+                    const email     = (referrer as any).email as string | null;
+                    const code      = (referrer as any).referral_code as string | null;
+                    const tier      = (referrer as any).tier as string | null;
+                    const n         = referrer.total_referrals;
+                    const onboarded = !!((referrer as any).onboarding_sms_sent);
                     return (
                       <tr key={referrer.id} className="hover:bg-muted/10 transition-colors group">
                         {/* Patient Name + status dot + tier */}
                         <td className="px-4 py-2.5">
                           <div className="flex items-center gap-2.5">
-                            <StatusDot n={n} />
+                            <StatusDot n={n} onboarded={onboarded} />
                             <div>
                               <span className="font-semibold text-foreground text-sm leading-tight">{referrer.name}</span>
                               <div className="mt-0.5">

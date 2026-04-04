@@ -242,6 +242,17 @@ router.post("/:id/send-link", async (req, res) => {
       respectCooldown: false, // manual sends always bypass cooldown
       reason: "manual_staff_send",
     });
+
+    // If at least one channel was successfully delivered, mark the patient as
+    // contacted so they're excluded from future automated post-visit sweeps.
+    const anyDelivered = result.sms?.status === "sent" || result.email?.status === "sent";
+    if (anyDelivered) {
+      await db
+        .update(referrersTable)
+        .set({ onboarding_sms_sent: true })
+        .where(eq(referrersTable.id, id));
+    }
+
     res.json({ success: true, ...result });
   } catch (err) {
     logger.error({ err }, "send-link failed");
