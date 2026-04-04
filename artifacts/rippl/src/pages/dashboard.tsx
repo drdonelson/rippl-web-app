@@ -38,6 +38,7 @@ interface DashboardStats {
     office_id: string | null;
     status: string;
     reward_type: string | null;
+    reward_value?: number | null;
     created_at: string;
   }[];
 }
@@ -266,8 +267,8 @@ export default function Dashboard() {
                         </p>
                       </div>
                     </div>
-                    <div className="px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border shrink-0">
-                      {event.status}
+                    <div className={`px-2.5 py-1 rounded-full text-xs font-semibold border shrink-0 ${event.status === "Reward Sent" ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground border-border"}`}>
+                      {event.status === "Reward Sent" && event.reward_value ? `$${event.reward_value} Reward Sent` : event.status}
                     </div>
                   </div>
                 ))}

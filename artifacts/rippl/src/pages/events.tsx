@@ -80,6 +80,7 @@ interface ReferralEvent {
   office: string;
   status: string;
   reward_type?: string | null;
+  reward_value?: number | null;
   household_duplicate?: boolean | null;
   created_at: string;
 }
@@ -456,6 +457,7 @@ export default function Events() {
                       ) : event.status === "Reward Sent" ? (
                         <div className="flex items-center justify-end gap-2 text-primary font-medium text-sm">
                           <CheckCircle2 className="w-4 h-4" />
+                          {event.reward_value ? `$${event.reward_value} ` : ""}
                           {event.reward_type ? (REWARD_LABELS[event.reward_type] ?? event.reward_type) : ""}
                         </div>
                       ) : (
