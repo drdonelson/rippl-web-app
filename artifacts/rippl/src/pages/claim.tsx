@@ -318,7 +318,8 @@ export default function Claim() {
   if (!claimData) return null;
 
   const { referrer, referral, localPartner, claim } = claimData;
-  const firstName   = referrer.name.split(" ")[0] ?? referrer.name;
+  const rawFirst    = referrer.name.split(" ")[0] ?? referrer.name;
+  const firstName   = (!rawFirst || rawFirst === "###") ? "there" : rawFirst;
   const rewardValue = claim.reward_value;
   const OFFICE_NAMES: Record<string, string> = {
     brentwood:  "Hallmark Dental – Brentwood",
