@@ -6,7 +6,7 @@ import {
   Plus, QrCode, Search, Copy, Check, Download, RefreshCw,
   CheckCircle2, AlertTriangle, LayoutList, LayoutGrid,
   ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Star, MapPin, Lock,
-  Send, Loader2, Phone, Mail,
+  Send, Loader2, Phone, Mail, Users,
 } from "lucide-react";
 import QRCode from "qrcode";
 import { Modal } from "@/components/ui/modal";
@@ -320,6 +320,15 @@ export default function Patients() {
     email?: { status: string; reason?: string };
   }>(null);
 
+  // Bulk send state
+  const [bulkSendOpen, setBulkSendOpen] = useState(false);
+  const [bulkChannelSms, setBulkChannelSms] = useState(true);
+  const [bulkChannelEmail, setBulkChannelEmail] = useState(false);
+  const [bulkSending, setBulkSending] = useState(false);
+  const [bulkResult, setBulkResult] = useState<null | {
+    total: number; sent: number; failed: number; skipped: number; errors: string[];
+  }>(null);
+
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(formSchema)
   });
@@ -380,6 +389,50 @@ export default function Patients() {
     if (!code) return null;
     return buildReferralUrl(code, BASE);
   }, [sendLinkReferrer]);
+
+  // Count patients who have not yet received a referral link (live from loaded list)
+  const unsentCount = useMemo(() => {
+    if (!referrers) return 0;
+    return (referrers as Array<Record<string, unknown>>).filter(r => !r.onboarding_sms_sent).length;
+  }, [referrers]);
+
+  const handleBulkSend = async () => {
+    if (!bulkChannelSms && !bulkChannelEmail) {
+      toast.error("Select at least one channel.");
+      return;
+    }
+    const channels: string[] = [];
+    if (bulkChannelSms)   channels.push("sms");
+    if (bulkChannelEmail) channels.push("email");
+
+    setBulkSending(true);
+    try {
+      const result = await customFetch<{
+        total: number; sent: number; failed: number; skipped: number; errors: string[];
+      }>(
+        `${BASE}/api/referrers/bulk-send-links`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            office_id: selectedOfficeId === "all" ? "all" : selectedOfficeId,
+            channels,
+          }),
+        }
+      );
+      setBulkResult(result);
+      queryClient.invalidateQueries({ queryKey: ["/api/referrers"] });
+      toast.success(
+        `Sent to ${result.sent} patient${result.sent !== 1 ? "s" : ""}` +
+        (result.failed > 0 ? ` (${result.failed} failed)` : "")
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Bulk send failed";
+      toast.error(msg);
+    } finally {
+      setBulkSending(false);
+    }
+  };
 
   const openSendLinkModal = (referrerId: string) => {
     setSendLinkModalReferrerId(referrerId);
@@ -637,6 +690,23 @@ export default function Patients() {
               <LayoutGrid className="w-3.5 h-3.5" />
             </button>
           </div>
+
+          {/* Send All Referral Links — super_admin only */}
+          {profile?.role === "super_admin" && !isDemo && (
+            <button
+              onClick={() => { setBulkSendOpen(true); setBulkResult(null); setBulkChannelSms(true); setBulkChannelEmail(false); }}
+              className="flex-shrink-0 px-4 sm:px-5 py-2 bg-card hover:bg-muted border border-border text-foreground rounded-xl font-semibold transition-all flex items-center gap-1.5 text-sm"
+              title={`Send referral links to ${unsentCount} patient${unsentCount !== 1 ? "s" : ""} who haven't received one`}
+            >
+              <Users className="w-4 h-4 text-primary" />
+              <span className="hidden sm:inline">Send All Links</span>
+              {unsentCount > 0 && (
+                <span className="ml-0.5 min-w-[20px] h-5 px-1.5 bg-primary text-primary-foreground rounded-full text-xs font-bold flex items-center justify-center">
+                  {unsentCount}
+                </span>
+              )}
+            </button>
+          )}
 
           {/* Add Patient — primary action, kept prominent */}
           <button
@@ -1311,6 +1381,139 @@ export default function Patients() {
                 {sendLoading
                   ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>
                   : <><Send className="w-4 h-4" /> Send Link</>
+                }
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* ── Bulk Send Referral Links Modal ────────────────────────────── */}
+      <Modal
+        isOpen={bulkSendOpen}
+        onClose={() => { if (!bulkSending) setBulkSendOpen(false); }}
+        title="Send All Referral Links"
+        description={`Send referral links to patients who have not yet received one.`}
+      >
+        {bulkResult ? (
+          /* ── Result view ── */
+          <div className="space-y-5">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-center">
+                <p className="text-2xl font-display font-bold text-green-400">{bulkResult.sent}</p>
+                <p className="text-xs text-green-400/80 font-medium mt-0.5">Sent</p>
+              </div>
+              <div className={cn(
+                "border rounded-xl p-3 text-center",
+                bulkResult.failed > 0
+                  ? "bg-red-500/10 border-red-500/20"
+                  : "bg-muted/40 border-border"
+              )}>
+                <p className={cn("text-2xl font-display font-bold", bulkResult.failed > 0 ? "text-red-400" : "text-muted-foreground")}>
+                  {bulkResult.failed}
+                </p>
+                <p className={cn("text-xs font-medium mt-0.5", bulkResult.failed > 0 ? "text-red-400/80" : "text-muted-foreground/60")}>Failed</p>
+              </div>
+              <div className="bg-muted/40 border border-border rounded-xl p-3 text-center">
+                <p className="text-2xl font-display font-bold text-muted-foreground">{bulkResult.skipped}</p>
+                <p className="text-xs text-muted-foreground/60 font-medium mt-0.5">Skipped</p>
+              </div>
+            </div>
+
+            {bulkResult.errors.length > 0 && (
+              <div className="bg-red-500/8 border border-red-500/20 rounded-xl p-3 max-h-32 overflow-y-auto space-y-1">
+                <p className="text-xs font-semibold text-red-400 mb-1.5">Errors</p>
+                {bulkResult.errors.map((e, i) => (
+                  <p key={i} className="text-xs text-red-400/80 font-mono leading-snug">{e}</p>
+                ))}
+              </div>
+            )}
+
+            <button
+              onClick={() => setBulkSendOpen(false)}
+              className="w-full py-3 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-semibold transition-colors text-sm"
+            >
+              Done
+            </button>
+          </div>
+        ) : (
+          /* ── Confirm view ── */
+          <div className="space-y-5">
+            {/* Patient count */}
+            <div className="bg-primary/8 border border-primary/20 rounded-xl px-4 py-3 flex items-center gap-3">
+              <Users className="w-5 h-5 text-primary flex-shrink-0" />
+              <p className="text-sm text-foreground">
+                <span className="font-bold text-primary">{unsentCount}</span>{" "}
+                patient{unsentCount !== 1 ? "s" : ""} {unsentCount !== 1 ? "have" : "has"} not yet received a referral link.
+              </p>
+            </div>
+
+            {/* Channel selector */}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-2">Send via</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setBulkChannelSms(s => !s)}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border font-semibold text-sm transition-all",
+                    bulkChannelSms
+                      ? "bg-primary/10 border-primary/30 text-primary"
+                      : "bg-muted/40 border-border text-muted-foreground hover:border-border/80"
+                  )}
+                >
+                  <Phone className="w-4 h-4" />
+                  SMS
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBulkChannelEmail(s => !s)}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border font-semibold text-sm transition-all",
+                    bulkChannelEmail
+                      ? "bg-primary/10 border-primary/30 text-primary"
+                      : "bg-muted/40 border-border text-muted-foreground hover:border-border/80"
+                  )}
+                >
+                  <Mail className="w-4 h-4" />
+                  Email
+                </button>
+              </div>
+            </div>
+
+            {/* Warning */}
+            <div className="flex items-start gap-2.5 bg-amber-500/8 border border-amber-500/20 rounded-xl px-4 py-3">
+              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-400/90 leading-relaxed">
+                This sends <strong>one message per patient</strong> and cannot be undone. Patients with no contact info for the selected channel will be skipped.
+              </p>
+            </div>
+
+            {/* Spinner overlay while sending */}
+            {bulkSending && (
+              <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                <span>Sending… this may take a minute</span>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => setBulkSendOpen(false)}
+                disabled={bulkSending}
+                className="flex-1 py-3 px-4 bg-muted hover:bg-muted/80 text-foreground rounded-xl font-semibold transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkSend}
+                disabled={bulkSending || (!bulkChannelSms && !bulkChannelEmail) || unsentCount === 0}
+                className="flex-1 py-3 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-semibold shadow-lg shadow-primary/20 transition-colors text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {bulkSending
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>
+                  : <><Send className="w-4 h-4" /> Send to {unsentCount} Patient{unsentCount !== 1 ? "s" : ""}</>
                 }
               </button>
             </div>
