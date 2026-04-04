@@ -4,16 +4,98 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, CalendarDays, Users, Droplets,
   ChevronDown, MapPin, LogOut, AlertTriangle, Menu, X,
+  Store, CheckSquare, Building2, TrendingUp, ExternalLink,
+  GraduationCap, Link2, Shield, FileText, Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useOffice } from "@/contexts/office-context";
-import { useAuth } from "@/contexts/auth-context";
+import { useAuth, type UserRole } from "@/contexts/auth-context";
 
-const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard",      icon: LayoutDashboard },
-  { href: "/events",    label: "Referral Events", icon: CalendarDays    },
-  { href: "/patients",  label: "Patients & QR",   icon: Users           },
+// ── Nav structure ─────────────────────────────────────────────────────────────
+
+type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  external?: boolean;
+  minRole?: "practice_admin" | "super_admin";
+};
+
+type NavSection = {
+  label?: string;
+  minRole?: "practice_admin" | "super_admin";
+  items: NavItem[];
+};
+
+const NAV_SECTIONS: NavSection[] = [
+  {
+    items: [
+      { href: "/dashboard", label: "Dashboard",       icon: LayoutDashboard },
+      { href: "/events",    label: "Referral Events",  icon: CalendarDays    },
+      { href: "/patients",  label: "Patients & QR",    icon: Users           },
+    ],
+  },
+  {
+    label: "Manage",
+    minRole: "practice_admin",
+    items: [
+      { href: "/partners",    label: "Local Partners", icon: Store,       minRole: "super_admin"    },
+      { href: "/admin-tasks", label: "Admin Tasks",    icon: CheckSquare                            },
+      { href: "/offices",     label: "Offices",        icon: Building2,   minRole: "super_admin"    },
+    ],
+  },
+  {
+    label: "Platform",
+    minRole: "super_admin",
+    items: [
+      { href: "/onboard",   label: "Onboard",   icon: GraduationCap },
+      { href: "/analytics", label: "Analytics", icon: TrendingUp    },
+    ],
+  },
+  {
+    label: "Public Pages",
+    minRole: "super_admin",
+    items: [
+      { href: "https://www.joinrippl.com/how-it-works",                                    label: "How It Works",   icon: Link2,    external: true },
+      { href: "https://www.joinrippl.com/privacy",                                         label: "Privacy Policy", icon: Shield,   external: true },
+      { href: "https://www.joinrippl.com/terms",                                           label: "Terms",          icon: FileText, external: true },
+      { href: "https://www.joinrippl.com/claim?token=demo-claim-preview-token-screenshot", label: "Demo Claim",     icon: Gift,     external: true },
+    ],
+  },
 ];
+
+// Core items shown in the mobile bottom tab bar (always visible)
+const TAB_BAR_ITEMS = NAV_SECTIONS[0].items;
+
+function roleLevel(role: UserRole | undefined): number {
+  if (role === "super_admin") return 3;
+  if (role === "practice_admin") return 2;
+  if (role?.startsWith("staff_")) return 1;
+  return 0;
+}
+
+function getSections(role: UserRole | undefined): NavSection[] {
+  const level = roleLevel(role);
+  return NAV_SECTIONS
+    .filter((s) => {
+      if (!s.minRole) return true;
+      if (s.minRole === "practice_admin") return level >= 2;
+      if (s.minRole === "super_admin") return level >= 3;
+      return false;
+    })
+    .map((s) => ({
+      ...s,
+      items: s.items.filter((item) => {
+        if (!item.minRole) return true;
+        if (item.minRole === "practice_admin") return level >= 2;
+        if (item.minRole === "super_admin") return level >= 3;
+        return false;
+      }),
+    }))
+    .filter((s) => s.items.length > 0);
+}
+
+// ── Office picker ─────────────────────────────────────────────────────────────
 
 function OfficePicker({ compact = false }: { compact?: boolean }) {
   const { offices, selectedOfficeId, setSelectedOfficeId, isLoading } = useOffice();
@@ -21,7 +103,6 @@ function OfficePicker({ compact = false }: { compact?: boolean }) {
 
   if (isLoading) return null;
 
-  // Demo users see a static, non-interactive "Demo Practice" badge
   if (isDemo) {
     return (
       <div className={cn("relative", compact ? "w-full" : "")}>
@@ -69,7 +150,8 @@ function OfficePicker({ compact = false }: { compact?: boolean }) {
   );
 }
 
-// ── Shared sidebar inner content ─────────────────────────────────────────────
+// ── Sidebar inner content ─────────────────────────────────────────────────────
+
 function SidebarContent({
   location,
   subtitleText,
@@ -80,6 +162,7 @@ function SidebarContent({
   onNavClick?: () => void;
 }) {
   const { user, profile, logout } = useAuth();
+  const sections = getSections(profile?.role);
 
   const handleLogout = () => {
     onNavClick?.();
@@ -106,40 +189,67 @@ function SidebarContent({
         <OfficePicker />
       </div>
 
-      {/* Nav items */}
-      <nav className="flex-1 px-4 space-y-2 mt-2">
-        {NAV_ITEMS.map((item) => {
-          const isActive = location === item.href;
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onNavClick}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium transition-all duration-300 group relative",
-                isActive
-                  ? "text-primary-foreground bg-primary/10"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              )}
-            >
-              {isActive && (
-                <motion.div
-                  layoutId="active-nav"
-                  className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/5 border border-primary/20 rounded-xl"
-                  initial={false}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                />
-              )}
-              <Icon className={cn("w-5 h-5 relative z-10", isActive ? "text-primary" : "")} />
-              <span className="relative z-10">{item.label}</span>
-            </Link>
-          );
-        })}
+      {/* Nav sections */}
+      <nav className="flex-1 px-4 space-y-1 mt-2 overflow-y-auto">
+        {sections.map((section, si) => (
+          <div key={si} className={si > 0 ? "pt-4" : ""}>
+            {section.label && (
+              <p className="px-4 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 select-none">
+                {section.label}
+              </p>
+            )}
+            {section.items.map((item) => {
+              const isActive = !item.external && location === item.href;
+              const Icon = item.icon;
+
+              if (item.external) {
+                return (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={onNavClick}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 group text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="text-sm">{item.label}</span>
+                    <ExternalLink className="w-3 h-3 ml-auto opacity-40 group-hover:opacity-70" />
+                  </a>
+                );
+              }
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onNavClick}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 group relative",
+                    isActive
+                      ? "text-primary-foreground bg-primary/10"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  )}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="active-nav"
+                      className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/5 border border-primary/20 rounded-xl"
+                      initial={false}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    />
+                  )}
+                  <Icon className={cn("w-4 h-4 shrink-0 relative z-10", isActive ? "text-primary" : "")} />
+                  <span className="relative z-10 text-sm">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* Bottom: user info + logout */}
-      <div className="p-4 mt-auto border-t border-border">
+      <div className="p-4 mt-auto border-t border-border shrink-0">
         <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl group">
           <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 text-xs font-bold text-primary uppercase">
             {(profile?.full_name ?? user?.email ?? "?")[0]}
@@ -162,6 +272,8 @@ function SidebarContent({
     </>
   );
 }
+
+// ── Main Layout ───────────────────────────────────────────────────────────────
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location]     = useLocation();
@@ -193,7 +305,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <AnimatePresence>
         {mobileOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               key="backdrop"
               initial={{ opacity: 0 }}
@@ -203,8 +314,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
               onClick={closeMobile}
             />
-
-            {/* Slide-in panel */}
             <motion.aside
               key="mobile-sidebar"
               initial={{ x: "-100%" }}
@@ -213,7 +322,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               transition={{ type: "spring", stiffness: 340, damping: 36, mass: 0.8 }}
               className="fixed inset-y-0 left-0 z-50 w-72 bg-card border-r border-border flex flex-col md:hidden"
             >
-              {/* Close button */}
               <button
                 onClick={closeMobile}
                 className="absolute top-4 right-4 p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors z-10"
@@ -221,7 +329,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               >
                 <X className="w-5 h-5" />
               </button>
-
               <SidebarContent
                 location={location}
                 subtitleText={subtitleText}
@@ -237,7 +344,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Mobile top header */}
         <div className="md:hidden flex items-center gap-3 px-4 py-2.5 border-b border-border bg-card/50 backdrop-blur-xl shrink-0">
-          {/* Hamburger */}
           <button
             onClick={() => setMobileOpen(true)}
             className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
@@ -245,12 +351,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           >
             <Menu className="w-5 h-5" />
           </button>
-
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shrink-0">
             <Droplets className="w-3.5 h-3.5 text-primary-foreground" />
           </div>
           <span className="text-base font-display font-bold text-foreground leading-none shrink-0">Rippl</span>
-
           <div className="flex-1 min-w-0">
             <OfficePicker compact />
           </div>
@@ -272,7 +376,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -z-10" />
 
-        {/* Scrollable content — extra bottom padding on mobile for tab bar */}
+        {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12 pb-24 md:pb-8 z-0">
           <motion.div
             key={location}
@@ -288,7 +392,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {/* ── Bottom tab bar — mobile only ────────────────────────────────── */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border flex items-stretch safe-area-bottom">
-        {NAV_ITEMS.map((item) => {
+        {TAB_BAR_ITEMS.map((item) => {
           const isActive = location === item.href;
           const Icon = item.icon;
           return (

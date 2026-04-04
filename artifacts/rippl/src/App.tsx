@@ -11,15 +11,19 @@ import ProtectedRoute from "@/components/protected-route";
 import { OfficeProvider } from "@/contexts/office-context";
 import { AuthProvider } from "@/contexts/auth-context";
 
-const Dashboard = lazy(() => import("@/pages/dashboard"));
-const Events    = lazy(() => import("@/pages/events"));
-const Patients  = lazy(() => import("@/pages/patients"));
-const Claim     = lazy(() => import("@/pages/claim"));
-const Refer     = lazy(() => import("@/pages/refer"));
-const Demo      = lazy(() => import("@/pages/demo"));
-const Onboard   = lazy(() => import("@/pages/onboard"));
-const Privacy   = lazy(() => import("@/pages/privacy"));
-const Terms     = lazy(() => import("@/pages/terms"));
+const Dashboard  = lazy(() => import("@/pages/dashboard"));
+const Events     = lazy(() => import("@/pages/events"));
+const Patients   = lazy(() => import("@/pages/patients"));
+const AdminTasks = lazy(() => import("@/pages/admin-tasks"));
+const Partners   = lazy(() => import("@/pages/partners"));
+const Offices    = lazy(() => import("@/pages/offices"));
+const Analytics  = lazy(() => import("@/pages/analytics"));
+const Claim      = lazy(() => import("@/pages/claim"));
+const Refer      = lazy(() => import("@/pages/refer"));
+const Demo       = lazy(() => import("@/pages/demo"));
+const Onboard    = lazy(() => import("@/pages/onboard"));
+const Privacy    = lazy(() => import("@/pages/privacy"));
+const Terms      = lazy(() => import("@/pages/terms"));
 const HowItWorks = lazy(() => import("@/pages/how-it-works"));
 const NotFound   = lazy(() => import("@/pages/not-found"));
 
@@ -60,9 +64,13 @@ function Router() {
             <Layout>
               <Suspense fallback={<PageLoader />}>
                 <Switch>
-                  <Route path="/dashboard" component={Dashboard} />
-                  <Route path="/events" component={Events} />
-                  <Route path="/patients" component={Patients} />
+                  <Route path="/dashboard"   component={Dashboard}  />
+                  <Route path="/events"      component={Events}     />
+                  <Route path="/patients"    component={Patients}   />
+                  <Route path="/admin-tasks" component={AdminTasks} />
+                  <Route path="/partners"    component={Partners}   />
+                  <Route path="/offices"     component={Offices}    />
+                  <Route path="/analytics"   component={Analytics}  />
                   <Route component={NotFound} />
                 </Switch>
               </Suspense>
