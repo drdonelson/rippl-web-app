@@ -90,6 +90,13 @@ function buildEmailHtml(referrerName: string, referralUrl: string): string {
   const safeUrl   = escHtml(referralUrl);
   const font      = "system-ui,-apple-system,sans-serif";
 
+  // mailto link so the patient can forward their referral link to a friend
+  const shareSubject = encodeURIComponent("I think you'd love my dentist");
+  const shareBody    = encodeURIComponent(
+    `Hey! I've been going to Hallmark Dental and wanted to share my referral link with you. Book your first visit here: ${referralUrl} — they're great and it only takes a minute to book online.`,
+  );
+  const safeMailto = escHtml(`mailto:?subject=${shareSubject}&body=${shareBody}`);
+
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head>
@@ -138,10 +145,9 @@ function buildEmailHtml(referrerName: string, referralUrl: string): string {
           <!-- PRIMARY CTA -->
           <tr>
             <td align="center" style="padding:36px 40px 16px;background-color:#0f1f38;">
-              <a href="${safeUrl}"
-                target="_blank"
+              <a href="${safeMailto}"
                 style="display:inline-block;background-color:#2dd4bf;color:#060e1a;font-family:${font};font-size:16px;font-weight:700;text-decoration:none;padding:16px 48px;border-radius:8px;letter-spacing:0.5px;">
-                Share My Link &#8594;
+                Share with a Friend &#8594;
               </a>
             </td>
           </tr>
@@ -150,7 +156,7 @@ function buildEmailHtml(referrerName: string, referralUrl: string): string {
           <tr>
             <td align="center" style="padding:0 40px 32px;background-color:#0f1f38;">
               <p style="margin:0;font-family:${font};font-size:12px;color:#475569;line-height:1.8;">
-                Or copy this link:<br/>
+                Or copy your personal link:<br/>
                 <a href="${safeUrl}" target="_blank" style="color:#2dd4bf;text-decoration:underline;word-break:break-all;">${safeUrl}</a>
               </p>
             </td>

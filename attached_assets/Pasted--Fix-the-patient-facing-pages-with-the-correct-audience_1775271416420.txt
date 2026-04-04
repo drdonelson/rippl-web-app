@@ -1,0 +1,63 @@
+"Fix the patient-facing pages with the correct audience in mind. Two completely different pages for two different people:
+PAGE 1 — /refer?ref=XXXX (for the FRIEND being referred — prospective new patient)
+This person clicked a friend's referral link. They know nothing about Rippl rewards — that's not their concern. This page should convince them to book at Hallmark Dental.
+Full redesign:
+
+Header: Rippl logo + 'HALLMARK DENTAL — Powered by Rippl'
+'PERSONAL INVITATION' teal badge
+Heading: '[ReferrerFirstName] thinks you'll love us' — pull first name from referrer record via ref code
+Subtext: 'Pick the location closest to you and book your first visit online — it only takes a minute.'
+Fix spacing — 24px gap between badge, heading, subtext
+
+Three location cards:
+
+Hallmark Dental Brentwood — Cool Springs / Brentwood TN — (615) 961-0330 — Book Online →
+Hallmark Dental Lewisburg — Lewisburg TN — (931) 359-3368 — Book Online →
+Hallmark Dental Greenbrier — Greenbrier TN — (615) 643-0800 — Book Online →
+
+Book Online links go to:
+
+Brentwood: https://www.hallmarkdds.com
+Lewisburg: https://www.hallmarkdds.com
+Greenbrier: https://www.hallmarkdds.com
+
+Insurance section (moved here from how-it-works):
+
+'We make it easy to get started — with or without insurance'
+Card 1: 'We Accept Most PPO Insurance' — 'Not sure if we accept your plan? We'll check your benefits for free — no obligation.' — Button: 'Request a Free Benefits Check →' opens mailto:frontdesk@hallmarkdds.com?subject=Free Benefits Check Request&body=Hi, I was referred to Hallmark Dental and would like a complimentary benefits check. My insurance provider is: [please fill in]. My name is: [please fill in]. Best time to reach me: [please fill in].
+Card 2: 'No Insurance? No Problem.' — 'We offer the Hallmark Care in-house membership plan — affordable dental coverage designed specifically for our patients.' — Button: 'Learn About Hallmark Care →' opens https://www.hallmarkdds.com/financial/hallmark-dental-care-program/ in new tab
+
+Why patients choose us — 4 cards:
+
+Family-friendly care — All ages welcome, from first teeth to full smile makeovers
+Modern & comfortable — State-of-the-art technology designed to keep you at ease
+Transparent pricing — We walk you through every cost before any treatment begins
+3 convenient locations — Brentwood, Lewisburg, and Greenbrier — always close to home
+
+Footer: Small text 'This invitation was shared by a Hallmark Dental patient via Rippl'
+No mention of rewards, tiers, or gift cards anywhere on this page.
+
+PAGE 2 — /how-it-works (for the REFERRER — existing patient)
+This page is for existing Hallmark Dental patients who want to understand how they earn rewards. Keep the existing content but make these changes:
+
+Remove the insurance cards section entirely — wrong audience
+Update the header to make it clear this is about earning rewards: 'Refer friends. Earn rewards.'
+Add a 'Your referral link is ready' CTA at the bottom — 'Ask your dentist for your personal link at your next visit or check your email from Hallmark Dental'
+Add a link at the very bottom: 'Not a patient yet? Book your first visit →' linking to https://www.hallmarkdds.com
+
+
+FIX 3 — Share My Link button behavior (everywhere)
+Any button labeled 'Share My Link' or 'Share Rippl with a friend' across ALL pages and emails should open the email client pre-populated:
+mailto:?subject=I think you'd love my dentist&body=Hey! I've been going to Hallmark Dental and wanted to share my referral link with you. Book your first visit here: https://www.joinrippl.com/refer?ref=[referral_code] — they're great and it only takes a minute to book online.
+Use window.location.href = 'mailto:...'
+Add a secondary option below the button: 'Or copy link' that copies the URL to clipboard with a checkmark confirmation.
+
+FIX 4 — Referral link email
+In the dark navy referral link email sent when staff clicks Send Link:
+
+Change 'Share My Link' button to open mailto with pre-populated message as above
+Add below the button: 'Or copy your personal link:' followed by the URL as plain copyable text
+Add a subtle footer line: 'Want to know how rewards work? Visit joinrippl.com/how-it-works'
+
+
+Push to GitHub using deploy.sh after all changes."

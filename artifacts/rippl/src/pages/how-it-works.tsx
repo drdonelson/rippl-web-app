@@ -3,7 +3,6 @@ import { Droplets, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { TIER_CONFIG } from "@/lib/tier-config";
-import InsuranceCards from "@/components/insurance-cards";
 
 const STEPS = [
   {
@@ -102,7 +101,7 @@ export default function HowItWorks() {
             <span className="text-white font-bold text-xl">Rippl</span>
           </div>
           <h1 className="text-3xl font-black text-white leading-tight mb-3">
-            Refer a Friend.<br />Earn Rewards.
+            Refer friends.<br />Earn rewards.
           </h1>
           <p className="text-slate-400 text-base leading-relaxed">
             Share your unique link with friends and family. When they complete their dental exam, you earn a reward — automatically.
@@ -210,9 +209,6 @@ export default function HowItWorks() {
           </div>
         </motion.section>
 
-        {/* ── Insurance / Financial ────────────────────────────────────────── */}
-        <InsuranceCards />
-
         {/* ── Footer CTA ──────────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -221,10 +217,18 @@ export default function HowItWorks() {
           className="bg-gradient-to-br from-teal-900/50 to-slate-800/50 border border-teal-700/30 rounded-3xl p-6 text-center"
         >
           <div className="text-3xl mb-3">🌊</div>
-          <h3 className="text-white font-bold text-lg mb-2">Ready to start referring?</h3>
-          <p className="text-slate-400 text-sm leading-relaxed">
-            Ask your dentist for your personal referral link at your next visit.
+          <h3 className="text-white font-bold text-lg mb-2">Your referral link is ready</h3>
+          <p className="text-slate-400 text-sm leading-relaxed mb-4">
+            Ask your dentist for your personal link at your next visit, or check your email from Hallmark Dental.
           </p>
+          <a
+            href="https://www.hallmarkdds.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-teal-400 text-sm font-semibold hover:text-teal-300 transition-colors"
+          >
+            Not a patient yet? Book your first visit →
+          </a>
         </motion.div>
 
         <p className="text-center text-xs text-slate-600 mt-6">

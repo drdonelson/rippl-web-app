@@ -260,6 +260,16 @@ export default function Claim() {
     }
   }, [selected, claimData, token, brand]);
 
+  const handleShare = useCallback(() => {
+    const code = result?.referral_code ?? claimData?.referrer.referral_code ?? "";
+    const url  = `${PUBLIC_APP_URL}/refer?ref=${code}`;
+    const subject = encodeURIComponent("I think you'd love my dentist");
+    const body    = encodeURIComponent(
+      `Hey! I've been going to Hallmark Dental and wanted to share my referral link with you. Book your first visit here: ${url} — they're great and it only takes a minute to book online.`,
+    );
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  }, [result, claimData]);
+
   const handleCopy = useCallback(async () => {
     const code = result?.referral_code ?? claimData?.referrer.referral_code ?? "";
     const url  = `${PUBLIC_APP_URL}/refer?ref=${code}`;
@@ -402,17 +412,22 @@ export default function Claim() {
 
             {/* Share CTA */}
             <button
+              onClick={handleShare}
+              className="w-full py-3.5 rounded-2xl font-semibold text-sm transition-all mb-2 bg-teal-500/20 border border-teal-500/40 text-teal-400 hover:bg-teal-500/30"
+            >
+              📤 Share with a friend
+            </button>
+            <button
               onClick={handleCopy}
               className={cn(
-                "w-full py-3.5 rounded-2xl font-semibold text-sm transition-all mb-1",
+                "w-full py-2.5 rounded-2xl font-semibold text-sm transition-all mb-6",
                 copied
-                  ? "bg-teal-600 text-white"
-                  : "bg-teal-500/20 border border-teal-500/40 text-teal-400 hover:bg-teal-500/30",
+                  ? "bg-teal-600/20 border border-teal-500/30 text-teal-400"
+                  : "bg-white/4 border border-slate-700 text-slate-400 hover:text-slate-300 hover:border-slate-600",
               )}
             >
-              {copied ? "✓ Link Copied!" : "📤 Share Rippl with another friend"}
+              {copied ? "✓ Link Copied!" : "Or copy link"}
             </button>
-            <p className="text-slate-600 text-xs mt-1 mb-6">Copies your personal referral link</p>
 
             {/* Insurance / Financial */}
             <InsuranceCards officeKey={referral?.office} className="w-full text-left" />

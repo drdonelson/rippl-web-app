@@ -13,6 +13,7 @@ import {
 } from "@/lib/office-config";
 import { useAuth } from "@/contexts/auth-context";
 import { DEMO_CODES } from "@/lib/demo-data";
+import InsuranceCards from "@/components/insurance-cards";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
@@ -373,11 +374,11 @@ export default function Refer() {
         <div className="mb-8 max-w-2xl">
           {referrerName ? (
             <>
-              <span className="inline-block text-teal-400 text-xs font-semibold tracking-widest uppercase mb-4 px-3 py-1 bg-teal-400/8 rounded-full border border-teal-400/20">
+              <span className="inline-block text-teal-400 text-xs font-semibold tracking-widest uppercase mb-6 px-3 py-1 bg-teal-400/8 rounded-full border border-teal-400/20">
                 Personal Invitation
               </span>
-              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3 leading-tight sm:whitespace-nowrap">
-                {referrerName} thinks you'll love us
+              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-6 leading-tight">
+                {referrerName.split(" ")[0]} thinks you'll love us
               </h1>
               <p className="text-white/55 text-base leading-relaxed">
                 Pick the location closest to you and book your first visit online — it only takes a minute.
@@ -385,10 +386,10 @@ export default function Refer() {
             </>
           ) : (
             <>
-              <span className="inline-block text-teal-400 text-xs font-semibold tracking-widest uppercase mb-4 px-3 py-1 bg-teal-400/8 rounded-full border border-teal-400/20">
+              <span className="inline-block text-teal-400 text-xs font-semibold tracking-widest uppercase mb-6 px-3 py-1 bg-teal-400/8 rounded-full border border-teal-400/20">
                 New Patient Welcome
               </span>
-              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3 leading-tight sm:whitespace-nowrap">
+              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-6 leading-tight">
                 Book your first visit at Hallmark Dental
               </h1>
               <p className="text-white/55 text-base leading-relaxed">
@@ -441,6 +442,11 @@ export default function Refer() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* ── Insurance / Financial ────────────────────────────────────────── */}
+        <div className="mb-5">
+          <InsuranceCards officeKey={null} />
         </div>
 
         {/* ── Testimonials ─────────────────────────────────────────────────── */}
@@ -638,9 +644,16 @@ export default function Refer() {
         )}
 
         {/* ── Footer ───────────────────────────────────────────────────────── */}
-        <p className="text-center text-xs text-white/20 pt-4">
-          © {new Date().getFullYear()} {isDemoPage ? "Demo Office" : "Hallmark Dental"} · Powered by Rippl
-        </p>
+        <div className="text-center pt-6 space-y-1">
+          {referrerName && (
+            <p className="text-xs text-white/30">
+              This invitation was shared by a Hallmark Dental patient via Rippl
+            </p>
+          )}
+          <p className="text-xs text-white/15">
+            © {new Date().getFullYear()} {isDemoPage ? "Demo Office" : "Hallmark Dental"} · Powered by Rippl
+          </p>
+        </div>
 
       </main>
     </div>
