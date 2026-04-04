@@ -34,6 +34,7 @@ export async function sendRewardNotification(
   rewardValue: number = 50
 ) {
   const claimUrl = `${APP_URL}/claim?token=${claimToken}`;
+  logger.info({ claimToken, claimUrl }, "sendRewardNotification — claim URL being sent");
   const smsBody = `Hi ${referrerName} 👋 You started a Rippl — ${newPatientName} just completed their visit at Hallmark Dental. Claim your reward here: ${claimUrl}`;
 
   const results: { sms?: string; email?: string; errors: string[] } = { errors: [] };
@@ -154,7 +155,7 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
                     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:2px solid #1e3352;">
                       <tr>
                         <td align="center" style="padding:0;">
-                          <a href="${claimUrl}?reward=in-house-credit" target="_blank" style="display:block;text-decoration:none;color:inherit;padding:20px 12px;">
+                          <a href="${claimUrl}&amp;reward=in-house-credit" target="_blank" style="display:block;text-decoration:none;color:inherit;padding:20px 12px;">
                             <p style="margin:0 0 8px;font-family:${font};font-size:26px;line-height:1;">&#x1F48E;</p>
                             <p style="margin:0 0 4px;font-family:${font};font-size:22px;font-weight:700;color:#2dd4bf;line-height:1;">$100</p>
                             <p style="margin:0 0 6px;font-family:${font};font-size:12px;font-weight:700;color:#f8fafc;line-height:1.3;">In-House Credit</p>
@@ -170,7 +171,7 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
                     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:2px solid #1e3352;">
                       <tr>
                         <td align="center" style="padding:0;">
-                          <a href="${claimUrl}?reward=amazon-gift-card" target="_blank" style="display:block;text-decoration:none;color:inherit;padding:20px 12px;">
+                          <a href="${claimUrl}&amp;reward=amazon-gift-card" target="_blank" style="display:block;text-decoration:none;color:inherit;padding:20px 12px;">
                             <p style="margin:0 0 8px;font-family:${font};font-size:26px;line-height:1;">&#x1F381;</p>
                             <p style="margin:0 0 4px;font-family:${font};font-size:22px;font-weight:700;color:#2dd4bf;line-height:1;">$${rv}</p>
                             <p style="margin:0 0 6px;font-family:${font};font-size:12px;font-weight:700;color:#f8fafc;line-height:1.3;">Gift Card</p>
@@ -186,7 +187,7 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
                     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:2px solid #1e3352;">
                       <tr>
                         <td align="center" style="padding:0;">
-                          <a href="${claimUrl}?reward=charity-donation" target="_blank" style="display:block;text-decoration:none;color:inherit;padding:20px 12px;">
+                          <a href="${claimUrl}&amp;reward=charity-donation" target="_blank" style="display:block;text-decoration:none;color:inherit;padding:20px 12px;">
                             <p style="margin:0 0 8px;font-family:${font};font-size:26px;line-height:1;">&#x1F49B;</p>
                             <p style="margin:0 0 4px;font-family:${font};font-size:22px;font-weight:700;color:#2dd4bf;line-height:1;">$${rv}</p>
                             <p style="margin:0 0 6px;font-family:${font};font-size:12px;font-weight:700;color:#f8fafc;line-height:1.3;">Charity Donation</p>
