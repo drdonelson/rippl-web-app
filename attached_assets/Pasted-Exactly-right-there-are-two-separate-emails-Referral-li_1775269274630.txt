@@ -1,0 +1,47 @@
+Exactly right — there are two separate emails:
+
+Referral link email — sent when staff clicks "Send Link" from the dashboard to share a patient's referral link with them
+Reward notification email — sent automatically when a REF-COMP fires and the patient earns a reward
+
+Both should use the dark navy design. Tell Replit Agent:
+
+"There are two separate email templates in the codebase — find both and update them to use the same dark navy Rippl design.
+Email 1 — Referral Link email (sent when staff clicks Send Link):
+
+Subject: 'Your personal referral link is ready 🔗'
+Header: Rippl logo in teal + 'HALLMARK DENTAL'
+Heading: 'Your personal referral link is ready'
+Body: 'Hi [Name] — Thanks for being a Hallmark Dental patient. Share your link with friends and family and earn rewards when they complete their first visit.'
+Large teal CTA button: 'Share My Link →' linking to https://www.joinrippl.com/refer?ref=[referral_code]
+Fallback: 'Or copy this link: [full URL]'
+Footer: 'Sent with Rippl by Hallmark Dental'
+
+Email 2 — Reward notification email (sent when REF-COMP fires):
+
+Subject: 'You started a Rippl 🎊'
+Header: Rippl logo in teal + 'HALLMARK DENTAL'
+Heading: 'You started a Rippl 🎊'
+Body: 'Hi [Name] — [New Patient] just completed their visit at Hallmark Dental.'
+'As a thank you for your referral, choose your reward below.'
+Three reward cards:
+
+💎 $100 In-House Credit — 'Applied to your next visit'
+🎁 $[reward_value] Gift Card — 'Sent to your email'
+💛 $[reward_value] Charity Donation — 'We donate on your behalf'
+
+
+Fallback: 'Cards not clickable? Visit: [claim URL]'
+Footer: 'Sent with Rippl by Hallmark Dental'
+
+Both emails should use this exact dark navy HTML styling:
+
+Outer background: #060e1a
+Card background: #0a1628
+Inner card background: #0f1f38
+Teal accent: #2dd4bf
+White text: #f8fafc
+Subtle borders: #1e3352
+Font: system-ui, sans-serif
+Max width: 600px centered
+
+Find both email template files, update them both to match this design, and push to GitHub using deploy.sh after."
