@@ -1,0 +1,52 @@
+Tell Replit Agent:
+
+"Create a public patient-facing page at /how-it-works explaining the Rippl referral program. This page should be accessible without login.
+Design: Dark navy background matching the app. Mobile-first — patients will view this on their phones.
+Content sections:
+Header:
+
+Rippl logo
+'Refer a Friend. Earn Rewards.'
+'Share your unique link with friends and family. When they complete their dental exam, you earn a reward — automatically.'
+
+How it works — 3 steps:
+
+Step 1: 🔗 Share Your Link — 'Share your personal referral link or QR code with anyone looking for a great dentist'
+Step 2: 🦷 They Book & Visit — 'Your friend schedules and completes their new patient exam at Hallmark Dental'
+Step 3: 🎁 You Earn a Reward — 'You automatically receive a reward — no forms, no waiting, no front desk needed'
+
+Reward tiers section:
+
+Title: 'The more you refer, the bigger your reward'
+Show all 4 tiers as cards:
+
+🌱 First Rippl — 1st referral — $35 reward
+🌊 Rippler — 3+ referrals — $50 reward
+⚡ Super Rippler — 6+ referrals — $75 reward
+🏆 Rippl Legend — 10+ referrals — $100 reward
+
+
+
+Reward options section:
+
+Title: 'Choose your reward'
+🎁 Gift Card — Amazon, Visa, Target, Starbucks
+🦷 Dental Credit — $100 toward any treatment
+❤️ Charity Donation — in your name
+🏪 Local Business — redeem at a partner near you
+
+FAQ section:
+
+'How do I share my link?' — 'Your dentist will give you a QR card or send you a personal link by text or email'
+'When do I get my reward?' — 'Within minutes of your friend completing their exam — automatically'
+'Is there a limit?' — 'No limit — refer as many friends as you want and keep earning'
+'Who can I refer?' — 'Anyone who is not already a patient at Hallmark Dental'
+'Do I need to create an account?' — 'No account needed — your reward arrives by email or text'
+
+Footer CTA:
+
+'Ready to start referring?'
+'Ask your dentist for your personal referral link at your next visit'
+
+Add /how-it-works to the public routes in the router so no login is required.
+Push to GitHub using deploy.sh after."

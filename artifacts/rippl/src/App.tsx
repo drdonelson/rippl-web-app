@@ -20,7 +20,8 @@ const Demo      = lazy(() => import("@/pages/demo"));
 const Onboard   = lazy(() => import("@/pages/onboard"));
 const Privacy   = lazy(() => import("@/pages/privacy"));
 const Terms     = lazy(() => import("@/pages/terms"));
-const NotFound  = lazy(() => import("@/pages/not-found"));
+const HowItWorks = lazy(() => import("@/pages/how-it-works"));
+const NotFound   = lazy(() => import("@/pages/not-found"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,6 +49,7 @@ function Router() {
         <Route path="/refer" component={Refer} />
         <Route path="/privacy" component={Privacy} />
         <Route path="/terms" component={Terms} />
+        <Route path="/how-it-works" component={HowItWorks} />
 
         {/* Onboarding — no sidebar, auth-protected inside component */}
         <Route path="/onboard" component={Onboard} />
