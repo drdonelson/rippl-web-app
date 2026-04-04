@@ -1,10 +1,11 @@
 import { logger } from "../lib/logger";
 
-const TANGO_BASE_URL = "https://api.tangocard.com/raas/v2";
-const TANGO_PLATFORM_NAME = process.env.TANGO_PLATFORM_NAME?.trim();
-const TANGO_PLATFORM_KEY  = process.env.TANGO_PLATFORM_KEY?.trim();
-const TANGO_ACCOUNT_ID    = process.env.TANGO_ACCOUNT_ID?.trim();
-const TANGO_CUSTOMER_ID   = process.env.TANGO_CUSTOMER_ID?.trim();
+const TANGO_BASE_URL        = "https://api.tangocard.com/raas/v2";
+const TANGO_PLATFORM_NAME   = process.env.TANGO_PLATFORM_NAME?.trim();
+const TANGO_PLATFORM_KEY    = process.env.TANGO_PLATFORM_KEY?.trim();
+const TANGO_ACCOUNT_ID      = process.env.TANGO_ACCOUNT_ID?.trim();
+const TANGO_CUSTOMER_ID     = process.env.TANGO_CUSTOMER_ID?.trim();
+const TANGO_EMAIL_TEMPLATE  = process.env.TANGO_EMAIL_TEMPLATE_ID?.trim() ?? "E813474";
 
 // Reward Link US (No Donations) — lets recipient choose from hundreds of US gift cards
 const REWARD_LINK_UTID = "U453114";
@@ -46,6 +47,7 @@ export async function sendAmazonRewardLink(
     amount:             amountDollars * CENTS_PER_DOLLAR,
     utid:               REWARD_LINK_UTID,
     sendEmail:          true,
+    emailTemplateId:    TANGO_EMAIL_TEMPLATE,
     externalRefID:      externalRefId,
     recipient: {
       email:     recipient.email,
