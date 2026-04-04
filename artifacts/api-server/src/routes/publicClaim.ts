@@ -127,39 +127,43 @@ router.post("/", async (req, res) => {
   let tangoOrderId: string | null = null;
   let adminTaskCreated = false;
 
+  // Helper: only include referral_event_id when it's non-null (column has NOT NULL constraint)
+  const maybeEventId = claim.referral_event_id
+    ? { referral_event_id: claim.referral_event_id }
+    : {};
+
   if (reward_type === "gift-card") {
-    if (referrer.email) {
+    // Always attempt Tango using the referrer's email from the referrers table.
+    // Only fall back to an admin_task if Tango fails or there is genuinely no email.
+    const referrerEmail = referrer.email ?? null;
+    let tangoResult: { success: boolean; orderId?: string; error?: string } | null = null;
+
+    if (referrerEmail) {
       const nameParts = referrer.name?.trim().split(" ") ?? ["Valued", "Patient"];
-      const tangoResult = await sendAmazonRewardLink(
+      tangoResult = await sendAmazonRewardLink(
         {
-          email:     referrer.email,
+          email:     referrerEmail,
           firstName: nameParts[0] ?? "Valued",
           lastName:  nameParts.slice(1).join(" ") || "Patient",
         },
         rewardValue,
         claim.id,
       );
-      if (tangoResult.success && tangoResult.orderId) {
-        tangoOrderId = tangoResult.orderId;
-      } else {
-        await db.insert(adminTasksTable).values({
-          task_type:         "gift-card",
-          referrer_id:       claim.referrer_id!,
-          referral_event_id: claim.referral_event_id!,
-          amount:            rewardValue,
-          notes:             `Tango failed: ${tangoResult.error ?? "unknown"}. Brand: ${gift_card_brand ?? "Amazon"}. Send $${rewardValue} gift card manually.`,
-          completed:         false,
-        });
-        adminTaskCreated = true;
-      }
+    }
+
+    if (tangoResult?.success && tangoResult.orderId) {
+      tangoOrderId = tangoResult.orderId;
     } else {
+      const failReason = !referrerEmail
+        ? `No email on file for referrer.`
+        : `Tango failed: ${tangoResult?.error ?? "unknown"}.`;
       await db.insert(adminTasksTable).values({
-        task_type:         "gift-card",
-        referrer_id:       claim.referrer_id!,
-        referral_event_id: claim.referral_event_id!,
-        amount:            rewardValue,
-        notes:             `No email on file. Brand: ${gift_card_brand ?? "Amazon"}. Deliver $${rewardValue} gift card manually.`,
-        completed:         false,
+        task_type:   "gift-card",
+        referrer_id: claim.referrer_id!,
+        ...maybeEventId,
+        amount:      rewardValue,
+        notes:       `${failReason} Brand: ${gift_card_brand ?? "Amazon"}. Send $${rewardValue} gift card manually.`,
+        completed:   false,
       });
       adminTaskCreated = true;
     }
@@ -167,22 +171,22 @@ router.post("/", async (req, res) => {
     pinCode = Math.floor(1000 + Math.random() * 9000).toString();
   } else if (reward_type === "in-house-credit") {
     await db.insert(adminTasksTable).values({
-      task_type:         "apply-credit",
-      referrer_id:       claim.referrer_id!,
-      referral_event_id: claim.referral_event_id!,
-      amount:            100,
-      notes:             `Apply $100 dental credit to account: ${referrer.name}.`,
-      completed:         false,
+      task_type:   "apply-credit",
+      referrer_id: claim.referrer_id!,
+      ...maybeEventId,
+      amount:      100,
+      notes:       `Apply $100 dental credit to account: ${referrer.name}.`,
+      completed:   false,
     });
     adminTaskCreated = true;
   } else if (reward_type === "charity") {
     await db.insert(adminTasksTable).values({
-      task_type:         "charity-donation",
-      referrer_id:       claim.referrer_id!,
-      referral_event_id: claim.referral_event_id!,
-      amount:            rewardValue,
-      notes:             `Donate $${rewardValue} to charity in ${referrer.name}'s name. Email: ${referrer.email ?? "none on file"}.`,
-      completed:         false,
+      task_type:   "charity-donation",
+      referrer_id: claim.referrer_id!,
+      ...maybeEventId,
+      amount:      rewardValue,
+      notes:       `Donate $${rewardValue} to charity in ${referrer.name}'s name. Email: ${referrer.email ?? "none on file"}.`,
+      completed:   false,
     });
     adminTaskCreated = true;
   }
