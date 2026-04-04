@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Droplets, CheckCircle2, Loader2, AlertTriangle, Clock, Gift, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getTierConfig, getProgressMessage, TIER_CONFIG } from "@/lib/tier-config";
-import InsuranceCards from "@/components/insurance-cards";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 const PUBLIC_APP_URL = "https://www.joinrippl.com";
@@ -428,9 +427,6 @@ export default function Claim() {
             >
               {copied ? "✓ Link Copied!" : "Or copy link"}
             </button>
-
-            {/* Insurance / Financial */}
-            <InsuranceCards officeKey={referral?.office} className="w-full text-left" />
           </motion.div>
         </div>
       </div>
