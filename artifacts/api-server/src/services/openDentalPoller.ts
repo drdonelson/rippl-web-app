@@ -1,6 +1,6 @@
 import { db } from "@workspace/db";
 import { referralEventsTable, referrersTable, officesTable, rewardClaimsTable } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { sendRewardNotification } from "./notifications";
 import { calculateTier } from "../lib/tierUtils";
@@ -513,18 +513,45 @@ export async function syncOpenDental(options?: {
         }
       }
 
+      // ── Patient-level dedup: prevent double rewards for the same new patient ─
+      // Checks by PatNum + office_id across any event that has already reached
+      // "Exam Completed" or "Reward Sent", regardless of proc number.
+      if (office?.id) {
+        const patientDup = await db
+          .select({ id: referralEventsTable.id, status: referralEventsTable.status })
+          .from(referralEventsTable)
+          .where(
+            and(
+              eq(referralEventsTable.new_patient_pat_num, newPatientPatNum),
+              eq(referralEventsTable.office_id, office.id),
+              inArray(referralEventsTable.status, ["Exam Completed", "Reward Sent"])
+            )
+          )
+          .limit(1);
+
+        if (patientDup.length > 0) {
+          result.skipped++;
+          logger.warn(
+            { patNum: newPatientPatNum, officeId: office.id, existingEventId: patientDup[0].id },
+            "Duplicate R0150 detected — skipping"
+          );
+          continue;
+        }
+      }
+
       // ── Create referral event ─────────────────────────────────────────────
       const [newEvent] = await db
         .insert(referralEventsTable)
         .values({
-          new_patient_name:  proc.PatientName ?? "Unknown Patient",
-          new_patient_phone: proc.PatientPhone ?? "",
-          referrer_id:       referrer.id,
-          team_source:       "open-dental-sync",
-          office:            office?.name ?? "Hallmark Dental",
-          office_id:         office?.id ?? null,
-          status:            "Exam Completed",
-          external_proc_num: procNum,
+          new_patient_name:    proc.PatientName ?? "Unknown Patient",
+          new_patient_phone:   proc.PatientPhone ?? "",
+          new_patient_pat_num: newPatientPatNum,
+          referrer_id:         referrer.id,
+          team_source:         "open-dental-sync",
+          office:              office?.name ?? "Hallmark Dental",
+          office_id:           office?.id ?? null,
+          status:              "Exam Completed",
+          external_proc_num:   procNum,
         })
         .returning();
 

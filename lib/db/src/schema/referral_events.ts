@@ -14,6 +14,7 @@ export const referralEventsTable = pgTable("referral_events", {
   status: text("status").notNull().default("Lead"), // Lead | Booked | Exam Completed | Reward Sent
   reward_type: text("reward_type"), // in-house-credit | amazon-gift-card | charity-donation
   external_proc_num: text("external_proc_num"), // Open Dental ProcNum for deduplication
+  new_patient_pat_num: text("new_patient_pat_num"), // Open Dental PatNum of the new patient — used for per-patient dedup
   household_id: text("household_id"), // hash(lastName + streetAddress) for duplicate detection
   household_duplicate: boolean("household_duplicate").notNull().default(false),
   office_id: text("office_id").references(() => officesTable.id), // nullable — legacy rows have no office_id
