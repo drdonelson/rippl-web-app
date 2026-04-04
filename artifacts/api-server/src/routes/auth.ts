@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { userProfilesTable, officesTable } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, like } from "drizzle-orm";
 import { supabaseAdmin } from "../lib/supabase";
 import { getProfileHandler, requireAuth, requireSuperAdmin } from "../middleware/auth";
 
@@ -103,6 +103,73 @@ router.post("/onboard-staff", requireAuth, requireSuperAdmin, async (req, res) =
   } catch (err) {
     console.error("[onboard-staff] Error:", err);
     res.status(500).json({ error: "Failed to create staff account" });
+  }
+});
+
+// GET /api/auth/staff-accounts — list all staff profiles (super_admin only)
+router.get("/staff-accounts", requireAuth, requireSuperAdmin, async (_req, res) => {
+  try {
+    // 1. Fetch all user_profiles with a staff_ role
+    const profiles = await db
+      .select({
+        id:          userProfilesTable.id,
+        full_name:   userProfilesTable.full_name,
+        role:        userProfilesTable.role,
+        practice_id: userProfilesTable.practice_id,
+        created_at:  userProfilesTable.created_at,
+        office_name: officesTable.name,
+        location_code: officesTable.location_code,
+      })
+      .from(userProfilesTable)
+      .leftJoin(officesTable, eq(userProfilesTable.practice_id, officesTable.id))
+      .where(like(userProfilesTable.role, "staff_%"));
+
+    if (profiles.length === 0) {
+      res.json([]);
+      return;
+    }
+
+    // 2. Fetch matching Supabase users for their emails
+    const { data: authList } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+    const emailMap = new Map<string, string>();
+    for (const u of (authList?.users ?? [])) {
+      if (u.email) emailMap.set(u.id, u.email);
+    }
+
+    const result = profiles.map(p => ({
+      id:            p.id,
+      full_name:     p.full_name ?? "",
+      email:         emailMap.get(p.id) ?? "(unknown)",
+      role:          p.role,
+      office_id:     p.practice_id ?? "",
+      office_name:   p.office_name ?? "",
+      location_code: p.location_code ?? "",
+      created_at:    p.created_at,
+    }));
+
+    res.json(result);
+  } catch (err) {
+    console.error("[staff-accounts] Error:", err);
+    res.status(500).json({ error: "Failed to fetch staff accounts" });
+  }
+});
+
+// DELETE /api/auth/staff-accounts/:id — remove a staff account (super_admin only)
+router.delete("/staff-accounts/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+  const { id } = req.params;
+  if (!id) { res.status(400).json({ error: "Missing id" }); return; }
+
+  try {
+    // 1. Delete from Supabase auth (ignore error if user doesn't exist there)
+    await supabaseAdmin.auth.admin.deleteUser(id);
+
+    // 2. Delete from user_profiles
+    await db.delete(userProfilesTable).where(eq(userProfilesTable.id, id));
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[staff-accounts delete] Error:", err);
+    res.status(500).json({ error: "Failed to delete staff account" });
   }
 });
 
