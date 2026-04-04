@@ -373,17 +373,20 @@ export default function Claim() {
             <div className="w-full bg-slate-800/60 border border-slate-700 rounded-2xl p-5 mb-5 text-left">
               {result.reward_type === "local-partner" && result.pin_code ? (
                 <>
-                  <p className="text-slate-400 text-xs uppercase tracking-wider font-semibold mb-2">Your Redemption PIN</p>
                   <p className="text-6xl font-black text-white tracking-[0.2em] text-center py-2 font-mono">
                     {result.pin_code}
                   </p>
-                  <p className="text-slate-400 text-xs text-center mt-2">Show this screen to the cashier to redeem your reward at {localPartner?.business_name ?? "the store"}.</p>
+                  <p className="text-slate-400 text-xs text-center mt-2">
+                    Your redemption PIN: <span className="text-white font-semibold">{result.pin_code}</span> — Show this screen at {localPartner?.business_name ?? "the store"} to redeem.
+                  </p>
                 </>
               ) : result.reward_type === "gift-card" ? (
                 <>
-                  <p className="text-white font-semibold mb-1">🎁 Check your email!</p>
+                  <p className="text-white font-semibold mb-1">🎁 {result.tango_order_id ? "Gift card on its way!" : "Request received!"}</p>
                   <p className="text-slate-400 text-sm">
-                    Your ${result.reward_value} {result.gift_card_brand ?? "Amazon"} gift card is on its way to {referrer.name.split(" ")[0]}'s inbox. It usually arrives within a few minutes.
+                    {result.tango_order_id
+                      ? `Your ${result.gift_card_brand ?? "Amazon"} gift card is on its way! Check your email — it usually arrives within a few minutes.`
+                      : "Your gift card request has been received — we'll email it to you within 24 hours."}
                   </p>
                 </>
               ) : result.reward_type === "in-house-credit" ? (
@@ -395,9 +398,9 @@ export default function Claim() {
                 </>
               ) : (
                 <>
-                  <p className="text-white font-semibold mb-1">❤️ Thank you for giving back!</p>
+                  <p className="text-white font-semibold mb-1">❤️ Donation confirmed!</p>
                   <p className="text-slate-400 text-sm">
-                    We'll donate ${result.reward_value} to charity in your name and send you a confirmation email.
+                    We'll make a ${result.reward_value} donation in your name and send you a confirmation email.
                   </p>
                 </>
               )}
