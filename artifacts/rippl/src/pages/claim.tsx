@@ -628,7 +628,7 @@ export default function Claim() {
         </AnimatePresence>
 
         <p className="text-center text-xs text-slate-600 mt-5">
-          By claiming, you agree to {office}'s referral program terms.
+          By claiming, you agree to Rippl's referral program terms.
         </p>
       </div>
     </div>
