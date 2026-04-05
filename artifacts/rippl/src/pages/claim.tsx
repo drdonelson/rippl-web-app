@@ -133,7 +133,7 @@ function RewardCard({
     >
       {badge && (
         <span className={cn(
-          "absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
+          "absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider px-2 py-[5px] rounded-full max-w-[110px] truncate leading-none",
           badgeColor === "amber"
             ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
             : "bg-teal-500/20 text-teal-400 border border-teal-500/30",
@@ -142,7 +142,7 @@ function RewardCard({
         </span>
       )}
 
-      <div className="flex items-start gap-4 pr-16">
+      <div className={cn("flex items-start gap-4", badge ? "pr-28" : "pr-16")}>
         <div className={cn(
           "w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 mt-0.5",
           isSelected ? "bg-teal-500/20" : "bg-slate-700/60",
@@ -548,6 +548,18 @@ export default function Claim() {
         {/* Reward cards */}
         <div className="space-y-3 mb-6">
 
+          {/* In-house credit — shown first */}
+          <RewardCard
+            isSelected={selected === "in-house-credit"}
+            onSelect={() => setSelected("in-house-credit")}
+            badge="Most Valuable"
+            badgeColor="amber"
+            icon="🦷"
+            title="$100 Dental Account Credit"
+            subtitle="Applied to your account within 24 hours"
+            detail="Worth the most — use it toward any future treatment"
+          />
+
           {/* Gift card */}
           <RewardCard
             isSelected={selected === "gift-card"}
@@ -602,18 +614,6 @@ export default function Claim() {
                 : "Show your PIN in store to redeem"}
             />
           )}
-
-          {/* In-house credit */}
-          <RewardCard
-            isSelected={selected === "in-house-credit"}
-            onSelect={() => setSelected("in-house-credit")}
-            badge="Most Valuable"
-            badgeColor="amber"
-            icon="🦷"
-            title="$100 Dental Account Credit"
-            subtitle="Applied to your account within 24 hours"
-            detail="Worth the most — use it toward any future treatment"
-          />
 
           {/* Charity */}
           <RewardCard
