@@ -519,7 +519,7 @@ export default function Claim() {
   // ── Selecting ─────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#0a1628]">
-      <div className="max-w-2xl mx-auto px-5 py-6 pb-10">
+      <div className="max-w-4xl mx-auto px-4 md:px-6 py-6 md:py-12 pb-10 md:pb-16">
 
         {/* Logo + Office */}
         <div className="flex items-center gap-2 mb-7">
@@ -530,11 +530,11 @@ export default function Claim() {
         </div>
 
         {/* Header */}
-        <div className="mb-7">
-          <h1 className="text-3xl font-black text-white leading-tight mb-3">
+        <div className="mb-7 md:text-center md:py-4">
+          <h1 className="text-3xl md:text-4xl font-black text-white leading-tight mb-3">
             Congratulations, {firstName}! 🎉
           </h1>
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-2 md:justify-center">
             <TierPill tierName={referrer.tier} />
           </div>
           <p className="text-teal-400 font-semibold text-lg mt-2">
@@ -583,7 +583,7 @@ export default function Claim() {
                   className="mt-3 overflow-hidden"
                 >
                   <p className="text-slate-400 text-xs mb-2">Choose brand:</p>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
                     {GIFT_CARD_BRANDS.map((b) => (
                       <button
                         key={b}
@@ -637,10 +637,11 @@ export default function Claim() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 12 }}
+              className="md:flex md:justify-center"
             >
               <button
                 onClick={() => setPhase("confirming")}
-                className="w-full py-4 rounded-2xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-base transition-all shadow-lg shadow-teal-600/25"
+                className="w-full md:max-w-[400px] py-4 rounded-2xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-base transition-all shadow-lg shadow-teal-600/25"
               >
                 Continue with {
                   selected === "gift-card" ? `${brand} Gift Card` :
