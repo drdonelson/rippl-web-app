@@ -120,20 +120,11 @@ function RewardCard({
   children?: React.ReactNode;
 }) {
   return (
-    <button
-      onClick={onSelect}
-      disabled={disabled}
-      className={cn(
-        "w-full text-left rounded-2xl p-4 border transition-all duration-200 relative overflow-hidden",
-        "disabled:cursor-not-allowed",
-        isSelected
-          ? "bg-teal-900/40 border-teal-500 shadow-lg shadow-teal-500/10"
-          : "bg-slate-800/50 border-slate-700 hover:border-slate-500 active:scale-[0.99]",
-      )}
-    >
+    <div className={cn("relative", badge && "mt-5")}>
+      {/* Badge floats above the card border */}
       {badge && (
         <span className={cn(
-          "absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider px-2 py-[5px] rounded-full max-w-[110px] truncate leading-none",
+          "absolute -top-3 right-4 z-10 text-[10px] font-bold uppercase tracking-wider px-2.5 py-[5px] rounded-full leading-none pointer-events-none",
           badgeColor === "amber"
             ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
             : "bg-teal-500/20 text-teal-400 border border-teal-500/30",
@@ -142,32 +133,44 @@ function RewardCard({
         </span>
       )}
 
-      <div className={cn("flex items-start gap-4", badge ? "pr-28" : "pr-16")}>
-        <div className={cn(
-          "w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 mt-0.5",
-          isSelected ? "bg-teal-500/20" : "bg-slate-700/60",
-        )}>
-          {icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-base font-bold text-white leading-tight">{title}</p>
-          <p className="text-teal-400 text-sm font-medium mt-0.5">{subtitle}</p>
-          <p className="text-slate-400 text-xs mt-1 leading-relaxed">{detail}</p>
-          {children}
-        </div>
-      </div>
-
-      <div className={cn(
-        "absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 mt-3",
-        isSelected ? "bg-teal-500 border-teal-500" : "border-slate-500",
-      )}>
-        {isSelected && (
-          <svg viewBox="0 0 20 20" fill="white" className="w-full h-full p-0.5">
-            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-          </svg>
+      <button
+        onClick={onSelect}
+        disabled={disabled}
+        className={cn(
+          "w-full text-left rounded-2xl p-4 border transition-all duration-200 relative overflow-hidden",
+          "disabled:cursor-not-allowed",
+          isSelected
+            ? "bg-teal-900/40 border-teal-500 shadow-lg shadow-teal-500/10"
+            : "bg-slate-800/50 border-slate-700 hover:border-slate-500 active:scale-[0.99]",
         )}
-      </div>
-    </button>
+      >
+        <div className="flex items-start gap-4 pr-16">
+          <div className={cn(
+            "w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 mt-0.5",
+            isSelected ? "bg-teal-500/20" : "bg-slate-700/60",
+          )}>
+            {icon}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-base font-bold text-white leading-tight">{title}</p>
+            <p className="text-teal-400 text-sm font-medium mt-0.5">{subtitle}</p>
+            <p className="text-slate-400 text-xs mt-1 leading-relaxed">{detail}</p>
+            {children}
+          </div>
+        </div>
+
+        <div className={cn(
+          "absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 mt-3",
+          isSelected ? "bg-teal-500 border-teal-500" : "border-slate-500",
+        )}>
+          {isSelected && (
+            <svg viewBox="0 0 20 20" fill="white" className="w-full h-full p-0.5">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          )}
+        </div>
+      </button>
+    </div>
   );
 }
 
@@ -516,7 +519,7 @@ export default function Claim() {
   // ── Selecting ─────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#0a1628]">
-      <div className="max-w-md mx-auto px-5 py-6 pb-10">
+      <div className="max-w-2xl mx-auto px-5 py-6 pb-10">
 
         {/* Logo + Office */}
         <div className="flex items-center gap-2 mb-7">
@@ -545,8 +548,8 @@ export default function Claim() {
           </p>
         </div>
 
-        {/* Reward cards */}
-        <div className="space-y-3 mb-6">
+        {/* Reward cards — 2-col on sm+, single-col on mobile */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-3 mb-6">
 
           {/* In-house credit — shown first */}
           <RewardCard
