@@ -24,6 +24,7 @@ type NavItem = {
 type NavSection = {
   label?: string;
   minRole?: "practice_admin" | "super_admin";
+  demoVisible?: boolean;
   items: NavItem[];
 };
 
@@ -55,11 +56,12 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: "Public Pages",
     minRole: "super_admin",
+    demoVisible: true,
     items: [
-      { href: "https://www.joinrippl.com/how-it-works",                                    label: "How It Works",   icon: Link2,    external: true },
-      { href: "https://www.joinrippl.com/privacy",                                         label: "Privacy Policy", icon: Shield,   external: true },
-      { href: "https://www.joinrippl.com/terms",                                           label: "Terms",          icon: FileText, external: true },
-      { href: "https://www.joinrippl.com/claim?token=demo-claim-preview-token-screenshot", label: "Demo Claim",     icon: Gift,     external: true },
+      { href: "https://www.joinrippl.com/how-it-works",                                    label: "How It Works",      icon: Link2,    external: true },
+      { href: "https://www.joinrippl.com/privacy",                                         label: "Privacy Policy",    icon: Shield,   external: true, minRole: "super_admin" },
+      { href: "https://www.joinrippl.com/terms",                                           label: "Terms",             icon: FileText, external: true, minRole: "super_admin" },
+      { href: "https://www.joinrippl.com/claim?token=demo-claim-preview-token-screenshot", label: "🎁 Demo Claim Page", icon: Gift,     external: true },
     ],
   },
 ];
@@ -74,10 +76,11 @@ function roleLevel(role: UserRole | undefined): number {
   return 0;
 }
 
-function getSections(role: UserRole | undefined): NavSection[] {
+function getSections(role: UserRole | undefined, isDemo = false): NavSection[] {
   const level = roleLevel(role);
   return NAV_SECTIONS
     .filter((s) => {
+      if (isDemo && s.demoVisible) return true;
       if (!s.minRole) return true;
       if (s.minRole === "practice_admin") return level >= 2;
       if (s.minRole === "super_admin") return level >= 3;
@@ -86,6 +89,7 @@ function getSections(role: UserRole | undefined): NavSection[] {
     .map((s) => ({
       ...s,
       items: s.items.filter((item) => {
+        if (isDemo && !item.minRole) return true;
         if (!item.minRole) return true;
         if (item.minRole === "practice_admin") return level >= 2;
         if (item.minRole === "super_admin") return level >= 3;
@@ -161,8 +165,8 @@ function SidebarContent({
   subtitleText: string;
   onNavClick?: () => void;
 }) {
-  const { user, profile, logout } = useAuth();
-  const sections = getSections(profile?.role);
+  const { user, profile, logout, isDemo } = useAuth();
+  const sections = getSections(profile?.role, isDemo);
 
   const handleLogout = () => {
     onNavClick?.();
