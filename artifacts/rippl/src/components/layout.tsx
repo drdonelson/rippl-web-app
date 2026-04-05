@@ -5,7 +5,7 @@ import {
   LayoutDashboard, CalendarDays, Users, Droplets,
   ChevronDown, MapPin, LogOut, AlertTriangle, Menu, X,
   Store, CheckSquare, Building2, TrendingUp, ExternalLink,
-  GraduationCap, Link2, Shield, FileText, Gift,
+  GraduationCap, Link2, Shield, FileText, Gift, Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useOffice } from "@/contexts/office-context";
@@ -42,6 +42,7 @@ const NAV_SECTIONS: NavSection[] = [
     minRole: "practice_admin",
     items: [
       { href: "/partners",    label: "Local Partners", icon: Store,       minRole: "super_admin"    },
+      { href: "/campaigns",   label: "Campaigns",      icon: Megaphone                              },
       { href: "/admin-tasks", label: "Admin Tasks",    icon: CheckSquare                            },
       { href: "/offices",     label: "Offices",        icon: Building2,   minRole: "super_admin"    },
     ],

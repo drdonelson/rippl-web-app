@@ -10,3 +10,4 @@ export * from "./referral_link_deliveries";
 export * from "./local_partners";
 export * from "./partner_reward_tiers";
 export * from "./reward_claims";
+export * from "./campaigns";

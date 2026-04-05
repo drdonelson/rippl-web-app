@@ -720,23 +720,6 @@ export default function Patients() {
             </button>
           </div>
 
-          {/* Send All Referral Links — super_admin only */}
-          {profile?.role === "super_admin" && !isDemo && (
-            <button
-              onClick={() => { setBulkSendOpen(true); setBulkResult(null); setBulkChannelSms(true); setBulkChannelEmail(false); }}
-              className="flex-shrink-0 px-4 sm:px-5 py-2 bg-card hover:bg-muted border border-border text-foreground rounded-xl font-semibold transition-all flex items-center gap-1.5 text-sm"
-              title={`Send referral links to ${unsentCount} patient${unsentCount !== 1 ? "s" : ""} who haven't received one`}
-            >
-              <Users className="w-4 h-4 text-primary" />
-              <span className="hidden sm:inline">Send All Links</span>
-              {unsentCount > 0 && (
-                <span className="ml-0.5 min-w-[20px] h-5 px-1.5 bg-primary text-primary-foreground rounded-full text-xs font-bold flex items-center justify-center">
-                  {unsentCount}
-                </span>
-              )}
-            </button>
-          )}
-
           {/* Add Patient — primary action, kept prominent */}
           <button
             onClick={openAddModal}

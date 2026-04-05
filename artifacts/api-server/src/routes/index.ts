@@ -7,6 +7,7 @@ import dashboardRouter from "./dashboard";
 import testRouter from "./test";
 import syncRouter from "./sync";
 import adminTasksRouter from "./adminTasks";
+import campaignsRouter from "./campaigns";
 import launchRouter from "./launch";
 import openDentalRouter from "./openDental";
 import officesRouter from "./offices";
@@ -36,6 +37,7 @@ router.use("/rewards", requireAuth, rewardsRouter);
 router.use("/dashboard", requireAuth, dashboardRouter);
 router.use("/sync", syncRouter);
 router.use("/admin-tasks", requireAuth, adminTasksRouter);
+router.use("/campaigns",   requireAuth, campaignsRouter);
 router.use("/opendental", requireAuth, openDentalRouter);
 router.use("/import", requireAuth, importJobsRouter);
 

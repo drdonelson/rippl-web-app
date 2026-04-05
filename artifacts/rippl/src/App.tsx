@@ -15,6 +15,7 @@ const Dashboard  = lazy(() => import("@/pages/dashboard"));
 const Events     = lazy(() => import("@/pages/events"));
 const Patients   = lazy(() => import("@/pages/patients"));
 const AdminTasks = lazy(() => import("@/pages/admin-tasks"));
+const Campaigns  = lazy(() => import("@/pages/campaigns"));
 const Partners   = lazy(() => import("@/pages/partners"));
 const Offices    = lazy(() => import("@/pages/offices"));
 const Analytics  = lazy(() => import("@/pages/analytics"));
@@ -68,6 +69,7 @@ function Router() {
                   <Route path="/events"      component={Events}     />
                   <Route path="/patients"    component={Patients}   />
                   <Route path="/admin-tasks" component={AdminTasks} />
+                  <Route path="/campaigns"  component={Campaigns}  />
                   <Route path="/partners"    component={Partners}   />
                   <Route path="/offices"     component={Offices}    />
                   <Route path="/analytics"   component={Analytics}  />
