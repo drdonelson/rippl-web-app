@@ -13,7 +13,7 @@ router.get("/", async (req, res) => {
         task_type: adminTasksTable.task_type,
         amount: adminTasksTable.amount,
         notes: adminTasksTable.notes,
-        completed: adminTasksTable.completed,
+        status: adminTasksTable.status,
         referral_event_id: adminTasksTable.referral_event_id,
         created_at: adminTasksTable.created_at,
         referrer_name: referrersTable.name,
@@ -23,7 +23,7 @@ router.get("/", async (req, res) => {
       .from(adminTasksTable)
       .leftJoin(referrersTable, eq(adminTasksTable.referrer_id, referrersTable.id))
       .leftJoin(referralEventsTable, eq(adminTasksTable.referral_event_id, referralEventsTable.id))
-      .where(eq(adminTasksTable.completed, false))
+      .where(eq(adminTasksTable.status, "pending"))
       .orderBy(adminTasksTable.created_at);
 
     res.json(tasks);
@@ -38,8 +38,8 @@ router.patch("/:id/complete", async (req, res) => {
   try {
     const [task] = await db
       .update(adminTasksTable)
-      .set({ completed: true })
-      .where(and(eq(adminTasksTable.id, id), eq(adminTasksTable.completed, false)))
+      .set({ status: "completed" })
+      .where(and(eq(adminTasksTable.id, id), eq(adminTasksTable.status, "pending")))
       .returning();
 
     if (!task) {
@@ -60,7 +60,7 @@ router.patch("/:id/override", async (req, res) => {
     const [task] = await db
       .select()
       .from(adminTasksTable)
-      .where(and(eq(adminTasksTable.id, id), eq(adminTasksTable.completed, false)));
+      .where(and(eq(adminTasksTable.id, id), eq(adminTasksTable.status, "pending")));
 
     if (!task) {
       res.status(404).json({ error: "Task not found or already completed" });
@@ -69,7 +69,7 @@ router.patch("/:id/override", async (req, res) => {
 
     await db
       .update(adminTasksTable)
-      .set({ completed: true })
+      .set({ status: "completed" })
       .where(eq(adminTasksTable.id, id));
 
     const [updatedEvent] = await db
@@ -83,7 +83,7 @@ router.patch("/:id/override", async (req, res) => {
       "Admin overrode household duplicate — duplicate flag cleared"
     );
 
-    res.json({ task: { ...task, completed: true }, event: updatedEvent });
+    res.json({ task: { ...task, status: "completed" }, event: updatedEvent });
   } catch (err) {
     req.log.error({ err, id }, "[admin-tasks] override failed");
     res.status(500).json({ error: "Failed to override task" });

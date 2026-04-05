@@ -11,7 +11,7 @@ type AdminTask = {
   task_type: string;
   amount: number | null;
   notes: string | null;
-  completed: boolean;
+  status: string;
   referral_event_id: string;
   created_at: string;
   referrer_name: string | null;

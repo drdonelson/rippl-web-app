@@ -163,7 +163,7 @@ router.post("/", async (req, res) => {
         ...maybeEventId,
         amount:      rewardValue,
         notes:       `${failReason} Brand: ${gift_card_brand ?? "Amazon"}. Send $${rewardValue} gift card manually.`,
-        completed:   false,
+        status:      "pending",
       });
       adminTaskCreated = true;
     }
@@ -176,7 +176,7 @@ router.post("/", async (req, res) => {
       ...maybeEventId,
       amount:      100,
       notes:       `Apply $100 dental credit to account: ${referrer.name}.`,
-      completed:   false,
+      status:      "pending",
     });
     adminTaskCreated = true;
   } else if (reward_type === "charity") {
@@ -186,7 +186,7 @@ router.post("/", async (req, res) => {
       ...maybeEventId,
       amount:      rewardValue,
       notes:       `Donate $${rewardValue} to charity in ${referrer.name}'s name. Email: ${referrer.email ?? "none on file"}.`,
-      completed:   false,
+      status:      "pending",
     });
     adminTaskCreated = true;
   }

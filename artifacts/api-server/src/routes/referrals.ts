@@ -88,7 +88,7 @@ router.post("/", async (req, res) => {
       referral_event_id: event.id,
       amount: 0,
       notes: `Household duplicate detected. Existing completed event: ${householdResult.conflicting_event_id ?? "unknown"}. Address match: ${householdResult.od_address_found ? "yes (OD address)" : "name only"}. Review and override if legitimate.`,
-      completed: false,
+      status: "pending",
     });
 
     res.status(201).json({ ...event, referrer_name: null });
@@ -237,12 +237,12 @@ router.patch("/:id/override-household", async (req, res) => {
   // Mark any associated household-duplicate admin task as complete
   await db
     .update(adminTasksTable)
-    .set({ completed: true })
+    .set({ status: "completed" })
     .where(
       and(
         eq(adminTasksTable.referral_event_id, id),
         eq(adminTasksTable.task_type, "household-duplicate-review"),
-        eq(adminTasksTable.completed, false)
+        eq(adminTasksTable.status, "pending")
       )
     );
 
