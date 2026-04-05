@@ -25,6 +25,7 @@ type NavSection = {
   label?: string;
   minRole?: "practice_admin" | "super_admin";
   demoVisible?: boolean;
+  demoOnly?: boolean;
   items: NavItem[];
 };
 
@@ -54,7 +55,15 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: "Public Pages",
+    label: "Analytics",
+    demoVisible: true,
+    demoOnly: true,
+    items: [
+      { href: "/analytics", label: "Analytics", icon: TrendingUp },
+    ],
+  },
+  {
+    label: "Patient Links",
     minRole: "super_admin",
     demoVisible: true,
     items: [
@@ -80,6 +89,7 @@ function getSections(role: UserRole | undefined, isDemo = false): NavSection[] {
   const level = roleLevel(role);
   return NAV_SECTIONS
     .filter((s) => {
+      if (s.demoOnly && !isDemo) return false;
       if (isDemo && s.demoVisible) return true;
       if (!s.minRole) return true;
       if (s.minRole === "practice_admin") return level >= 2;

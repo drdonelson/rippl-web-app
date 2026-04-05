@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckSquare, Loader2, AlertTriangle, CheckCircle2, Clock, Building2, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
+import { customFetch } from "@workspace/api-client-react";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
@@ -20,17 +21,11 @@ type AdminTask = {
 };
 
 async function fetchTasks(): Promise<AdminTask[]> {
-  const res = await fetch(`${BASE}/api/admin-tasks`, { credentials: "include" });
-  if (!res.ok) throw new Error("Failed to load tasks");
-  return res.json();
+  return customFetch<AdminTask[]>(`${BASE}/api/admin-tasks`);
 }
 
 async function completeTask(id: string): Promise<void> {
-  const res = await fetch(`${BASE}/api/admin-tasks/${id}/complete`, {
-    method: "PATCH",
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error("Failed to complete task");
+  await customFetch(`${BASE}/api/admin-tasks/${id}/complete`, { method: "PATCH" });
 }
 
 function taskLabel(task_type: string): { icon: React.ReactNode; label: string; color: string } {

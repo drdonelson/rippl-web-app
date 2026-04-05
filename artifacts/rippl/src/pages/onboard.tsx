@@ -3,10 +3,12 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/auth-context";
 import {
   Droplets, Loader2, CheckCircle2, ArrowLeft, Building2,
-  UserPlus, Eye, EyeOff, Trash2, AlertTriangle,
+  UserPlus, Eye, EyeOff, Trash2, AlertTriangle, KeyRound,
 } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
@@ -65,6 +67,7 @@ export default function Onboard() {
   const [listLoading, setListLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [resettingId, setResettingId] = useState<string | null>(null);
 
   const authHeaders = useCallback(() => ({
     "Content-Type": "application/json",
@@ -177,6 +180,25 @@ export default function Onboard() {
       setDeleteError("Network error. Please try again.");
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  // ── Reset staff password ──────────────────────────────────────────────────
+  const handleResetPassword = async (id: string, email: string) => {
+    setResettingId(id);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) {
+        toast.error(`Failed to send reset email: ${error.message}`);
+      } else {
+        toast.success(`Password reset email sent to ${email}`);
+      }
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setResettingId(null);
     }
   };
 
@@ -427,6 +449,16 @@ export default function Onboard() {
                           )}
                         </div>
                       </div>
+                      <button
+                        onClick={() => handleResetPassword(acct.id, acct.email)}
+                        disabled={resettingId === acct.id}
+                        className="shrink-0 p-2 rounded-lg text-white/30 hover:text-teal-400 hover:bg-teal-500/10 transition-all disabled:opacity-40"
+                        title={`Send password reset email to ${acct.email}`}
+                      >
+                        {resettingId === acct.id
+                          ? <Loader2 className="w-4 h-4 animate-spin" />
+                          : <KeyRound className="w-4 h-4" />}
+                      </button>
                       <button
                         onClick={() => handleDelete(acct.id)}
                         disabled={deletingId === acct.id}
