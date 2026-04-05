@@ -90,7 +90,7 @@ function TierPill({ tierName }: { tierName: string | null }) {
       "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold border",
       cfg.color, cfg.bg, cfg.border,
     )}>
-      {cfg.emoji} {cfg.label}
+      <img src={cfg.icon} alt={cfg.label} className="w-4 h-4" /> {cfg.label}
     </span>
   );
 }
@@ -177,7 +177,7 @@ function TierProgressBar({ tierName, totalReferrals }: { tierName: string | null
   if (!cfg.nextTierAt) {
     return (
       <div className="text-center">
-        <p className="text-amber-400 text-sm font-semibold">You've reached the highest tier! 🏆</p>
+        <p className="text-purple-400 text-sm font-semibold">You've reached Legend status!</p>
       </div>
     );
   }
@@ -189,8 +189,12 @@ function TierProgressBar({ tierName, totalReferrals }: { tierName: string | null
   return (
     <div className="space-y-2">
       <div className="flex justify-between text-xs text-slate-400">
-        <span className={cn("font-semibold", cfg.color)}>{cfg.emoji} {cfg.label}</span>
-        <span className={cn("font-semibold", nextCfg?.color)}>{nextCfg?.emoji} {cfg.nextTierLabel}</span>
+        <span className={cn("inline-flex items-center gap-1 font-semibold", cfg.color)}>
+          <img src={cfg.icon} alt={cfg.label} className="w-4 h-4" /> {cfg.label}
+        </span>
+        <span className={cn("inline-flex items-center gap-1 font-semibold", nextCfg?.color)}>
+          {nextCfg && <img src={nextCfg.icon} alt={cfg.nextTierLabel ?? ''} className="w-4 h-4" />} {cfg.nextTierLabel}
+        </span>
       </div>
       <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
         <motion.div

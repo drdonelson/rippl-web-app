@@ -161,7 +161,7 @@ export default function HowItWorks() {
                   tier.bg, tier.border,
                 )}
               >
-                <div className="text-3xl mb-1">{tier.emoji}</div>
+                <img src={tier.icon} alt={tier.label} className="w-7 h-7 mb-1 mx-auto" />
                 <p className={cn("font-bold text-sm leading-tight", tier.color)}>{tier.label}</p>
                 <p className="text-slate-400 text-xs mt-1">{tier.referrals}</p>
                 <p className={cn("font-black text-lg mt-1.5", tier.color)}>{tier.reward}</p>
@@ -216,7 +216,7 @@ export default function HowItWorks() {
           viewport={{ once: true }}
           className="bg-gradient-to-br from-teal-900/50 to-slate-800/50 border border-teal-700/30 rounded-3xl p-6 text-center"
         >
-          <div className="text-3xl mb-3">🌊</div>
+          <Droplets className="w-8 h-8 mb-3 mx-auto text-teal-400" />
           <h3 className="text-white font-bold text-lg mb-2">Your referral link is ready</h3>
           <p className="text-slate-400 text-sm leading-relaxed mb-4">
             Ask your dentist for your personal link at your next visit, or check your email from Hallmark Dental.
