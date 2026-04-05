@@ -237,7 +237,7 @@ router.patch("/:id/override-household", async (req, res) => {
   // Mark any associated household-duplicate admin task as complete
   await db
     .update(adminTasksTable)
-    .set({ status: "completed" })
+    .set({ status: "completed", completed: true })
     .where(
       and(
         eq(adminTasksTable.referral_event_id, id),
