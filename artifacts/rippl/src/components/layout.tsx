@@ -5,7 +5,7 @@ import {
   LayoutDashboard, CalendarDays, Users, Droplets,
   ChevronDown, MapPin, LogOut, AlertTriangle, Menu, X,
   Store, CheckSquare, Building2, TrendingUp, ExternalLink,
-  GraduationCap, Link2, Shield, FileText, Gift, Megaphone,
+  GraduationCap, Link2, Shield, FileText, Gift, Megaphone, UserCog,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useOffice } from "@/contexts/office-context";
@@ -53,6 +53,15 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/onboard",   label: "Onboard",   icon: GraduationCap },
       { href: "/analytics", label: "Analytics", icon: TrendingUp    },
+    ],
+  },
+  {
+    label: "Manage",
+    demoVisible: true,
+    demoOnly: true,
+    items: [
+      { href: "/campaigns", label: "Campaigns",      icon: Megaphone },
+      { href: "/staff",     label: "Staff Accounts", icon: UserCog   },
     ],
   },
   {

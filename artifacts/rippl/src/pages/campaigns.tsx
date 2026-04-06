@@ -3,12 +3,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Megaphone, MessageSquare, Mail, Loader2, AlertTriangle,
   Users, CheckCircle2, Clock, Send, ChevronDown, Eye, RefreshCw,
-  Hash, Zap,
+  Hash, Zap, Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { customFetch } from "@workspace/api-client-react";
 import { Modal } from "@/components/ui/modal";
+import { useAuth } from "@/contexts/auth-context";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
@@ -134,16 +135,41 @@ function filterLabel(f: string) {
   return FILTER_OPTIONS.find(o => o.value === f)?.label ?? f;
 }
 
+// ── Demo data ─────────────────────────────────────────────────────────────────
+
+const DEMO_COUNT_RESULT: CountResult = {
+  count: 2847,
+  preview_patient: {
+    name:          "Sarah Johnson",
+    referral_code: "SARAH1234",
+    tier:          "starter",
+    reward_value:  35,
+    office_name:   "Hallmark Dental – Brentwood",
+  },
+};
+
+interface DemoCampaign extends Campaign {
+  audience_label?: string;
+  display_channel?: string;
+}
+
+const DEMO_CAMPAIGNS: DemoCampaign[] = [
+  { id: "d1", name: "Spring Welcome Campaign",     channel: "sms",   display_channel: "SMS",          audience_filter: "not_contacted",    audience_label: "All uncontacted patients", sent_count: 847, failed_count: 0, status: "sent", created_by: null, sent_at: "2026-03-15", created_at: "2026-03-15", message_template: "" },
+  { id: "d2", name: "Tier Upgrade Announcement",   channel: "email", display_channel: "Email",        audience_filter: "tier_rippler",     audience_label: "Amplifier + Ambassador",   sent_count: 124, failed_count: 0, status: "sent", created_by: null, sent_at: "2026-03-22", created_at: "2026-03-22", message_template: "" },
+  { id: "d3", name: "Brentwood VIP Outreach",      channel: "sms",   display_channel: "SMS + Email",  audience_filter: "office_brentwood", audience_label: "Legend tier",              sent_count: 12,  failed_count: 0, status: "sent", created_by: null, sent_at: "2026-04-01", created_at: "2026-04-01", message_template: "" },
+  { id: "d4", name: "New Patient Welcome",          channel: "email", display_channel: "Email",        audience_filter: "not_contacted",    audience_label: "All uncontacted",          sent_count: 312, failed_count: 0, status: "sent", created_by: null, sent_at: "2026-04-03", created_at: "2026-04-03", message_template: "" },
+];
+
 // ── Campaign builder tab ───────────────────────────────────────────────────────
 
-function CampaignBuilder({ channel }: { channel: Channel }) {
+function CampaignBuilder({ channel, isDemo }: { channel: Channel; isDemo?: boolean }) {
   const qc = useQueryClient();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [campaignName, setCampaignName]   = useState("");
   const [filter, setFilter]               = useState<AudienceFilter>("not_contacted");
   const [template, setTemplate]           = useState(channel === "sms" ? DEFAULT_SMS : DEFAULT_EMAIL);
-  const [countResult, setCountResult]     = useState<CountResult | null>(null);
+  const [countResult, setCountResult]     = useState<CountResult | null>(isDemo ? DEMO_COUNT_RESULT : null);
   const [countLoading, setCountLoading]   = useState(false);
   const [confirmOpen, setConfirmOpen]     = useState(false);
 
@@ -152,8 +178,9 @@ function CampaignBuilder({ channel }: { channel: Channel }) {
   const charCount = template.length;
   const smsSegments = channel === "sms" ? Math.ceil(charCount / 160) : 0;
 
-  // Fetch count whenever filter changes
+  // Fetch count whenever filter changes (skipped in demo mode)
   const fetchCount = useCallback(async (f: AudienceFilter) => {
+    if (isDemo) return;
     setCountLoading(true);
     try {
       const result = await customFetch<CountResult>(`${BASE}/api/campaigns/count`, {
@@ -167,13 +194,14 @@ function CampaignBuilder({ channel }: { channel: Channel }) {
     } finally {
       setCountLoading(false);
     }
-  }, []);
+  }, [isDemo]);
 
   useEffect(() => {
+    if (isDemo) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => fetchCount(filter), 400);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [filter, fetchCount]);
+  }, [filter, fetchCount, isDemo]);
 
   const sendMutation = useMutation({
     mutationFn: () => customFetch(`${BASE}/api/campaigns/send`, {
@@ -335,12 +363,13 @@ function CampaignBuilder({ channel }: { channel: Channel }) {
 
         {/* Send button */}
         <button
-          onClick={() => setConfirmOpen(true)}
-          disabled={!canSend || countLoading}
+          onClick={() => { if (!isDemo) setConfirmOpen(true); }}
+          disabled={isDemo || !canSend || countLoading}
+          title={isDemo ? "Sending disabled in demo mode" : undefined}
           className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-primary-foreground font-semibold rounded-xl transition-all shadow-lg shadow-primary/20"
         >
-          <Send className="w-4 h-4" />
-          {channel === "sms" ? "Send SMS Campaign" : "Send Email Campaign"}
+          {isDemo ? <Lock className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+          {isDemo ? "Sending disabled in demo mode" : channel === "sms" ? "Send SMS Campaign" : "Send Email Campaign"}
         </button>
       </div>
 
@@ -428,19 +457,20 @@ function CampaignBuilder({ channel }: { channel: Channel }) {
 
 // ── Campaign history ───────────────────────────────────────────────────────────
 
-function CampaignHistory() {
-  const qc = useQueryClient();
-
-  const { data: campaigns = [], isLoading, isError, refetch, isFetching } = useQuery<Campaign[]>({
+function CampaignHistory({ isDemo }: { isDemo?: boolean }) {
+  const { data: liveData = [], isLoading, isError, refetch, isFetching } = useQuery<Campaign[]>({
     queryKey: ["campaigns"],
     queryFn:  () => customFetch<Campaign[]>(`${BASE}/api/campaigns`),
-    refetchInterval: 8000, // poll while 'draft' campaigns are being sent
+    refetchInterval: isDemo ? false : 8000,
+    enabled: !isDemo,
   });
+
+  const campaigns: DemoCampaign[] = isDemo ? DEMO_CAMPAIGNS : liveData;
 
   function statusBadge(status: string) {
     if (status === "sent")    return "text-green-400 bg-green-500/10 border-green-500/20";
     if (status === "failed")  return "text-red-400 bg-red-500/10 border-red-500/20";
-    return "text-amber-400 bg-amber-500/10 border-amber-500/20"; // draft / processing
+    return "text-amber-400 bg-amber-500/10 border-amber-500/20";
   }
 
   function statusLabel(status: string) {
@@ -456,21 +486,23 @@ function CampaignHistory() {
           <Clock className="w-4 h-4 text-primary" />
           Campaign History
         </h2>
-        <button
-          onClick={() => refetch()}
-          disabled={isFetching}
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 flex items-center gap-1"
-        >
-          <RefreshCw className={cn("w-3 h-3", isFetching && "animate-spin")} />
-          Refresh
-        </button>
+        {!isDemo && (
+          <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 flex items-center gap-1"
+          >
+            <RefreshCw className={cn("w-3 h-3", isFetching && "animate-spin")} />
+            Refresh
+          </button>
+        )}
       </div>
 
-      {isLoading ? (
+      {!isDemo && isLoading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="w-5 h-5 animate-spin text-primary" />
         </div>
-      ) : isError ? (
+      ) : !isDemo && isError ? (
         <div className="flex items-center gap-3 m-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           Failed to load campaign history.
@@ -482,7 +514,7 @@ function CampaignHistory() {
         </div>
       ) : (
         <>
-          <div className="hidden md:grid grid-cols-[2fr_80px_1.5fr_80px_80px_100px] gap-4 px-6 py-2 bg-muted/20 text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border">
+          <div className="hidden md:grid grid-cols-[2fr_100px_1.5fr_80px_80px_100px] gap-4 px-6 py-2 bg-muted/20 text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border">
             <span>Campaign</span>
             <span>Channel</span>
             <span>Audience</span>
@@ -494,7 +526,7 @@ function CampaignHistory() {
             {campaigns.map(c => (
               <div
                 key={c.id}
-                className="grid md:grid-cols-[2fr_80px_1.5fr_80px_80px_100px] gap-4 px-6 py-4 text-sm items-center hover:bg-muted/10 transition-colors"
+                className="grid md:grid-cols-[2fr_100px_1.5fr_80px_80px_100px] gap-4 px-6 py-4 text-sm items-center hover:bg-muted/10 transition-colors"
               >
                 <div className="min-w-0">
                   <p className="font-semibold text-foreground truncate">{c.name}</p>
@@ -510,10 +542,12 @@ function CampaignHistory() {
                     {c.channel === "sms"
                       ? <MessageSquare className="w-3.5 h-3.5" />
                       : <Mail className="w-3.5 h-3.5" />}
-                    {c.channel.toUpperCase()}
+                    {(c as DemoCampaign).display_channel ?? c.channel.toUpperCase()}
                   </span>
                 </div>
-                <div className="text-muted-foreground truncate text-xs">{filterLabel(c.audience_filter)}</div>
+                <div className="text-muted-foreground truncate text-xs">
+                  {(c as DemoCampaign).audience_label ?? filterLabel(c.audience_filter)}
+                </div>
                 <div className="font-semibold text-foreground">{c.sent_count}</div>
                 <div className={cn("font-semibold", c.failed_count > 0 ? "text-red-400" : "text-muted-foreground")}>
                   {c.failed_count}
@@ -531,6 +565,7 @@ function CampaignHistory() {
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function CampaignsPage() {
+  const { isDemo } = useAuth();
   const [activeChannel, setActiveChannel] = useState<Channel>("sms");
 
   return (
@@ -572,10 +607,10 @@ export default function CampaignsPage() {
       </div>
 
       {/* Builder */}
-      <CampaignBuilder key={activeChannel} channel={activeChannel} />
+      <CampaignBuilder key={activeChannel} channel={activeChannel} isDemo={isDemo} />
 
       {/* History */}
-      <CampaignHistory />
+      <CampaignHistory isDemo={isDemo} />
     </div>
   );
 }
