@@ -144,8 +144,18 @@ function scheduleDelayedSms(
       .from(referrersTable)
       .where(eq(referrersTable.id, referrerId));
 
-    if (!referrer || referrer.onboarding_sms_sent) {
-      logger.info({ referrerId }, "Onboarding SMS skipped at send time (already sent or referrer gone)");
+    if (!referrer) {
+      logger.info({ referrerId }, "Onboarding SMS skipped at send time — referrer not found");
+      return;
+    }
+
+    if (referrer.sms_opt_out) {
+      logger.info({ referrerId }, "Skipping onboarding SMS — patient opted out");
+      return;
+    }
+
+    if (referrer.onboarding_sms_sent) {
+      logger.info({ referrerId }, "Onboarding SMS skipped at send time — already sent");
       return;
     }
 
