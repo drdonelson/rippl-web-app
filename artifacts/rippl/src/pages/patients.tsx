@@ -295,6 +295,7 @@ function SmsStatusCell({
 }) {
   const firstName = referrerName.split(" ")[0] ?? referrerName;
 
+  // State 1: SMS already sent — locked, read-only
   if (onboarded) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 whitespace-nowrap">
@@ -303,21 +304,22 @@ function SmsStatusCell({
     );
   }
 
-  if (!optedOut) {
+  // State 2: opted out — gray pill + toggle to re-enable
+  if (optedOut) {
     return (
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
-            <Check className="w-2.5 h-2.5" /> Scheduled
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold bg-muted text-muted-foreground border border-border whitespace-nowrap">
+            <X className="w-2.5 h-2.5" /> No SMS
           </span>
-          <SmsToggle optedOut={false} loading={loading} onClick={onToggleClick} />
+          <SmsToggle optedOut={true} loading={loading} onClick={onToggleClick} />
         </div>
         {showConfirm && (
           <div className="rounded-lg border border-border bg-popover shadow-xl p-2.5 text-left" style={{ minWidth: "168px" }}>
-            <p className="text-xs font-medium text-foreground mb-2">Exclude {firstName} from referral SMS?</p>
+            <p className="text-xs font-medium text-foreground mb-2">Re-enable SMS for {firstName}?</p>
             <div className="flex gap-1.5">
               <button onClick={onCancel} className="flex-1 py-1.5 text-[11px] bg-muted hover:bg-muted/80 text-foreground rounded-md font-medium transition-colors">Cancel</button>
-              <button onClick={onConfirm} disabled={loading} className="flex-1 py-1.5 text-[11px] bg-destructive hover:bg-destructive/90 text-white rounded-md font-semibold transition-colors disabled:opacity-50">Exclude</button>
+              <button onClick={onConfirm} disabled={loading} className="flex-1 py-1.5 text-[11px] bg-primary hover:bg-primary/90 text-primary-foreground rounded-md font-semibold transition-colors disabled:opacity-50">Enable</button>
             </div>
           </div>
         )}
@@ -325,20 +327,16 @@ function SmsStatusCell({
     );
   }
 
+  // State 3: not yet triggered, not opted out — blank cell, toggle available to pre-emptively opt out
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-2">
-        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold bg-muted text-muted-foreground border border-border whitespace-nowrap">
-          <X className="w-2.5 h-2.5" /> No SMS
-        </span>
-        <SmsToggle optedOut={true} loading={loading} onClick={onToggleClick} />
-      </div>
+      <SmsToggle optedOut={false} loading={loading} onClick={onToggleClick} />
       {showConfirm && (
         <div className="rounded-lg border border-border bg-popover shadow-xl p-2.5 text-left" style={{ minWidth: "168px" }}>
-          <p className="text-xs font-medium text-foreground mb-2">Re-enable SMS for {firstName}?</p>
+          <p className="text-xs font-medium text-foreground mb-2">Exclude {firstName} from referral SMS?</p>
           <div className="flex gap-1.5">
             <button onClick={onCancel} className="flex-1 py-1.5 text-[11px] bg-muted hover:bg-muted/80 text-foreground rounded-md font-medium transition-colors">Cancel</button>
-            <button onClick={onConfirm} disabled={loading} className="flex-1 py-1.5 text-[11px] bg-primary hover:bg-primary/90 text-primary-foreground rounded-md font-semibold transition-colors disabled:opacity-50">Enable</button>
+            <button onClick={onConfirm} disabled={loading} className="flex-1 py-1.5 text-[11px] bg-destructive hover:bg-destructive/90 text-white rounded-md font-semibold transition-colors disabled:opacity-50">Exclude</button>
           </div>
         </div>
       )}
@@ -1088,104 +1086,60 @@ export default function Patients() {
           {/* ── Desktop table — hidden on mobile to prevent Safari OOM crash ── */}
           <div className="hidden sm:block bg-card border border-border rounded-2xl shadow-xl shadow-black/10 overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left" style={{ tableLayout: "fixed" }}>
                 <colgroup>
-                  <col style={{ minWidth: "220px" }} />
-                  <col style={{ width: "72px" }} />
-                  <col style={{ width: "130px" }} />
-                  <col style={{ minWidth: "180px" }} />
+                  <col />
                   <col style={{ width: "110px" }} />
-                  <col style={{ width: "80px" }} />
-                  <col style={{ width: "72px" }} />
-                  <col style={{ minWidth: "160px" }} />
-                  <col style={{ width: "1px" }} />
+                  <col style={{ width: "65px" }} />
+                  <col style={{ width: "130px" }} />
+                  <col style={{ width: "100px" }} />
                 </colgroup>
                 <thead>
                   <tr className="bg-muted/30 border-b border-border">
-                    {thSortBtn("name", "Patient Name")}
-                    {thStatic("ID")}
-                    {thStatic("Phone")}
-                    {thStatic("Email")}
-                    {thStatic("Ref. Code")}
+                    {thSortBtn("name", "Patient")}
+                    {thStatic("Tier")}
                     {thSortBtn("total_referrals", "Refs")}
-                    {thSortBtn("total_rewards_issued", "Rwds")}
-                    <th className="px-4 py-3 text-xs uppercase tracking-wider font-semibold text-muted-foreground whitespace-nowrap">
+                    <th className="px-3 py-3 text-xs uppercase tracking-wider font-semibold text-muted-foreground whitespace-nowrap">
                       <span className="flex items-center gap-1.5">
                         Auto SMS
                         <span
-                          title="Controls whether this patient receives an automatic referral link SMS 2 hours after their visit."
+                          title="Patients receive an automatic referral link SMS 2 hours after their visit. Toggle off to prevent this for specific patients."
                           className="cursor-help opacity-50 hover:opacity-100 transition-opacity"
                         >
                           <Info className="w-3 h-3" />
                         </span>
                       </span>
                     </th>
-                    <th className="px-4 py-3 text-xs uppercase tracking-wider font-semibold text-muted-foreground text-right sticky right-0 bg-muted/30 border-l border-border whitespace-nowrap">
+                    <th className="px-3 py-3 text-xs uppercase tracking-wider font-semibold text-muted-foreground text-right">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {sortedReferrers.map((referrer) => {
-                    const phone     = (referrer as any).phone as string | null;
-                    const email     = (referrer as any).email as string | null;
-                    const code      = (referrer as any).referral_code as string | null;
                     const tier      = (referrer as any).tier as string | null;
                     const n         = referrer.total_referrals;
                     const onboarded = !!((referrer as any).onboarding_sms_sent);
                     const optedOut  = !!((referrer as any).sms_opt_out);
                     return (
                       <tr key={referrer.id} className={cn("hover:bg-muted/10 transition-colors group", optedOut && "opacity-60")}>
-                        {/* Patient Name + status dot + tier */}
-                        <td className="px-4 py-2.5">
-                          <div className="flex items-center gap-2.5">
+                        {/* Patient Name */}
+                        <td className="px-4 py-2.5 overflow-hidden">
+                          <div className="flex items-center gap-2.5 min-w-0">
                             <StatusDot n={n} onboarded={onboarded} />
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-semibold text-foreground text-sm leading-tight">{referrer.name}</span>
-                              </div>
-                              <div className="mt-0.5">
-                                <TierBadge tier={tier} totalReferrals={n} />
-                                <TierProgress tier={tier} totalReferrals={n} />
-                              </div>
-                            </div>
+                            <span className="font-semibold text-foreground text-sm leading-tight truncate">{referrer.name}</span>
                           </div>
                         </td>
-                        {/* Patient ID */}
-                        <td className="px-4 py-2.5 text-xs text-muted-foreground font-mono tabular-nums">
-                          {referrer.patient_id}
-                        </td>
-                        {/* Phone */}
-                        <td className="px-4 py-2.5 text-sm text-muted-foreground whitespace-nowrap">
-                          {isValidPhone(phone) ? phone : <span className="opacity-30">—</span>}
-                        </td>
-                        {/* Email — truncate, full on hover tooltip */}
-                        <td className="px-4 py-2.5 max-w-0">
-                          {email
-                            ? <span
-                                title={email}
-                                className="block text-sm text-muted-foreground truncate overflow-hidden whitespace-nowrap"
-                              >{email}</span>
-                            : <span className="opacity-30 text-sm">—</span>}
-                        </td>
-                        {/* Referral Code — single line, 11px */}
-                        <td className="px-4 py-2.5">
-                          {code
-                            ? <span className="font-mono px-1.5 py-0.5 rounded bg-background border border-border text-primary whitespace-nowrap overflow-hidden" style={{ fontSize: "11px" }}>
-                                {code}
-                              </span>
-                            : <span className="opacity-30 text-sm">—</span>}
+                        {/* Tier */}
+                        <td className="px-3 py-2.5">
+                          <TierBadge tier={tier} totalReferrals={n} />
                         </td>
                         {/* Referrals */}
-                        <td className="px-4 py-2.5 text-center">
+                        <td className="px-3 py-2.5 text-center">
                           <span className="font-display font-bold text-foreground">{n}</span>
                         </td>
-                        {/* Rewards */}
-                        <td className="px-4 py-2.5 text-center">
-                          <span className="font-display font-bold text-foreground">{referrer.total_rewards_issued}</span>
-                        </td>
                         {/* Auto SMS status cell */}
-                        <td className="px-4 py-2.5">
+                        <td className="px-3 py-2.5">
                           <SmsStatusCell
                             onboarded={onboarded}
                             optedOut={optedOut}
@@ -1204,32 +1158,29 @@ export default function Patients() {
                             onCancel={() => setConfirmPopover(null)}
                           />
                         </td>
-                        {/* Actions — sticky right */}
-                        <td className="px-4 py-2.5 sticky right-0 bg-card border-l border-border">
-                          <div className="flex items-center gap-1.5">
+                        {/* Actions */}
+                        <td className="px-3 py-2.5">
+                          <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => setQrModalReferrerId(referrer.id)}
                               title="Get QR Code"
-                              className="flex items-center gap-1 px-2.5 py-1.5 bg-secondary hover:bg-muted text-foreground text-xs font-semibold rounded-lg transition-colors border border-border whitespace-nowrap"
+                              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-muted transition-colors border border-border text-muted-foreground hover:text-foreground"
                             >
-                              <QrCode className="w-3 h-3" />
-                              QR
+                              <QrCode className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => openSendLinkModal(referrer.id)}
                               title="Send Referral Link"
-                              className="flex items-center gap-1 px-2.5 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold rounded-lg transition-colors border border-primary/20 whitespace-nowrap"
+                              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-primary/10 transition-colors border border-primary/20 text-primary"
                             >
-                              <Send className="w-3 h-3" />
-                              Send
+                              <Send className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => navigate(`/events?referrer=${encodeURIComponent(referrer.name)}`)}
                               title="View Events"
-                              className="flex items-center gap-1 px-2.5 py-1.5 bg-secondary hover:bg-muted text-foreground text-xs font-semibold rounded-lg transition-colors border border-border whitespace-nowrap"
+                              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-muted transition-colors border border-border text-muted-foreground hover:text-foreground"
                             >
-                              <ExternalLink className="w-3 h-3" />
-                              Events
+                              <ExternalLink className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>
