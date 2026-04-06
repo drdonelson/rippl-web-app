@@ -1,4 +1,5 @@
 import twilio from "twilio";
+import { SMS_ENABLED } from "../lib/smsEnabled";
 import sgMail from "@sendgrid/mail";
 import { logger } from "../lib/logger";
 
@@ -40,20 +41,25 @@ export async function sendRewardNotification(
   const results: { sms?: string; email?: string; errors: string[] } = { errors: [] };
 
   // Send SMS via Twilio
-  try {
-    if (!TWILIO_PHONE_NUMBER) throw new Error("TWILIO_PHONE_NUMBER not set");
-    const client = getTwilioClient();
-    const msg = await client.messages.create({
-      body: smsBody,
-      from: TWILIO_PHONE_NUMBER,
-      to: referrerPhone,
-    });
-    results.sms = msg.sid;
-    logger.info({ sid: msg.sid, to: referrerPhone }, "SMS sent via Twilio");
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    results.errors.push(`SMS: ${message}`);
-    logger.error({ err, to: referrerPhone }, "Failed to send Twilio SMS");
+  if (!SMS_ENABLED) {
+    logger.info({ to: referrerPhone, body: smsBody }, "[SMS-SUPPRESSED] Reward notification SMS not sent (SMS_ENABLED=false)");
+    results.sms = "suppressed";
+  } else {
+    try {
+      if (!TWILIO_PHONE_NUMBER) throw new Error("TWILIO_PHONE_NUMBER not set");
+      const client = getTwilioClient();
+      const msg = await client.messages.create({
+        body: smsBody,
+        from: TWILIO_PHONE_NUMBER,
+        to: referrerPhone,
+      });
+      results.sms = msg.sid;
+      logger.info({ sid: msg.sid, to: referrerPhone }, "SMS sent via Twilio");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      results.errors.push(`SMS: ${message}`);
+      logger.error({ err, to: referrerPhone }, "Failed to send Twilio SMS");
+    }
   }
 
   // Send email via SendGrid — HTML only, click tracking disabled

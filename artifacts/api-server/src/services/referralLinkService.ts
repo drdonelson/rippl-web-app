@@ -8,6 +8,7 @@
  */
 
 import twilio from "twilio";
+import { SMS_ENABLED } from "../lib/smsEnabled";
 import sgMail from "@sendgrid/mail";
 import { db } from "@workspace/db";
 import { referrersTable, referralLinkDeliveriesTable } from "@workspace/db/schema";
@@ -275,18 +276,26 @@ export async function sendReferralLinkToPatient(
     }).returning();
 
     try {
-      if (!TWILIO_PHONE_NUMBER) throw new Error("TWILIO_PHONE_NUMBER not set");
-      const client = getTwilioClient();
-      const msg = await client.messages.create({
-        body: smsBody,
-        from: TWILIO_PHONE_NUMBER,
-        to: referrer.phone,
-      });
-      await db.update(referralLinkDeliveriesTable)
-        .set({ status: "sent", provider_message_id: msg.sid, sent_at: new Date() })
-        .where(eq(referralLinkDeliveriesTable.id, logRow.id));
-      result.sms = { status: "sent", provider_message_id: msg.sid };
-      logger.info({ sid: msg.sid, to: referrer.phone }, "Referral link SMS sent");
+      if (!SMS_ENABLED) {
+        logger.info({ to: referrer.phone, body: smsBody }, "[SMS-SUPPRESSED] Referral link SMS not sent (SMS_ENABLED=false)");
+        await db.update(referralLinkDeliveriesTable)
+          .set({ status: "sent", provider_message_id: "suppressed", sent_at: new Date() })
+          .where(eq(referralLinkDeliveriesTable.id, logRow.id));
+        result.sms = { status: "sent", provider_message_id: "suppressed" };
+      } else {
+        if (!TWILIO_PHONE_NUMBER) throw new Error("TWILIO_PHONE_NUMBER not set");
+        const client = getTwilioClient();
+        const msg = await client.messages.create({
+          body: smsBody,
+          from: TWILIO_PHONE_NUMBER,
+          to: referrer.phone,
+        });
+        await db.update(referralLinkDeliveriesTable)
+          .set({ status: "sent", provider_message_id: msg.sid, sent_at: new Date() })
+          .where(eq(referralLinkDeliveriesTable.id, logRow.id));
+        result.sms = { status: "sent", provider_message_id: msg.sid };
+        logger.info({ sid: msg.sid, to: referrer.phone }, "Referral link SMS sent");
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       await db.update(referralLinkDeliveriesTable)

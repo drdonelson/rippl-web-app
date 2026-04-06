@@ -6,6 +6,7 @@ import {
 } from "@workspace/db/schema";
 import { eq, and, gt, sql, desc } from "drizzle-orm";
 import twilio from "twilio";
+import { SMS_ENABLED } from "../lib/smsEnabled";
 import sgMail from "@sendgrid/mail";
 
 const router: IRouter = Router();
@@ -284,11 +285,15 @@ router.post("/send", async (req, res) => {
         try {
           if (channel === "sms") {
             if (!referrer.phone) { failCount++; continue; }
-            await twilioClient!.messages.create({
-              body: message,
-              from: TWILIO_PHONE_NUMBER!,
-              to:   referrer.phone,
-            });
+            if (!SMS_ENABLED) {
+              logger.info({ to: referrer.phone, body: message }, "[SMS-SUPPRESSED] Campaign SMS not sent (SMS_ENABLED=false)");
+            } else {
+              await twilioClient!.messages.create({
+                body: message,
+                from: TWILIO_PHONE_NUMBER!,
+                to:   referrer.phone,
+              });
+            }
             // Mark contacted if this was an onboarding campaign
             if (filter === "not_contacted") {
               await db

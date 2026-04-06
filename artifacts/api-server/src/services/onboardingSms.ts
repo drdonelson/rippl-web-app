@@ -1,4 +1,5 @@
 import twilio from "twilio";
+import { SMS_ENABLED } from "../lib/smsEnabled";
 import { db } from "@workspace/db";
 import { referrersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
@@ -47,6 +48,10 @@ export async function sendOnboardingSmsNow(
   const body = `Hi ${firstName} — welcome to Hallmark Dental! We're so glad you came in. If you know anyone who could use a great dentist, share your personal link and earn a reward when they become a patient: ${shareUrl} 🦷`;
 
   try {
+    if (!SMS_ENABLED) {
+      logger.info({ to: phone, referralCode, body }, "[SMS-SUPPRESSED] Onboarding SMS not sent (SMS_ENABLED=false)");
+      return { success: true, smsSid: "suppressed" };
+    }
     if (!TWILIO_PHONE_NUMBER) throw new Error("TWILIO_PHONE_NUMBER not set");
     const client = getTwilioClient();
     const msg = await client.messages.create({ body, from: TWILIO_PHONE_NUMBER, to: phone });
