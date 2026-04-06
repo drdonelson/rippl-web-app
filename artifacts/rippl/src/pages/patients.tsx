@@ -6,7 +6,7 @@ import {
   Plus, QrCode, Search, Copy, Check, Download, RefreshCw,
   CheckCircle2, AlertTriangle, LayoutList, LayoutGrid,
   ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Star, MapPin, Lock,
-  Send, Loader2, Phone, Mail, Users, BellOff, X, Info,
+  Send, Loader2, Phone, Mail, Users, BellOff, X, Info, MoreHorizontal,
 } from "lucide-react";
 import QRCode from "qrcode";
 import { Modal } from "@/components/ui/modal";
@@ -408,6 +408,24 @@ export default function Patients() {
       null
     );
   }, [offices, selectedOfficeId]);
+
+  // id → short display name ("Hallmark Dental – Brentwood" → "Brentwood")
+  const officeById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const o of offices) {
+      const parts = o.name.split(" – ");
+      map.set(o.id, parts[parts.length - 1] ?? o.name);
+    }
+    return map;
+  }, [offices]);
+
+  const [actionMenuId, setActionMenuId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!actionMenuId) return;
+    const close = () => setActionMenuId(null);
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [actionMenuId]);
 
   // Per-office import state: officeId (or "default") → ImportPhase
   const [importPhases, setImportPhases] = useState<Map<string, ImportPhase>>(new Map());
@@ -1089,14 +1107,16 @@ export default function Patients() {
               <table className="w-full text-left" style={{ tableLayout: "fixed" }}>
                 <colgroup>
                   <col />
-                  <col style={{ width: "110px" }} />
-                  <col style={{ width: "65px" }} />
-                  <col style={{ width: "130px" }} />
                   <col style={{ width: "100px" }} />
+                  <col style={{ width: "110px" }} />
+                  <col style={{ width: "80px" }} />
+                  <col style={{ width: "100px" }} />
+                  <col style={{ width: "80px" }} />
                 </colgroup>
                 <thead>
                   <tr className="bg-muted/30 border-b border-border">
                     {thSortBtn("name", "Patient")}
+                    {thStatic("Office")}
                     {thStatic("Tier")}
                     {thSortBtn("total_referrals", "Refs")}
                     <th className="px-3 py-3 text-xs uppercase tracking-wider font-semibold text-muted-foreground whitespace-nowrap">
@@ -1121,6 +1141,8 @@ export default function Patients() {
                     const n         = referrer.total_referrals;
                     const onboarded = !!((referrer as any).onboarding_sms_sent);
                     const optedOut  = !!((referrer as any).sms_opt_out);
+                    const officeLabel = officeById.get((referrer as any).office_id as string) ?? "—";
+                    const menuOpen  = actionMenuId === referrer.id;
                     return (
                       <tr key={referrer.id} className={cn("hover:bg-muted/10 transition-colors group", optedOut && "opacity-60")}>
                         {/* Patient Name */}
@@ -1129,6 +1151,10 @@ export default function Patients() {
                             <StatusDot n={n} onboarded={onboarded} />
                             <span className="font-semibold text-foreground text-sm leading-tight truncate">{referrer.name}</span>
                           </div>
+                        </td>
+                        {/* Office */}
+                        <td className="px-3 py-2.5 overflow-hidden">
+                          <span className="text-xs text-muted-foreground truncate block">{officeLabel}</span>
                         </td>
                         {/* Tier */}
                         <td className="px-3 py-2.5">
@@ -1158,16 +1184,9 @@ export default function Patients() {
                             onCancel={() => setConfirmPopover(null)}
                           />
                         </td>
-                        {/* Actions */}
+                        {/* Actions — Send primary, ⋯ for QR + Events */}
                         <td className="px-3 py-2.5">
                           <div className="flex items-center justify-end gap-1">
-                            <button
-                              onClick={() => setQrModalReferrerId(referrer.id)}
-                              title="Get QR Code"
-                              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-muted transition-colors border border-border text-muted-foreground hover:text-foreground"
-                            >
-                              <QrCode className="w-3.5 h-3.5" />
-                            </button>
                             <button
                               onClick={() => openSendLinkModal(referrer.id)}
                               title="Send Referral Link"
@@ -1175,13 +1194,39 @@ export default function Patients() {
                             >
                               <Send className="w-3.5 h-3.5" />
                             </button>
-                            <button
-                              onClick={() => navigate(`/events?referrer=${encodeURIComponent(referrer.name)}`)}
-                              title="View Events"
-                              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-muted transition-colors border border-border text-muted-foreground hover:text-foreground"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </button>
+                            <div className="relative">
+                              <button
+                                onMouseDown={e => e.stopPropagation()}
+                                onClick={() => setActionMenuId(menuOpen ? null : referrer.id)}
+                                title="More actions"
+                                className={cn(
+                                  "w-7 h-7 flex items-center justify-center rounded-lg transition-colors border border-border text-muted-foreground",
+                                  menuOpen ? "bg-muted text-foreground" : "hover:bg-muted hover:text-foreground"
+                                )}
+                              >
+                                <MoreHorizontal className="w-3.5 h-3.5" />
+                              </button>
+                              {menuOpen && (
+                                <div
+                                  onMouseDown={e => e.stopPropagation()}
+                                  className="absolute right-0 top-full mt-1 z-30 bg-popover border border-border rounded-xl shadow-xl py-1"
+                                  style={{ minWidth: "148px" }}
+                                >
+                                  <button
+                                    onClick={() => { setActionMenuId(null); setQrModalReferrerId(referrer.id); }}
+                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                                  >
+                                    <QrCode className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" /> Get QR Code
+                                  </button>
+                                  <button
+                                    onClick={() => { setActionMenuId(null); navigate(`/events?referrer=${encodeURIComponent(referrer.name)}`); }}
+                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" /> View Events
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </td>
                       </tr>
