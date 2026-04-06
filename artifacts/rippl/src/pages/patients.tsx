@@ -252,7 +252,7 @@ export default function Patients() {
   const { isDemo, isLoading: authIsLoading, isStaff, profile } = useAuth();
   const queryEnabled = !authIsLoading && !isDemo;
 
-  const { data: fetchedReferrers, isLoading: referrersLoading } = useGetReferrers({ query: { enabled: queryEnabled } });
+  const { data: fetchedReferrers, isLoading: referrersLoading, isError: referrersError, error: referrersErrorObj } = useGetReferrers({ query: { enabled: queryEnabled } });
   const referrers = isDemo ? DEMO_REFERRERS : fetchedReferrers;
   const isLoading = isDemo ? false : referrersLoading;
   const queryClient = useQueryClient();

@@ -32,33 +32,46 @@ router.get("/", async (req, res) => {
   const conditions = effectiveOfficeId
     ? [eq(referrersTable.office_id, effectiveOfficeId)]
     : [];
-  const referrers = await db
-    .select()
-    .from(referrersTable)
-    .where(conditions.length ? and(...conditions) : undefined)
-    .orderBy(referrersTable.created_at);
-  res.json(referrers);
+
+  try {
+    const referrers = await db
+      .select()
+      .from(referrersTable)
+      .where(conditions.length ? and(...conditions) : undefined)
+      .orderBy(referrersTable.created_at);
+    res.json(referrers);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error({ err, effectiveOfficeId }, "GET /api/referrers failed");
+    res.status(500).json({ error: message });
+  }
 });
 
 router.post("/", async (req, res) => {
-  const user = req.authUser!;
-  const body = CreateReferrerBody.parse(req.body);
+  try {
+    const user = req.authUser!;
+    const body = CreateReferrerBody.parse(req.body);
 
-  // Staff can only create patients tagged to their own assigned office.
-  if (isStaff(user)) {
-    if (!user.practice_id) {
-      res.status(403).json({ error: "Your staff account has no assigned office." });
-      return;
+    // Staff can only create patients tagged to their own assigned office.
+    if (isStaff(user)) {
+      if (!user.practice_id) {
+        res.status(403).json({ error: "Your staff account has no assigned office." });
+        return;
+      }
+      body.office_id = user.practice_id;
     }
-    body.office_id = user.practice_id;
-  }
 
-  const referral_code = generateReferralCode(body.name);
-  const [referrer] = await db.insert(referrersTable).values({
-    ...body,
-    referral_code,
-  }).returning();
-  res.status(201).json(referrer);
+    const referral_code = generateReferralCode(body.name);
+    const [referrer] = await db.insert(referrersTable).values({
+      ...body,
+      referral_code,
+    }).returning();
+    res.status(201).json(referrer);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error({ err }, "POST /api/referrers failed");
+    res.status(500).json({ error: message });
+  }
 });
 
 // POST /api/referrers/bulk-send-links — super_admin only
@@ -172,39 +185,51 @@ router.post("/bulk-send-links", requireSuperAdmin, async (req, res) => {
 });
 
 router.get("/:id/qr", async (req, res) => {
-  const { id } = GetReferrerQrParams.parse(req.params);
-  const [referrer] = await db.select().from(referrersTable).where(eq(referrersTable.id, id));
-  if (!referrer) {
-    res.status(404).json({ error: "Referrer not found" });
-    return;
+  try {
+    const { id } = GetReferrerQrParams.parse(req.params);
+    const [referrer] = await db.select().from(referrersTable).where(eq(referrersTable.id, id));
+    if (!referrer) {
+      res.status(404).json({ error: "Referrer not found" });
+      return;
+    }
+
+    // Resolve the public base URL using the priority chain:
+    //   1. PUBLIC_APP_URL  — canonical production domain (https://www.joinrippl.com)
+    //   2. APP_URL         — legacy secret, same purpose
+    //   3. REPLIT_DOMAINS  — Replit dev preview (works in dev, not on Render)
+    //   4. Hard-coded joinrippl.com — last resort so localhost never leaks into QR codes
+    const publicAppUrl = (
+      process.env.PUBLIC_APP_URL ||
+      process.env.APP_URL ||
+      (process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}` : "") ||
+      "https://www.joinrippl.com"
+    ).replace(/\/$/, "");
+
+    const referral_url = `${publicAppUrl}/refer?ref=${encodeURIComponent(referrer.referral_code)}`;
+    res.json({ referral_url, referral_code: referrer.referral_code });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error({ err }, "GET /api/referrers/:id/qr failed");
+    res.status(500).json({ error: message });
   }
-
-  // Resolve the public base URL using the priority chain:
-  //   1. PUBLIC_APP_URL  — canonical production domain (https://www.joinrippl.com)
-  //   2. APP_URL         — legacy secret, same purpose
-  //   3. REPLIT_DOMAINS  — Replit dev preview (works in dev, not on Render)
-  //   4. Hard-coded joinrippl.com — last resort so localhost never leaks into QR codes
-  const publicAppUrl = (
-    process.env.PUBLIC_APP_URL ||
-    process.env.APP_URL ||
-    (process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}` : "") ||
-    "https://www.joinrippl.com"
-  ).replace(/\/$/, "");
-
-  const referral_url = `${publicAppUrl}/refer?ref=${encodeURIComponent(referrer.referral_code)}`;
-  res.json({ referral_url, referral_code: referrer.referral_code });
 });
 
 // GET /api/referrers/:id/last-delivery — most recent link delivery for a referrer
 router.get("/:id/last-delivery", async (req, res) => {
-  const { id } = req.params;
-  const [referrer] = await db.select({ id: referrersTable.id }).from(referrersTable).where(eq(referrersTable.id, id));
-  if (!referrer) {
-    res.status(404).json({ error: "Referrer not found" });
-    return;
+  try {
+    const { id } = req.params;
+    const [referrer] = await db.select({ id: referrersTable.id }).from(referrersTable).where(eq(referrersTable.id, id));
+    if (!referrer) {
+      res.status(404).json({ error: "Referrer not found" });
+      return;
+    }
+    const last = await getLastDelivery(id);
+    res.json(last ?? null);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error({ err }, "GET /api/referrers/:id/last-delivery failed");
+    res.status(500).json({ error: message });
   }
-  const last = await getLastDelivery(id);
-  res.json(last ?? null);
 });
 
 // POST /api/referrers/:id/send-link — manually send referral link via SMS and/or email
@@ -263,26 +288,32 @@ router.post("/:id/send-link", async (req, res) => {
 
 // ── PATCH /:id/opt-out — toggle SMS/email opt-out ─────────────────────────────
 router.patch("/:id/opt-out", async (req, res) => {
-  const { id } = req.params;
-  const { sms_opt_out, opt_out_reason } = req.body as { sms_opt_out: boolean; opt_out_reason?: string };
+  try {
+    const { id } = req.params;
+    const { sms_opt_out, opt_out_reason } = req.body as { sms_opt_out: boolean; opt_out_reason?: string };
 
-  if (typeof sms_opt_out !== "boolean") {
-    return void res.status(400).json({ error: "sms_opt_out must be a boolean" });
+    if (typeof sms_opt_out !== "boolean") {
+      return void res.status(400).json({ error: "sms_opt_out must be a boolean" });
+    }
+
+    const updated = await db
+      .update(referrersTable)
+      .set({
+        sms_opt_out,
+        opt_out_reason: sms_opt_out ? (opt_out_reason ?? null) : null,
+      })
+      .where(eq(referrersTable.id, id))
+      .returning({ id: referrersTable.id, sms_opt_out: referrersTable.sms_opt_out });
+
+    if (!updated.length) return void res.status(404).json({ error: "Referrer not found" });
+
+    logger.info({ referrerId: id, sms_opt_out, opt_out_reason }, "Opt-out updated");
+    return void res.json({ ok: true, sms_opt_out: updated[0].sms_opt_out });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error({ err }, "PATCH /api/referrers/:id/opt-out failed");
+    return void res.status(500).json({ error: message });
   }
-
-  const updated = await db
-    .update(referrersTable)
-    .set({
-      sms_opt_out,
-      opt_out_reason: sms_opt_out ? (opt_out_reason ?? null) : null,
-    })
-    .where(eq(referrersTable.id, id))
-    .returning({ id: referrersTable.id, sms_opt_out: referrersTable.sms_opt_out });
-
-  if (!updated.length) return void res.status(404).json({ error: "Referrer not found" });
-
-  logger.info({ referrerId: id, sms_opt_out, opt_out_reason }, "Opt-out updated");
-  return void res.json({ ok: true, sms_opt_out: updated[0].sms_opt_out });
 });
 
 export default router;
