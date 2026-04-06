@@ -6,7 +6,7 @@ import {
   Plus, QrCode, Search, Copy, Check, Download, RefreshCw,
   CheckCircle2, AlertTriangle, LayoutList, LayoutGrid,
   ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Star, MapPin, Lock,
-  Send, Loader2, Phone, Mail, Users, BellOff,
+  Send, Loader2, Phone, Mail, Users, BellOff, X, Info,
 } from "lucide-react";
 import QRCode from "qrcode";
 import { Modal } from "@/components/ui/modal";
@@ -272,6 +272,80 @@ function SmsToggle({
   );
 }
 
+function SmsStatusCell({
+  onboarded,
+  optedOut,
+  referrerId,
+  referrerName,
+  loading,
+  showConfirm,
+  onToggleClick,
+  onConfirm,
+  onCancel,
+}: {
+  onboarded: boolean;
+  optedOut: boolean;
+  referrerId: string;
+  referrerName: string;
+  loading: boolean;
+  showConfirm: boolean;
+  onToggleClick: () => void;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const firstName = referrerName.split(" ")[0] ?? referrerName;
+
+  if (onboarded) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 whitespace-nowrap">
+        <Check className="w-2.5 h-2.5" /> Sent
+      </span>
+    );
+  }
+
+  if (!optedOut) {
+    return (
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
+            <Check className="w-2.5 h-2.5" /> Scheduled
+          </span>
+          <SmsToggle optedOut={false} loading={loading} onClick={onToggleClick} />
+        </div>
+        {showConfirm && (
+          <div className="rounded-lg border border-border bg-popover shadow-xl p-2.5 text-left" style={{ minWidth: "168px" }}>
+            <p className="text-xs font-medium text-foreground mb-2">Exclude {firstName} from referral SMS?</p>
+            <div className="flex gap-1.5">
+              <button onClick={onCancel} className="flex-1 py-1.5 text-[11px] bg-muted hover:bg-muted/80 text-foreground rounded-md font-medium transition-colors">Cancel</button>
+              <button onClick={onConfirm} disabled={loading} className="flex-1 py-1.5 text-[11px] bg-destructive hover:bg-destructive/90 text-white rounded-md font-semibold transition-colors disabled:opacity-50">Exclude</button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-2">
+        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold bg-muted text-muted-foreground border border-border whitespace-nowrap">
+          <X className="w-2.5 h-2.5" /> No SMS
+        </span>
+        <SmsToggle optedOut={true} loading={loading} onClick={onToggleClick} />
+      </div>
+      {showConfirm && (
+        <div className="rounded-lg border border-border bg-popover shadow-xl p-2.5 text-left" style={{ minWidth: "168px" }}>
+          <p className="text-xs font-medium text-foreground mb-2">Re-enable SMS for {firstName}?</p>
+          <div className="flex gap-1.5">
+            <button onClick={onCancel} className="flex-1 py-1.5 text-[11px] bg-muted hover:bg-muted/80 text-foreground rounded-md font-medium transition-colors">Cancel</button>
+            <button onClick={onConfirm} disabled={loading} className="flex-1 py-1.5 text-[11px] bg-primary hover:bg-primary/90 text-primary-foreground rounded-md font-semibold transition-colors disabled:opacity-50">Enable</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Patients() {
   const { isDemo, isLoading: authIsLoading, isStaff, profile } = useAuth();
 
@@ -379,8 +453,9 @@ export default function Patients() {
     total: number; sent: number; failed: number; skipped: number; errors: string[];
   }>(null);
 
-  // Opt-out toggle — immediate, no modal
+  // Opt-out toggle
   const [optOutLoadingIds, setOptOutLoadingIds] = useState<Set<string>>(new Set());
+  const [confirmPopover, setConfirmPopover] = useState<{ id: string; name: string; optedOut: boolean } | null>(null);
 
   const handleToggleOptOut = async (referrerId: string, name: string, currentlyOptedOut: boolean) => {
     if (optOutLoadingIds.has(referrerId)) return;
@@ -417,6 +492,13 @@ export default function Patients() {
     } finally {
       setOptOutLoadingIds(prev => { const s = new Set(prev); s.delete(referrerId); return s; });
     }
+  };
+
+  const handleConfirmOptOut = async () => {
+    if (!confirmPopover) return;
+    const { id, name, optedOut } = confirmPopover;
+    setConfirmPopover(null);
+    await handleToggleOptOut(id, name, optedOut);
   };
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
@@ -1015,6 +1097,7 @@ export default function Patients() {
                   <col style={{ width: "110px" }} />
                   <col style={{ width: "80px" }} />
                   <col style={{ width: "72px" }} />
+                  <col style={{ minWidth: "160px" }} />
                   <col style={{ width: "1px" }} />
                 </colgroup>
                 <thead>
@@ -1026,6 +1109,17 @@ export default function Patients() {
                     {thStatic("Ref. Code")}
                     {thSortBtn("total_referrals", "Refs")}
                     {thSortBtn("total_rewards_issued", "Rwds")}
+                    <th className="px-4 py-3 text-xs uppercase tracking-wider font-semibold text-muted-foreground whitespace-nowrap">
+                      <span className="flex items-center gap-1.5">
+                        Auto SMS
+                        <span
+                          title="Controls whether this patient receives an automatic referral link SMS 2 hours after their visit."
+                          className="cursor-help opacity-50 hover:opacity-100 transition-opacity"
+                        >
+                          <Info className="w-3 h-3" />
+                        </span>
+                      </span>
+                    </th>
                     <th className="px-4 py-3 text-xs uppercase tracking-wider font-semibold text-muted-foreground text-right sticky right-0 bg-muted/30 border-l border-border whitespace-nowrap">
                       Actions
                     </th>
@@ -1049,11 +1143,6 @@ export default function Patients() {
                             <div>
                               <div className="flex items-center gap-1.5">
                                 <span className="font-semibold text-foreground text-sm leading-tight">{referrer.name}</span>
-                                {optedOut && (
-                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-muted text-muted-foreground border border-border whitespace-nowrap">
-                                    <BellOff className="w-2.5 h-2.5" /> No SMS
-                                  </span>
-                                )}
                               </div>
                               <div className="mt-0.5">
                                 <TierBadge tier={tier} totalReferrals={n} />
@@ -1095,6 +1184,26 @@ export default function Patients() {
                         <td className="px-4 py-2.5 text-center">
                           <span className="font-display font-bold text-foreground">{referrer.total_rewards_issued}</span>
                         </td>
+                        {/* Auto SMS status cell */}
+                        <td className="px-4 py-2.5">
+                          <SmsStatusCell
+                            onboarded={onboarded}
+                            optedOut={optedOut}
+                            referrerId={referrer.id}
+                            referrerName={referrer.name}
+                            loading={optOutLoadingIds.has(referrer.id)}
+                            showConfirm={confirmPopover?.id === referrer.id}
+                            onToggleClick={() => {
+                              if (confirmPopover?.id === referrer.id) {
+                                setConfirmPopover(null);
+                              } else {
+                                setConfirmPopover({ id: referrer.id, name: referrer.name, optedOut });
+                              }
+                            }}
+                            onConfirm={handleConfirmOptOut}
+                            onCancel={() => setConfirmPopover(null)}
+                          />
+                        </td>
                         {/* Actions — sticky right */}
                         <td className="px-4 py-2.5 sticky right-0 bg-card border-l border-border">
                           <div className="flex items-center gap-1.5">
@@ -1122,11 +1231,6 @@ export default function Patients() {
                               <ExternalLink className="w-3 h-3" />
                               Events
                             </button>
-                            <SmsToggle
-                              optedOut={optedOut}
-                              loading={optOutLoadingIds.has(referrer.id)}
-                              onClick={() => handleToggleOptOut(referrer.id, referrer.name, optedOut)}
-                            />
                           </div>
                         </td>
                       </tr>
