@@ -137,10 +137,18 @@ function scheduleDelayedSms(
 ): void {
   const firstName = fullName.trim().split(/\s+/)[0] ?? "there";
 
+  const scheduledAt = new Date(Date.now() + ONBOARDING_DELAY_MS);
+
   logger.info(
     { referrerId, phone, delayMs: ONBOARDING_DELAY_MS },
     "Onboarding SMS scheduled — fires in 2 hours"
   );
+
+  // Record scheduled time immediately so the dashboard can show it
+  db.update(referrersTable)
+    .set({ onboarding_sms_scheduled_at: scheduledAt })
+    .where(eq(referrersTable.id, referrerId))
+    .catch(err => logger.error({ err, referrerId }, "Failed to set onboarding_sms_scheduled_at"));
 
   setTimeout(async () => {
     // Re-check the flag before sending in case something changed
@@ -169,7 +177,7 @@ function scheduleDelayedSms(
     if (result.success) {
       await db
         .update(referrersTable)
-        .set({ onboarding_sms_sent: true })
+        .set({ onboarding_sms_sent: true, onboarding_sms_sent_at: new Date() })
         .where(eq(referrersTable.id, referrerId));
       logger.info({ referrerId, smsSid: result.smsSid }, "Onboarding SMS delivered and flag set");
     } else {

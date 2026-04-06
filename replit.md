@@ -45,7 +45,7 @@ artifacts-monorepo/
 - **Onboard** (`/onboard`) — Super-admin only: create new staff accounts
 - **Dashboard** (`/dashboard`) — Stat cards (total referrals, exams completed, rewards issued, active referrers), recent activity feed, top referrers leaderboard
 - **Referral Events** (`/events`) — Table of all referral events with status badges and "Send Reward" action for completed exams
-- **Patients & QR** (`/patients`) — Grid of referrer cards with QR code generation
+- **Patients** (`/patients`) — 3-tab layout: (1) Today's Activity — Sending Today / Sent Today / This Week sections; (2) Active Patients — list/grid with All/Has Referral/Opted Out filter pills + tier dropdown + SMS toggle; (3) QR Codes — office-level QR codes with copy/download + individual patient QR lookup by name search
 - **Reward Claim** (`/claim?ref=[code]`) — Public-facing mobile-friendly reward selection page (no auth required)
 
 ### Backend API Routes

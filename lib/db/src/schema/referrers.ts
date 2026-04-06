@@ -21,6 +21,9 @@ export const referrersTable = pgTable("referrers", {
   reward_value: integer("reward_value").default(35),
   sms_opt_out: boolean("sms_opt_out").default(false),
   opt_out_reason: text("opt_out_reason"),
+  // Timestamps for Today's Activity view
+  onboarding_sms_scheduled_at: timestamp("onboarding_sms_scheduled_at"), // when the 2-hour delay was queued
+  onboarding_sms_sent_at: timestamp("onboarding_sms_sent_at"),           // when the SMS actually fired
 });
 
 export const insertReferrerSchema = createInsertSchema(referrersTable).omit({ id: true, created_at: true });

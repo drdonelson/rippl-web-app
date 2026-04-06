@@ -34,7 +34,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/dashboard", label: "Dashboard",       icon: LayoutDashboard },
       { href: "/events",    label: "Referral Events",  icon: CalendarDays    },
-      { href: "/patients",  label: "Patients & QR",    icon: Users           },
+      { href: "/patients",  label: "Patients",           icon: Users           },
     ],
   },
   {
@@ -438,7 +438,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 "text-[10px] font-semibold leading-none",
                 isActive ? "text-primary" : "text-muted-foreground"
               )}>
-                {item.label === "Referral Events" ? "Events" : item.label === "Patients & QR" ? "Patients" : item.label}
+                {item.label === "Referral Events" ? "Events" : item.label}
               </span>
             </Link>
           );
