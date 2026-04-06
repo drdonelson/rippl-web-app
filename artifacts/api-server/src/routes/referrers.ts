@@ -261,4 +261,28 @@ router.post("/:id/send-link", async (req, res) => {
   }
 });
 
+// ── PATCH /:id/opt-out — toggle SMS/email opt-out ─────────────────────────────
+router.patch("/:id/opt-out", async (req, res) => {
+  const { id } = req.params;
+  const { sms_opt_out, opt_out_reason } = req.body as { sms_opt_out: boolean; opt_out_reason?: string };
+
+  if (typeof sms_opt_out !== "boolean") {
+    return void res.status(400).json({ error: "sms_opt_out must be a boolean" });
+  }
+
+  const updated = await db
+    .update(referrersTable)
+    .set({
+      sms_opt_out,
+      opt_out_reason: sms_opt_out ? (opt_out_reason ?? null) : null,
+    })
+    .where(eq(referrersTable.id, id))
+    .returning({ id: referrersTable.id, sms_opt_out: referrersTable.sms_opt_out });
+
+  if (!updated.length) return void res.status(404).json({ error: "Referrer not found" });
+
+  logger.info({ referrerId: id, sms_opt_out, opt_out_reason }, "Opt-out updated");
+  return void res.json({ ok: true, sms_opt_out: updated[0].sms_opt_out });
+});
+
 export default router;

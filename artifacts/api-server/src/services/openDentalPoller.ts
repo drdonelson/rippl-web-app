@@ -294,11 +294,19 @@ async function runOnboardingSweep(
         continue;
       }
 
-      // Check our referrers table by phone — skip if already onboarded
+      // Check our referrers table by phone — skip if opted out or already onboarded
       const existing = await db
-        .select({ onboarding_sms_sent: referrersTable.onboarding_sms_sent })
+        .select({
+          onboarding_sms_sent: referrersTable.onboarding_sms_sent,
+          sms_opt_out:         referrersTable.sms_opt_out,
+        })
         .from(referrersTable)
         .where(eq(referrersTable.phone, phone));
+
+      if (existing.length > 0 && existing[0].sms_opt_out) {
+        logger.info({ patNum, officeId }, "[onboarding-sweep] Skipping onboarding — patient opted out");
+        continue;
+      }
 
       if (existing.length > 0 && existing[0].onboarding_sms_sent) {
         logger.debug({ patNum, officeId }, "[onboarding-sweep] Already onboarded — skipping");

@@ -71,11 +71,12 @@ async function getFilteredReferrers(filter: AudienceFilter): Promise<ReferrerRow
         o.name AS office_name
       FROM referrers r
       LEFT JOIN offices o ON o.id = r.office_id
-      WHERE NOT EXISTS (
-        SELECT 1 FROM referral_events re
-        WHERE re.referrer_id = r.id
-          AND re.created_at > ${cutoff}
-      )
+      WHERE r.sms_opt_out = false
+        AND NOT EXISTS (
+          SELECT 1 FROM referral_events re
+          WHERE re.referrer_id = r.id
+            AND re.created_at > ${cutoff}
+        )
       ORDER BY r.name
     `);
     return rows as ReferrerRow[];
@@ -92,7 +93,8 @@ async function getFilteredReferrers(filter: AudienceFilter): Promise<ReferrerRow
         o.name AS office_name
       FROM referrers r
       INNER JOIN offices o ON o.id = r.office_id
-      WHERE o.location_code = ${locationCode}
+      WHERE r.sms_opt_out = false
+        AND o.location_code = ${locationCode}
       ORDER BY r.name
     `);
     return rows as ReferrerRow[];
@@ -115,7 +117,8 @@ async function getFilteredReferrers(filter: AudienceFilter): Promise<ReferrerRow
       o.name AS office_name
     FROM referrers r
     LEFT JOIN offices o ON o.id = r.office_id
-    ${condition ? sql`WHERE ${condition}` : sql``}
+    WHERE r.sms_opt_out = false
+    ${condition ? sql`AND ${condition}` : sql``}
     ORDER BY r.name
   `);
   return rows as ReferrerRow[];

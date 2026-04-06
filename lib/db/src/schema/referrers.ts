@@ -19,6 +19,8 @@ export const referrersTable = pgTable("referrers", {
   tier: text("tier").default("starter"),
   tier_unlocked_at: timestamp("tier_unlocked_at"),
   reward_value: integer("reward_value").default(35),
+  sms_opt_out: boolean("sms_opt_out").default(false),
+  opt_out_reason: text("opt_out_reason"),
 });
 
 export const insertReferrerSchema = createInsertSchema(referrersTable).omit({ id: true, created_at: true });

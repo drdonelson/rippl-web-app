@@ -6,7 +6,7 @@ import {
   Plus, QrCode, Search, Copy, Check, Download, RefreshCw,
   CheckCircle2, AlertTriangle, LayoutList, LayoutGrid,
   ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Star, MapPin, Lock,
-  Send, Loader2, Phone, Mail, Users,
+  Send, Loader2, Phone, Mail, Users, BellOff, Bell,
 } from "lucide-react";
 import QRCode from "qrcode";
 import { Modal } from "@/components/ui/modal";
@@ -347,6 +347,57 @@ export default function Patients() {
   const [bulkResult, setBulkResult] = useState<null | {
     total: number; sent: number; failed: number; skipped: number; errors: string[];
   }>(null);
+
+  // Opt-out state
+  const [optOutModal, setOptOutModal] = useState<{
+    id: string; name: string; currentlyOptedOut: boolean;
+  } | null>(null);
+  const [optOutReason, setOptOutReason] = useState("");
+  const [optOutLoading, setOptOutLoading] = useState(false);
+
+  const openOptOutModal = (referrerId: string, name: string, currentlyOptedOut: boolean) => {
+    setOptOutModal({ id: referrerId, name, currentlyOptedOut });
+    setOptOutReason("");
+  };
+
+  const handleOptOut = async () => {
+    if (!optOutModal) return;
+    const newOptOut = !optOutModal.currentlyOptedOut;
+    setOptOutLoading(true);
+
+    if (isDemo) {
+      await new Promise(r => setTimeout(r, 600));
+      toast.success(
+        newOptOut
+          ? `Demo: ${optOutModal.name} excluded from automated messages.`
+          : `Demo: ${optOutModal.name} will receive automated messages again.`
+      );
+      setOptOutModal(null);
+      setOptOutReason("");
+      setOptOutLoading(false);
+      return;
+    }
+
+    try {
+      await customFetch(`${BASE}/api/referrers/${optOutModal.id}/opt-out`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sms_opt_out: newOptOut, opt_out_reason: optOutReason.trim() || undefined }),
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/referrers"] });
+      toast.success(
+        newOptOut
+          ? `${optOutModal.name} excluded from automated messages.`
+          : `${optOutModal.name} will receive automated messages again.`
+      );
+      setOptOutModal(null);
+      setOptOutReason("");
+    } catch (err) {
+      toast.error("Failed to update opt-out status. Please try again.");
+    } finally {
+      setOptOutLoading(false);
+    }
+  };
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(formSchema)
@@ -867,12 +918,20 @@ export default function Patients() {
                   const tier      = (referrer as any).tier as string | null;
                   const n         = referrer.total_referrals;
                   const onboarded = !!((referrer as any).onboarding_sms_sent);
+                  const optedOut  = !!((referrer as any).sms_opt_out);
                   return (
-                    <div key={referrer.id} className="px-4 py-3 flex items-center justify-between gap-3">
+                    <div key={referrer.id} className={cn("px-4 py-3 flex items-center justify-between gap-3", optedOut && "opacity-60")}>
                       <div className="flex items-center gap-2.5 min-w-0">
                         <StatusDot n={n} onboarded={onboarded} />
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-foreground truncate">{referrer.name}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-sm font-semibold text-foreground truncate">{referrer.name}</p>
+                            {optedOut && (
+                              <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[9px] font-semibold bg-destructive/10 text-destructive border border-destructive/20 shrink-0">
+                                <BellOff className="w-2 h-2" /> No SMS
+                              </span>
+                            )}
+                          </div>
                           <div className="mt-0.5 flex items-center gap-2 flex-wrap">
                             <TierBadge tier={tier} totalReferrals={n} />
                             {code && (
@@ -900,6 +959,18 @@ export default function Patients() {
                         >
                           <Send className="w-3 h-3" />
                           Send
+                        </button>
+                        <button
+                          onClick={() => openOptOutModal(referrer.id, referrer.name, optedOut)}
+                          title={optedOut ? "Re-enable automated messages" : "Exclude from automated messages"}
+                          className={cn(
+                            "p-1.5 rounded-lg transition-colors border",
+                            optedOut
+                              ? "bg-destructive/10 text-destructive border-destructive/20"
+                              : "bg-secondary text-muted-foreground border-border"
+                          )}
+                        >
+                          {optedOut ? <BellOff className="w-3 h-3" /> : <Bell className="w-3 h-3" />}
                         </button>
                       </div>
                     </div>
@@ -955,14 +1026,22 @@ export default function Patients() {
                     const tier      = (referrer as any).tier as string | null;
                     const n         = referrer.total_referrals;
                     const onboarded = !!((referrer as any).onboarding_sms_sent);
+                    const optedOut  = !!((referrer as any).sms_opt_out);
                     return (
-                      <tr key={referrer.id} className="hover:bg-muted/10 transition-colors group">
+                      <tr key={referrer.id} className={cn("hover:bg-muted/10 transition-colors group", optedOut && "opacity-60")}>
                         {/* Patient Name + status dot + tier */}
                         <td className="px-4 py-2.5">
                           <div className="flex items-center gap-2.5">
                             <StatusDot n={n} onboarded={onboarded} />
                             <div>
-                              <span className="font-semibold text-foreground text-sm leading-tight">{referrer.name}</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-semibold text-foreground text-sm leading-tight">{referrer.name}</span>
+                                {optedOut && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-destructive/10 text-destructive border border-destructive/20 whitespace-nowrap">
+                                    <BellOff className="w-2.5 h-2.5" /> No SMS
+                                  </span>
+                                )}
+                              </div>
                               <div className="mt-0.5">
                                 <TierBadge tier={tier} totalReferrals={n} />
                                 <TierProgress tier={tier} totalReferrals={n} />
@@ -1030,6 +1109,18 @@ export default function Patients() {
                               <ExternalLink className="w-3 h-3" />
                               Events
                             </button>
+                            <button
+                              onClick={() => openOptOutModal(referrer.id, referrer.name, optedOut)}
+                              title={optedOut ? "Re-enable automated messages" : "Exclude from automated messages"}
+                              className={cn(
+                                "p-1.5 rounded-lg transition-colors border",
+                                optedOut
+                                  ? "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
+                                  : "bg-secondary text-muted-foreground border-border hover:text-foreground hover:bg-muted"
+                              )}
+                            >
+                              {optedOut ? <BellOff className="w-3 h-3" /> : <Bell className="w-3 h-3" />}
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -1048,11 +1139,20 @@ export default function Patients() {
       ) : (
         /* ── GRID / TILE VIEW ───────────────────────────────────────────── */
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredReferrers.map((referrer) => (
-            <div key={referrer.id} className="bg-card rounded-2xl border border-border p-6 hover:shadow-xl transition-all duration-300 flex flex-col group">
+          {filteredReferrers.map((referrer) => {
+            const gridOptedOut = !!((referrer as any).sms_opt_out);
+            return (
+            <div key={referrer.id} className={cn("bg-card rounded-2xl border border-border p-6 hover:shadow-xl transition-all duration-300 flex flex-col group", gridOptedOut && "opacity-60")}>
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="text-xl font-semibold text-foreground">{referrer.name}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-semibold text-foreground">{referrer.name}</h3>
+                    {gridOptedOut && (
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-destructive/10 text-destructive border border-destructive/20">
+                        <BellOff className="w-2.5 h-2.5" /> No SMS
+                      </span>
+                    )}
+                  </div>
                   <div className="mt-1.5">
                     <TierBadge tier={(referrer as any).tier} totalReferrals={referrer.total_referrals} />
                   </div>
@@ -1090,9 +1190,22 @@ export default function Patients() {
                   <Send className="w-4 h-4" />
                   Send Link
                 </button>
+                <button
+                  onClick={() => openOptOutModal(referrer.id, referrer.name, gridOptedOut)}
+                  title={gridOptedOut ? "Re-enable automated messages" : "Exclude from automated messages"}
+                  className={cn(
+                    "py-2.5 px-3 rounded-xl font-semibold transition-all flex items-center justify-center text-sm border",
+                    gridOptedOut
+                      ? "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
+                      : "bg-secondary text-muted-foreground border-border hover:bg-muted"
+                  )}
+                >
+                  {gridOptedOut ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -1427,6 +1540,80 @@ export default function Patients() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* ── Opt-out Confirmation Modal ────────────────────────────────── */}
+      <Modal
+        isOpen={!!optOutModal}
+        onClose={() => { if (!optOutLoading) { setOptOutModal(null); setOptOutReason(""); } }}
+        title={optOutModal?.currentlyOptedOut ? "Re-enable Automated Messages" : "Exclude from Automated Messages"}
+        description={
+          optOutModal?.currentlyOptedOut
+            ? `Re-enable SMS and email referral messages for ${optOutModal?.name}?`
+            : `Exclude ${optOutModal?.name} from all automated onboarding SMS and campaign messages.`
+        }
+      >
+        <div className="space-y-5">
+          {!optOutModal?.currentlyOptedOut && (
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                Reason <span className="font-normal opacity-60">(optional)</span>
+              </label>
+              <textarea
+                value={optOutReason}
+                onChange={e => setOptOutReason(e.target.value)}
+                rows={2}
+                placeholder="e.g. Patient requested no marketing messages"
+                className="w-full px-4 py-2.5 bg-background border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none"
+              />
+            </div>
+          )}
+
+          {optOutModal?.currentlyOptedOut ? (
+            <div className="flex items-start gap-3 px-4 py-3 bg-primary/5 border border-primary/20 rounded-xl">
+              <Bell className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                This patient will be included in automated onboarding and campaign messages going forward.
+              </p>
+            </div>
+          ) : (
+            <div className="flex items-start gap-3 px-4 py-3 bg-destructive/5 border border-destructive/20 rounded-xl">
+              <BellOff className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                This patient will be skipped in all automated onboarding sweeps and bulk campaign sends. You can re-enable them at any time.
+              </p>
+            </div>
+          )}
+
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => { setOptOutModal(null); setOptOutReason(""); }}
+              disabled={optOutLoading}
+              className="flex-1 py-3 px-4 bg-muted hover:bg-muted/80 text-foreground rounded-xl font-semibold transition-colors text-sm disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleOptOut}
+              disabled={optOutLoading}
+              className={cn(
+                "flex-1 py-3 px-4 rounded-xl font-semibold transition-colors text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed",
+                optOutModal?.currentlyOptedOut
+                  ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
+                  : "bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              )}
+            >
+              {optOutLoading
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>
+                : optOutModal?.currentlyOptedOut
+                  ? <><Bell className="w-4 h-4" /> Re-enable Messages</>
+                  : <><BellOff className="w-4 h-4" /> Exclude Patient</>
+              }
+            </button>
+          </div>
+        </div>
       </Modal>
 
       {/* ── Bulk Send Referral Links Modal ────────────────────────────── */}
