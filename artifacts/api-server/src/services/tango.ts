@@ -9,7 +9,6 @@ const TANGO_EMAIL_TEMPLATE  = process.env.TANGO_EMAIL_TEMPLATE_ID?.trim() ?? "E8
 
 // Reward Link US (No Donations) — lets recipient choose from hundreds of US gift cards
 const REWARD_LINK_UTID = "U453114";
-const CENTS_PER_DOLLAR = 100;
 
 // Log which Tango env vars are present at startup (values never logged)
 logger.info(
@@ -56,7 +55,7 @@ export async function sendAmazonRewardLink(
   const payload = {
     accountIdentifier:  TANGO_ACCOUNT_ID,
     customerIdentifier: TANGO_CUSTOMER_ID,
-    amount:             amountDollars * CENTS_PER_DOLLAR,
+    amount:             amountDollars,
     utid:               REWARD_LINK_UTID,
     sendEmail:          true,
     emailTemplateId:    TANGO_EMAIL_TEMPLATE,
