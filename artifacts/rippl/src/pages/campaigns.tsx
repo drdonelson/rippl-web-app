@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Megaphone, MessageSquare, Mail, Loader2, AlertTriangle,
   Users, CheckCircle2, Clock, Send, ChevronDown, Eye, RefreshCw,
-  Hash, Zap, Lock,
+  Hash, Zap, Lock, FlaskConical, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -172,6 +172,38 @@ function CampaignBuilder({ channel, isDemo }: { channel: Channel; isDemo?: boole
   const [countResult, setCountResult]     = useState<CountResult | null>(isDemo ? DEMO_COUNT_RESULT : null);
   const [countLoading, setCountLoading]   = useState(false);
   const [confirmOpen, setConfirmOpen]     = useState(false);
+
+  // ── Test-send state ──────────────────────────────────────────────────────────
+  const [testPanelOpen, setTestPanelOpen] = useState(false);
+  const [testEmail, setTestEmail]         = useState<string>(() => {
+    try { return localStorage.getItem("rippl_test_email") || "hello@joinrippl.com"; }
+    catch { return "hello@joinrippl.com"; }
+  });
+  const [testSending, setTestSending]     = useState(false);
+
+  const handleTestSend = async () => {
+    if (testSending || isDemo) return;
+    const addr = testEmail.trim();
+    if (!addr || !addr.includes("@")) { toast.error("Enter a valid email address"); return; }
+    try { localStorage.setItem("rippl_test_email", addr); } catch {}
+    setTestSending(true);
+    try {
+      const result = await customFetch<{ success: boolean; sent_to: string; patient_name: string; used_placeholder: boolean }>(
+        `${BASE}/api/campaigns/test-send`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filter, message_template: template, test_email: addr }),
+        }
+      );
+      const patientNote = result.used_placeholder ? " (placeholder data — no matching patients)" : ` using ${result.patient_name}'s data`;
+      toast.success(`Test email sent to ${result.sent_to}${patientNote}`);
+      setTestPanelOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send test email");
+    } finally {
+      setTestSending(false);
+    }
+  };
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -361,16 +393,68 @@ function CampaignBuilder({ channel, isDemo }: { channel: Channel; isDemo?: boole
           )}
         </div>
 
-        {/* Send button */}
-        <button
-          onClick={() => { if (!isDemo) setConfirmOpen(true); }}
-          disabled={isDemo || !canSend || countLoading}
-          title={isDemo ? "Sending disabled in demo mode" : undefined}
-          className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-primary-foreground font-semibold rounded-xl transition-all shadow-lg shadow-primary/20"
-        >
-          {isDemo ? <Lock className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-          {isDemo ? "Sending disabled in demo mode" : channel === "sms" ? "Send SMS Campaign" : "Send Email Campaign"}
-        </button>
+        {/* Send button row */}
+        <div className="space-y-2">
+          <button
+            onClick={() => { if (!isDemo) setConfirmOpen(true); }}
+            disabled={isDemo || !canSend || countLoading}
+            title={isDemo ? "Sending disabled in demo mode" : undefined}
+            className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-primary-foreground font-semibold rounded-xl transition-all shadow-lg shadow-primary/20"
+          >
+            {isDemo ? <Lock className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+            {isDemo ? "Sending disabled in demo mode" : channel === "sms" ? "Send SMS Campaign" : "Send Email Campaign"}
+          </button>
+
+          {/* Send Test button — email only */}
+          {channel === "email" && (
+            <div>
+              <button
+                onClick={() => setTestPanelOpen(o => !o)}
+                disabled={isDemo || template.trim().length === 0}
+                title={isDemo ? "Unavailable in demo mode" : "Send a test email to preview exactly what patients will receive"}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-border hover:border-muted-foreground/40 text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-sm font-medium transition-all"
+              >
+                <FlaskConical className="w-4 h-4" />
+                Send Test Email
+              </button>
+
+              {testPanelOpen && (
+                <div className="mt-2 p-4 rounded-xl border border-border bg-muted/10 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Test email address</p>
+                    <button onClick={() => setTestPanelOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Sends to this address with all variables filled using real data from the first matching patient.
+                    {countResult?.preview_patient && (
+                      <span className="text-primary"> Preview patient: {countResult.preview_patient.name}.</span>
+                    )}
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      value={testEmail}
+                      onChange={e => setTestEmail(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter") handleTestSend(); }}
+                      placeholder="hello@joinrippl.com"
+                      className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+                    />
+                    <button
+                      onClick={handleTestSend}
+                      disabled={testSending || !testEmail.trim()}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      {testSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FlaskConical className="w-3.5 h-3.5" />}
+                      {testSending ? "Sending…" : "Send Test"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Preview panel */}

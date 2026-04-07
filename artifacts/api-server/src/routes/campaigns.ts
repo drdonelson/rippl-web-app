@@ -341,4 +341,92 @@ router.post("/send", async (req, res) => {
   });
 });
 
+// ── POST /api/campaigns/test-send ─────────────────────────────────────────────
+// Sends a single test email to the specified address using real patient data.
+// Does NOT create a campaign record. Logs with [TEST-SEND] prefix.
+
+router.post("/test-send", async (req, res) => {
+  if (!canAccess(req.authUser?.role ?? "")) {
+    res.status(403).json({ error: "Access denied" });
+    return;
+  }
+
+  const { filter, message_template, test_email } = req.body as {
+    filter: string;
+    message_template: string;
+    test_email?: string;
+  };
+
+  if (!filter || !message_template?.trim()) {
+    res.status(400).json({ error: "filter and message_template are required" });
+    return;
+  }
+  if (!VALID_FILTERS.includes(filter as AudienceFilter)) {
+    res.status(400).json({ error: "Invalid filter" });
+    return;
+  }
+
+  const recipientEmail = (test_email?.trim() || SENDGRID_FROM_EMAIL).toLowerCase();
+
+  if (!SENDGRID_API_KEY) {
+    res.status(500).json({ error: "SendGrid not configured (SENDGRID_API_KEY)" });
+    return;
+  }
+
+  try {
+    // Get the first matching patient for real template data
+    const referrers = await getFilteredReferrers(filter as AudienceFilter);
+    const patient   = referrers[0] ?? null;
+
+    // If no real patient, synthesise a placeholder referrer
+    const referrerData: ReferrerRow = patient ?? {
+      id:                  "test",
+      name:                "Sarah Johnson",
+      phone:               null,
+      email:               null,
+      referral_code:       "TEST-1234",
+      tier:                "starter",
+      reward_value:        35,
+      office_id:           null,
+      onboarding_sms_sent: false,
+      office_name:         "Hallmark Dental",
+    };
+
+    const renderedMessage = renderTemplate(message_template.trim(), referrerData);
+
+    sgMail.setApiKey(SENDGRID_API_KEY);
+    await sgMail.send({
+      to:   recipientEmail,
+      from: { email: SENDGRID_FROM_EMAIL, name: "Rippl by Hallmark Dental" },
+      subject: `[TEST] Campaign Preview — ${referrerData.name.split(" ")[0]}'s data`,
+      text:    renderedMessage,
+      html:    `<div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto">
+        <div style="background:#0d9488;color:#fff;padding:8px 16px;border-radius:6px 6px 0 0;font-size:12px;font-weight:600;letter-spacing:.05em">
+          TEST PREVIEW — rendered with ${patient ? referrerData.name + "'s real data" : "placeholder data (no matching patients)"}
+        </div>
+        <div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 6px 6px">
+          <p style="white-space:pre-wrap;line-height:1.7;margin:0">${renderedMessage.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br/>")}</p>
+        </div>
+      </div>`,
+      trackingSettings: { clickTracking: { enable: false, enableText: false } },
+    });
+
+    req.log.info(
+      { recipientEmail, patientName: referrerData.name, filter },
+      "[TEST-SEND] Campaign test email sent"
+    );
+
+    res.json({
+      success:      true,
+      sent_to:      recipientEmail,
+      patient_name: referrerData.name,
+      used_placeholder: !patient,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    req.log.error({ err }, "[TEST-SEND] Failed to send test email");
+    res.status(500).json({ error: message });
+  }
+});
+
 export default router;
