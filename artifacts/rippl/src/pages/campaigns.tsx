@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Megaphone, MessageSquare, Mail, Loader2, AlertTriangle,
   Users, CheckCircle2, Clock, Send, ChevronDown, Eye, RefreshCw,
-  Hash, Zap, Lock, FlaskConical, X,
+  Hash, Zap, Lock, FlaskConical, X, Layers, TrendingUp, Link2, ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -120,6 +120,205 @@ Thank you for being part of our community!
 
 — The Team at {{office_name}}`;
 
+// ── Pre-built email templates ──────────────────────────────────────────────────
+
+const TPL_WELCOME = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html><body style="margin:0;padding:0;background:#f3f4f6;font-family:system-ui,-apple-system,sans-serif">
+<div style="max-width:580px;margin:32px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)">
+  <div style="background:#0a1628;padding:28px 32px;text-align:center">
+    <p style="margin:0 0 6px;color:#0d9488;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase">Rippl Rewards</p>
+    <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;line-height:1.3">Welcome, {{first_name}}! 🎉</h1>
+  </div>
+  <div style="padding:32px">
+    <p style="margin:0 0 18px;color:#374151;font-size:15px;line-height:1.7">Hi {{first_name}},</p>
+    <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.7">Thank you for being a patient at <strong>{{office_name}}</strong>. You're now enrolled in the <strong>Rippl Rewards</strong> program — share our practice with friends and earn gift cards automatically.</p>
+
+    <h2 style="margin:0 0 14px;color:#0a1628;font-size:15px;font-weight:700;border-bottom:2px solid #f3f4f6;padding-bottom:8px">How it works</h2>
+    <table style="width:100%;border-collapse:collapse;margin:0 0 28px">
+      <tr>
+        <td style="width:40px;vertical-align:top;padding:0 14px 18px 0">
+          <div style="width:34px;height:34px;background:#0d9488;border-radius:50%;text-align:center;line-height:34px;color:#fff;font-weight:800;font-size:15px">1</div>
+        </td>
+        <td style="vertical-align:top;padding:0 0 18px">
+          <p style="margin:0 0 3px;color:#111827;font-size:14px;font-weight:600">Share your personal link</p>
+          <p style="margin:0;color:#6b7280;font-size:13px;line-height:1.6">Send your unique link to friends or family who need a dentist.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="width:40px;vertical-align:top;padding:0 14px 18px 0">
+          <div style="width:34px;height:34px;background:#0d9488;border-radius:50%;text-align:center;line-height:34px;color:#fff;font-weight:800;font-size:15px">2</div>
+        </td>
+        <td style="vertical-align:top;padding:0 0 18px">
+          <p style="margin:0 0 3px;color:#111827;font-size:14px;font-weight:600">They book &amp; complete their visit</p>
+          <p style="margin:0;color:#6b7280;font-size:13px;line-height:1.6">Your referral schedules and completes their new patient exam.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="width:40px;vertical-align:top;padding:0 14px 0 0">
+          <div style="width:34px;height:34px;background:#0d9488;border-radius:50%;text-align:center;line-height:34px;color:#fff;font-weight:800;font-size:15px">3</div>
+        </td>
+        <td style="vertical-align:top;padding:0">
+          <p style="margin:0 0 3px;color:#111827;font-size:14px;font-weight:600">You earn a reward</p>
+          <p style="margin:0;color:#6b7280;font-size:13px;line-height:1.6">We send you a digital gift card automatically — no forms needed.</p>
+        </td>
+      </tr>
+    </table>
+
+    <h2 style="margin:0 0 10px;color:#0a1628;font-size:15px;font-weight:700;border-bottom:2px solid #f3f4f6;padding-bottom:8px">Your reward tiers</h2>
+    <table style="width:100%;border-collapse:collapse;margin:0 0 28px;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb">
+      <tr style="background:#f9fafb">
+        <td style="padding:10px 14px;font-size:13px;font-weight:600;color:#111827">⭐ Influencer</td>
+        <td style="padding:10px 14px;font-size:12px;color:#9ca3af">1–2 referrals</td>
+        <td style="padding:10px 14px;font-size:14px;font-weight:700;color:#0d9488;text-align:right">$35 / referral</td>
+      </tr>
+      <tr style="background:#ffffff;border-top:1px solid #e5e7eb">
+        <td style="padding:10px 14px;font-size:13px;font-weight:600;color:#111827">🔥 Amplifier</td>
+        <td style="padding:10px 14px;font-size:12px;color:#9ca3af">3–5 referrals</td>
+        <td style="padding:10px 14px;font-size:14px;font-weight:700;color:#0d9488;text-align:right">$50 / referral</td>
+      </tr>
+      <tr style="background:#f9fafb;border-top:1px solid #e5e7eb">
+        <td style="padding:10px 14px;font-size:13px;font-weight:600;color:#111827">🚀 Ambassador</td>
+        <td style="padding:10px 14px;font-size:12px;color:#9ca3af">6–9 referrals</td>
+        <td style="padding:10px 14px;font-size:14px;font-weight:700;color:#0d9488;text-align:right">$75 / referral</td>
+      </tr>
+      <tr style="background:#ffffff;border-top:1px solid #e5e7eb">
+        <td style="padding:10px 14px;font-size:13px;font-weight:600;color:#111827">👑 Legend</td>
+        <td style="padding:10px 14px;font-size:12px;color:#9ca3af">10+ referrals</td>
+        <td style="padding:10px 14px;font-size:14px;font-weight:700;color:#0d9488;text-align:right">$100 / referral</td>
+      </tr>
+    </table>
+
+    <div style="text-align:center;margin:0 0 28px">
+      <a href="{{referral_link}}" style="display:inline-block;background:#0d9488;color:#ffffff;text-decoration:none;padding:15px 36px;border-radius:8px;font-size:15px;font-weight:700;letter-spacing:.01em">Share My Referral Link →</a>
+    </div>
+
+    <p style="margin:0;color:#9ca3af;font-size:11px;text-align:center;line-height:1.8">
+      Sent by {{office_name}} via Rippl &nbsp;·&nbsp; You're receiving this because you're enrolled in our referral rewards program.
+    </p>
+  </div>
+</div>
+</body></html>`;
+
+const TPL_TIER_STATUS = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html><body style="margin:0;padding:0;background:#f3f4f6;font-family:system-ui,-apple-system,sans-serif">
+<div style="max-width:580px;margin:32px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)">
+  <div style="background:#0a1628;padding:28px 32px;text-align:center">
+    <p style="margin:0 0 6px;color:#0d9488;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase">Your Rippl Status</p>
+    <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;line-height:1.3">{{first_name}}, you're a <span style="color:#0d9488">{{tier_name}}</span></h1>
+  </div>
+  <div style="padding:32px">
+    <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7">Hi {{first_name}},</p>
+    <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.7">Here's a quick look at your current Rippl Rewards status at <strong>{{office_name}}</strong>.</p>
+
+    <div style="background:#f0fdf9;border:2px solid #0d9488;border-radius:12px;padding:20px 24px;margin:0 0 28px;text-align:center">
+      <p style="margin:0 0 4px;color:#6b7280;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em">Current Tier</p>
+      <p style="margin:0 0 8px;color:#0a1628;font-size:28px;font-weight:800">{{tier_name}}</p>
+      <p style="margin:0;color:#6b7280;font-size:13px">Each confirmed referral earns you</p>
+      <p style="margin:4px 0 0;color:#0d9488;font-size:32px;font-weight:800">{{reward_value}}</p>
+      <p style="margin:2px 0 0;color:#9ca3af;font-size:12px">as a digital gift card</p>
+    </div>
+
+    <h2 style="margin:0 0 10px;color:#0a1628;font-size:15px;font-weight:700;border-bottom:2px solid #f3f4f6;padding-bottom:8px">Full tier progression</h2>
+    <table style="width:100%;border-collapse:collapse;margin:0 0 28px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
+      <tr style="background:#f9fafb">
+        <td style="padding:10px 14px;font-size:13px;font-weight:600;color:#111827">⭐ Influencer</td>
+        <td style="padding:10px 14px;font-size:12px;color:#9ca3af">1–2 referrals</td>
+        <td style="padding:10px 14px;font-size:13px;font-weight:700;color:#0d9488;text-align:right">$35 each</td>
+      </tr>
+      <tr style="background:#ffffff;border-top:1px solid #e5e7eb">
+        <td style="padding:10px 14px;font-size:13px;font-weight:600;color:#111827">🔥 Amplifier</td>
+        <td style="padding:10px 14px;font-size:12px;color:#9ca3af">3–5 referrals</td>
+        <td style="padding:10px 14px;font-size:13px;font-weight:700;color:#0d9488;text-align:right">$50 each</td>
+      </tr>
+      <tr style="background:#f9fafb;border-top:1px solid #e5e7eb">
+        <td style="padding:10px 14px;font-size:13px;font-weight:600;color:#111827">🚀 Ambassador</td>
+        <td style="padding:10px 14px;font-size:12px;color:#9ca3af">6–9 referrals</td>
+        <td style="padding:10px 14px;font-size:13px;font-weight:700;color:#0d9488;text-align:right">$75 each</td>
+      </tr>
+      <tr style="background:#ffffff;border-top:1px solid #e5e7eb">
+        <td style="padding:10px 14px;font-size:13px;font-weight:600;color:#111827">👑 Legend</td>
+        <td style="padding:10px 14px;font-size:12px;color:#9ca3af">10+ referrals</td>
+        <td style="padding:10px 14px;font-size:13px;font-weight:700;color:#0d9488;text-align:right">$100 each</td>
+      </tr>
+    </table>
+
+    <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7">Keep sharing to move up — every confirmed referral counts!</p>
+
+    <div style="text-align:center;margin:0 0 28px">
+      <a href="{{referral_link}}" style="display:inline-block;background:#0d9488;color:#ffffff;text-decoration:none;padding:15px 36px;border-radius:8px;font-size:15px;font-weight:700">Share My Link &amp; Keep Earning →</a>
+    </div>
+
+    <p style="margin:0;color:#9ca3af;font-size:11px;text-align:center;line-height:1.8">
+      Sent by {{office_name}} via Rippl &nbsp;·&nbsp; Reply STOP to unsubscribe.
+    </p>
+  </div>
+</div>
+</body></html>`;
+
+const TPL_SIMPLE_LINK = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html><body style="margin:0;padding:0;background:#f3f4f6;font-family:system-ui,-apple-system,sans-serif">
+<div style="max-width:540px;margin:32px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)">
+  <div style="background:#0a1628;padding:20px 32px">
+    <p style="margin:0;color:#0d9488;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase">Rippl Rewards · {{office_name}}</p>
+  </div>
+  <div style="padding:36px 32px">
+    <p style="margin:0 0 16px;color:#111827;font-size:16px;line-height:1.7">Hi {{first_name}},</p>
+    <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.7">Know someone who could use a great dentist? Share your referral link — when they complete their first visit, you earn <strong style="color:#0d9488">{{reward_value}}</strong> as a digital gift card.</p>
+    <p style="margin:0 0 28px;color:#374151;font-size:15px;line-height:1.7">No limits, no forms — just share and earn.</p>
+
+    <div style="text-align:center;margin:0 0 28px">
+      <a href="{{referral_link}}" style="display:inline-block;background:#0d9488;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:700;letter-spacing:.01em">Send My Referral Link →</a>
+    </div>
+
+    <p style="margin:0 0 6px;color:#9ca3af;font-size:12px;text-align:center">Or copy this link:</p>
+    <p style="margin:0;color:#6b7280;font-size:12px;text-align:center;word-break:break-all">{{referral_link}}</p>
+  </div>
+  <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:14px 32px">
+    <p style="margin:0;color:#9ca3af;font-size:11px;text-align:center;line-height:1.7">Sent by {{office_name}} via Rippl &nbsp;·&nbsp; Reply STOP to unsubscribe.</p>
+  </div>
+</div>
+</body></html>`;
+
+interface EmailTemplate {
+  id:          string;
+  label:       string;
+  tagline:     string;
+  icon:        React.FC<{ className?: string }>;
+  accentColor: string;
+  content:     string;
+}
+
+const EMAIL_TEMPLATES: EmailTemplate[] = [
+  {
+    id:          "welcome",
+    label:       "Welcome — How it works",
+    tagline:     "Intro email with 3-step guide and full tier grid",
+    icon:        Layers,
+    accentColor: "#6366f1",
+    content:     TPL_WELCOME,
+  },
+  {
+    id:          "tier_status",
+    label:       "Tier status",
+    tagline:     "Personalized with current tier, reward value, and progression",
+    icon:        TrendingUp,
+    accentColor: "#0d9488",
+    content:     TPL_TIER_STATUS,
+  },
+  {
+    id:          "simple_link",
+    label:       "Simple referral link",
+    tagline:     "Short, friendly message with a single CTA button",
+    icon:        Link2,
+    accentColor: "#f59e0b",
+    content:     TPL_SIMPLE_LINK,
+  },
+];
+
+function isHtmlTemplate(template: string): boolean {
+  return template.trimStart().startsWith("<");
+}
+
 function estimatedDelivery(count: number, channel: Channel): string {
   if (count === 0) return "—";
   const secs = Math.ceil(count / 10) + 2;
@@ -172,6 +371,14 @@ function CampaignBuilder({ channel, isDemo }: { channel: Channel; isDemo?: boole
   const [countResult, setCountResult]     = useState<CountResult | null>(isDemo ? DEMO_COUNT_RESULT : null);
   const [countLoading, setCountLoading]   = useState(false);
   const [confirmOpen, setConfirmOpen]     = useState(false);
+
+  // ── Template picker state ────────────────────────────────────────────────────
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+
+  const applyTemplate = (tpl: EmailTemplate) => {
+    setTemplate(tpl.content);
+    setSelectedTemplateId(tpl.id);
+  };
 
   // ── Test-send state ──────────────────────────────────────────────────────────
   const [testPanelOpen, setTestPanelOpen] = useState(false);
@@ -346,6 +553,50 @@ function CampaignBuilder({ channel, isDemo }: { channel: Channel; isDemo?: boole
           </span>
         </div>
 
+        {/* Email template picker */}
+        {channel === "email" && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">Start from a template</p>
+            <div className="grid grid-cols-1 gap-2">
+              {EMAIL_TEMPLATES.map(tpl => {
+                const Icon     = tpl.icon;
+                const isActive = selectedTemplateId === tpl.id;
+                return (
+                  <button
+                    key={tpl.id}
+                    onClick={() => applyTemplate(tpl)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all",
+                      isActive
+                        ? "border-primary/60 bg-primary/5"
+                        : "border-border hover:border-muted-foreground/30 hover:bg-muted/10"
+                    )}
+                  >
+                    <div
+                      className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
+                      style={{ background: `${tpl.accentColor}18`, color: tpl.accentColor }}
+                    >
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={cn("text-sm font-semibold truncate", isActive ? "text-primary" : "text-foreground")}>
+                        {tpl.label}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">{tpl.tagline}</p>
+                    </div>
+                    <ChevronRight className={cn("w-4 h-4 shrink-0 transition-colors", isActive ? "text-primary" : "text-muted-foreground/40")} />
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-2 my-4">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs text-muted-foreground">or write your own below</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+          </div>
+        )}
+
         {/* Message template */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
@@ -472,11 +723,23 @@ function CampaignBuilder({ channel, isDemo }: { channel: Channel; isDemo?: boole
             </h2>
           </div>
           {countResult.preview_patient ? (
-            <div className="bg-background border border-border rounded-xl p-4">
-              <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed font-mono">
-                {previewMsg}
-              </p>
-            </div>
+            isHtmlTemplate(template) ? (
+              <div className="rounded-xl border border-border overflow-hidden bg-white">
+                <iframe
+                  srcDoc={previewMsg}
+                  sandbox="allow-same-origin"
+                  className="w-full"
+                  style={{ height: "480px", border: "none", display: "block" }}
+                  title="Email preview"
+                />
+              </div>
+            ) : (
+              <div className="bg-background border border-border rounded-xl p-4">
+                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed font-mono">
+                  {previewMsg}
+                </p>
+              </div>
+            )
           ) : (
             <p className="text-sm text-muted-foreground">No patients match this filter — select a different audience to preview.</p>
           )}

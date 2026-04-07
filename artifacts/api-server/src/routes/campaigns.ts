@@ -18,6 +18,43 @@ const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
 const SENDGRID_API_KEY    = process.env.SENDGRID_API_KEY;
 const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "hello@joinrippl.com";
 
+// ── HTML template detection & helpers ─────────────────────────────────────────
+
+function isHtmlTemplate(template: string): boolean {
+  return template.trimStart().startsWith("<");
+}
+
+function stripHtml(html: string): string {
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&#?\w+;/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function buildEmailPayload(renderedMessage: string): { text: string; html: string } {
+  if (isHtmlTemplate(renderedMessage)) {
+    return {
+      html: renderedMessage,
+      text: stripHtml(renderedMessage),
+    };
+  }
+  const escaped = renderedMessage
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\n/g, "<br/>");
+  return {
+    text: renderedMessage,
+    html: `<p style="font-family:system-ui,sans-serif;white-space:pre-wrap;line-height:1.7">${escaped}</p>`,
+  };
+}
+
 const TIER_NAMES: Record<string, string> = {
   starter:       "Influencer",
   rippler:       "Amplifier",
@@ -303,12 +340,13 @@ router.post("/send", async (req, res) => {
             }
           } else {
             if (!referrer.email) { failCount++; continue; }
+            const { text: emailText, html: emailHtml } = buildEmailPayload(message);
             await sgMail.send({
               to:   referrer.email,
               from: { email: SENDGRID_FROM_EMAIL, name: "Rippl by Hallmark Dental" },
               subject: name.trim(),
-              text:    message,
-              html:    `<p style="font-family:system-ui,sans-serif;white-space:pre-wrap;line-height:1.7">${message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br/>")}</p>`,
+              text:    emailText,
+              html:    emailHtml,
               trackingSettings: { clickTracking: { enable: false, enableText: false } },
             });
           }
@@ -393,21 +431,24 @@ router.post("/test-send", async (req, res) => {
     };
 
     const renderedMessage = renderTemplate(message_template.trim(), referrerData);
+    const { text: emailText, html: emailBodyHtml } = buildEmailPayload(renderedMessage);
+
+    const testBannerHtml = `<div style="background:#0d9488;color:#fff;padding:8px 16px;border-radius:6px 6px 0 0;font-size:12px;font-weight:600;letter-spacing:.05em;font-family:system-ui,sans-serif;max-width:600px;margin:0 auto">
+      TEST PREVIEW — rendered with ${patient ? referrerData.name + "'s real data" : "placeholder data (no matching patients)"}
+    </div>`;
+
+    // Wrap HTML templates in the test banner; for plain-text emails use a simple wrapper
+    const testHtml = isHtmlTemplate(renderedMessage)
+      ? testBannerHtml + emailBodyHtml
+      : `<div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto">${testBannerHtml}<div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 6px 6px">${emailBodyHtml}</div></div>`;
 
     sgMail.setApiKey(SENDGRID_API_KEY);
     await sgMail.send({
       to:   recipientEmail,
       from: { email: SENDGRID_FROM_EMAIL, name: "Rippl by Hallmark Dental" },
       subject: `[TEST] Campaign Preview — ${referrerData.name.split(" ")[0]}'s data`,
-      text:    renderedMessage,
-      html:    `<div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto">
-        <div style="background:#0d9488;color:#fff;padding:8px 16px;border-radius:6px 6px 0 0;font-size:12px;font-weight:600;letter-spacing:.05em">
-          TEST PREVIEW — rendered with ${patient ? referrerData.name + "'s real data" : "placeholder data (no matching patients)"}
-        </div>
-        <div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 6px 6px">
-          <p style="white-space:pre-wrap;line-height:1.7;margin:0">${renderedMessage.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br/>")}</p>
-        </div>
-      </div>`,
+      text:    emailText,
+      html:    testHtml,
       trackingSettings: { clickTracking: { enable: false, enableText: false } },
     });
 
