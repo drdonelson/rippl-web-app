@@ -20,6 +20,7 @@ export const referrersTable = pgTable("referrers", {
   tier_unlocked_at: timestamp("tier_unlocked_at"),
   reward_value: integer("reward_value").default(35),
   sms_opt_out: boolean("sms_opt_out").default(false),
+  sms_opt_out_permanent: boolean("sms_opt_out_permanent").default(false),
   opt_out_reason: text("opt_out_reason"),
   // Timestamps for Today's Activity view
   onboarding_sms_scheduled_at: timestamp("onboarding_sms_scheduled_at"), // when the 2-hour delay was queued

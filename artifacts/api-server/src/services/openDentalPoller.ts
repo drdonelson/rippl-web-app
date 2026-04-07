@@ -297,14 +297,24 @@ async function runOnboardingSweep(
       // Check our referrers table by phone — skip if opted out or already onboarded
       const existing = await db
         .select({
-          onboarding_sms_sent: referrersTable.onboarding_sms_sent,
-          sms_opt_out:         referrersTable.sms_opt_out,
+          onboarding_sms_sent:   referrersTable.onboarding_sms_sent,
+          sms_opt_out:           referrersTable.sms_opt_out,
+          sms_opt_out_permanent: referrersTable.sms_opt_out_permanent,
         })
         .from(referrersTable)
         .where(eq(referrersTable.phone, phone));
 
+      if (existing.length > 0 && existing[0].sms_opt_out_permanent) {
+        logger.info({ patNum, officeId }, "[onboarding-sweep] Skipping onboarding — patient permanently opted out (No SMS Ever)");
+        continue;
+      }
+
       if (existing.length > 0 && existing[0].sms_opt_out) {
-        logger.info({ patNum, officeId }, "[onboarding-sweep] Skipping onboarding — patient opted out");
+        logger.info({ patNum, officeId }, "[onboarding-sweep] Skipping onboarding — patient chose 'Skip next SMS', resetting flag");
+        await db
+          .update(referrersTable)
+          .set({ sms_opt_out: false })
+          .where(eq(referrersTable.phone, phone));
         continue;
       }
 

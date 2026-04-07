@@ -286,29 +286,45 @@ router.post("/:id/send-link", async (req, res) => {
   }
 });
 
-// ── PATCH /:id/opt-out — toggle SMS/email opt-out ─────────────────────────────
+// ── PATCH /:id/opt-out — set SMS opt-out mode ────────────────────────────────
+// mode: "skip_next"  → sms_opt_out=true, sms_opt_out_permanent=false
+//       "permanent"  → sms_opt_out=true, sms_opt_out_permanent=true
+//       "resume"     → sms_opt_out=false, sms_opt_out_permanent=false
 router.patch("/:id/opt-out", async (req, res) => {
   try {
     const { id } = req.params;
-    const { sms_opt_out, opt_out_reason } = req.body as { sms_opt_out: boolean; opt_out_reason?: string };
+    const { mode, opt_out_reason } = req.body as { mode: "skip_next" | "permanent" | "resume"; opt_out_reason?: string };
 
-    if (typeof sms_opt_out !== "boolean") {
-      return void res.status(400).json({ error: "sms_opt_out must be a boolean" });
+    const validModes = ["skip_next", "permanent", "resume"];
+    if (!validModes.includes(mode)) {
+      return void res.status(400).json({ error: `mode must be one of: ${validModes.join(", ")}` });
     }
+
+    const updateValues =
+      mode === "resume"
+        ? { sms_opt_out: false, sms_opt_out_permanent: false, opt_out_reason: null as string | null }
+        : mode === "permanent"
+        ? { sms_opt_out: true, sms_opt_out_permanent: true, opt_out_reason: opt_out_reason ?? null }
+        : { sms_opt_out: true, sms_opt_out_permanent: false, opt_out_reason: opt_out_reason ?? null };
 
     const updated = await db
       .update(referrersTable)
-      .set({
-        sms_opt_out,
-        opt_out_reason: sms_opt_out ? (opt_out_reason ?? null) : null,
-      })
+      .set(updateValues)
       .where(eq(referrersTable.id, id))
-      .returning({ id: referrersTable.id, sms_opt_out: referrersTable.sms_opt_out });
+      .returning({
+        id: referrersTable.id,
+        sms_opt_out: referrersTable.sms_opt_out,
+        sms_opt_out_permanent: referrersTable.sms_opt_out_permanent,
+      });
 
     if (!updated.length) return void res.status(404).json({ error: "Referrer not found" });
 
-    logger.info({ referrerId: id, sms_opt_out, opt_out_reason }, "Opt-out updated");
-    return void res.json({ ok: true, sms_opt_out: updated[0].sms_opt_out });
+    logger.info({ referrerId: id, mode, opt_out_reason }, "Opt-out mode updated");
+    return void res.json({
+      ok: true,
+      sms_opt_out: updated[0].sms_opt_out,
+      sms_opt_out_permanent: updated[0].sms_opt_out_permanent,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     logger.error({ err }, "PATCH /api/referrers/:id/opt-out failed");

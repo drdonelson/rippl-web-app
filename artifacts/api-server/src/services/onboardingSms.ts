@@ -162,8 +162,18 @@ function scheduleDelayedSms(
       return;
     }
 
+    if (referrer.sms_opt_out_permanent) {
+      logger.info({ referrerId }, "Skipping onboarding SMS — patient permanently opted out (No SMS Ever)");
+      return;
+    }
+
     if (referrer.sms_opt_out) {
-      logger.info({ referrerId }, "Skipping onboarding SMS — patient opted out");
+      // Temporary skip — reset the flag so it doesn't block future scheduled sends
+      logger.info({ referrerId }, "Skipping onboarding SMS — patient chose 'Skip next SMS', resetting flag");
+      await db
+        .update(referrersTable)
+        .set({ sms_opt_out: false })
+        .where(eq(referrersTable.id, referrerId));
       return;
     }
 

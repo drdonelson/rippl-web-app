@@ -188,23 +188,36 @@ function TierProgress({ tier, totalReferrals }: { tier: string | null | undefine
   );
 }
 
-function SmsToggle({ optedOut, loading, onClick }: { optedOut: boolean; loading: boolean; onClick: () => void }) {
+function SmsToggle({ optedOut, permanent, loading, onClick }: { optedOut: boolean; permanent: boolean; loading: boolean; onClick: () => void }) {
+  if (permanent) return (
+    <button type="button" onClick={onClick} disabled={loading}
+      title="Adjust SMS settings"
+      className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20 whitespace-nowrap hover:bg-red-500/20 transition-colors cursor-pointer", loading && "opacity-50 cursor-not-allowed")}>
+      <X className="w-2.5 h-2.5" /> No SMS Ever
+    </button>
+  );
+  if (optedOut) return (
+    <button type="button" onClick={onClick} disabled={loading}
+      title="Adjust SMS settings"
+      className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap hover:bg-amber-500/20 transition-colors cursor-pointer", loading && "opacity-50 cursor-not-allowed")}>
+      <Clock className="w-2.5 h-2.5" /> Skip Next
+    </button>
+  );
   return (
     <button type="button" onClick={onClick} disabled={loading}
-      title={optedOut ? "Re-enable automated messages" : "Exclude from automated messages"}
-      className={cn("relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none",
-        optedOut ? "bg-muted-foreground/25" : "bg-emerald-500", loading && "opacity-50 cursor-not-allowed")}>
-      <span className={cn("pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm ring-0 transition-transform duration-200",
-        optedOut ? "translate-x-0" : "translate-x-4")} />
+      title="Adjust SMS settings"
+      className={cn("relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none bg-emerald-500", loading && "opacity-50 cursor-not-allowed")}>
+      <span className="pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 translate-x-4" />
     </button>
   );
 }
 
 function SmsStatusCell({
-  onboarded, optedOut, referrerId, referrerName, loading, showConfirm, onToggleClick, onConfirm, onCancel,
+  onboarded, optedOut, permanent, loading, showMenu, onToggleClick, onChooseSkipNext, onChoosePermanent, onChooseResume, onCancel, referrerName,
 }: {
-  onboarded: boolean; optedOut: boolean; referrerId: string; referrerName: string;
-  loading: boolean; showConfirm: boolean; onToggleClick: () => void; onConfirm: () => void; onCancel: () => void;
+  onboarded: boolean; optedOut: boolean; permanent: boolean; referrerName: string;
+  loading: boolean; showMenu: boolean;
+  onToggleClick: () => void; onChooseSkipNext: () => void; onChoosePermanent: () => void; onChooseResume: () => void; onCancel: () => void;
 }) {
   const firstName = referrerName.split(" ")[0] ?? referrerName;
   if (onboarded) return (
@@ -212,35 +225,44 @@ function SmsStatusCell({
       <Check className="w-2.5 h-2.5" /> Sent
     </span>
   );
-  if (optedOut) return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-2">
-        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold bg-muted text-muted-foreground border border-border whitespace-nowrap">
-          <X className="w-2.5 h-2.5" /> No SMS
-        </span>
-        <SmsToggle optedOut={true} loading={loading} onClick={onToggleClick} />
-      </div>
-      {showConfirm && (
-        <div className="rounded-lg border border-border bg-popover shadow-xl p-2.5 text-left" style={{ minWidth: "168px" }}>
-          <p className="text-xs font-medium text-foreground mb-2">Re-enable SMS for {firstName}?</p>
-          <div className="flex gap-1.5">
-            <button onClick={onCancel} className="flex-1 py-1.5 text-[11px] bg-muted hover:bg-muted/80 text-foreground rounded-md font-medium transition-colors">Cancel</button>
-            <button onClick={onConfirm} disabled={loading} className="flex-1 py-1.5 text-[11px] bg-primary hover:bg-primary/90 text-primary-foreground rounded-md font-semibold transition-colors disabled:opacity-50">Enable</button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
   return (
     <div className="flex flex-col gap-1.5">
-      <SmsToggle optedOut={false} loading={loading} onClick={onToggleClick} />
-      {showConfirm && (
-        <div className="rounded-lg border border-border bg-popover shadow-xl p-2.5 text-left" style={{ minWidth: "168px" }}>
-          <p className="text-xs font-medium text-foreground mb-2">Exclude {firstName} from referral SMS?</p>
-          <div className="flex gap-1.5">
-            <button onClick={onCancel} className="flex-1 py-1.5 text-[11px] bg-muted hover:bg-muted/80 text-foreground rounded-md font-medium transition-colors">Cancel</button>
-            <button onClick={onConfirm} disabled={loading} className="flex-1 py-1.5 text-[11px] bg-destructive hover:bg-destructive/90 text-white rounded-md font-semibold transition-colors disabled:opacity-50">Exclude</button>
-          </div>
+      <SmsToggle optedOut={optedOut} permanent={permanent} loading={loading} onClick={onToggleClick} />
+      {showMenu && (
+        <div className="rounded-lg border border-border bg-popover shadow-xl p-2.5 text-left z-50" style={{ minWidth: "186px" }}>
+          <p className="text-xs font-semibold text-foreground mb-2">SMS for {firstName}:</p>
+          {permanent ? (
+            <button onClick={onChooseResume} disabled={loading}
+              className="w-full py-1.5 text-[11px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-md font-semibold transition-colors text-left px-2.5 mb-1">
+              ✓ Re-enable Auto SMS
+            </button>
+          ) : optedOut ? (
+            <>
+              <button onClick={onChooseResume} disabled={loading}
+                className="w-full py-1.5 text-[11px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-md font-semibold transition-colors text-left px-2.5 mb-1">
+                ✓ Cancel skip — send normally
+              </button>
+              <button onClick={onChoosePermanent} disabled={loading}
+                className="w-full py-1.5 text-[11px] bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-md font-semibold transition-colors text-left px-2.5 mb-1">
+                ✕ Never send SMS
+              </button>
+            </>
+          ) : (
+            <>
+              <button onClick={onChooseSkipNext} disabled={loading}
+                className="w-full py-1.5 text-[11px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 rounded-md font-semibold transition-colors text-left px-2.5 mb-1">
+                ⏭ Skip next SMS only
+              </button>
+              <button onClick={onChoosePermanent} disabled={loading}
+                className="w-full py-1.5 text-[11px] bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-md font-semibold transition-colors text-left px-2.5 mb-1">
+                ✕ Never send SMS
+              </button>
+            </>
+          )}
+          <button onClick={onCancel}
+            className="w-full py-1 text-[11px] bg-muted hover:bg-muted/80 text-muted-foreground rounded-md font-medium transition-colors text-center">
+            Cancel
+          </button>
         </div>
       )}
     </div>
@@ -341,35 +363,34 @@ export default function Patients() {
 
   // ── Opt-out toggle ─────────────────────────────────────────────────────────
   const [optOutLoadingIds, setOptOutLoadingIds] = useState<Set<string>>(new Set());
-  const [confirmPopover, setConfirmPopover] = useState<{ id: string; name: string; optedOut: boolean } | null>(null);
+  const [optOutMenu, setOptOutMenu] = useState<{ id: string; name: string } | null>(null);
 
-  const handleToggleOptOut = async (referrerId: string, name: string, currentlyOptedOut: boolean) => {
+  const handleOptOutMode = async (referrerId: string, name: string, mode: "skip_next" | "permanent" | "resume") => {
     if (optOutLoadingIds.has(referrerId)) return;
-    const newOptOut = !currentlyOptedOut;
     const firstName = name.split(" ")[0];
+    setOptOutMenu(null);
     setOptOutLoadingIds(prev => new Set(prev).add(referrerId));
     if (isDemo) {
       await new Promise(r => setTimeout(r, 500));
-      toast.success(newOptOut ? `Demo: ${firstName} excluded from automated messages.` : `Demo: ${firstName} re-enabled for automated messages.`);
+      const msg = mode === "skip_next" ? `Demo: Next SMS to ${firstName} will be skipped.`
+        : mode === "permanent" ? `Demo: ${firstName} permanently excluded (No SMS Ever).`
+        : `Demo: ${firstName} re-enabled for automated messages.`;
+      toast.success(msg);
       setOptOutLoadingIds(prev => { const s = new Set(prev); s.delete(referrerId); return s; });
       return;
     }
     try {
       await customFetch(`${BASE}/api/referrers/${referrerId}/opt-out`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sms_opt_out: newOptOut }),
+        body: JSON.stringify({ mode }),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/referrers"] });
-      toast.success(newOptOut ? `${firstName} excluded from automated messages.` : `${firstName} will receive automated messages again.`);
+      const msg = mode === "skip_next" ? `${firstName}'s next SMS will be skipped automatically.`
+        : mode === "permanent" ? `${firstName} permanently excluded from all automated SMS.`
+        : `${firstName} will receive automated messages again.`;
+      toast.success(msg);
     } catch { toast.error("Failed to update — please try again."); }
     finally { setOptOutLoadingIds(prev => { const s = new Set(prev); s.delete(referrerId); return s; }); }
-  };
-
-  const handleConfirmOptOut = async () => {
-    if (!confirmPopover) return;
-    const { id, name, optedOut } = confirmPopover;
-    setConfirmPopover(null);
-    await handleToggleOptOut(id, name, optedOut);
   };
 
   // ── Form ───────────────────────────────────────────────────────────────────
@@ -557,7 +578,7 @@ export default function Patients() {
         if (rOfficeId !== selectedOfficeId) return false;
       }
       if (patientFilter === "active" && r.total_referrals <= 0) return false;
-      if (patientFilter === "opted_out" && !(r as AnyReferrer).sms_opt_out) return false;
+      if (patientFilter === "opted_out" && !(r as AnyReferrer).sms_opt_out && !(r as AnyReferrer).sms_opt_out_permanent) return false;
       if (tierFilter !== "all" && (r as AnyReferrer).tier !== tierFilter) return false;
       return (
         r.name.toLowerCase().includes(term) ||
@@ -673,12 +694,15 @@ export default function Patients() {
                 {sendingToday.map((r: AnyReferrer) => {
                   const scheduledAt = r.onboarding_sms_scheduled_at as string;
                   const officeLabel = officeById.get(r.office_id as string) ?? "—";
-                  const optedOut = r.sms_opt_out as boolean;
+                  const optedOut = !!(r.sms_opt_out as boolean);
+                  const permanent = !!(r.sms_opt_out_permanent as boolean);
+                  const rid = r.id as string;
+                  const rname = r.name as string;
                   return (
-                    <div key={r.id as string} className="px-5 py-3 flex items-center gap-4">
+                    <div key={rid} className="px-5 py-3 flex items-center gap-4">
                       <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse flex-shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-foreground truncate">{r.name as string}</p>
+                        <p className="text-sm font-semibold text-foreground truncate">{rname}</p>
                         <p className="text-xs text-muted-foreground">{officeLabel}</p>
                       </div>
                       <div className="text-right flex-shrink-0">
@@ -687,16 +711,15 @@ export default function Patients() {
                       <SmsStatusCell
                         onboarded={false}
                         optedOut={optedOut}
-                        referrerId={r.id as string}
-                        referrerName={r.name as string}
-                        loading={optOutLoadingIds.has(r.id as string)}
-                        showConfirm={confirmPopover?.id === r.id}
-                        onToggleClick={() => {
-                          if (confirmPopover?.id === r.id) { setConfirmPopover(null); }
-                          else { setConfirmPopover({ id: r.id as string, name: r.name as string, optedOut }); }
-                        }}
-                        onConfirm={handleConfirmOptOut}
-                        onCancel={() => setConfirmPopover(null)}
+                        permanent={permanent}
+                        referrerName={rname}
+                        loading={optOutLoadingIds.has(rid)}
+                        showMenu={optOutMenu?.id === rid}
+                        onToggleClick={() => setOptOutMenu(optOutMenu?.id === rid ? null : { id: rid, name: rname })}
+                        onChooseSkipNext={() => handleOptOutMode(rid, rname, "skip_next")}
+                        onChoosePermanent={() => handleOptOutMode(rid, rname, "permanent")}
+                        onChooseResume={() => handleOptOutMode(rid, rname, "resume")}
+                        onCancel={() => setOptOutMenu(null)}
                       />
                     </div>
                   );
@@ -938,13 +961,16 @@ export default function Patients() {
                       const tier = (referrer as AnyReferrer).tier as string | null;
                       const n = referrer.total_referrals;
                       const optedOut = !!((referrer as AnyReferrer).sms_opt_out);
+                      const permanent = !!((referrer as AnyReferrer).sms_opt_out_permanent);
+                      const anyOptOut = optedOut || permanent;
                       return (
-                        <div key={referrer.id} className={cn("px-4 py-3 flex items-center justify-between gap-3", optedOut && "opacity-60")}>
+                        <div key={referrer.id} className={cn("px-4 py-3 flex items-center justify-between gap-3", anyOptOut && "opacity-60")}>
                           <div className="flex items-center gap-2.5 min-w-0">
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
                                 <p className="text-sm font-semibold text-foreground truncate">{referrer.name}</p>
-                                {optedOut && <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[9px] font-semibold bg-muted text-muted-foreground border border-border shrink-0"><BellOff className="w-2 h-2" /> No SMS</span>}
+                                {permanent && <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[9px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20 shrink-0"><BellOff className="w-2 h-2" /> No SMS Ever</span>}
+                                {!permanent && optedOut && <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[9px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0"><Clock className="w-2 h-2" /> Skip Next</span>}
                               </div>
                               <div className="mt-0.5 flex items-center gap-2 flex-wrap">
                                 <TierBadge tier={tier} totalReferrals={n} />
@@ -962,8 +988,8 @@ export default function Patients() {
                               className="flex items-center gap-1 px-2.5 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold rounded-lg transition-colors border border-primary/20">
                               <Send className="w-3 h-3" /> Send
                             </button>
-                            <SmsToggle optedOut={optedOut} loading={optOutLoadingIds.has(referrer.id)}
-                              onClick={() => handleToggleOptOut(referrer.id, referrer.name, optedOut)} />
+                            <SmsToggle optedOut={optedOut} permanent={permanent} loading={optOutLoadingIds.has(referrer.id)}
+                              onClick={() => setOptOutMenu(optOutMenu?.id === referrer.id ? null : { id: referrer.id, name: referrer.name })} />
                           </div>
                         </div>
                       );
@@ -1007,10 +1033,12 @@ export default function Patients() {
                         const n = referrer.total_referrals;
                         const onboarded = !!((referrer as AnyReferrer).onboarding_sms_sent);
                         const optedOut = !!((referrer as AnyReferrer).sms_opt_out);
+                        const permanent = !!((referrer as AnyReferrer).sms_opt_out_permanent);
+                        const anyOptOut = optedOut || permanent;
                         const officeLabel = officeById.get((referrer as AnyReferrer).office_id as string) ?? "—";
                         const menuOpen = actionMenuId === referrer.id;
                         return (
-                          <tr key={referrer.id} className={cn("hover:bg-muted/10 transition-colors group", optedOut && "opacity-60")}>
+                          <tr key={referrer.id} className={cn("hover:bg-muted/10 transition-colors group", anyOptOut && "opacity-60")}>
                             <td className="px-4 py-2.5 overflow-hidden">
                               <div className="flex items-center gap-2.5 min-w-0">
                                 {n >= 1 ? <Star className="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" title="Active referrer" />
@@ -1023,16 +1051,15 @@ export default function Patients() {
                             <td className="px-3 py-2.5"><TierBadge tier={tier} totalReferrals={n} /></td>
                             <td className="px-3 py-2.5 text-center"><span className="font-display font-bold text-foreground">{n}</span></td>
                             <td className="px-3 py-2.5">
-                              <SmsStatusCell onboarded={onboarded} optedOut={optedOut}
-                                referrerId={referrer.id} referrerName={referrer.name}
+                              <SmsStatusCell onboarded={onboarded} optedOut={optedOut} permanent={permanent}
+                                referrerName={referrer.name}
                                 loading={optOutLoadingIds.has(referrer.id)}
-                                showConfirm={confirmPopover?.id === referrer.id}
-                                onToggleClick={() => {
-                                  if (confirmPopover?.id === referrer.id) { setConfirmPopover(null); }
-                                  else { setConfirmPopover({ id: referrer.id, name: referrer.name, optedOut }); }
-                                }}
-                                onConfirm={handleConfirmOptOut}
-                                onCancel={() => setConfirmPopover(null)}
+                                showMenu={optOutMenu?.id === referrer.id}
+                                onToggleClick={() => setOptOutMenu(optOutMenu?.id === referrer.id ? null : { id: referrer.id, name: referrer.name })}
+                                onChooseSkipNext={() => handleOptOutMode(referrer.id, referrer.name, "skip_next")}
+                                onChoosePermanent={() => handleOptOutMode(referrer.id, referrer.name, "permanent")}
+                                onChooseResume={() => handleOptOutMode(referrer.id, referrer.name, "resume")}
+                                onCancel={() => setOptOutMenu(null)}
                               />
                             </td>
                             <td className="px-3 py-2.5">
@@ -1081,13 +1108,16 @@ export default function Patients() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {filteredReferrers.map((referrer) => {
                 const gridOptedOut = !!((referrer as AnyReferrer).sms_opt_out);
+                const gridPermanent = !!((referrer as AnyReferrer).sms_opt_out_permanent);
+                const gridAnyOptOut = gridOptedOut || gridPermanent;
                 return (
-                  <div key={referrer.id} className={cn("bg-card rounded-2xl border border-border p-6 hover:shadow-xl transition-all duration-300 flex flex-col group", gridOptedOut && "opacity-60")}>
+                  <div key={referrer.id} className={cn("bg-card rounded-2xl border border-border p-6 hover:shadow-xl transition-all duration-300 flex flex-col group", gridAnyOptOut && "opacity-60")}>
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="text-xl font-semibold text-foreground">{referrer.name}</h3>
-                          {gridOptedOut && <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-muted text-muted-foreground border border-border"><BellOff className="w-2.5 h-2.5" /> No SMS</span>}
+                          {gridPermanent && <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20"><BellOff className="w-2.5 h-2.5" /> No SMS Ever</span>}
+                          {!gridPermanent && gridOptedOut && <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20"><Clock className="w-2.5 h-2.5" /> Skip Next</span>}
                         </div>
                         <div className="mt-1.5"><TierBadge tier={(referrer as AnyReferrer).tier as string} totalReferrals={referrer.total_referrals} /></div>
                         <p className="text-sm text-muted-foreground font-mono mt-1">ID: {referrer.patient_id}</p>
@@ -1114,8 +1144,8 @@ export default function Patients() {
                         className="flex-1 py-2.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl font-semibold transition-all flex items-center justify-center gap-2 text-sm border border-primary/20">
                         <Send className="w-4 h-4" /> Send Link
                       </button>
-                      <SmsToggle optedOut={gridOptedOut} loading={optOutLoadingIds.has(referrer.id)}
-                        onClick={() => handleToggleOptOut(referrer.id, referrer.name, gridOptedOut)} />
+                      <SmsToggle optedOut={gridOptedOut} permanent={gridPermanent} loading={optOutLoadingIds.has(referrer.id)}
+                        onClick={() => setOptOutMenu(optOutMenu?.id === referrer.id ? null : { id: referrer.id, name: referrer.name })} />
                     </div>
                   </div>
                 );
