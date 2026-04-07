@@ -6,7 +6,7 @@ import {
   Plus, QrCode, Search, Copy, Check, Download, RefreshCw,
   AlertTriangle, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Star, MapPin, Lock,
   Send, Loader2, Phone, Mail, Users, BellOff, X, Info, MoreHorizontal,
-  Clock, CheckCircle2, ChevronDown, ChevronUp, Calendar, Zap, LayoutList, LayoutGrid,
+  Clock, CheckCircle2, ChevronDown, ChevronUp, Calendar, LayoutList, LayoutGrid,
 } from "lucide-react";
 import QRCode from "qrcode";
 import { Modal } from "@/components/ui/modal";
@@ -18,7 +18,7 @@ import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useOffice, type Office } from "@/contexts/office-context";
 import { useAuth } from "@/contexts/auth-context";
-import { getPublicAppUrl, buildReferralUrl } from "@/lib/app-url";
+import { buildReferralUrl } from "@/lib/app-url";
 import { getTierConfig, getTierTooltip } from "@/lib/tier-config";
 
 // ── Form Schema ──────────────────────────────────────────────────────────────
@@ -42,7 +42,7 @@ type ViewMode = "list" | "grid";
 type SortField = "name" | "total_referrals" | "total_rewards_issued";
 type SortDir = "asc" | "desc";
 type PatientFilter = "all" | "active" | "opted_out";
-type ActiveTab = "today" | "patients" | "qr";
+type ActiveTab = "today" | "patients";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
@@ -283,9 +283,6 @@ export default function Patients() {
     else { setSortField(field); setSortDir(field === "name" ? "asc" : "desc"); }
   };
 
-  // ── QR tab state ───────────────────────────────────────────────────────────
-  const [qrTabSearch, setQrTabSearch] = useState("");
-  const [officeQrUrls, setOfficeQrUrls] = useState<Map<string, string>>(new Map());
 
   // ── Office context ─────────────────────────────────────────────────────────
   const { offices, selectedOfficeId } = useOffice();
@@ -588,26 +585,6 @@ export default function Patients() {
     [sortedReferrers, showAllMobile]
   );
 
-  // ── QR tab — generate office QR data URLs ──────────────────────────────────
-  const appUrl = getPublicAppUrl() || "https://www.joinrippl.com";
-  useEffect(() => {
-    if (!offices.length) return;
-    const map = new Map<string, string>();
-    Promise.all(offices.map(async (office) => {
-      const url = `${appUrl}/onboard?location=${office.location_code}`;
-      try {
-        const dataUrl = await QRCode.toDataURL(url, { width: 256, margin: 2, color: { dark: '#0a1628', light: '#ffffff' } });
-        map.set(office.id, dataUrl);
-      } catch {}
-    })).then(() => setOfficeQrUrls(new Map(map)));
-  }, [offices, appUrl]);
-
-  const qrTabReferrers = useMemo(() => {
-    if (!qrTabSearch.trim()) return [];
-    const term = qrTabSearch.toLowerCase();
-    return (referrers ?? []).filter(r => r.name.toLowerCase().includes(term)).slice(0, 10);
-  }, [referrers, qrTabSearch]);
-
   // ── Sort button helpers ────────────────────────────────────────────────────
   const thSortBtn = (field: SortField, label: string, extraClass = "") => (
     <th className={cn("px-4 py-3 font-semibold text-left", extraClass)}>
@@ -639,7 +616,7 @@ export default function Patients() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">Patients</h1>
-          <p className="text-muted-foreground mt-1.5">Manage referrers, track today's outreach, and print QR codes.</p>
+          <p className="text-muted-foreground mt-1.5">Manage referrers and track today's outreach.</p>
         </div>
         <button onClick={openAddModal}
           className="self-start sm:self-auto px-4 sm:px-5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-semibold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all flex items-center gap-1.5 text-sm">
@@ -649,7 +626,7 @@ export default function Patients() {
 
       {/* ── Tab bar ──────────────────────────────────────────────────────── */}
       <div className="flex items-center border-b border-border gap-0">
-        {([ ["today", "Today's Activity"], ["patients", "Active Patients"], ["qr", "QR Codes"] ] as [ActiveTab, string][]).map(([key, label]) => (
+        {([ ["today", "Today's Activity"], ["patients", "Active Patients"] ] as [ActiveTab, string][]).map(([key, label]) => (
           <button key={key} onClick={() => setActiveTab(key)}
             className={cn(
               "px-5 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-all whitespace-nowrap",
@@ -1145,121 +1122,6 @@ export default function Patients() {
               })}
             </div>
           )}
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════════════ */}
-      {/* TAB 3 — QR CODES                                                    */}
-      {/* ══════════════════════════════════════════════════════════════════════ */}
-      {activeTab === "qr" && (
-        <div className="space-y-8">
-
-          {/* Office-level QR codes */}
-          <div>
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-7 h-7 rounded-lg bg-primary/8 flex items-center justify-center">
-                <MapPin className="w-3.5 h-3.5 text-primary/70" />
-              </div>
-              <div>
-                <h2 className="text-base font-semibold text-foreground">Office QR Codes</h2>
-                <p className="text-xs text-muted-foreground">Print and display at each location for walk-in enrollment</p>
-              </div>
-            </div>
-            {offices.length === 0 ? (
-              <div className="bg-card border border-border rounded-2xl p-10 text-center text-muted-foreground text-sm">No offices configured</div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {offices.map((office) => {
-                  const shortName = (() => { const d = office.name.lastIndexOf("–"); return d !== -1 ? office.name.slice(d + 2).trim() : office.name; })();
-                  const qrUrl = officeQrUrls.get(office.id);
-                  const officeLink = `${appUrl}/onboard?location=${office.location_code}`;
-                  return (
-                    <div key={office.id} className="bg-card border border-border rounded-2xl p-5 flex flex-col items-center gap-4">
-                      <div className="text-center">
-                        <p className="font-semibold text-foreground">{shortName}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{office.name}</p>
-                      </div>
-                      {qrUrl ? (
-                        <a href={officeLink} target="_blank" rel="noopener noreferrer" className="block bg-white p-3 rounded-2xl shadow-inner hover:opacity-90 transition-opacity cursor-pointer">
-                          <img src={qrUrl} alt={`QR code for ${shortName}`} className="w-40 h-40 rounded-lg" />
-                        </a>
-                      ) : (
-                        <div className="w-40 h-40 bg-muted/40 rounded-2xl animate-pulse" />
-                      )}
-                      <div className="w-full space-y-2">
-                        <p className="text-xs text-muted-foreground text-center truncate font-mono">{officeLink}</p>
-                        <div className="flex gap-2">
-                          <button onClick={() => navigator.clipboard.writeText(officeLink).then(() => toast.success("Link copied!"))}
-                            className="flex-1 py-2 bg-secondary hover:bg-muted text-foreground text-xs font-semibold rounded-xl transition-colors flex items-center justify-center gap-1.5 border border-border">
-                            <Copy className="w-3 h-3" /> Copy Link
-                          </button>
-                          {qrUrl && (
-                            <a href={qrUrl} download={`rippl-qr-${office.location_code}.png`}
-                              className="flex-1 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold rounded-xl transition-colors flex items-center justify-center gap-1.5 border border-primary/20">
-                              <Download className="w-3 h-3" /> Download
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Individual patient QR lookup */}
-          <div>
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-7 h-7 rounded-lg bg-primary/8 flex items-center justify-center">
-                <Search className="w-3.5 h-3.5 text-primary/70" />
-              </div>
-              <div>
-                <h2 className="text-base font-semibold text-foreground">Patient QR Lookup</h2>
-                <p className="text-xs text-muted-foreground">Search by name to find and display an individual patient's QR code</p>
-              </div>
-            </div>
-            <div className="bg-card border border-border rounded-2xl overflow-hidden">
-              <div className="p-4 border-b border-border">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <input type="text" placeholder="Search patient name…" value={qrTabSearch} onChange={e => setQrTabSearch(e.target.value)}
-                    className="pl-9 pr-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full text-sm transition-all" />
-                </div>
-              </div>
-              {qrTabSearch.trim() === "" ? (
-                <div className="py-12 text-center text-muted-foreground text-sm">Type a patient name to search</div>
-              ) : isLoading ? (
-                <div className="py-8 text-center text-muted-foreground text-sm">Loading patients…</div>
-              ) : qrTabReferrers.length === 0 ? (
-                <div className="py-12 text-center text-muted-foreground text-sm">No patients found matching "{qrTabSearch}"</div>
-              ) : (
-                <div className="divide-y divide-border">
-                  {qrTabReferrers.map((referrer) => {
-                    const officeLabel = officeById.get((referrer as AnyReferrer).office_id as string) ?? "—";
-                    return (
-                      <button key={referrer.id} onClick={() => setQrModalReferrerId(referrer.id)}
-                        className="w-full px-4 py-3 flex items-center gap-4 hover:bg-muted/10 transition-colors text-left">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm flex-shrink-0">
-                          {referrer.name.charAt(0)}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-foreground truncate">{referrer.name}</p>
-                          <p className="text-xs text-muted-foreground">{officeLabel}</p>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <TierBadge tier={(referrer as AnyReferrer).tier as string} totalReferrals={referrer.total_referrals} />
-                          <div className="p-1.5 rounded-lg bg-secondary border border-border text-muted-foreground">
-                            <QrCode className="w-3.5 h-3.5" />
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       )}
 
