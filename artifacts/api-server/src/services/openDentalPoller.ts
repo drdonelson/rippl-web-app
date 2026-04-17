@@ -183,6 +183,69 @@ async function lookupReferringPatNum(
   return { refAttaches, referralRecord, referringPatNum };
 }
 
+// ── New patient name resolver ──────────────────────────────────────────────────
+//
+// Lookup order (per spec):
+//  1. referrers table — WHERE patient_id = newPatientPatNum AND office_id = officeId
+//  2. Open Dental   — GET /api/v1/patients/{newPatientPatNum} → FName + ' ' + LName
+//  3. Fallback      — 'Unknown Patient' (logged as a warning)
+
+async function resolveNewPatientName(
+  newPatientPatNum: string,
+  officeId: string | null | undefined,
+  headers: Record<string, string>
+): Promise<string> {
+  // ── 1. Check referrers table ──────────────────────────────────────────────
+  try {
+    const conditions = officeId
+      ? and(eq(referrersTable.patient_id, newPatientPatNum), eq(referrersTable.office_id, officeId))
+      : eq(referrersTable.patient_id, newPatientPatNum);
+
+    const [found] = await db
+      .select({ name: referrersTable.name })
+      .from(referrersTable)
+      .where(conditions)
+      .limit(1);
+
+    if (found?.name) {
+      logger.debug(
+        { newPatientPatNum, officeId, name: found.name },
+        "[name-lookup] Resolved from referrers table"
+      );
+      return found.name;
+    }
+  } catch (err) {
+    logger.warn({ err, newPatientPatNum }, "[name-lookup] Error querying referrers table — trying OD API");
+  }
+
+  // ── 2. Ask Open Dental directly ───────────────────────────────────────────
+  try {
+    const patNum = parseInt(newPatientPatNum, 10);
+    if (!isNaN(patNum) && patNum > 0) {
+      const patient = await fetchOdPatient(patNum, headers);
+      if (patient) {
+        const name = `${(patient.FName ?? "").trim()} ${(patient.LName ?? "").trim()}`.trim();
+        if (name) {
+          logger.debug(
+            { newPatientPatNum, officeId, name },
+            "[name-lookup] Resolved from Open Dental /patients endpoint"
+          );
+          return name;
+        }
+      }
+    }
+  } catch (err) {
+    logger.warn({ err, newPatientPatNum }, "[name-lookup] Open Dental /patients lookup failed — using fallback");
+  }
+
+  // ── 3. Fallback ───────────────────────────────────────────────────────────
+  logger.warn(
+    { newPatientPatNum, officeId },
+    "[name-lookup] Could not resolve new patient name from referrers table or Open Dental — using 'Unknown Patient'"
+  );
+  return "Unknown Patient";
+}
+
 // ── Appointment-based onboarding helpers ──────────────────────────────────────
 
 /**
@@ -557,11 +620,14 @@ export async function syncOpenDental(options?: {
         }
       }
 
+      // ── Resolve new patient name (referrers table → OD API → fallback) ───────
+      const newPatientName = await resolveNewPatientName(newPatientPatNum, office?.id, headers);
+
       // ── Create referral event ─────────────────────────────────────────────
       const [newEvent] = await db
         .insert(referralEventsTable)
         .values({
-          new_patient_name:    proc.PatientName ?? "Unknown Patient",
+          new_patient_name:    newPatientName,
           new_patient_phone:   proc.PatientPhone ?? "",
           new_patient_pat_num: newPatientPatNum,
           referrer_id:         referrer.id,
