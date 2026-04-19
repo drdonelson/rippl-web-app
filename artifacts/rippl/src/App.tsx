@@ -27,6 +27,7 @@ const Staff      = lazy(() => import("@/pages/staff"));
 const Privacy    = lazy(() => import("@/pages/privacy"));
 const Terms      = lazy(() => import("@/pages/terms"));
 const HowItWorks = lazy(() => import("@/pages/how-it-works"));
+const Practices  = lazy(() => import("@/pages/practices"));
 const NotFound   = lazy(() => import("@/pages/not-found"));
 
 const queryClient = new QueryClient({
@@ -56,6 +57,7 @@ function Router() {
         <Route path="/privacy" component={Privacy} />
         <Route path="/terms" component={Terms} />
         <Route path="/how-it-works" component={HowItWorks} />
+        <Route path="/practices"   component={Practices}  />
 
         {/* Onboarding — no sidebar, auth-protected inside component */}
         <Route path="/onboard" component={Onboard} />
