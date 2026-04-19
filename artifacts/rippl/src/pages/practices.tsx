@@ -204,8 +204,7 @@ export default function Practices() {
         {/* ── Stats row ──────────────────────────────────────────────────────── */}
         <motion.section
           initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-60px" }}
+          animate="show"
           variants={stagger}
           className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-20"
         >
@@ -225,8 +224,7 @@ export default function Practices() {
         {/* ── ROI comparison ─────────────────────────────────────────────────── */}
         <motion.section
           initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-60px" }}
+          animate="show"
           variants={stagger}
           className="mb-20"
         >
@@ -311,8 +309,7 @@ export default function Practices() {
         {/* ── How it works ───────────────────────────────────────────────────── */}
         <motion.section
           initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-60px" }}
+          animate="show"
           variants={stagger}
           className="mb-20"
         >
@@ -348,8 +345,7 @@ export default function Practices() {
         {/* ── Features ───────────────────────────────────────────────────────── */}
         <motion.section
           initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-60px" }}
+          animate="show"
           variants={stagger}
           className="mb-20"
         >
@@ -402,8 +398,7 @@ export default function Practices() {
         {/* ── Pricing ────────────────────────────────────────────────────────── */}
         <motion.section
           initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-60px" }}
+          animate="show"
           variants={stagger}
           className="mb-20"
         >
@@ -444,8 +439,7 @@ export default function Practices() {
         {/* ── FAQ ────────────────────────────────────────────────────────────── */}
         <motion.section
           initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-60px" }}
+          animate="show"
           className="mb-20"
         >
           <h2 className="text-2xl font-black text-white mb-6 text-center">Frequently asked questions</h2>
@@ -459,8 +453,7 @@ export default function Practices() {
         {/* ── Final CTA ──────────────────────────────────────────────────────── */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
           <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-slate-700 rounded-3xl p-8 md:p-12">
