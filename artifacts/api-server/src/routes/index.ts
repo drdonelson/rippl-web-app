@@ -15,6 +15,7 @@ import authRouter from "./auth";
 import importJobsRouter from "./importJobs";
 import referralRouter from "./referral";
 import publicClaimRouter from "./publicClaim";
+import demoRouter from "./demo";
 import { requireAuth } from "../middleware/auth";
 
 const router: IRouter = Router();
@@ -26,6 +27,7 @@ router.use("/auth", authRouter);
 router.use("/test", testRouter);
 router.use("/referral", referralRouter);
 router.use("/claim", publicClaimRouter);
+router.use("/demo", demoRouter);
 
 // Semi-public routes (non-sensitive data)
 router.use("/offices", officesRouter);

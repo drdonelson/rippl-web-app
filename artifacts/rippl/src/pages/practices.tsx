@@ -1,5 +1,5 @@
-import { motion } from "framer-motion";
-import { Droplets, CheckCircle2, ArrowRight, ChevronDown, TrendingUp, Users, Zap, Shield } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Droplets, CheckCircle2, ArrowRight, ChevronDown, TrendingUp, Users, Zap, Shield, X, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -101,6 +101,204 @@ const FAQS = [
   },
 ];
 
+const EMR_OPTIONS = [
+  "Open Dental",
+  "Dentrix",
+  "Eaglesoft",
+  "Curve Dental",
+  "Carestream Dental",
+  "Dental Vision",
+  "Other",
+];
+
+const LOCATION_OPTIONS = ["1", "2–3", "4–9", "10+"];
+
+type DemoFormState = "idle" | "submitting" | "success" | "error";
+
+function DemoModal({ onClose }: { onClose: () => void }) {
+  const [state, setState] = useState<DemoFormState>("idle");
+  const [form, setForm] = useState({
+    name: "", email: "", phone: "", practice: "", emr: "", locations: "",
+  });
+
+  const set = (field: keyof typeof form) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setState("submitting");
+    try {
+      const res = await fetch("/api/demo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error("request failed");
+      setState("success");
+    } catch {
+      setState("error");
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Panel */}
+      <motion.div
+        initial={{ opacity: 0, y: 24, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 16, scale: 0.97 }}
+        transition={{ duration: 0.25 }}
+        className="relative w-full max-w-md bg-[#112240] border border-slate-700 rounded-3xl p-6 md:p-8 shadow-2xl"
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition-colors"
+          aria-label="Close"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {state === "success" ? (
+          <div className="text-center py-6">
+            <div className="w-14 h-14 rounded-2xl bg-teal-900/60 border border-teal-700/40 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-7 h-7 text-teal-400" />
+            </div>
+            <h3 className="text-white font-black text-xl mb-2">You're on the list!</h3>
+            <p className="text-slate-400 text-sm leading-relaxed max-w-xs mx-auto">
+              We'll reach out within one business day to schedule your demo. Check your inbox for a confirmation.
+            </p>
+            <button
+              onClick={onClose}
+              className="mt-6 inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm"
+            >
+              Done
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-7 h-7 rounded-lg bg-teal-600 flex items-center justify-center">
+                  <Droplets className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-white font-bold text-sm">Rippl</span>
+              </div>
+              <h3 className="text-white font-black text-xl mt-3 mb-1">Request a Demo</h3>
+              <p className="text-slate-400 text-sm">We'll walk through your Open Dental setup and get you live — in one call.</p>
+            </div>
+
+            <form onSubmit={submit} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <label className="block text-xs text-slate-400 font-medium mb-1">Full name *</label>
+                  <input
+                    required
+                    value={form.name}
+                    onChange={set("name")}
+                    placeholder="Dr. Jane Smith"
+                    className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-teal-600 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 font-medium mb-1">Email *</label>
+                  <input
+                    required
+                    type="email"
+                    value={form.email}
+                    onChange={set("email")}
+                    placeholder="jane@mypractice.com"
+                    className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-teal-600 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 font-medium mb-1">Phone *</label>
+                  <input
+                    required
+                    type="tel"
+                    value={form.phone}
+                    onChange={set("phone")}
+                    placeholder="(615) 555-0100"
+                    className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-teal-600 transition-colors"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs text-slate-400 font-medium mb-1">Practice name *</label>
+                  <input
+                    required
+                    value={form.practice}
+                    onChange={set("practice")}
+                    placeholder="Smith Family Dentistry"
+                    className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-teal-600 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 font-medium mb-1">EMR system</label>
+                  <select
+                    value={form.emr}
+                    onChange={set("emr")}
+                    className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-teal-600 transition-colors appearance-none"
+                  >
+                    <option value="" className="bg-slate-800">Select EMR…</option>
+                    {EMR_OPTIONS.map((o) => (
+                      <option key={o} value={o} className="bg-slate-800">{o}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 font-medium mb-1">Locations</label>
+                  <select
+                    value={form.locations}
+                    onChange={set("locations")}
+                    className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-teal-600 transition-colors appearance-none"
+                  >
+                    <option value="" className="bg-slate-800">How many?</option>
+                    {LOCATION_OPTIONS.map((o) => (
+                      <option key={o} value={o} className="bg-slate-800">{o}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {state === "error" && (
+                <p className="text-red-400 text-xs text-center">
+                  Something went wrong — email us at{" "}
+                  <a href="mailto:hello@joinrippl.com" className="underline">hello@joinrippl.com</a>
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={state === "submitting"}
+                className="w-full flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-500 disabled:opacity-60 text-white font-bold px-6 py-3 rounded-xl transition-colors shadow-lg shadow-teal-600/25 text-sm mt-1"
+              >
+                {state === "submitting" ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>
+                ) : (
+                  <>Request Demo <ArrowRight className="w-4 h-4" /></>
+                )}
+              </button>
+              <p className="text-slate-600 text-xs text-center">We'll respond within one business day.</p>
+            </form>
+          </>
+        )}
+      </motion.div>
+    </div>
+  );
+}
+
 function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
@@ -123,8 +321,14 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 }
 
 export default function Practices() {
+  const [showModal, setShowModal] = useState(false);
+
   return (
     <div className="min-h-screen bg-[#0a1628] overflow-x-hidden">
+
+      <AnimatePresence>
+        {showModal && <DemoModal onClose={() => setShowModal(false)} />}
+      </AnimatePresence>
 
       {/* ── Ambient glow ───────────────────────────────────────────────────── */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
@@ -142,12 +346,12 @@ export default function Practices() {
             </div>
             <span className="text-white font-bold text-xl">Rippl</span>
           </div>
-          <a
-            href="mailto:hello@joinrippl.com?subject=Rippl%20Demo%20Request"
+          <button
+            onClick={() => setShowModal(true)}
             className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors shadow-lg shadow-teal-600/25"
           >
             Request a Demo <ArrowRight className="w-4 h-4" />
-          </a>
+          </button>
         </div>
 
         {/* ── Hero ───────────────────────────────────────────────────────────── */}
@@ -182,12 +386,12 @@ export default function Practices() {
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a
-              href="mailto:hello@joinrippl.com?subject=Rippl%20Demo%20Request"
+            <button
+              onClick={() => setShowModal(true)}
               className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold px-7 py-3.5 rounded-2xl transition-colors shadow-xl shadow-teal-600/30 text-base"
             >
               Request a Demo <ArrowRight className="w-5 h-5" />
-            </a>
+            </button>
             <a
               href="/how-it-works"
               className="inline-flex items-center gap-2 bg-slate-800/60 border border-slate-700 hover:border-slate-500 text-slate-300 font-semibold px-7 py-3.5 rounded-2xl transition-colors text-base"
@@ -426,12 +630,12 @@ export default function Practices() {
                 </div>
               ))}
             </div>
-            <a
-              href="mailto:hello@joinrippl.com?subject=Rippl%20Demo%20Request"
+            <button
+              onClick={() => setShowModal(true)}
               className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold px-8 py-4 rounded-2xl transition-colors shadow-xl shadow-teal-600/30 text-base"
             >
               Request a Demo <ArrowRight className="w-5 h-5" />
-            </a>
+            </button>
             <p className="text-slate-500 text-xs mt-4">We'll walk through your Open Dental setup and get you live same day.</p>
           </motion.div>
         </motion.section>
@@ -465,12 +669,12 @@ export default function Practices() {
               We'll connect to your Open Dental instance, walk through the admin dashboard,
               and get you live — in one call.
             </p>
-            <a
-              href="mailto:hello@joinrippl.com?subject=Rippl%20Demo%20Request"
+            <button
+              onClick={() => setShowModal(true)}
               className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold px-8 py-4 rounded-2xl transition-colors shadow-xl shadow-teal-600/30 text-base"
             >
               Request a Demo <ArrowRight className="w-5 h-5" />
-            </a>
+            </button>
             <p className="text-slate-500 text-xs mt-4">
               Questions? Email us at{" "}
               <a href="mailto:hello@joinrippl.com" className="text-teal-500 hover:text-teal-400">
