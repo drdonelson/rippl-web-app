@@ -19,7 +19,7 @@ const stagger = {
 const CHANNELS = [
   {
     name: "Google Ads",
-    costPerPatient: "$250–$600",
+    costPerPatient: "$150–$400",
     leadQuality: "Stranger, low intent",
     effort: "Daily mgmt + agency",
     automated: false,
@@ -529,7 +529,7 @@ export default function Practices() {
               {
                 icon: "📊",
                 title: "Google Ads reality check",
-                body: "Dental keywords in saturated metros run $15–$30 per click — cosmetic terms hit $40+. At a 5–7% click-to-booking rate with a typical no-show tax, you're paying $250–$600 per completed new patient. Plus $1,000–$1,500/mo in agency management on top of ad spend. You compete head-to-head with every DSO in your zip code.",
+                body: "A well-optimized dental Google Ads program in a saturated metro pulls 400–500 new patients/year per office at $150–$300 CAC — real numbers from Hallmark Dental's own data. Add agency fees ($12K–$18K/yr), constant bid management, and DSO competition driving CPCs up. Rippl costs $85/patient, success-only, with zero ad operations.",
               },
               {
                 icon: "📱",
@@ -600,25 +600,25 @@ export default function Practices() {
                   <span className="font-black text-slate-900 text-lg tabular-nums">$72K–$126K</span>
                 </div>
                 <div className="flex items-center justify-between gap-3 mt-2">
-                  <span className="text-slate-500 text-sm">~200–300 new patients / year</span>
-                  <span className="font-bold text-slate-500 text-sm tabular-nums">$300–$500 CAC</span>
+                  <span className="text-slate-500 text-sm">~400–500 new patients / year</span>
+                  <span className="font-bold text-slate-500 text-sm tabular-nums">$150–$300 CAC</span>
                 </div>
               </div>
 
               <div className="bg-gradient-to-br from-teal-50 to-white border-2 border-teal-200 rounded-2xl p-6">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xl">💧</span>
-                  <p className="text-slate-900 font-bold text-base">Same 250 patients via Rippl</p>
+                  <p className="text-slate-900 font-bold text-base">Same 450 patients via Rippl</p>
                 </div>
                 <p className="text-teal-700 text-xs mb-4 font-semibold">Pay only when they walk in</p>
                 <div className="space-y-2.5 mb-5">
                   <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-slate-700">Platform fee (250 × $20)</span>
-                    <span className="font-semibold text-slate-900 tabular-nums">$5,000</span>
+                    <span className="text-slate-700">Platform fee (450 × $20)</span>
+                    <span className="font-semibold text-slate-900 tabular-nums">$9,000</span>
                   </div>
                   <div className="flex items-center justify-between gap-3 text-sm">
                     <span className="text-slate-700">Rewards (avg $65, face value)</span>
-                    <span className="font-semibold text-slate-900 tabular-nums">$16,250</span>
+                    <span className="font-semibold text-slate-900 tabular-nums">$29,250</span>
                   </div>
                   <div className="flex items-center justify-between gap-3 text-sm">
                     <span className="text-slate-700">Agency / creative / staff time</span>
@@ -627,7 +627,7 @@ export default function Practices() {
                 </div>
                 <div className="flex items-center justify-between gap-3 pt-4 border-t border-teal-200">
                   <span className="text-slate-900 font-bold">Total / year</span>
-                  <span className="font-black text-teal-700 text-lg tabular-nums">$21,250</span>
+                  <span className="font-black text-teal-700 text-lg tabular-nums">$38,250</span>
                 </div>
                 <div className="flex items-center justify-between gap-3 mt-2">
                   <span className="text-slate-500 text-sm">Cost per new patient</span>
@@ -637,7 +637,7 @@ export default function Practices() {
             </div>
             <div className="mt-3 bg-teal-600 text-white rounded-xl px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
               <p className="font-bold text-sm">Savings vs. digital plan</p>
-              <span className="font-black text-lg tabular-nums">$51K–$105K / year</span>
+              <span className="font-black text-lg tabular-nums">$34K–$88K / year</span>
             </div>
           </motion.div>
 
