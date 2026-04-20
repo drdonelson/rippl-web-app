@@ -14,32 +14,52 @@ const stagger = {
 };
 
 // ── ROI Comparison data ──────────────────────────────────────────────────────
+// Benchmarks reflect a saturated metro market (e.g. Nashville / Brentwood TN)
+// for a single-office practice with ~2,000–3,000 active patients.
 const CHANNELS = [
   {
     name: "Google Ads",
+    costPerPatient: "$250–$600",
+    leadQuality: "Stranger, low intent",
+    effort: "Daily mgmt + agency",
+    automated: false,
+    highlight: false,
+  },
+  {
+    name: "Meta (FB / IG)",
     costPerPatient: "$200–$500",
-    leadQuality: "Low intent",
-    effort: "Ongoing mgmt",
+    leadQuality: "Impulse / image-led",
+    effort: "Creative refresh constant",
     automated: false,
     highlight: false,
   },
   {
     name: "EDDM Mailers",
-    costPerPatient: "$150–$400",
-    leadQuality: "Cold leads",
-    effort: "Design + print + mail",
+    costPerPatient: "$180–$450",
+    leadQuality: "Cold, ad-fatigued",
+    effort: "Design, print, mail each drop",
     automated: false,
     highlight: false,
   },
   {
     name: "Rippl",
-    costPerPatient: "$20",
-    leadQuality: "Peer-referred trust",
+    costPerPatient: "$55–$120",
+    leadQuality: "Peer-verified trust",
     effort: "Fully automated",
     automated: true,
     highlight: true,
   },
 ];
+
+// Saturated-market annual spend model for a 2,500-active-patient practice.
+// Sources: dental-industry CPC benchmarks (WordStream/SEMrush), USPS EDDM
+// retail postage + commodity print pricing, Meta local-health CPL ranges.
+const ANNUAL_SPEND = {
+  google:   { label: "Google Ads + agency mgmt",      cost: "$48,000–$66,000" },
+  meta:     { label: "Meta (FB / IG) + creative",     cost: "$18,000–$36,000" },
+  eddm:     { label: "EDDM mailers (quarterly drop)", cost: "$10,000–$14,000" },
+  seo:      { label: "SEO retainer + listings",       cost: "$12,000–$24,000" },
+};
 
 const STATS = [
   { value: "$20", label: "Per verified new patient", sub: "Only when they walk in the door" },
@@ -494,11 +514,28 @@ export default function Practices() {
             </table>
           </motion.div>
 
-          <motion.div variants={fadeUp} className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+          <motion.div variants={fadeUp} className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
             {[
-              { icon: "📬", title: "EDDM reality check", body: "A 5,000-piece mailer run costs $1,500–$2,500 in postage, design, and print. At a 0.5–1% response rate, you're paying $150–$400 per patient — who may never return." },
-              { icon: "📊", title: "Google Ads reality check", body: "Dental keywords average $15–$50 per click. With a 3–5% booking conversion, you're spending $300–$1,000+ per new patient — and competing against every DSO in your market." },
-              { icon: "✅", title: "Rippl reality check", body: "You pay $20 only when a referred patient completes their first visit. If they don't show — you don't pay. Peer-referred patients also convert and retain at significantly higher rates." },
+              {
+                icon: "📊",
+                title: "Google Ads reality check",
+                body: "Dental keywords in saturated metros run $15–$30 per click — cosmetic terms hit $40+. At a 5–7% click-to-booking rate with a typical no-show tax, you're paying $250–$600 per completed new patient. Plus $1,000–$1,500/mo in agency management on top of ad spend. You compete head-to-head with every DSO in your zip code.",
+              },
+              {
+                icon: "📱",
+                title: "Meta (FB / IG) reality check",
+                body: "Local-health CPL on Meta runs $45–$100 per lead, but intent is much lower than Google. Lead-to-patient conversion is 20–30%, landing you at $200–$500 per new patient. Creative fatigues in 30–45 days, so you're on the hook for a constant content treadmill — or another $500–$1,200/mo in creative management.",
+              },
+              {
+                icon: "📬",
+                title: "EDDM mailer reality check",
+                body: "A 5,000-piece drop in an affluent zip runs $2,250–$2,900 all-in (postage $0.22 + print/design). Response rates in saturated markets have dropped to 0.5–1% — recipients are buried in dental mailers. Net: $180–$450 per new patient, and they're cold leads with no existing trust.",
+              },
+              {
+                icon: "✅",
+                title: "Rippl reality check",
+                body: "Total all-in cost: $55–$120 per new patient ($20 platform fee + $35–$100 reward, tier-based). You pay only when they complete a visit — no-shows cost you nothing. Referred patients accept 4× more treatment and retain 37% longer than ad-sourced ones. No ads, no creative, no agency.",
+              },
             ].map((item) => (
               <div key={item.title} className="bg-white border border-slate-200 rounded-2xl p-4">
                 <div className="text-2xl mb-2">{item.icon}</div>
@@ -506,6 +543,103 @@ export default function Practices() {
                 <p className="text-slate-500 text-xs leading-relaxed">{item.body}</p>
               </div>
             ))}
+          </motion.div>
+        </motion.section>
+
+        {/* ── Annual spend comparison ─────────────────────────────────── */}
+        <motion.section
+          initial="hidden"
+          animate="show"
+          variants={stagger}
+          className="mb-16"
+        >
+          <motion.div variants={fadeUp} className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">
+              The math for a saturated-market practice
+            </h2>
+            <p className="text-slate-500 text-sm max-w-xl mx-auto">
+              A single-office practice with ~2,500 active patients in a competitive metro typically
+              spends this across paid channels. Rippl replaces most of it — and only bills when a
+              patient actually shows.
+            </p>
+          </motion.div>
+
+          <motion.div variants={fadeUp} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* What they spend today */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6">
+              <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3">
+                Typical annual spend
+              </p>
+              <div className="space-y-3 mb-5">
+                {Object.values(ANNUAL_SPEND).map((row) => (
+                  <div key={row.label} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-700">{row.label}</span>
+                    <span className="font-bold text-slate-900 tabular-nums">{row.cost}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-between gap-3 pt-4 border-t border-slate-200">
+                <span className="text-slate-900 font-bold">Total / year</span>
+                <span className="font-black text-slate-900 text-lg tabular-nums">$88K–$140K</span>
+              </div>
+              <div className="flex items-center justify-between gap-3 mt-2">
+                <span className="text-slate-500 text-sm">~250 new patients / year</span>
+                <span className="font-bold text-slate-500 text-sm tabular-nums">$350–$560 CAC</span>
+              </div>
+            </div>
+
+            {/* What Rippl costs to match */}
+            <div className="bg-gradient-to-br from-teal-50 to-white border-2 border-teal-200 rounded-2xl p-6">
+              <p className="text-xs font-semibold uppercase tracking-widest text-teal-700 mb-3">
+                Same 250 patients, through Rippl
+              </p>
+              <div className="space-y-3 mb-5">
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-slate-700">Platform fee (250 × $20)</span>
+                  <span className="font-bold text-slate-900 tabular-nums">$5,000</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-slate-700">Rewards (avg $65/referral)</span>
+                  <span className="font-bold text-slate-900 tabular-nums">$16,250</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-slate-700">Staff time</span>
+                  <span className="font-bold text-slate-900 tabular-nums">$0</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-slate-700">Agency / creative</span>
+                  <span className="font-bold text-slate-900 tabular-nums">$0</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-3 pt-4 border-t border-teal-200">
+                <span className="text-slate-900 font-bold">Total / year</span>
+                <span className="font-black text-teal-700 text-lg tabular-nums">$21,250</span>
+              </div>
+              <div className="flex items-center justify-between gap-3 mt-2">
+                <span className="text-slate-500 text-sm">Blended cost per patient</span>
+                <span className="font-bold text-teal-700 text-sm tabular-nums">$85</span>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            variants={fadeUp}
+            className="mt-4 bg-teal-600 text-white rounded-2xl p-5 flex items-center justify-between gap-4 flex-wrap"
+          >
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-teal-100 mb-1">
+                Bottom line
+              </p>
+              <p className="font-black text-lg md:text-xl leading-tight">
+                $67K–$119K saved per year, per office
+              </p>
+              <p className="text-teal-100 text-xs mt-1">
+                And referred patients convert and retain at significantly higher rates than ad-sourced ones.
+              </p>
+            </div>
+            <span className="bg-white/15 border border-white/20 text-white font-black text-2xl px-4 py-2 rounded-xl tabular-nums">
+              4–7× ROI
+            </span>
           </motion.div>
         </motion.section>
 
