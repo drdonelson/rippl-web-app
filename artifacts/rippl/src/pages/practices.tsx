@@ -113,7 +113,11 @@ const FAQS = [
   },
   {
     q: "How does billing work?",
-    a: "No monthly fees, no setup fees. You pay $20 per verified referral — only when a new patient completes their first exam. If the Tango gift card fails, the reward falls back to an admin task so nothing is ever lost.",
+    a: "Two line items, that's it. A $499 one-time setup fee covers Open Dental integration, staff training, and office configuration (waived for the first 10 Founding Practices). After that, you pay $20 per verified referral — only when a new patient completes their first exam. Gift card rewards are billed at face value with zero markup. No monthly fees, no long-term contract, no card processing charges.",
+  },
+  {
+    q: "What is the Founding Practice program?",
+    a: "The first 10 offices to go live with Rippl get the $499 setup fee waived. In exchange, you agree to let us publish a brief case study about your results after 90 days of use, and you become a referenceable launch partner for future practices. You get early-mover pricing; we get real-world data to make Rippl better for everyone who comes after.",
   },
   {
     q: "How long does setup take?",
@@ -400,8 +404,8 @@ export default function Practices() {
             className="text-slate-500 text-lg leading-relaxed max-w-2xl mx-auto mb-8"
           >
             Rippl turns completed referrals into automated gift card rewards — fully
-            integrated with Open Dental. You only pay $20 when a new patient actually
-            walks in the door. No ad spend. No mailers. No staff work.
+            integrated with Open Dental. $499 one-time setup, then $20 when a new
+            patient actually walks in the door. No ad spend. No mailers. No staff work.
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -688,7 +692,7 @@ export default function Practices() {
         >
           <motion.div variants={fadeUp} className="text-center mb-8">
             <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">Everything included</h2>
-            <p className="text-slate-500 text-sm">No add-ons. No tiers. One flat $20-per-referral model.</p>
+            <p className="text-slate-500 text-sm">No add-ons. No monthly fees. One flat $20-per-referral model after onboarding.</p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-6">
@@ -741,35 +745,116 @@ export default function Practices() {
         >
           <motion.div
             variants={fadeUp}
-            className="bg-gradient-to-br from-teal-50 to-slate-50 border border-teal-200 rounded-3xl p-8 md:p-10 text-center"
+            className="bg-gradient-to-br from-teal-50 to-slate-50 border border-teal-200 rounded-3xl p-8 md:p-10"
           >
-            <span className="inline-block bg-teal-100 border border-teal-200 text-teal-700 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full mb-5">
-              Pricing
-            </span>
-            <div className="flex items-end justify-center gap-1 mb-2">
-              <span className="text-6xl md:text-7xl font-black text-slate-900">$20</span>
-              <span className="text-slate-500 text-lg mb-3">/ referral</span>
+            <div className="text-center mb-8">
+              <span className="inline-block bg-teal-100 border border-teal-200 text-teal-700 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full mb-5">
+                Transparent pricing
+              </span>
+              <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">
+                Two numbers. That's the whole model.
+              </h2>
+              <p className="text-slate-500 text-sm max-w-lg mx-auto">
+                No monthly fees. No card markup. No long-term contract. You pay only when
+                a patient actually walks in.
+              </p>
             </div>
-            <p className="text-teal-600 font-semibold text-sm mb-6">Only when a new patient completes their first visit</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-lg mx-auto mb-8">
-              {[
-                { icon: "✓", text: "No monthly fees" },
-                { icon: "✓", text: "No setup fees" },
-                { icon: "✓", text: "No long-term contract" },
-              ].map((item) => (
-                <div key={item.text} className="flex items-center justify-center gap-2 text-slate-700 text-sm font-semibold">
-                  <span className="text-teal-600">{item.icon}</span>
-                  {item.text}
+
+            {/* Two price pillars */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto mb-8">
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center">
+                <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-2">
+                  One-time setup
+                </p>
+                <div className="flex items-end justify-center gap-1 mb-2">
+                  <span className="text-5xl font-black text-slate-900">$499</span>
                 </div>
-              ))}
+                <p className="text-slate-500 text-sm leading-relaxed">
+                  Open Dental integration, staff training, tier & reward configuration,
+                  office setup.
+                </p>
+                <p className="mt-3 inline-block bg-teal-100 border border-teal-200 text-teal-700 text-[11px] font-semibold px-2 py-1 rounded-md uppercase tracking-wide">
+                  Waived for Founding Practices
+                </p>
+              </div>
+
+              <div className="bg-white border-2 border-teal-500 rounded-2xl p-6 text-center">
+                <p className="text-xs font-semibold uppercase tracking-widest text-teal-700 mb-2">
+                  Per verified referral
+                </p>
+                <div className="flex items-end justify-center gap-1 mb-2">
+                  <span className="text-5xl font-black text-slate-900">$20</span>
+                  <span className="text-slate-500 text-base mb-1">/ patient</span>
+                </div>
+                <p className="text-slate-500 text-sm leading-relaxed">
+                  Only when a new patient completes their first visit. Rewards billed
+                  at face value, zero markup.
+                </p>
+              </div>
             </div>
-            <button
-              onClick={() => setShowModal(true)}
-              className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold px-8 py-4 rounded-2xl transition-colors shadow-xl shadow-teal-600/25 text-base"
-            >
-              Request a Demo <ArrowRight className="w-5 h-5" />
-            </button>
-            <p className="text-slate-400 text-xs mt-4">We'll walk through your Open Dental setup and get you live same day.</p>
+
+            {/* Founding Practice callout */}
+            <div className="bg-slate-900 text-white rounded-2xl p-5 md:p-6 max-w-2xl mx-auto mb-8">
+              <div className="flex items-start gap-4">
+                <div className="text-2xl shrink-0">🌱</div>
+                <div className="flex-1">
+                  <p className="font-black text-base mb-1">Founding Practice program</p>
+                  <p className="text-slate-300 text-sm leading-relaxed">
+                    The first 10 offices to go live get the $499 setup fee waived in exchange
+                    for a brief case study after 90 days. You become a referenceable launch
+                    partner. We get real-world data to make Rippl better.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Sample invoice */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 max-w-2xl mx-auto mb-8">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200">
+                <p className="text-slate-900 font-bold text-sm">Sample monthly statement</p>
+                <p className="text-slate-400 text-xs">22 referrals, mixed tiers</p>
+              </div>
+              <div className="space-y-2.5 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-600">Platform fee — 22 × $20</span>
+                  <span className="font-semibold text-slate-900 tabular-nums">$440</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-600">Rewards — face value, zero markup</span>
+                  <span className="font-semibold text-slate-900 tabular-nums">$1,320</span>
+                </div>
+                <div className="flex items-center justify-between text-slate-400 text-xs">
+                  <span>Monthly platform fees</span>
+                  <span className="tabular-nums">$0</span>
+                </div>
+                <div className="flex items-center justify-between text-slate-400 text-xs">
+                  <span>Card processing / Tango markup</span>
+                  <span className="tabular-nums">$0</span>
+                </div>
+                <div className="flex items-center justify-between text-slate-400 text-xs">
+                  <span>Agency / creative / management</span>
+                  <span className="tabular-nums">$0</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-200">
+                <span className="text-slate-900 font-black">Your total</span>
+                <span className="font-black text-slate-900 text-lg tabular-nums">$1,760</span>
+              </div>
+              <p className="text-slate-400 text-xs mt-3 leading-relaxed">
+                That's ~$80 per new patient, all-in. A typical Google Ads program in a
+                saturated metro would cost you $6,000+ for the same 22 patients.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <button
+                onClick={() => setShowModal(true)}
+                className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold px-8 py-4 rounded-2xl transition-colors shadow-xl shadow-teal-600/25 text-base"
+              >
+                Claim a Founding Practice spot <ArrowRight className="w-5 h-5" />
+              </button>
+              <p className="text-slate-400 text-xs mt-4">We'll walk through your Open Dental setup and get you live same day.</p>
+            </div>
           </motion.div>
         </motion.section>
 
