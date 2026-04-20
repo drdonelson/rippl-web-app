@@ -13,7 +13,7 @@ import { toast } from "sonner";
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
 const inputClass =
-  "w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 transition-all";
+  "w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-all";
 
 interface ActiveOffice {
   id: string;
@@ -248,18 +248,18 @@ export default function Onboard() {
             <Droplets className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white">Account Setup</h1>
-            <p className="text-white/40 text-xs">Create practice or staff accounts</p>
+            <h1 className="text-xl font-bold text-slate-900">Account Setup</h1>
+            <p className="text-slate-400 text-xs">Create practice or staff accounts</p>
           </div>
         </div>
 
         {/* ── Tabs ── */}
-        <div className="flex gap-1 p-1 bg-white/5 border border-white/10 rounded-xl mb-6">
+        <div className="flex gap-1 p-1 bg-slate-100 border border-slate-200 rounded-xl mb-6">
           <button
             onClick={() => setActiveTab("practice")}
             className={cn(
               "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all",
-              activeTab === "practice" ? "bg-teal-500 text-white shadow" : "text-white/50 hover:text-white",
+              activeTab === "practice" ? "bg-teal-500 text-white shadow" : "text-slate-500 hover:text-slate-900",
             )}
           >
             <Building2 className="w-4 h-4" />
@@ -269,7 +269,7 @@ export default function Onboard() {
             onClick={() => setActiveTab("staff")}
             className={cn(
               "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all",
-              activeTab === "staff" ? "bg-teal-500 text-white shadow" : "text-white/50 hover:text-white",
+              activeTab === "staff" ? "bg-teal-500 text-white shadow" : "text-slate-500 hover:text-slate-900",
             )}
           >
             <UserPlus className="w-4 h-4" />
@@ -279,31 +279,31 @@ export default function Onboard() {
 
         {/* ── Practice form ── */}
         {activeTab === "practice" && (
-          <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-8 shadow-2xl">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-8 shadow-2xl">
             <form onSubmit={handlePracticeSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-1.5">Practice Name</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Practice Name</label>
                 <input value={practiceForm.practice_name} onChange={e => setPracticeForm(f => ({ ...f, practice_name: e.target.value }))} required placeholder="My Practice – Nashville" className={inputClass} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-1.5">Doctor Name</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Doctor Name</label>
                 <input value={practiceForm.doctor_name} onChange={e => setPracticeForm(f => ({ ...f, doctor_name: e.target.value }))} required placeholder="Dr. Jane Smith" className={inputClass} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-1.5">Admin Email</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Admin Email</label>
                 <input type="email" value={practiceForm.email} onChange={e => setPracticeForm(f => ({ ...f, email: e.target.value }))} required placeholder="admin@mypractice.com" className={inputClass} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-1.5">Temporary Password</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Temporary Password</label>
                 <input type="password" value={practiceForm.password} onChange={e => setPracticeForm(f => ({ ...f, password: e.target.value }))} required placeholder="Min. 8 characters" minLength={8} className={inputClass} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-1.5">Location Code</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Location Code</label>
                 <input value={practiceForm.location_code} onChange={e => setPracticeForm(f => ({ ...f, location_code: e.target.value }))} required placeholder="springfield" className={inputClass} />
-                <p className="text-xs text-white/30 mt-1">Lowercase, no spaces (used internally)</p>
+                <p className="text-xs text-slate-400 mt-1">Lowercase, no spaces (used internally)</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-1.5">Open Dental Customer Key</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Open Dental Customer Key</label>
                 <input value={practiceForm.customer_key} onChange={e => setPracticeForm(f => ({ ...f, customer_key: e.target.value }))} required placeholder="16-character key" className={inputClass} />
               </div>
               {practiceError && (
@@ -321,31 +321,31 @@ export default function Onboard() {
           <>
             {/* ── Staff success banner ── */}
             {staffSuccessEmail && (
-              <div className="bg-teal-500/10 border border-teal-500/30 rounded-2xl p-4 mb-4 flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0 mt-0.5" />
+              <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4 mb-4 flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-teal-300 font-semibold text-sm">Account created!</p>
-                  <p className="text-teal-400/80 text-xs mt-0.5">
+                  <p className="text-teal-700 font-semibold text-sm">Account created!</p>
+                  <p className="text-teal-600 text-xs mt-0.5">
                     <span className="font-mono">{staffSuccessEmail}</span> can now log in at joinrippl.com
                   </p>
                 </div>
-                <button onClick={() => setStaffSuccessEmail(null)} className="ml-auto text-white/30 hover:text-white text-lg leading-none">×</button>
+                <button onClick={() => setStaffSuccessEmail(null)} className="ml-auto text-slate-400 hover:text-slate-600 text-lg leading-none">×</button>
               </div>
             )}
 
             {/* ── Staff form ── */}
-            <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-8 shadow-2xl mb-6">
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-8 shadow-2xl mb-6">
               <form onSubmit={handleStaffSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-white/70 mb-1.5">Full Name</label>
+                  <label className="block text-sm font-medium text-slate-600 mb-1.5">Full Name</label>
                   <input value={staffForm.full_name} onChange={e => setStaffForm(f => ({ ...f, full_name: e.target.value }))} required placeholder="e.g. Sarah Johnson" className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-white/70 mb-1.5">Email</label>
+                  <label className="block text-sm font-medium text-slate-600 mb-1.5">Email</label>
                   <input type="email" value={staffForm.email} onChange={e => setStaffForm(f => ({ ...f, email: e.target.value }))} required placeholder="frontdesk@hallmarkdds.com" className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-white/70 mb-1.5">Temporary Password</label>
+                  <label className="block text-sm font-medium text-slate-600 mb-1.5">Temporary Password</label>
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
@@ -359,7 +359,7 @@ export default function Onboard() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(v => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                       tabIndex={-1}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -367,15 +367,15 @@ export default function Onboard() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-white/70 mb-1.5">Assign to Office</label>
+                  <label className="block text-sm font-medium text-slate-600 mb-1.5">Assign to Office</label>
                   {offices.length === 0 ? (
-                    <p className="text-white/40 text-sm">No offices found. Create a practice first.</p>
+                    <p className="text-slate-400 text-sm">No offices found. Create a practice first.</p>
                   ) : (
                     <select
                       value={staffForm.office_id}
                       onChange={e => setStaffForm(f => ({ ...f, office_id: e.target.value }))}
                       required
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 transition-all"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-all"
                     >
                       {offices.map(o => {
                         const d = o.name.lastIndexOf("–");
@@ -385,9 +385,9 @@ export default function Onboard() {
                     </select>
                   )}
                   {derivedRole && (
-                    <p className="text-xs text-teal-400/70 mt-1.5 flex items-center gap-1">
-                      <span className="text-white/30">Role assigned:</span>
-                      <code className="font-mono bg-white/5 px-1.5 py-0.5 rounded text-teal-400">{derivedRole}</code>
+                    <p className="text-xs text-teal-600 mt-1.5 flex items-center gap-1">
+                      <span className="text-slate-400">Role assigned:</span>
+                      <code className="font-mono bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded text-teal-700">{derivedRole}</code>
                     </p>
                   )}
                 </div>
@@ -407,8 +407,8 @@ export default function Onboard() {
             {/* ── Existing staff accounts list ── */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-white font-semibold text-sm">Existing Staff Accounts</h2>
-                <button onClick={fetchStaffAccounts} disabled={listLoading} className="text-xs text-white/30 hover:text-white/60 transition-colors disabled:opacity-40">
+                <h2 className="text-slate-900 font-semibold text-sm">Existing Staff Accounts</h2>
+                <button onClick={fetchStaffAccounts} disabled={listLoading} className="text-xs text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-40">
                   {listLoading ? <Loader2 className="w-3 h-3 animate-spin inline" /> : "Refresh"}
                 </button>
               </div>
@@ -422,37 +422,37 @@ export default function Onboard() {
 
               {listLoading && staffAccounts.length === 0 ? (
                 <div className="flex justify-center py-8">
-                  <Loader2 className="w-5 h-5 text-white/30 animate-spin" />
+                  <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
                 </div>
               ) : staffAccounts.length === 0 ? (
-                <div className="bg-white/5 border border-white/10 rounded-2xl px-5 py-6 text-center">
-                  <p className="text-white/30 text-sm">No staff accounts yet.</p>
+                <div className="bg-white border border-slate-200 rounded-2xl px-5 py-6 text-center">
+                  <p className="text-slate-400 text-sm">No staff accounts yet.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
                   {staffAccounts.map(acct => (
                     <div
                       key={acct.id}
-                      className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+                      className="bg-white border border-slate-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-medium truncate">
-                          {acct.full_name || <span className="text-white/40 italic">No name</span>}
+                        <p className="text-slate-900 text-sm font-medium truncate">
+                          {acct.full_name || <span className="text-slate-400 italic">No name</span>}
                         </p>
-                        <p className="text-white/50 text-xs truncate">{acct.email}</p>
+                        <p className="text-slate-500 text-xs truncate">{acct.email}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs text-white/30 bg-white/5 border border-white/10 rounded px-1.5 py-0.5 font-mono">
+                          <span className="text-xs text-slate-600 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5 font-mono">
                             {acct.role}
                           </span>
                           {acct.office_name && (
-                            <span className="text-xs text-white/30 truncate">· {acct.office_name}</span>
+                            <span className="text-xs text-slate-400 truncate">· {acct.office_name}</span>
                           )}
                         </div>
                       </div>
                       <button
                         onClick={() => handleResetPassword(acct.id, acct.email)}
                         disabled={resettingId === acct.id}
-                        className="shrink-0 p-2 rounded-lg text-white/30 hover:text-teal-400 hover:bg-teal-500/10 transition-all disabled:opacity-40"
+                        className="shrink-0 p-2 rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-500/10 transition-all disabled:opacity-40"
                         title={`Send password reset email to ${acct.email}`}
                       >
                         {resettingId === acct.id
@@ -462,7 +462,7 @@ export default function Onboard() {
                       <button
                         onClick={() => handleDelete(acct.id)}
                         disabled={deletingId === acct.id}
-                        className="shrink-0 p-2 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-40"
+                        className="shrink-0 p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-40"
                         title="Remove access"
                       >
                         {deletingId === acct.id

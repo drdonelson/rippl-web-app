@@ -80,7 +80,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "https://www.joinrippl.com/how-it-works",                                    label: "How It Works",      icon: Link2,    external: true },
       { href: "https://www.joinrippl.com/privacy",                                         label: "Privacy Policy",    icon: Shield,   external: true, minRole: "super_admin" },
       { href: "https://www.joinrippl.com/terms",                                           label: "Terms",             icon: FileText, external: true, minRole: "super_admin" },
-      { href: "https://www.joinrippl.com/claim?token=demo-claim-preview-token-screenshot", label: "🎁 Demo Claim Page", icon: Gift,     external: true },
+      { href: "https://www.joinrippl.com/claim?token=demo-claim-preview-token-screenshot", label: "Demo Claim Page",  icon: Gift,     external: true },
     ],
   },
 ];
