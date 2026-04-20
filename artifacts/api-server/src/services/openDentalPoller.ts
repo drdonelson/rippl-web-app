@@ -90,7 +90,7 @@ interface SyncResult {
   debug?: ProcDebug[];
 }
 
-function buildHeaders(customerKey?: string): Record<string, string> {
+export function buildHeaders(customerKey?: string): Record<string, string> {
   const ck = (customerKey ?? OPEN_DENTAL_KEY ?? "").trim();
   const developerKey = OPEN_DENTAL_DEVELOPER_KEY?.trim();
   return {
@@ -190,7 +190,7 @@ async function lookupReferringPatNum(
 //  2. Open Dental   — GET /api/v1/patients/{newPatientPatNum} → FName + ' ' + LName
 //  3. Fallback      — 'Unknown Patient' (logged as a warning)
 
-async function resolveNewPatientName(
+export async function resolveNewPatientName(
   newPatientPatNum: string,
   officeId: string | null | undefined,
   headers: Record<string, string>

@@ -16,6 +16,7 @@ import importJobsRouter from "./importJobs";
 import referralRouter from "./referral";
 import publicClaimRouter from "./publicClaim";
 import demoRouter from "./demo";
+import backfillRouter from "./backfill";
 import { requireAuth } from "../middleware/auth";
 
 const router: IRouter = Router();
@@ -42,5 +43,6 @@ router.use("/admin-tasks", requireAuth, adminTasksRouter);
 router.use("/campaigns",   requireAuth, campaignsRouter);
 router.use("/opendental", requireAuth, openDentalRouter);
 router.use("/import", requireAuth, importJobsRouter);
+router.use("/backfill", requireAuth, backfillRouter);
 
 export default router;

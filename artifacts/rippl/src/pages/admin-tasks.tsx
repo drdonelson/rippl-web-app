@@ -1,9 +1,18 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { CheckSquare, Loader2, AlertTriangle, CheckCircle2, Clock, Building2, Heart } from "lucide-react";
+import { CheckSquare, Loader2, AlertTriangle, CheckCircle2, Clock, Building2, Heart, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { customFetch } from "@workspace/api-client-react";
+
+interface BackfillReport {
+  scanned: number;
+  resolved: number;
+  stillUnknown: number;
+  skipped: number;
+  errors: Array<{ eventId: string; reason: string }>;
+  updates: Array<{ eventId: string; from: string; to: string }>;
+}
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
@@ -58,9 +67,14 @@ function formatDate(iso: string): string {
   });
 }
 
+async function runUnknownNameBackfill(): Promise<BackfillReport> {
+  return customFetch<BackfillReport>(`${BASE}/api/backfill/unknown-names`, { method: "POST" });
+}
+
 export default function AdminTasksPage() {
   const qc = useQueryClient();
   const [completing, setCompleting] = useState<string | null>(null);
+  const [backfillResult, setBackfillResult] = useState<BackfillReport | null>(null);
   const { session, isLoading: authLoading } = useAuth();
 
   const { data: tasks, isLoading, isError } = useQuery<AdminTask[]>({
@@ -76,15 +90,86 @@ export default function AdminTasksPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-tasks"] }),
   });
 
+  const backfill = useMutation({
+    mutationFn: runUnknownNameBackfill,
+    onSuccess: (report) => {
+      setBackfillResult(report);
+      qc.invalidateQueries({ queryKey: ["admin-tasks"] });
+      qc.invalidateQueries({ queryKey: ["referral-events"] });
+    },
+  });
+
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">Admin Tasks</h1>
-        <p className="text-muted-foreground mt-1">
-          Pending in-house credits to apply and charity donations to process.
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-foreground">Admin Tasks</h1>
+          <p className="text-muted-foreground mt-1">
+            Pending in-house credits to apply and charity donations to process.
+          </p>
+        </div>
+        <button
+          onClick={() => backfill.mutate()}
+          disabled={backfill.isPending}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-card hover:bg-muted/50 text-foreground text-sm font-semibold transition-colors disabled:opacity-60"
+          title="Re-resolve any referral events stuck at 'Unknown Patient' using Open Dental"
+        >
+          {backfill.isPending
+            ? <><Loader2 className="w-4 h-4 animate-spin" /> Resolving...</>
+            : <><Wand2 className="w-4 h-4" /> Resolve unknown patient names</>}
+        </button>
       </div>
+
+      {/* Backfill result banner */}
+      {backfillResult && (
+        <div
+          className={cn(
+            "rounded-2xl border p-4 flex items-start justify-between gap-4 flex-wrap",
+            backfillResult.resolved > 0
+              ? "bg-primary/5 border-primary/20"
+              : backfillResult.scanned === 0
+                ? "bg-card border-border"
+                : "bg-amber-50 border-amber-200",
+          )}
+        >
+          <div className="text-sm">
+            <p className="font-semibold text-foreground">
+              {backfillResult.scanned === 0
+                ? "No unknown-patient events found — nothing to backfill."
+                : `Scanned ${backfillResult.scanned}, resolved ${backfillResult.resolved}, still unknown ${backfillResult.stillUnknown}.`}
+            </p>
+            {backfillResult.updates.length > 0 && (
+              <ul className="mt-2 space-y-1 text-muted-foreground text-xs">
+                {backfillResult.updates.slice(0, 5).map((u) => (
+                  <li key={u.eventId}>✓ Event <span className="font-mono">{u.eventId.slice(0, 8)}</span> → <span className="text-foreground font-medium">{u.to}</span></li>
+                ))}
+                {backfillResult.updates.length > 5 && (
+                  <li className="italic">... and {backfillResult.updates.length - 5} more</li>
+                )}
+              </ul>
+            )}
+            {backfillResult.errors.length > 0 && (
+              <p className="mt-2 text-xs text-amber-700">
+                {backfillResult.errors.length} event{backfillResult.errors.length === 1 ? "" : "s"} failed — see server logs.
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => setBackfillResult(null)}
+            className="text-muted-foreground hover:text-foreground text-xs font-semibold"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {backfill.isError && (
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+          <AlertTriangle className="w-5 h-5 shrink-0" />
+          Backfill failed. Check server logs for details.
+        </div>
+      )}
 
       {/* Content */}
       {isLoading ? (
