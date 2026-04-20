@@ -51,15 +51,21 @@ const CHANNELS = [
   },
 ];
 
-// Saturated-market annual spend model for a 2,500-active-patient practice.
-// Sources: dental-industry CPC benchmarks (WordStream/SEMrush), USPS EDDM
-// retail postage + commodity print pricing, Meta local-health CPL ranges.
-const ANNUAL_SPEND = {
-  google:   { label: "Google Ads + agency mgmt",      cost: "$48,000–$66,000" },
-  meta:     { label: "Meta (FB / IG) + creative",     cost: "$18,000–$36,000" },
-  eddm:     { label: "EDDM mailers (quarterly drop)", cost: "$10,000–$14,000" },
-  seo:      { label: "SEO retainer + listings",       cost: "$12,000–$24,000" },
-};
+// Two realistic marketing-plan profiles most single-office practices actually run.
+// Sources: dental-industry CPC benchmarks, USPS EDDM retail postage + commodity
+// print pricing, Meta local-health CPL ranges, Hallmark Dental internal data.
+const DIGITAL_PLAN = [
+  { label: "Google Ads spend",          cost: "$36K–$60K" },
+  { label: "Agency management",         cost: "$12K–$18K" },
+  { label: "SEO retainer + listings",   cost: "$12K–$24K" },
+  { label: "Meta (FB / IG) + creative", cost: "$12K–$24K" },
+];
+
+const EDDM_PLAN = [
+  { label: "Postage (USPS EDDM retail)", cost: "$4K–$5K" },
+  { label: "Print & design",              cost: "$4K–$6K" },
+  { label: "Campaign setup per drop",     cost: "$2K–$4K" },
+];
 
 const STATS = [
   { value: "$20", label: "Per verified new patient", sub: "Only when they walk in the door" },
@@ -113,11 +119,11 @@ const FAQS = [
   },
   {
     q: "How does billing work?",
-    a: "Two line items, that's it. A $499 one-time setup fee covers Open Dental integration, staff training, and office configuration (waived for the first 10 Founding Practices). After that, you pay $20 per verified referral — only when a new patient completes their first exam. Gift card rewards are billed at face value with zero markup. No monthly fees, no long-term contract, no card processing charges.",
+    a: "Two line items, that's it. A $499 one-time setup fee covers Open Dental integration, staff training, and office configuration (waived for Founding Practices — see below). After that, you pay $20 per verified referral — only when a new patient completes their first exam. Gift card rewards are billed at face value with zero markup. No monthly fees, no long-term contract, no card processing charges.",
   },
   {
     q: "What is the Founding Practice program?",
-    a: "The first 10 offices to go live with Rippl get the $499 setup fee waived. In exchange, you agree to let us publish a brief case study about your results after 90 days of use, and you become a referenceable launch partner for future practices. You get early-mover pricing; we get real-world data to make Rippl better for everyone who comes after.",
+    a: "Any practice that signs up and goes live with Rippl before August 31, 2026 gets the $499 setup fee waived. In exchange, you agree to let us publish a brief case study about your results after 90 days of use, and you become a referenceable launch partner for future practices. You get early-mover pricing; we get real-world data to make Rippl better for everyone who comes after. After August 31, the setup fee applies to all new practices.",
   },
   {
     q: "How long does setup take?",
@@ -559,92 +565,154 @@ export default function Practices() {
         >
           <motion.div variants={fadeUp} className="text-center mb-8">
             <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">
-              The math for a saturated-market practice
+              Whichever channel you're running, Rippl beats it
             </h2>
             <p className="text-slate-500 text-sm max-w-xl mx-auto">
-              A single-office practice with ~2,500 active patients in a competitive metro typically
-              spends this across paid channels. Rippl replaces most of it — and only bills when a
-              patient actually shows.
+              Most practices run one marketing approach, not all of them. Here's what each
+              typically costs a single-office practice in a saturated metro — and what Rippl
+              costs to deliver the same patients.
             </p>
           </motion.div>
 
-          <motion.div variants={fadeUp} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* What they spend today */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6">
-              <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3">
-                Typical annual spend
-              </p>
-              <div className="space-y-3 mb-5">
-                {Object.values(ANNUAL_SPEND).map((row) => (
-                  <div key={row.label} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-slate-700">{row.label}</span>
-                    <span className="font-bold text-slate-900 tabular-nums">{row.cost}</span>
+          {/* Scenario 1: Digital marketing plan */}
+          <motion.div variants={fadeUp} className="mb-5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">Scenario 1</span>
+              <span className="h-px bg-slate-200 flex-1" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xl">📊</span>
+                  <p className="text-slate-900 font-bold text-base">Digital marketing plan</p>
+                </div>
+                <p className="text-slate-500 text-xs mb-4">Google Ads + SEO + Social, typically via an agency</p>
+                <div className="space-y-2.5 mb-5">
+                  {DIGITAL_PLAN.map((row) => (
+                    <div key={row.label} className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-slate-700">{row.label}</span>
+                      <span className="font-semibold text-slate-900 tabular-nums">{row.cost}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between gap-3 pt-4 border-t border-slate-200">
+                  <span className="text-slate-900 font-bold">Total / year</span>
+                  <span className="font-black text-slate-900 text-lg tabular-nums">$72K–$126K</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 mt-2">
+                  <span className="text-slate-500 text-sm">~200–300 new patients / year</span>
+                  <span className="font-bold text-slate-500 text-sm tabular-nums">$300–$500 CAC</span>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-teal-50 to-white border-2 border-teal-200 rounded-2xl p-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xl">💧</span>
+                  <p className="text-slate-900 font-bold text-base">Same 250 patients via Rippl</p>
+                </div>
+                <p className="text-teal-700 text-xs mb-4 font-semibold">Pay only when they walk in</p>
+                <div className="space-y-2.5 mb-5">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-700">Platform fee (250 × $20)</span>
+                    <span className="font-semibold text-slate-900 tabular-nums">$5,000</span>
                   </div>
-                ))}
-              </div>
-              <div className="flex items-center justify-between gap-3 pt-4 border-t border-slate-200">
-                <span className="text-slate-900 font-bold">Total / year</span>
-                <span className="font-black text-slate-900 text-lg tabular-nums">$88K–$140K</span>
-              </div>
-              <div className="flex items-center justify-between gap-3 mt-2">
-                <span className="text-slate-500 text-sm">~250 new patients / year</span>
-                <span className="font-bold text-slate-500 text-sm tabular-nums">$350–$560 CAC</span>
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-700">Rewards (avg $65, face value)</span>
+                    <span className="font-semibold text-slate-900 tabular-nums">$16,250</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-700">Agency / creative / staff time</span>
+                    <span className="font-semibold text-slate-900 tabular-nums">$0</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-3 pt-4 border-t border-teal-200">
+                  <span className="text-slate-900 font-bold">Total / year</span>
+                  <span className="font-black text-teal-700 text-lg tabular-nums">$21,250</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 mt-2">
+                  <span className="text-slate-500 text-sm">Cost per new patient</span>
+                  <span className="font-bold text-teal-700 text-sm tabular-nums">$85</span>
+                </div>
               </div>
             </div>
-
-            {/* What Rippl costs to match */}
-            <div className="bg-gradient-to-br from-teal-50 to-white border-2 border-teal-200 rounded-2xl p-6">
-              <p className="text-xs font-semibold uppercase tracking-widest text-teal-700 mb-3">
-                Same 250 patients, through Rippl
-              </p>
-              <div className="space-y-3 mb-5">
-                <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="text-slate-700">Platform fee (250 × $20)</span>
-                  <span className="font-bold text-slate-900 tabular-nums">$5,000</span>
-                </div>
-                <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="text-slate-700">Rewards (avg $65/referral)</span>
-                  <span className="font-bold text-slate-900 tabular-nums">$16,250</span>
-                </div>
-                <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="text-slate-700">Staff time</span>
-                  <span className="font-bold text-slate-900 tabular-nums">$0</span>
-                </div>
-                <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="text-slate-700">Agency / creative</span>
-                  <span className="font-bold text-slate-900 tabular-nums">$0</span>
-                </div>
-              </div>
-              <div className="flex items-center justify-between gap-3 pt-4 border-t border-teal-200">
-                <span className="text-slate-900 font-bold">Total / year</span>
-                <span className="font-black text-teal-700 text-lg tabular-nums">$21,250</span>
-              </div>
-              <div className="flex items-center justify-between gap-3 mt-2">
-                <span className="text-slate-500 text-sm">Blended cost per patient</span>
-                <span className="font-bold text-teal-700 text-sm tabular-nums">$85</span>
-              </div>
+            <div className="mt-3 bg-teal-600 text-white rounded-xl px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
+              <p className="font-bold text-sm">Savings vs. digital plan</p>
+              <span className="font-black text-lg tabular-nums">$51K–$105K / year</span>
             </div>
           </motion.div>
 
-          <motion.div
-            variants={fadeUp}
-            className="mt-4 bg-teal-600 text-white rounded-2xl p-5 flex items-center justify-between gap-4 flex-wrap"
-          >
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-teal-100 mb-1">
-                Bottom line
-              </p>
-              <p className="font-black text-lg md:text-xl leading-tight">
-                $67K–$119K saved per year, per office
-              </p>
-              <p className="text-teal-100 text-xs mt-1">
-                And referred patients convert and retain at significantly higher rates than ad-sourced ones.
-              </p>
+          {/* Scenario 2: EDDM mailers */}
+          <motion.div variants={fadeUp}>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">Scenario 2</span>
+              <span className="h-px bg-slate-200 flex-1" />
             </div>
-            <span className="bg-white/15 border border-white/20 text-white font-black text-2xl px-4 py-2 rounded-xl tabular-nums">
-              4–7× ROI
-            </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xl">📬</span>
+                  <p className="text-slate-900 font-bold text-base">EDDM mailer program</p>
+                </div>
+                <p className="text-slate-500 text-xs mb-4">Quarterly 5,000-piece drops in target zips</p>
+                <div className="space-y-2.5 mb-5">
+                  {EDDM_PLAN.map((row) => (
+                    <div key={row.label} className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-slate-700">{row.label}</span>
+                      <span className="font-semibold text-slate-900 tabular-nums">{row.cost}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between gap-3 pt-4 border-t border-slate-200">
+                  <span className="text-slate-900 font-bold">Total / year</span>
+                  <span className="font-black text-slate-900 text-lg tabular-nums">$10K–$15K</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 mt-2">
+                  <span className="text-slate-500 text-sm">~40–80 new patients / year</span>
+                  <span className="font-bold text-slate-500 text-sm tabular-nums">$180–$450 CAC</span>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-teal-50 to-white border-2 border-teal-200 rounded-2xl p-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xl">💧</span>
+                  <p className="text-slate-900 font-bold text-base">Same 60 patients via Rippl</p>
+                </div>
+                <p className="text-teal-700 text-xs mb-4 font-semibold">No print, no postage, no design cycle</p>
+                <div className="space-y-2.5 mb-5">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-700">Platform fee (60 × $20)</span>
+                    <span className="font-semibold text-slate-900 tabular-nums">$1,200</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-700">Rewards (avg $65, face value)</span>
+                    <span className="font-semibold text-slate-900 tabular-nums">$3,900</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-700">Print / postage / creative</span>
+                    <span className="font-semibold text-slate-900 tabular-nums">$0</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-3 pt-4 border-t border-teal-200">
+                  <span className="text-slate-900 font-bold">Total / year</span>
+                  <span className="font-black text-teal-700 text-lg tabular-nums">$5,100</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 mt-2">
+                  <span className="text-slate-500 text-sm">Cost per new patient</span>
+                  <span className="font-bold text-teal-700 text-sm tabular-nums">$85</span>
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 bg-teal-600 text-white rounded-xl px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
+              <p className="font-bold text-sm">Savings vs. EDDM program</p>
+              <span className="font-black text-lg tabular-nums">$4.9K–$9.9K / year</span>
+            </div>
           </motion.div>
+
+          <motion.p variants={fadeUp} className="text-center text-slate-500 text-xs mt-6 max-w-xl mx-auto leading-relaxed">
+            Rippl works alongside whatever you're already doing — you can keep running ads or mailers
+            and add a referral layer on top. Most practices end up reducing paid-channel spend once
+            peer referrals start compounding.
+          </motion.p>
         </motion.section>
 
         {/* ── How it works ─────────────────────────────────────────────── */}
@@ -774,7 +842,7 @@ export default function Practices() {
                   office setup.
                 </p>
                 <p className="mt-3 inline-block bg-teal-100 border border-teal-200 text-teal-700 text-[11px] font-semibold px-2 py-1 rounded-md uppercase tracking-wide">
-                  Waived for Founding Practices
+                  Waived if live by Aug 31, 2026
                 </p>
               </div>
 
@@ -798,11 +866,17 @@ export default function Practices() {
               <div className="flex items-start gap-4">
                 <div className="text-2xl shrink-0">🌱</div>
                 <div className="flex-1">
-                  <p className="font-black text-base mb-1">Founding Practice program</p>
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <p className="font-black text-base">Founding Practice program</p>
+                    <span className="inline-block bg-teal-500/20 border border-teal-400/40 text-teal-300 text-[10px] font-semibold px-2 py-0.5 rounded-md uppercase tracking-wide">
+                      Ends Aug 31, 2026
+                    </span>
+                  </div>
                   <p className="text-slate-300 text-sm leading-relaxed">
-                    The first 10 offices to go live get the $499 setup fee waived in exchange
-                    for a brief case study after 90 days. You become a referenceable launch
-                    partner. We get real-world data to make Rippl better.
+                    Every practice that signs up and goes live before August 31, 2026 gets the
+                    $499 setup fee waived — in exchange for a brief case study after 90 days of use
+                    and referenceable launch-partner status. After August 31, the setup fee
+                    applies to all new practices.
                   </p>
                 </div>
               </div>
