@@ -40,8 +40,8 @@ const queryClient = new QueryClient({
 });
 
 const PageLoader = () => (
-  <div className="flex items-center justify-center h-screen bg-[#0a1628]">
-    <div className="text-teal-400 text-sm tracking-wide">Loading…</div>
+  <div className="flex items-center justify-center h-screen bg-background">
+    <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
   </div>
 );
 
