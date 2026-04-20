@@ -8,7 +8,7 @@ const STEPS = [
   {
     emoji: "🔗",
     title: "Share Your Link",
-    body: "Share your personal referral link or QR code with anyone looking for a great dentist.",
+    body: "Share your personal referral link with anyone looking for a great dentist.",
   },
   {
     emoji: "🦷",
@@ -64,10 +64,10 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   return (
     <button
       onClick={() => setOpen((v) => !v)}
-      className="w-full text-left bg-slate-800/50 border border-slate-700 rounded-2xl px-5 py-4 transition-colors hover:border-slate-600"
+      className="w-full text-left bg-white border border-slate-200 rounded-2xl px-5 py-4 transition-colors hover:border-slate-300 text-left"
     >
       <div className="flex items-start justify-between gap-3">
-        <span className="text-white font-semibold text-sm leading-snug">{q}</span>
+        <span className="text-slate-800 font-semibold text-sm leading-snug">{q}</span>
         <ChevronDown
           className={cn(
             "w-4 h-4 text-slate-400 shrink-0 mt-0.5 transition-transform duration-200",
@@ -76,7 +76,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
         />
       </div>
       {open && (
-        <p className="text-slate-400 text-sm mt-2 leading-relaxed">{a}</p>
+        <p className="text-slate-500 text-sm mt-2 leading-relaxed">{a}</p>
       )}
     </button>
   );
@@ -89,68 +89,66 @@ const fadeUp = {
 
 export default function HowItWorks() {
   return (
-    <div className="min-h-screen bg-[#0a1628]">
+    <div className="min-h-screen bg-slate-50">
       <div className="max-w-4xl mx-auto px-4 md:px-6 py-6 md:py-12 pb-16">
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <div className="pb-8 text-center">
           <div className="flex items-center justify-center gap-2 mb-6">
-            <div className="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center shadow-lg shadow-teal-600/30">
+            <div className="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center shadow-lg shadow-teal-600/20">
               <Droplets className="w-5 h-5 text-white" />
             </div>
-            <span className="text-white font-bold text-xl">Rippl</span>
+            <span className="text-slate-900 font-bold text-xl">Rippl</span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-black text-white leading-tight mb-3">
+          <h1 className="text-3xl md:text-4xl font-black text-slate-900 leading-tight mb-3">
             Refer friends.<br />Earn rewards.
           </h1>
-          <p className="text-slate-400 text-base leading-relaxed max-w-xl mx-auto">
+          <p className="text-slate-500 text-base leading-relaxed max-w-xl mx-auto">
             Share your unique link with friends and family. When they complete their dental exam, you earn a reward — automatically.
           </p>
         </div>
 
-        {/* ── How it works — 3 steps (horizontal row on desktop) ───────────── */}
+        {/* ── How it works — 3 steps ────────────────────────────────────── */}
         <motion.section
           initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-60px" }}
+          animate="show"
           transition={{ staggerChildren: 0.1 }}
           className="mb-10 md:mb-14"
         >
-          <h2 className="text-lg font-bold text-white mb-4 text-center">How it works</h2>
+          <h2 className="text-lg font-bold text-slate-800 mb-4 text-center">How it works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
             {STEPS.map((step, i) => (
               <motion.div
                 key={i}
                 variants={fadeUp}
-                className="flex items-start gap-4 bg-slate-800/50 border border-slate-700 rounded-2xl p-4 md:p-5"
+                className="flex items-start gap-4 bg-white border border-slate-200 rounded-2xl p-4 md:p-5"
               >
-                <div className="w-11 h-11 rounded-xl bg-slate-700/60 flex items-center justify-center text-2xl shrink-0">
+                <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-2xl shrink-0">
                   {step.emoji}
                 </div>
                 <div>
-                  <p className="text-white font-bold text-sm mb-0.5">
-                    <span className="text-teal-500 mr-1.5">Step {i + 1}.</span>
+                  <p className="text-slate-800 font-bold text-sm mb-0.5">
+                    <span className="text-teal-600 mr-1.5">Step {i + 1}.</span>
                     {step.title}
                   </p>
-                  <p className="text-slate-400 text-sm leading-relaxed">{step.body}</p>
+                  <p className="text-slate-500 text-sm leading-relaxed">{step.body}</p>
                 </div>
               </motion.div>
             ))}
           </div>
         </motion.section>
 
-        {/* ── Reward tiers (2x2 on desktop, stacked on mobile) ─────────────── */}
+        {/* ── Reward tiers ─────────────────────────────────────────────── */}
         <motion.section
           initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-60px" }}
+          animate="show"
           transition={{ staggerChildren: 0.08 }}
           className="mb-10 md:mb-14"
         >
-          <h2 className="text-lg font-bold text-white mb-1 text-center">
+          <h2 className="text-lg font-bold text-slate-800 mb-1 text-center">
             The more you refer, the bigger your reward
           </h2>
-          <p className="text-slate-500 text-sm text-center mb-4">Tiers unlock automatically as you refer more friends</p>
+          <p className="text-slate-400 text-sm text-center mb-4">Tiers unlock automatically as you refer more friends</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             {TIERS.map((tier) => (
               <motion.div
@@ -172,40 +170,38 @@ export default function HowItWorks() {
           </div>
         </motion.section>
 
-        {/* ── Reward options (2x2 on desktop, stacked on mobile) ───────────── */}
+        {/* ── Reward options ────────────────────────────────────────────── */}
         <motion.section
           initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-60px" }}
+          animate="show"
           transition={{ staggerChildren: 0.08 }}
           className="mb-10 md:mb-14"
         >
-          <h2 className="text-lg font-bold text-white mb-4 text-center">Choose your reward</h2>
+          <h2 className="text-lg font-bold text-slate-800 mb-4 text-center">Choose your reward</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             {REWARD_OPTIONS.map((opt) => (
               <motion.div
                 key={opt.title}
                 variants={fadeUp}
-                className="bg-slate-800/50 border border-slate-700 rounded-2xl p-4 md:p-5 flex items-start gap-4"
+                className="bg-white border border-slate-200 rounded-2xl p-4 md:p-5 flex items-start gap-4"
               >
                 <div className="text-3xl shrink-0">{opt.icon}</div>
                 <div>
-                  <p className="text-white font-bold text-sm mb-1">{opt.title}</p>
-                  <p className="text-slate-400 text-xs leading-relaxed">{opt.body}</p>
+                  <p className="text-slate-800 font-bold text-sm mb-1">{opt.title}</p>
+                  <p className="text-slate-500 text-xs leading-relaxed">{opt.body}</p>
                 </div>
               </motion.div>
             ))}
           </div>
         </motion.section>
 
-        {/* ── FAQ (single wider column) ─────────────────────────────────────── */}
+        {/* ── FAQ ──────────────────────────────────────────────────────── */}
         <motion.section
           initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-60px" }}
+          animate="show"
           className="mb-10 md:mb-14"
         >
-          <h2 className="text-lg font-bold text-white mb-4 text-center">Frequently asked questions</h2>
+          <h2 className="text-lg font-bold text-slate-800 mb-4 text-center">Frequently asked questions</h2>
           <div className="space-y-2">
             {FAQS.map((faq) => (
               <FaqItem key={faq.q} q={faq.q} a={faq.a} />
@@ -213,29 +209,28 @@ export default function HowItWorks() {
           </div>
         </motion.section>
 
-        {/* ── Footer CTA ──────────────────────────────────────────────────── */}
+        {/* ── Footer CTA ──────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="bg-gradient-to-br from-teal-900/50 to-slate-800/50 border border-teal-700/30 rounded-3xl p-6 md:p-8 text-center"
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-br from-teal-50 to-slate-50 border border-teal-200 rounded-3xl p-6 md:p-8 text-center"
         >
-          <Droplets className="w-8 h-8 mb-3 mx-auto text-teal-400" />
-          <h3 className="text-white font-bold text-lg mb-2">Your referral link is ready</h3>
-          <p className="text-slate-400 text-sm leading-relaxed mb-4 max-w-md mx-auto">
+          <Droplets className="w-8 h-8 mb-3 mx-auto text-teal-600" />
+          <h3 className="text-slate-800 font-bold text-lg mb-2">Your referral link is ready</h3>
+          <p className="text-slate-500 text-sm leading-relaxed mb-4 max-w-md mx-auto">
             Ask your dentist for your personal link at your next visit, or check your email from Hallmark Dental.
           </p>
           <a
             href="https://www.hallmarkdds.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-teal-400 text-sm font-semibold hover:text-teal-300 transition-colors"
+            className="inline-flex items-center gap-1.5 text-teal-600 text-sm font-semibold hover:text-teal-500 transition-colors"
           >
             Not a patient yet? Book your first visit →
           </a>
         </motion.div>
 
-        <p className="text-center text-xs text-slate-600 mt-6">
+        <p className="text-center text-xs text-slate-400 mt-6">
           Powered by Rippl · Referral Program Terms Apply
         </p>
       </div>

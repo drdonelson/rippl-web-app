@@ -2,7 +2,7 @@ import { Droplets, Mail, MessageSquare } from "lucide-react";
 
 export default function Terms() {
   return (
-    <div className="min-h-screen bg-[#0a1628] text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Subtle background texture */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-teal-500/5 rounded-full blur-3xl" />
@@ -17,27 +17,27 @@ export default function Terms() {
             <Droplets className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-white">Rippl</p>
-            <p className="text-xs text-white/40">Referral rewards for dental practices</p>
+            <p className="text-sm font-semibold text-slate-900">Rippl</p>
+            <p className="text-xs text-slate-400">Referral rewards for dental practices</p>
           </div>
         </div>
 
         {/* Page header */}
         <div className="flex items-start gap-4 mb-10">
-          <div className="w-10 h-10 rounded-xl bg-teal-400/10 flex items-center justify-center flex-shrink-0 mt-1">
-            <MessageSquare className="w-5 h-5 text-teal-400" />
+          <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center flex-shrink-0 mt-1">
+            <MessageSquare className="w-5 h-5 text-teal-600" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-white">Terms & Conditions</h1>
-            <p className="text-white/50 text-sm mt-1">SMS Messaging Program · Effective April 2026</p>
+            <h1 className="text-3xl font-bold text-slate-900">Terms & Conditions</h1>
+            <p className="text-slate-500 text-sm mt-1">SMS Messaging Program · Effective April 2026</p>
           </div>
         </div>
 
         {/* Content */}
-        <div className="space-y-10 text-white/75 leading-relaxed text-[15px]">
+        <div className="space-y-10 text-slate-600 leading-relaxed text-[15px]">
 
           <section>
-            <h2 className="text-base font-semibold text-white mb-3">Program Description</h2>
+            <h2 className="text-base font-semibold text-slate-900 mb-3">Program Description</h2>
             <p>
               Rippl operates a dental patient referral rewards program on behalf of participating dental practices
               (including Hallmark Dental). When a patient refers a new patient who completes a qualifying
@@ -52,9 +52,9 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-white mb-3">Message Frequency</h2>
+            <h2 className="text-base font-semibold text-slate-900 mb-3">Message Frequency</h2>
             <p>
-              Messages are <span className="text-white/90 font-medium">transactional only</span> — they are sent
+              Messages are <span className="text-slate-900 font-medium">transactional only</span> — they are sent
               solely in response to a specific referral event, such as when a referred patient completes their first
               appointment and your reward becomes available. You will not receive recurring promotional or marketing
               messages.
@@ -66,19 +66,19 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-white mb-3">Costs</h2>
+            <h2 className="text-base font-semibold text-slate-900 mb-3">Costs</h2>
             <p>
               Rippl does not charge for SMS messages. However,{" "}
-              <span className="text-white/90 font-medium">message and data rates may apply</span> depending on your
+              <span className="text-slate-900 font-medium">message and data rates may apply</span> depending on your
               mobile carrier and plan. Please check with your carrier if you are unsure about your messaging rates.
             </p>
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-white mb-3">How to Opt Out</h2>
+            <h2 className="text-base font-semibold text-slate-900 mb-3">How to Opt Out</h2>
             <p>
               You may opt out of SMS messages at any time by replying{" "}
-              <span className="font-mono text-teal-400 bg-teal-400/10 px-1.5 py-0.5 rounded text-sm">STOP</span>{" "}
+              <span className="font-mono text-teal-700 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded text-sm">STOP</span>{" "}
               to any message you receive. After opting out, you will receive a one-time confirmation and no further
               messages will be sent to your number.
             </p>
@@ -88,16 +88,16 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-white mb-3">How to Get Help</h2>
+            <h2 className="text-base font-semibold text-slate-900 mb-3">How to Get Help</h2>
             <p>
               For assistance with the SMS program, reply{" "}
-              <span className="font-mono text-teal-400 bg-teal-400/10 px-1.5 py-0.5 rounded text-sm">HELP</span>{" "}
+              <span className="font-mono text-teal-700 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded text-sm">HELP</span>{" "}
               to any message you receive, or contact us directly at the email address below.
             </p>
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-white mb-3">Eligibility</h2>
+            <h2 className="text-base font-semibold text-slate-900 mb-3">Eligibility</h2>
             <p>
               The referral rewards program is available to patients of participating dental practices who have
               provided a valid U.S. mobile phone number. Participation in the SMS program is voluntary and
@@ -106,7 +106,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-white mb-3">Changes to These Terms</h2>
+            <h2 className="text-base font-semibold text-slate-900 mb-3">Changes to These Terms</h2>
             <p>
               Rippl reserves the right to modify these Terms & Conditions at any time. Any changes will be posted
               at this URL with an updated effective date. Continued participation in the program after changes are
@@ -115,7 +115,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-white mb-3">Contact</h2>
+            <h2 className="text-base font-semibold text-slate-900 mb-3">Contact</h2>
             <p className="mb-3">
               For questions about these terms or the SMS program, please contact us:
             </p>

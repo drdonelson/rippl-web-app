@@ -127,18 +127,7 @@ function OfficePicker({ compact = false }: { compact?: boolean }) {
 
   if (isLoading) return null;
 
-  if (isDemo) {
-    return (
-      <div className={cn("relative", compact ? "w-full" : "")}>
-        <div className="relative flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2 cursor-default select-none">
-          <MapPin className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
-          <span className={cn("font-medium text-yellow-300", compact ? "text-xs" : "text-sm")}>
-            Demo Practice
-          </span>
-        </div>
-      </div>
-    );
-  }
+  if (isDemo) return null;
 
   const allOption = { id: "all", name: "All Locations", location_code: "all", active: true };
   const options   = [allOption, ...offices];
@@ -196,7 +185,7 @@ function SidebarContent({
   return (
     <>
       {/* Logo */}
-      <div className="p-8 flex items-center gap-3">
+      <div className="px-6 pt-6 pb-4 flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20">
           <Droplets className="w-6 h-6 text-primary-foreground" />
         </div>
@@ -386,12 +375,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Demo banner */}
         {isDemo && (
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-yellow-500/15 border-b border-yellow-500/30 text-yellow-300 text-xs font-medium shrink-0">
-            <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-yellow-400" />
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border-b border-amber-200 text-amber-800 text-xs font-medium shrink-0">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-500" />
             You are viewing a demo — no real patient data is shown
             <button
               onClick={logout}
-              className="ml-auto flex items-center gap-1 text-yellow-400 hover:text-yellow-200 transition-colors font-semibold"
+              className="ml-auto flex items-center gap-1 text-amber-700 hover:text-amber-900 transition-colors font-semibold"
             >
               <LogOut className="w-3 h-3" /> Exit demo
             </button>

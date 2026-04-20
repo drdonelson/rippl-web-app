@@ -33,20 +33,20 @@ function taskLabel(task_type: string): { icon: React.ReactNode; label: string; c
     return {
       icon: <Building2 className="w-4 h-4" />,
       label: "In-House Credit",
-      color: "text-teal-400 bg-teal-500/10 border-teal-500/20",
+      color: "text-teal-700 bg-teal-50 border-teal-200",
     };
   }
   if (task_type === "charity_donation") {
     return {
       icon: <Heart className="w-4 h-4" />,
       label: "Charity Donation",
-      color: "text-pink-400 bg-pink-500/10 border-pink-500/20",
+      color: "text-pink-700 bg-pink-50 border-pink-200",
     };
   }
   return {
     icon: <CheckSquare className="w-4 h-4" />,
     label: task_type.replace(/_/g, " "),
-    color: "text-slate-400 bg-slate-500/10 border-slate-500/20",
+    color: "text-slate-600 bg-slate-100 border-slate-200",
   };
 }
 

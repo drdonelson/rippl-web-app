@@ -101,11 +101,11 @@ export default function Onboard() {
   // Access guard
   if (profile && profile.role !== "super_admin") {
     return (
-      <div className="min-h-screen bg-[#0a1628] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
         <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold text-white">Access Denied</h1>
-          <p className="text-white/50">Only super admins can access this page.</p>
-          <Link href="/dashboard" className="inline-block mt-4 text-teal-400 hover:text-teal-300 underline text-sm">
+          <h1 className="text-2xl font-bold text-slate-900">Access Denied</h1>
+          <p className="text-slate-500">Only super admins can access this page.</p>
+          <Link href="/dashboard" className="inline-block mt-4 text-teal-600 hover:text-teal-500 underline text-sm">
             Return to dashboard
           </Link>
         </div>
@@ -205,20 +205,20 @@ export default function Onboard() {
   // ── Practice success screen ───────────────────────────────────────────────
   if (practiceSuccess) {
     return (
-      <div className="min-h-screen bg-[#0a1628] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
         <div className="text-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-teal-500/20 flex items-center justify-center mx-auto">
-            <CheckCircle2 className="w-9 h-9 text-teal-400" />
+          <div className="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center mx-auto">
+            <CheckCircle2 className="w-9 h-9 text-teal-600" />
           </div>
-          <h2 className="text-2xl font-bold text-white">Practice Created!</h2>
-          <p className="text-white/60 text-sm">The practice admin account has been created and can now log in.</p>
+          <h2 className="text-2xl font-bold text-slate-900">Practice Created!</h2>
+          <p className="text-slate-500 text-sm">The practice admin account has been created and can now log in.</p>
           <div className="flex gap-3 justify-center mt-6">
             <button
               onClick={() => {
                 setPracticeSuccess(false);
                 setPracticeForm({ practice_name: "", doctor_name: "", email: "", password: "", customer_key: "", location_code: "" });
               }}
-              className="px-4 py-2 border border-white/10 rounded-lg text-white/70 hover:text-white text-sm transition-colors"
+              className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 text-sm transition-colors"
             >
               Add another
             </button>
@@ -236,9 +236,9 @@ export default function Onboard() {
   const derivedRole    = selectedOffice ? `staff_${selectedOffice.location_code}` : null;
 
   return (
-    <div className="min-h-screen bg-[#0a1628] flex flex-col items-center px-4 py-12">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center px-4 py-12">
       <div className="w-full max-w-md relative z-10">
-        <Link href="/dashboard" className="flex items-center gap-2 text-white/40 hover:text-white/70 text-sm mb-8 transition-colors w-fit">
+        <Link href="/dashboard" className="flex items-center gap-2 text-slate-400 hover:text-slate-600 text-sm mb-8 transition-colors w-fit">
           <ArrowLeft className="w-4 h-4" />
           Back to dashboard
         </Link>

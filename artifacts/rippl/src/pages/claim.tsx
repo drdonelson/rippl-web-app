@@ -70,13 +70,13 @@ function ErrorCard({
   body: string;
 }) {
   return (
-    <div className="min-h-screen bg-[#0a1628] flex items-center justify-center p-5">
-      <div className="max-w-sm w-full bg-slate-800/60 backdrop-blur border border-slate-700 rounded-3xl p-8 text-center shadow-2xl">
-        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 bg-slate-700/60">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-5">
+      <div className="max-w-sm w-full bg-white border border-slate-200 rounded-3xl p-8 text-center shadow-md">
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 bg-slate-100">
           {icon}
         </div>
-        <h2 className="text-xl font-bold text-white mb-2">{title}</h2>
-        <p className="text-slate-400 text-sm leading-relaxed">{body}</p>
+        <h2 className="text-xl font-bold text-slate-900 mb-2">{title}</h2>
+        <p className="text-slate-500 text-sm leading-relaxed">{body}</p>
       </div>
     </div>
   );
@@ -126,8 +126,8 @@ function RewardCard({
         <span className={cn(
           "absolute -top-3 right-4 z-10 text-[10px] font-bold uppercase tracking-wider px-2.5 py-[5px] rounded-full leading-none pointer-events-none",
           badgeColor === "amber"
-            ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-            : "bg-teal-500/20 text-teal-400 border border-teal-500/30",
+            ? "bg-amber-100 text-amber-700 border border-amber-200"
+            : "bg-teal-100 text-teal-700 border border-teal-200",
         )}>
           {badge}
         </span>
@@ -140,28 +140,28 @@ function RewardCard({
           "w-full text-left rounded-2xl p-4 border transition-all duration-200 relative overflow-hidden",
           "disabled:cursor-not-allowed",
           isSelected
-            ? "bg-teal-900/40 border-teal-500 shadow-lg shadow-teal-500/10"
-            : "bg-slate-800/50 border-slate-700 hover:border-slate-500 active:scale-[0.99]",
+            ? "bg-teal-50 border-teal-500 shadow-lg shadow-teal-500/10"
+            : "bg-white border-slate-200 hover:border-slate-300 active:scale-[0.99]",
         )}
       >
         <div className="flex items-start gap-4 pr-16">
           <div className={cn(
             "w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 mt-0.5",
-            isSelected ? "bg-teal-500/20" : "bg-slate-700/60",
+            isSelected ? "bg-teal-100" : "bg-slate-100",
           )}>
             {icon}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-base font-bold text-white leading-tight">{title}</p>
-            <p className="text-teal-400 text-sm font-medium mt-0.5">{subtitle}</p>
-            <p className="text-slate-400 text-xs mt-1 leading-relaxed">{detail}</p>
+            <p className="text-base font-bold text-slate-900 leading-tight">{title}</p>
+            <p className="text-teal-600 text-sm font-medium mt-0.5">{subtitle}</p>
+            <p className="text-slate-500 text-xs mt-1 leading-relaxed">{detail}</p>
             {children}
           </div>
         </div>
 
         <div className={cn(
           "absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 mt-3",
-          isSelected ? "bg-teal-500 border-teal-500" : "border-slate-500",
+          isSelected ? "bg-teal-500 border-teal-500" : "border-slate-300",
         )}>
           {isSelected && (
             <svg viewBox="0 0 20 20" fill="white" className="w-full h-full p-0.5">
@@ -199,7 +199,7 @@ function TierProgressBar({ tierName, totalReferrals }: { tierName: string | null
           {nextCfg && <img src={nextCfg.icon} alt={cfg.nextTierLabel ?? ''} className="w-4 h-4" />} {cfg.nextTierLabel}
         </span>
       </div>
-      <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+      <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
@@ -291,8 +291,8 @@ export default function Claim() {
   // ── Loading ───────────────────────────────────────────────────────────────
   if (phase === "loading") {
     return (
-      <div className="min-h-screen bg-[#0a1628] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-teal-500 animate-spin" />
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-teal-600 animate-spin" />
       </div>
     );
   }
@@ -348,7 +348,7 @@ export default function Claim() {
   // ── Success ───────────────────────────────────────────────────────────────
   if (phase === "success" && result) {
     return (
-      <div className="min-h-screen bg-[#0a1628] flex flex-col">
+      <div className="min-h-screen bg-slate-50 flex flex-col">
         <div className="flex-1 flex flex-col max-w-md mx-auto w-full px-5 py-8 justify-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -360,7 +360,7 @@ export default function Claim() {
               <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center">
                 <Droplets className="w-5 h-5 text-white" />
               </div>
-              <span className="text-white font-bold text-lg">Rippl</span>
+              <span className="text-slate-900 font-bold text-lg">Rippl</span>
             </div>
 
             {/* Checkmark */}
@@ -373,11 +373,11 @@ export default function Claim() {
               <CheckCircle2 className="w-10 h-10 text-white" />
             </motion.div>
 
-            <h2 className="text-2xl font-bold text-white mb-1">Reward Claimed!</h2>
-            <p className="text-slate-400 text-sm mb-6">Thank you for being a loyal patient, {firstName}.</p>
+            <h2 className="text-2xl font-bold text-slate-900 mb-1">Reward Claimed!</h2>
+            <p className="text-slate-500 text-sm mb-6">Thank you for being a loyal patient, {firstName}.</p>
 
             {/* Reward-specific message */}
-            <div className="w-full bg-slate-800/60 border border-slate-700 rounded-2xl p-5 mb-5 text-left">
+            <div className="w-full bg-white border border-slate-200 rounded-2xl p-5 mb-5 text-left">
               {result.reward_type === "local-partner" && result.pin_code ? (
                 <>
                   <p className="text-6xl font-black text-white tracking-[0.2em] text-center py-2 font-mono">
@@ -389,8 +389,8 @@ export default function Claim() {
                 </>
               ) : result.reward_type === "gift-card" ? (
                 <>
-                  <p className="text-white font-semibold mb-1">🎁 {result.tango_order_id ? "Gift card on its way!" : "Request received!"}</p>
-                  <p className="text-slate-400 text-sm">
+                  <p className="text-slate-900 font-semibold mb-1">🎁 {result.tango_order_id ? "Gift card on its way!" : "Request received!"}</p>
+                  <p className="text-slate-500 text-sm">
                     {result.tango_order_id
                       ? `Your ${result.gift_card_brand ?? "Amazon"} gift card is on its way! Check your email — it usually arrives within a few minutes.`
                       : "Your gift card request has been received — we'll email it to you within 24 hours."}
@@ -398,15 +398,15 @@ export default function Claim() {
                 </>
               ) : result.reward_type === "in-house-credit" ? (
                 <>
-                  <p className="text-white font-semibold mb-1">🦷 Credit incoming!</p>
-                  <p className="text-slate-400 text-sm">
+                  <p className="text-slate-900 font-semibold mb-1">🦷 Credit incoming!</p>
+                  <p className="text-slate-500 text-sm">
                     Your $100 dental credit will be applied to your account within 24 hours. You'll see it at your next appointment.
                   </p>
                 </>
               ) : (
                 <>
-                  <p className="text-white font-semibold mb-1">❤️ Donation confirmed!</p>
-                  <p className="text-slate-400 text-sm">
+                  <p className="text-slate-900 font-semibold mb-1">❤️ Donation confirmed!</p>
+                  <p className="text-slate-500 text-sm">
                     We'll make a ${result.reward_value} donation in your name and send you a confirmation email.
                   </p>
                 </>
@@ -414,7 +414,7 @@ export default function Claim() {
             </div>
 
             {/* Tier progress */}
-            <div className="w-full bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 mb-5">
+            <div className="w-full bg-white border border-slate-200 rounded-2xl p-4 mb-5">
               <p className="text-slate-400 text-xs uppercase tracking-wider font-semibold mb-3 text-center">Your Referral Progress</p>
               <TierProgressBar tierName={referrer.tier} totalReferrals={referrer.total_referrals} />
             </div>
@@ -422,7 +422,7 @@ export default function Claim() {
             {/* Share CTA */}
             <button
               onClick={handleShare}
-              className="w-full py-3.5 rounded-2xl font-semibold text-sm transition-all mb-2 bg-teal-500/20 border border-teal-500/40 text-teal-400 hover:bg-teal-500/30"
+              className="w-full py-3.5 rounded-2xl font-semibold text-sm transition-all mb-2 bg-teal-50 border border-teal-200 text-teal-600 hover:bg-teal-100"
             >
               📤 Share with a friend
             </button>
@@ -431,8 +431,8 @@ export default function Claim() {
               className={cn(
                 "w-full py-2.5 rounded-2xl font-semibold text-sm transition-all mb-6",
                 copied
-                  ? "bg-teal-600/20 border border-teal-500/30 text-teal-400"
-                  : "bg-white/4 border border-slate-700 text-slate-400 hover:text-slate-300 hover:border-slate-600",
+                  ? "bg-teal-50 border border-teal-200 text-teal-600"
+                  : "bg-white border border-slate-200 text-slate-500 hover:text-slate-700 hover:border-slate-300",
               )}
             >
               {copied ? "✓ Link Copied!" : "Or copy link"}
@@ -454,40 +454,40 @@ export default function Claim() {
     const lbl = labels[selected];
 
     return (
-      <div className="min-h-screen bg-[#0a1628] flex flex-col">
+      <div className="min-h-screen bg-slate-50 flex flex-col">
         <div className="flex-1 flex flex-col max-w-md mx-auto w-full px-5 py-8 justify-center">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center text-center"
           >
-            <div className="w-20 h-20 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-5xl mb-5">
+            <div className="w-20 h-20 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-5xl mb-5">
               {lbl.icon}
             </div>
-            <h2 className="text-xl font-bold text-white mb-1">Confirm your reward</h2>
-            <p className="text-slate-400 text-sm mb-6">
-              You're about to claim your <span className="text-white font-semibold">{lbl.value} {lbl.name}</span>.
+            <h2 className="text-xl font-bold text-slate-900 mb-1">Confirm your reward</h2>
+            <p className="text-slate-500 text-sm mb-6">
+              You're about to claim your <span className="text-slate-900 font-semibold">{lbl.value} {lbl.name}</span>.
             </p>
 
-            <div className="w-full bg-slate-800/60 border border-slate-700 rounded-2xl p-4 mb-5 text-left space-y-2">
+            <div className="w-full bg-white border border-slate-200 rounded-2xl p-4 mb-5 text-left space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Reward</span>
-                <span className="text-white font-medium">{lbl.name}</span>
+                <span className="text-slate-500">Reward</span>
+                <span className="text-slate-900 font-medium">{lbl.name}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Value</span>
-                <span className="text-teal-400 font-bold">{lbl.value}</span>
+                <span className="text-slate-500">Value</span>
+                <span className="text-teal-600 font-bold">{lbl.value}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Delivery</span>
-                <span className="text-white font-medium">{lbl.detail}</span>
+                <span className="text-slate-500">Delivery</span>
+                <span className="text-slate-900 font-medium">{lbl.detail}</span>
               </div>
             </div>
 
             {submitError && (
-              <div className="w-full bg-red-900/30 border border-red-500/40 rounded-xl p-3 mb-4 flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                <p className="text-red-400 text-xs">{submitError}</p>
+              <div className="w-full bg-red-50 border border-red-200 rounded-xl p-3 mb-4 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                <p className="text-red-600 text-xs">{submitError}</p>
               </div>
             )}
 
@@ -506,7 +506,7 @@ export default function Claim() {
             <button
               onClick={() => { setPhase("selecting"); setSubmitError(null); }}
               disabled={isSubmitting}
-              className="flex items-center gap-1.5 text-slate-400 text-sm hover:text-white transition-colors disabled:opacity-40"
+              className="flex items-center gap-1.5 text-slate-500 text-sm hover:text-slate-800 transition-colors disabled:opacity-40"
             >
               <ArrowLeft className="w-4 h-4" /> Go back
             </button>
@@ -518,7 +518,7 @@ export default function Claim() {
 
   // ── Selecting ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#0a1628]">
+    <div className="min-h-screen bg-slate-50">
       <div className="max-w-4xl mx-auto px-4 md:px-6 py-6 md:py-12 pb-10 md:pb-16">
 
         {/* Logo + Office */}
@@ -526,24 +526,24 @@ export default function Claim() {
           <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center">
             <Droplets className="w-5 h-5 text-white" />
           </div>
-          <span className="text-slate-300 text-sm font-medium">{office}</span>
+          <span className="text-slate-600 text-sm font-medium">{office}</span>
         </div>
 
         {/* Header */}
         <div className="mb-7 md:text-center md:py-4">
-          <h1 className="text-3xl md:text-4xl font-black text-white leading-tight mb-3">
+          <h1 className="text-3xl md:text-4xl font-black text-slate-900 leading-tight mb-3">
             Congratulations, {firstName}! 🎉
           </h1>
           <div className="flex items-center gap-3 mb-2 md:justify-center">
             <TierPill tierName={referrer.tier} />
           </div>
-          <p className="text-teal-400 font-semibold text-lg mt-2">
+          <p className="text-teal-600 font-semibold text-lg mt-2">
             You've earned a ${rewardValue} reward
           </p>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1">
             {getProgressMessage(referrer.tier, referrer.total_referrals)}
           </p>
-          <p className="text-slate-500 text-xs mt-1">
+          <p className="text-slate-400 text-xs mt-1">
             {referral?.new_patient_name ?? "a friend"} just completed their visit — pick your reward below.
           </p>
         </div>
@@ -592,7 +592,7 @@ export default function Claim() {
                           "py-1.5 px-2 rounded-lg text-xs font-semibold transition-all border",
                           brand === b
                             ? "bg-teal-600 border-teal-500 text-white"
-                            : "bg-slate-700/60 border-slate-600 text-slate-300 hover:border-slate-400",
+                            : "bg-white border-slate-200 text-slate-700 hover:border-slate-300",
                         )}
                       >
                         {b}
@@ -654,7 +654,7 @@ export default function Claim() {
           )}
         </AnimatePresence>
 
-        <p className="text-center text-xs text-slate-600 mt-5">
+        <p className="text-center text-xs text-slate-400 mt-5">
           By claiming, you agree to Rippl's referral program terms.
         </p>
       </div>

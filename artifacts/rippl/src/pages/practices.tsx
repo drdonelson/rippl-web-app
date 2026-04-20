@@ -72,10 +72,10 @@ const HOW_IT_WORKS = [
 ];
 
 const FEATURES = [
-  { icon: Zap,       title: "EMR-connected",       body: "Reads completed procedures directly from Open Dental. No manual data entry." },
-  { icon: Users,     title: "Tiered rewards",       body: "Patients earn $35–$100 gift cards as they refer more. Bigger rewards = more motivation." },
+  { icon: Zap,        title: "EMR-connected",      body: "Reads completed procedures directly from Open Dental. No manual data entry." },
+  { icon: Users,      title: "Tiered rewards",      body: "Patients earn $35–$100 gift cards as they refer more. Bigger rewards = more motivation." },
   { icon: TrendingUp, title: "Practice dashboard",  body: "See referral events, top referrers, reward history, and ROI at a glance." },
-  { icon: Shield,    title: "Dedup protection",     body: "Each new patient can only generate one reward — no gaming, no double-paying." },
+  { icon: Shield,     title: "Dedup protection",    body: "Each new patient can only generate one reward — no gaming, no double-paying." },
 ];
 
 const FAQS = [
@@ -151,7 +151,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
 
@@ -161,11 +161,11 @@ function DemoModal({ onClose }: { onClose: () => void }) {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 16, scale: 0.97 }}
         transition={{ duration: 0.25 }}
-        className="relative w-full max-w-md bg-[#112240] border border-slate-700 rounded-3xl p-6 md:p-8 shadow-2xl"
+        className="relative w-full max-w-md bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-2xl shadow-slate-200/50"
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition-colors"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 transition-colors"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
@@ -173,11 +173,11 @@ function DemoModal({ onClose }: { onClose: () => void }) {
 
         {state === "success" ? (
           <div className="text-center py-6">
-            <div className="w-14 h-14 rounded-2xl bg-teal-900/60 border border-teal-700/40 flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="w-7 h-7 text-teal-400" />
+            <div className="w-14 h-14 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-7 h-7 text-teal-600" />
             </div>
-            <h3 className="text-white font-black text-xl mb-2">You're on the list!</h3>
-            <p className="text-slate-400 text-sm leading-relaxed max-w-xs mx-auto">
+            <h3 className="text-slate-900 font-black text-xl mb-2">You're on the list!</h3>
+            <p className="text-slate-500 text-sm leading-relaxed max-w-xs mx-auto">
               We'll reach out within one business day to schedule your demo. Check your inbox for a confirmation.
             </p>
             <button
@@ -194,86 +194,86 @@ function DemoModal({ onClose }: { onClose: () => void }) {
                 <div className="w-7 h-7 rounded-lg bg-teal-600 flex items-center justify-center">
                   <Droplets className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-white font-bold text-sm">Rippl</span>
+                <span className="text-slate-900 font-bold text-sm">Rippl</span>
               </div>
-              <h3 className="text-white font-black text-xl mt-3 mb-1">Request a Demo</h3>
-              <p className="text-slate-400 text-sm">We'll walk through your Open Dental setup and get you live — in one call.</p>
+              <h3 className="text-slate-900 font-black text-xl mt-3 mb-1">Request a Demo</h3>
+              <p className="text-slate-500 text-sm">We'll walk through your Open Dental setup and get you live — in one call.</p>
             </div>
 
             <form onSubmit={submit} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
-                  <label className="block text-xs text-slate-400 font-medium mb-1">Full name *</label>
+                  <label className="block text-xs text-slate-500 font-medium mb-1">Full name *</label>
                   <input
                     required
                     value={form.name}
                     onChange={set("name")}
                     placeholder="Dr. Jane Smith"
-                    className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-teal-600 transition-colors"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-400 font-medium mb-1">Email *</label>
+                  <label className="block text-xs text-slate-500 font-medium mb-1">Email *</label>
                   <input
                     required
                     type="email"
                     value={form.email}
                     onChange={set("email")}
                     placeholder="jane@mypractice.com"
-                    className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-teal-600 transition-colors"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-400 font-medium mb-1">Phone *</label>
+                  <label className="block text-xs text-slate-500 font-medium mb-1">Phone *</label>
                   <input
                     required
                     type="tel"
                     value={form.phone}
                     onChange={set("phone")}
                     placeholder="(615) 555-0100"
-                    className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-teal-600 transition-colors"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors"
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-xs text-slate-400 font-medium mb-1">Practice name *</label>
+                  <label className="block text-xs text-slate-500 font-medium mb-1">Practice name *</label>
                   <input
                     required
                     value={form.practice}
                     onChange={set("practice")}
                     placeholder="Smith Family Dentistry"
-                    className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-teal-600 transition-colors"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-400 font-medium mb-1">EMR system</label>
+                  <label className="block text-xs text-slate-500 font-medium mb-1">EMR system</label>
                   <select
                     value={form.emr}
                     onChange={set("emr")}
-                    className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-teal-600 transition-colors appearance-none"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 text-sm focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors appearance-none"
                   >
-                    <option value="" className="bg-slate-800">Select EMR…</option>
+                    <option value="">Select EMR…</option>
                     {EMR_OPTIONS.map((o) => (
-                      <option key={o} value={o} className="bg-slate-800">{o}</option>
+                      <option key={o} value={o}>{o}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-400 font-medium mb-1">Locations</label>
+                  <label className="block text-xs text-slate-500 font-medium mb-1">Locations</label>
                   <select
                     value={form.locations}
                     onChange={set("locations")}
-                    className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-teal-600 transition-colors appearance-none"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 text-sm focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors appearance-none"
                   >
-                    <option value="" className="bg-slate-800">How many?</option>
+                    <option value="">How many?</option>
                     {LOCATION_OPTIONS.map((o) => (
-                      <option key={o} value={o} className="bg-slate-800">{o}</option>
+                      <option key={o} value={o}>{o}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
               {state === "error" && (
-                <p className="text-red-400 text-xs text-center">
+                <p className="text-red-600 text-xs text-center">
                   Something went wrong — email us at{" "}
                   <a href="mailto:hello@joinrippl.com" className="underline">hello@joinrippl.com</a>
                 </p>
@@ -282,7 +282,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
               <button
                 type="submit"
                 disabled={state === "submitting"}
-                className="w-full flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-500 disabled:opacity-60 text-white font-bold px-6 py-3 rounded-xl transition-colors shadow-lg shadow-teal-600/25 text-sm mt-1"
+                className="w-full flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-500 disabled:opacity-60 text-white font-bold px-6 py-3 rounded-xl transition-colors shadow-lg shadow-teal-600/20 text-sm mt-1"
               >
                 {state === "submitting" ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>
@@ -290,7 +290,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
                   <>Request Demo <ArrowRight className="w-4 h-4" /></>
                 )}
               </button>
-              <p className="text-slate-600 text-xs text-center">We'll respond within one business day.</p>
+              <p className="text-slate-400 text-xs text-center">We'll respond within one business day.</p>
             </form>
           </>
         )}
@@ -304,10 +304,10 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   return (
     <button
       onClick={() => setOpen((v) => !v)}
-      className="w-full text-left bg-slate-800/50 border border-slate-700 rounded-2xl px-5 py-4 transition-colors hover:border-slate-600"
+      className="w-full text-left bg-white border border-slate-200 rounded-2xl px-5 py-4 transition-colors hover:border-slate-300"
     >
       <div className="flex items-start justify-between gap-3">
-        <span className="text-white font-semibold text-sm leading-snug">{q}</span>
+        <span className="text-slate-800 font-semibold text-sm leading-snug">{q}</span>
         <ChevronDown
           className={cn(
             "w-4 h-4 text-slate-400 shrink-0 mt-0.5 transition-transform duration-200",
@@ -315,7 +315,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
           )}
         />
       </div>
-      {open && <p className="text-slate-400 text-sm mt-3 leading-relaxed">{a}</p>}
+      {open && <p className="text-slate-500 text-sm mt-3 leading-relaxed">{a}</p>}
     </button>
   );
 }
@@ -324,61 +324,60 @@ export default function Practices() {
   const [showModal, setShowModal] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#0a1628] overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 overflow-x-hidden">
 
       <AnimatePresence>
         {showModal && <DemoModal onClose={() => setShowModal(false)} />}
       </AnimatePresence>
 
-      {/* ── Ambient glow ───────────────────────────────────────────────────── */}
+      {/* ── Subtle glow ────────────────────────────────────────────────── */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-teal-500/5 rounded-full blur-[120px]" />
-        <div className="absolute top-[60%] -left-40 w-[500px] h-[400px] bg-teal-600/4 rounded-full blur-[100px]" />
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-teal-500/6 rounded-full blur-[120px]" />
       </div>
 
-      <div className="relative max-w-5xl mx-auto px-4 md:px-8 py-10 md:py-16 pb-20">
+      <div className="relative max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-14 pb-20">
 
-        {/* ── Nav bar ────────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between mb-16">
+        {/* ── Nav bar ──────────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between mb-14">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center shadow-lg shadow-teal-600/30">
+            <div className="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center shadow-lg shadow-teal-600/20">
               <Droplets className="w-5 h-5 text-white" />
             </div>
-            <span className="text-white font-bold text-xl">Rippl</span>
+            <span className="text-slate-900 font-bold text-xl">Rippl</span>
           </div>
           <button
             onClick={() => setShowModal(true)}
-            className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors shadow-lg shadow-teal-600/25"
+            className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors shadow-md shadow-teal-600/20"
           >
             Request a Demo <ArrowRight className="w-4 h-4" />
           </button>
         </div>
 
-        {/* ── Hero ───────────────────────────────────────────────────────────── */}
+        {/* ── Hero ─────────────────────────────────────────────────────── */}
         <motion.section
           initial="hidden"
           animate="show"
           variants={stagger}
-          className="text-center mb-20"
+          className="text-center mb-16"
         >
           <motion.div variants={fadeUp}>
-            <span className="inline-block bg-teal-900/60 border border-teal-700/40 text-teal-400 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full mb-6">
+            <span className="inline-block bg-teal-50 border border-teal-200 text-teal-700 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full mb-6">
               For Dental Practices
             </span>
           </motion.div>
 
           <motion.h1
             variants={fadeUp}
-            className="text-4xl md:text-6xl font-black text-white leading-tight mb-5"
+            className="text-4xl md:text-6xl font-black text-slate-900 leading-tight mb-5"
           >
             Your patients are your
             <br />
-            <span className="text-teal-400">best marketing channel.</span>
+            <span className="text-teal-600">best marketing channel.</span>
           </motion.h1>
 
           <motion.p
             variants={fadeUp}
-            className="text-slate-400 text-lg leading-relaxed max-w-2xl mx-auto mb-8"
+            className="text-slate-500 text-lg leading-relaxed max-w-2xl mx-auto mb-8"
           >
             Rippl turns completed referrals into automated gift card rewards — fully
             integrated with Open Dental. You only pay $20 when a new patient actually
@@ -388,68 +387,68 @@ export default function Practices() {
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
               onClick={() => setShowModal(true)}
-              className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold px-7 py-3.5 rounded-2xl transition-colors shadow-xl shadow-teal-600/30 text-base"
+              className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold px-7 py-3.5 rounded-2xl transition-colors shadow-xl shadow-teal-600/25 text-base"
             >
               Request a Demo <ArrowRight className="w-5 h-5" />
             </button>
             <a
               href="/how-it-works"
-              className="inline-flex items-center gap-2 bg-slate-800/60 border border-slate-700 hover:border-slate-500 text-slate-300 font-semibold px-7 py-3.5 rounded-2xl transition-colors text-base"
+              className="inline-flex items-center gap-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-semibold px-7 py-3.5 rounded-2xl transition-colors text-base"
             >
               See patient experience
             </a>
           </motion.div>
 
-          <motion.p variants={fadeUp} className="text-slate-600 text-sm mt-4">
+          <motion.p variants={fadeUp} className="text-slate-400 text-sm mt-4">
             Live today at Hallmark Dental — 3 offices, 11,000+ patients
           </motion.p>
         </motion.section>
 
-        {/* ── Stats row ──────────────────────────────────────────────────────── */}
+        {/* ── Stats row ────────────────────────────────────────────────── */}
         <motion.section
           initial="hidden"
           animate="show"
           variants={stagger}
-          className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-20"
+          className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-16"
         >
           {STATS.map((s) => (
             <motion.div
               key={s.label}
               variants={fadeUp}
-              className="bg-slate-800/50 border border-slate-700 rounded-2xl p-4 md:p-5 text-center"
+              className="bg-white border border-slate-200 rounded-2xl p-4 md:p-5 text-center"
             >
-              <p className="text-3xl md:text-4xl font-black text-teal-400 mb-1">{s.value}</p>
-              <p className="text-white font-semibold text-xs md:text-sm leading-tight mb-1">{s.label}</p>
-              <p className="text-slate-500 text-xs leading-snug">{s.sub}</p>
+              <p className="text-3xl md:text-4xl font-black text-teal-600 mb-1">{s.value}</p>
+              <p className="text-slate-800 font-semibold text-xs md:text-sm leading-tight mb-1">{s.label}</p>
+              <p className="text-slate-400 text-xs leading-snug">{s.sub}</p>
             </motion.div>
           ))}
         </motion.section>
 
-        {/* ── ROI comparison ─────────────────────────────────────────────────── */}
+        {/* ── ROI comparison ───────────────────────────────────────────── */}
         <motion.section
           initial="hidden"
           animate="show"
           variants={stagger}
-          className="mb-20"
+          className="mb-16"
         >
           <motion.div variants={fadeUp} className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-black text-white mb-2">
+            <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">
               Stop paying for clicks. Pay for patients.
             </h2>
-            <p className="text-slate-400 text-sm max-w-xl mx-auto">
+            <p className="text-slate-500 text-sm max-w-xl mx-auto">
               Traditional dental marketing charges you whether or not a patient ever books.
               Rippl charges only on verified, completed first visits.
             </p>
           </motion.div>
 
-          <motion.div variants={fadeUp} className="overflow-x-auto rounded-2xl border border-slate-700">
+          <motion.div variants={fadeUp} className="overflow-x-auto rounded-2xl border border-slate-200">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-700 bg-slate-800/60">
-                  <th className="text-left text-slate-400 font-semibold px-5 py-3.5">Channel</th>
-                  <th className="text-left text-slate-400 font-semibold px-5 py-3.5">Cost per new patient</th>
-                  <th className="text-left text-slate-400 font-semibold px-5 py-3.5 hidden sm:table-cell">Lead quality</th>
-                  <th className="text-left text-slate-400 font-semibold px-5 py-3.5 hidden md:table-cell">Staff effort</th>
+                <tr className="border-b border-slate-200 bg-slate-100">
+                  <th className="text-left text-slate-500 font-semibold px-5 py-3.5">Channel</th>
+                  <th className="text-left text-slate-500 font-semibold px-5 py-3.5">Cost per new patient</th>
+                  <th className="text-left text-slate-500 font-semibold px-5 py-3.5 hidden sm:table-cell">Lead quality</th>
+                  <th className="text-left text-slate-500 font-semibold px-5 py-3.5 hidden md:table-cell">Staff effort</th>
                 </tr>
               </thead>
               <tbody>
@@ -457,35 +456,35 @@ export default function Practices() {
                   <tr
                     key={ch.name}
                     className={cn(
-                      "border-b border-slate-700/50 last:border-0 transition-colors",
+                      "border-b border-slate-200/60 last:border-0 transition-colors",
                       ch.highlight
-                        ? "bg-teal-900/25 border-teal-700/30"
-                        : "bg-slate-800/30 hover:bg-slate-800/50",
+                        ? "bg-teal-50/80"
+                        : "bg-white hover:bg-slate-50",
                       i === CHANNELS.length - 1 && "last:rounded-b-2xl",
                     )}
                   >
                     <td className="px-5 py-4">
-                      <span className={cn("font-bold", ch.highlight ? "text-teal-300" : "text-slate-300")}>
+                      <span className={cn("font-bold", ch.highlight ? "text-teal-700" : "text-slate-700")}>
                         {ch.name}
                       </span>
                       {ch.highlight && (
-                        <span className="ml-2 bg-teal-600/30 border border-teal-600/40 text-teal-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-md uppercase tracking-wide">
+                        <span className="ml-2 bg-teal-100 border border-teal-200 text-teal-700 text-[10px] font-semibold px-1.5 py-0.5 rounded-md uppercase tracking-wide">
                           You are here
                         </span>
                       )}
                     </td>
                     <td className="px-5 py-4">
-                      <span className={cn("font-black text-base", ch.highlight ? "text-teal-400" : "text-slate-400")}>
+                      <span className={cn("font-black text-base", ch.highlight ? "text-teal-600" : "text-slate-500")}>
                         {ch.costPerPatient}
                       </span>
                     </td>
                     <td className="px-5 py-4 hidden sm:table-cell">
-                      <span className={ch.highlight ? "text-teal-300 font-semibold" : "text-slate-400"}>
+                      <span className={ch.highlight ? "text-teal-700 font-semibold" : "text-slate-500"}>
                         {ch.leadQuality}
                       </span>
                     </td>
                     <td className="px-5 py-4 hidden md:table-cell">
-                      <span className={ch.highlight ? "text-teal-300 font-semibold" : "text-slate-400"}>
+                      <span className={ch.highlight ? "text-teal-700 font-semibold" : "text-slate-500"}>
                         {ch.effort}
                       </span>
                     </td>
@@ -501,25 +500,25 @@ export default function Practices() {
               { icon: "📊", title: "Google Ads reality check", body: "Dental keywords average $15–$50 per click. With a 3–5% booking conversion, you're spending $300–$1,000+ per new patient — and competing against every DSO in your market." },
               { icon: "✅", title: "Rippl reality check", body: "You pay $20 only when a referred patient completes their first visit. If they don't show — you don't pay. Peer-referred patients also convert and retain at significantly higher rates." },
             ].map((item) => (
-              <div key={item.title} className="bg-slate-800/40 border border-slate-700 rounded-2xl p-4">
+              <div key={item.title} className="bg-white border border-slate-200 rounded-2xl p-4">
                 <div className="text-2xl mb-2">{item.icon}</div>
-                <p className="text-white font-bold text-sm mb-1">{item.title}</p>
-                <p className="text-slate-400 text-xs leading-relaxed">{item.body}</p>
+                <p className="text-slate-800 font-bold text-sm mb-1">{item.title}</p>
+                <p className="text-slate-500 text-xs leading-relaxed">{item.body}</p>
               </div>
             ))}
           </motion.div>
         </motion.section>
 
-        {/* ── How it works ───────────────────────────────────────────────────── */}
+        {/* ── How it works ─────────────────────────────────────────────── */}
         <motion.section
           initial="hidden"
           animate="show"
           variants={stagger}
-          className="mb-20"
+          className="mb-16"
         >
           <motion.div variants={fadeUp} className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-black text-white mb-2">How Rippl works</h2>
-            <p className="text-slate-400 text-sm max-w-lg mx-auto">
+            <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">How Rippl works</h2>
+            <p className="text-slate-500 text-sm max-w-lg mx-auto">
               Four steps — the last three happen with zero intervention from your team.
             </p>
           </motion.div>
@@ -529,33 +528,33 @@ export default function Practices() {
               <motion.div
                 key={i}
                 variants={fadeUp}
-                className="flex items-start gap-4 bg-slate-800/50 border border-slate-700 rounded-2xl p-5"
+                className="flex items-start gap-4 bg-white border border-slate-200 rounded-2xl p-5"
               >
-                <div className="w-12 h-12 rounded-xl bg-slate-700/60 flex items-center justify-center text-2xl shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-2xl shrink-0">
                   {step.emoji}
                 </div>
                 <div>
-                  <p className="text-white font-bold text-sm mb-1">
-                    <span className="text-teal-500 mr-1.5">{i + 1}.</span>
+                  <p className="text-slate-800 font-bold text-sm mb-1">
+                    <span className="text-teal-600 mr-1.5">{i + 1}.</span>
                     {step.title}
                   </p>
-                  <p className="text-slate-400 text-sm leading-relaxed">{step.body}</p>
+                  <p className="text-slate-500 text-sm leading-relaxed">{step.body}</p>
                 </div>
               </motion.div>
             ))}
           </div>
         </motion.section>
 
-        {/* ── Features ───────────────────────────────────────────────────────── */}
+        {/* ── Features ─────────────────────────────────────────────────── */}
         <motion.section
           initial="hidden"
           animate="show"
           variants={stagger}
-          className="mb-20"
+          className="mb-16"
         >
           <motion.div variants={fadeUp} className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-black text-white mb-2">Everything included</h2>
-            <p className="text-slate-400 text-sm">No add-ons. No tiers. One flat $20-per-referral model.</p>
+            <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">Everything included</h2>
+            <p className="text-slate-500 text-sm">No add-ons. No tiers. One flat $20-per-referral model.</p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-6">
@@ -563,21 +562,21 @@ export default function Practices() {
               <motion.div
                 key={f.title}
                 variants={fadeUp}
-                className="flex items-start gap-4 bg-slate-800/50 border border-slate-700 rounded-2xl p-5"
+                className="flex items-start gap-4 bg-white border border-slate-200 rounded-2xl p-5"
               >
-                <div className="w-10 h-10 rounded-xl bg-teal-900/50 border border-teal-700/30 flex items-center justify-center shrink-0">
-                  <f.icon className="w-5 h-5 text-teal-400" />
+                <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center shrink-0">
+                  <f.icon className="w-5 h-5 text-teal-600" />
                 </div>
                 <div>
-                  <p className="text-white font-bold text-sm mb-1">{f.title}</p>
-                  <p className="text-slate-400 text-sm leading-relaxed">{f.body}</p>
+                  <p className="text-slate-800 font-bold text-sm mb-1">{f.title}</p>
+                  <p className="text-slate-500 text-sm leading-relaxed">{f.body}</p>
                 </div>
               </motion.div>
             ))}
           </div>
 
-          <motion.div variants={fadeUp} className="bg-slate-800/40 border border-slate-700 rounded-2xl p-5">
-            <p className="text-white font-bold text-sm mb-3">Also included:</p>
+          <motion.div variants={fadeUp} className="bg-white border border-slate-200 rounded-2xl p-5">
+            <p className="text-slate-800 font-bold text-sm mb-3">Also included:</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
               {[
                 "SMS + email reward notifications",
@@ -590,8 +589,8 @@ export default function Practices() {
                 "Staff onboarding tools",
                 "Role-based access control",
               ].map((item) => (
-                <div key={item} className="flex items-start gap-2 text-slate-400 text-xs">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-500 shrink-0 mt-0.5" />
+                <div key={item} className="flex items-start gap-2 text-slate-500 text-xs">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0 mt-0.5" />
                   {item}
                 </div>
               ))}
@@ -599,54 +598,54 @@ export default function Practices() {
           </motion.div>
         </motion.section>
 
-        {/* ── Pricing ────────────────────────────────────────────────────────── */}
+        {/* ── Pricing ──────────────────────────────────────────────────── */}
         <motion.section
           initial="hidden"
           animate="show"
           variants={stagger}
-          className="mb-20"
+          className="mb-16"
         >
           <motion.div
             variants={fadeUp}
-            className="bg-gradient-to-br from-teal-900/40 to-slate-800/60 border border-teal-700/30 rounded-3xl p-8 md:p-10 text-center"
+            className="bg-gradient-to-br from-teal-50 to-slate-50 border border-teal-200 rounded-3xl p-8 md:p-10 text-center"
           >
-            <span className="inline-block bg-teal-900/60 border border-teal-700/40 text-teal-400 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full mb-5">
+            <span className="inline-block bg-teal-100 border border-teal-200 text-teal-700 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full mb-5">
               Pricing
             </span>
             <div className="flex items-end justify-center gap-1 mb-2">
-              <span className="text-6xl md:text-7xl font-black text-white">$20</span>
-              <span className="text-slate-400 text-lg mb-3">/ referral</span>
+              <span className="text-6xl md:text-7xl font-black text-slate-900">$20</span>
+              <span className="text-slate-500 text-lg mb-3">/ referral</span>
             </div>
-            <p className="text-teal-400 font-semibold text-sm mb-6">Only when a new patient completes their first visit</p>
+            <p className="text-teal-600 font-semibold text-sm mb-6">Only when a new patient completes their first visit</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-lg mx-auto mb-8">
               {[
                 { icon: "✓", text: "No monthly fees" },
                 { icon: "✓", text: "No setup fees" },
                 { icon: "✓", text: "No long-term contract" },
               ].map((item) => (
-                <div key={item.text} className="flex items-center justify-center gap-2 text-slate-300 text-sm font-semibold">
-                  <span className="text-teal-400">{item.icon}</span>
+                <div key={item.text} className="flex items-center justify-center gap-2 text-slate-700 text-sm font-semibold">
+                  <span className="text-teal-600">{item.icon}</span>
                   {item.text}
                 </div>
               ))}
             </div>
             <button
               onClick={() => setShowModal(true)}
-              className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold px-8 py-4 rounded-2xl transition-colors shadow-xl shadow-teal-600/30 text-base"
+              className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold px-8 py-4 rounded-2xl transition-colors shadow-xl shadow-teal-600/25 text-base"
             >
               Request a Demo <ArrowRight className="w-5 h-5" />
             </button>
-            <p className="text-slate-500 text-xs mt-4">We'll walk through your Open Dental setup and get you live same day.</p>
+            <p className="text-slate-400 text-xs mt-4">We'll walk through your Open Dental setup and get you live same day.</p>
           </motion.div>
         </motion.section>
 
-        {/* ── FAQ ────────────────────────────────────────────────────────────── */}
+        {/* ── FAQ ──────────────────────────────────────────────────────── */}
         <motion.section
           initial="hidden"
           animate="show"
-          className="mb-20"
+          className="mb-16"
         >
-          <h2 className="text-2xl font-black text-white mb-6 text-center">Frequently asked questions</h2>
+          <h2 className="text-2xl font-black text-slate-900 mb-6 text-center">Frequently asked questions</h2>
           <div className="space-y-2">
             {FAQS.map((faq) => (
               <FaqItem key={faq.q} q={faq.q} a={faq.a} />
@@ -654,38 +653,38 @@ export default function Practices() {
           </div>
         </motion.section>
 
-        {/* ── Final CTA ──────────────────────────────────────────────────────── */}
+        {/* ── Final CTA ────────────────────────────────────────────────── */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-slate-700 rounded-3xl p-8 md:p-12">
-            <Droplets className="w-10 h-10 mb-4 mx-auto text-teal-400" />
-            <h3 className="text-white font-black text-2xl md:text-3xl mb-3">
+          <div className="bg-gradient-to-br from-slate-100 to-white border border-slate-200 rounded-3xl p-8 md:p-12">
+            <Droplets className="w-10 h-10 mb-4 mx-auto text-teal-600" />
+            <h3 className="text-slate-900 font-black text-2xl md:text-3xl mb-3">
               Ready to make your patients your best marketers?
             </h3>
-            <p className="text-slate-400 text-sm leading-relaxed mb-6 max-w-lg mx-auto">
+            <p className="text-slate-500 text-sm leading-relaxed mb-6 max-w-lg mx-auto">
               We'll connect to your Open Dental instance, walk through the admin dashboard,
               and get you live — in one call.
             </p>
             <button
               onClick={() => setShowModal(true)}
-              className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold px-8 py-4 rounded-2xl transition-colors shadow-xl shadow-teal-600/30 text-base"
+              className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold px-8 py-4 rounded-2xl transition-colors shadow-xl shadow-teal-600/25 text-base"
             >
               Request a Demo <ArrowRight className="w-5 h-5" />
             </button>
-            <p className="text-slate-500 text-xs mt-4">
+            <p className="text-slate-400 text-xs mt-4">
               Questions? Email us at{" "}
-              <a href="mailto:hello@joinrippl.com" className="text-teal-500 hover:text-teal-400">
+              <a href="mailto:hello@joinrippl.com" className="text-teal-600 hover:text-teal-500">
                 hello@joinrippl.com
               </a>
             </p>
           </div>
         </motion.section>
 
-        <p className="text-center text-xs text-slate-600 mt-8">
-          © 2026 Rippl · Powered by Hallmark Dental · <a href="/privacy" className="hover:text-slate-400 transition-colors">Privacy</a> · <a href="/terms" className="hover:text-slate-400 transition-colors">Terms</a>
+        <p className="text-center text-xs text-slate-400 mt-8">
+          © 2026 Rippl · Powered by Hallmark Dental · <a href="/privacy" className="hover:text-slate-600 transition-colors">Privacy</a> · <a href="/terms" className="hover:text-slate-600 transition-colors">Terms</a>
         </p>
       </div>
     </div>

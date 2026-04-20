@@ -98,27 +98,27 @@ function OfficeBookingCard({
           onBook(office.key);
         }
       }}
-      className="group relative flex flex-col gap-4 p-5 rounded-2xl border border-white/8 bg-white/3 hover:bg-teal-500/5 hover:border-teal-400/25 active:bg-teal-500/8 active:scale-[0.99] transition-all duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/40 select-none"
+      className="group relative flex flex-col gap-4 p-5 rounded-2xl border border-slate-200 bg-white hover:bg-teal-50/60 hover:border-teal-300 active:bg-teal-50 active:scale-[0.99] transition-all duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/50 select-none"
     >
       {/* Header row */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-white text-base leading-snug">
+          <p className="font-bold text-slate-900 text-base leading-snug">
             Hallmark Dental
           </p>
-          <p className="text-teal-300 font-semibold text-sm leading-tight mt-0.5">
+          <p className="text-teal-600 font-semibold text-sm leading-tight mt-0.5">
             {office.label}
           </p>
-          <p className="text-white/35 text-xs mt-1 leading-relaxed">{office.address}</p>
+          <p className="text-slate-400 text-xs mt-1 leading-relaxed">{office.address}</p>
         </div>
-        <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-400/20 flex items-center justify-center flex-shrink-0 group-hover:bg-teal-500/20 transition-colors mt-0.5">
-          <MapPin className="w-4 h-4 text-teal-400" />
+        <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center flex-shrink-0 group-hover:bg-teal-100 transition-colors mt-0.5">
+          <MapPin className="w-4 h-4 text-teal-600" />
         </div>
       </div>
 
       {/* Book CTA row */}
-      <div className="flex items-center justify-between pt-1 border-t border-white/6">
-        <span className="flex items-center gap-1.5 text-sm font-bold text-teal-400 group-hover:text-teal-300 group-hover:gap-2.5 transition-all duration-150">
+      <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+        <span className="flex items-center gap-1.5 text-sm font-bold text-teal-600 group-hover:text-teal-500 group-hover:gap-2.5 transition-all duration-150">
           Book Online
           <ArrowRight className="w-3.5 h-3.5" />
         </span>
@@ -128,7 +128,7 @@ function OfficeBookingCard({
           href={phoneHref(office.phone)}
           onClick={e => e.stopPropagation()}
           onKeyDown={e => e.stopPropagation()}
-          className="flex items-center gap-1.5 text-xs text-white/35 hover:text-teal-400 hover:bg-teal-400/8 active:bg-teal-400/12 px-2.5 py-1.5 rounded-lg transition-colors"
+          className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-teal-600 hover:bg-teal-50 px-2.5 py-1.5 rounded-lg transition-colors"
           aria-label={`Call ${office.label} at ${office.phone}`}
         >
           <Phone className="w-3 h-3" />
@@ -301,8 +301,8 @@ export default function Refer() {
   // ── Loading ───────────────────────────────────────────────────────────────────
   if (infoLoading) {
     return (
-      <div className="min-h-screen bg-[#0a1628] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-teal-400 animate-spin" />
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-teal-600 animate-spin" />
       </div>
     );
   }
@@ -310,30 +310,30 @@ export default function Refer() {
   // ── Success (form submitted) ───────────────────────────────────────────────────
   if (submitted) {
     return (
-      <div className="min-h-screen bg-[#0a1628] flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-[#0f2040] border border-white/10 rounded-3xl p-8 text-center shadow-2xl">
-          <div className="w-20 h-20 bg-teal-400/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 className="w-10 h-10 text-teal-400" />
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white border border-slate-200 rounded-3xl p-8 text-center shadow-md">
+          <div className="w-20 h-20 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle2 className="w-10 h-10 text-teal-600" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-3">You're all set!</h2>
-          <p className="text-white/60 mb-4 leading-relaxed">
+          <h2 className="text-2xl font-bold text-slate-900 mb-3">You're all set!</h2>
+          <p className="text-slate-500 mb-4 leading-relaxed">
             Your request has been sent to{" "}
-            <span className="text-white font-semibold">
+            <span className="text-slate-900 font-semibold">
               Hallmark Dental{selectedOffice ? ` — ${selectedOffice}` : ""}
             </span>
             . Our team will reach out shortly to get you scheduled.
           </p>
           {referrerName && (
-            <p className="text-sm text-teal-400 font-medium">
+            <p className="text-sm text-teal-600 font-medium">
               Thanks to {referrerName} for the recommendation!
             </p>
           )}
-          <div className="mt-6 pt-6 border-t border-white/10">
-            <p className="text-xs text-white/30">
+          <div className="mt-6 pt-6 border-t border-slate-100">
+            <p className="text-xs text-slate-400">
               Questions? Call us at{" "}
               <a
                 href={phoneHref(selectedOfficeConfig?.phone || OFFICE_CONFIG[0].phone)}
-                className="text-teal-400 underline underline-offset-2"
+                className="text-teal-600 underline underline-offset-2"
               >
                 {selectedOfficeConfig?.phone || OFFICE_CONFIG[0].phone}
               </a>
@@ -346,13 +346,11 @@ export default function Refer() {
 
   // ── Main page ─────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#0a1628] flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
 
-      {/* Ambient glows */}
+      {/* Ambient glow */}
       <div aria-hidden className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-[36rem] h-[36rem] bg-teal-500/4 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 -left-32 w-80 h-80 bg-teal-500/3 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-teal-500/2 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-[36rem] h-[36rem] bg-teal-500/5 rounded-full blur-3xl" />
       </div>
 
       <main className="relative z-10 flex-1 w-full max-w-5xl mx-auto px-4 sm:px-8 pt-10 pb-16">
@@ -363,10 +361,10 @@ export default function Refer() {
             <Droplets className="w-6 h-6 text-white" />
           </div>
           <div>
-            <p className="text-xs text-teal-400 font-medium tracking-wider uppercase">
+            <p className="text-xs text-teal-600 font-medium tracking-wider uppercase">
               {isDemoPage ? "Demo Office" : "Hallmark Dental"}
             </p>
-            <p className="text-sm text-white/50">Powered by Rippl</p>
+            <p className="text-sm text-slate-400">Powered by Rippl</p>
           </div>
         </div>
 
@@ -374,25 +372,25 @@ export default function Refer() {
         <div className="mb-8 max-w-2xl">
           {referrerName ? (
             <>
-              <span className="inline-block text-teal-400 text-xs font-semibold tracking-widest uppercase mb-6 px-3 py-1 bg-teal-400/8 rounded-full border border-teal-400/20">
+              <span className="inline-block text-teal-700 text-xs font-semibold tracking-widest uppercase mb-6 px-3 py-1 bg-teal-50 rounded-full border border-teal-200">
                 Personal Invitation
               </span>
-              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-6 leading-tight">
+              <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-6 leading-tight">
                 {referrerName.split(" ")[0]} thinks you'll love us
               </h1>
-              <p className="text-white/55 text-base leading-relaxed">
+              <p className="text-slate-500 text-base leading-relaxed">
                 Pick the location closest to you and book your first visit online — it only takes a minute.
               </p>
             </>
           ) : (
             <>
-              <span className="inline-block text-teal-400 text-xs font-semibold tracking-widest uppercase mb-6 px-3 py-1 bg-teal-400/8 rounded-full border border-teal-400/20">
+              <span className="inline-block text-teal-700 text-xs font-semibold tracking-widest uppercase mb-6 px-3 py-1 bg-teal-50 rounded-full border border-teal-200">
                 New Patient Welcome
               </span>
-              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-6 leading-tight">
+              <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-6 leading-tight">
                 Book your first visit at Hallmark Dental
               </h1>
-              <p className="text-white/55 text-base leading-relaxed">
+              <p className="text-slate-500 text-base leading-relaxed">
                 Choose your nearest location below and book online in seconds.
               </p>
             </>
@@ -401,7 +399,7 @@ export default function Refer() {
 
         {/* ── Office selection ─────────────────────────────────────────────── */}
         <div className="mb-3">
-          <h2 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-4">
+          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
             Choose your location
           </h2>
 
@@ -423,7 +421,7 @@ export default function Refer() {
             <button
               type="button"
               onClick={openFallbackForm}
-              className="flex items-center gap-2 text-sm text-white/40 hover:text-white/70 transition-colors group pt-4"
+              className="flex items-center gap-2 text-sm text-slate-400 hover:text-slate-600 transition-colors group pt-4"
             >
               <span>Prefer us to reach out to you instead?</span>
               <ChevronDown className="w-3.5 h-3.5 group-hover:translate-y-0.5 transition-transform" />
@@ -432,13 +430,13 @@ export default function Refer() {
         </div>
 
         {/* ── Why Hallmark Dental ──────────────────────────────────────────── */}
-        <div className="bg-[#0f2040] border border-white/10 rounded-3xl p-6 shadow-xl mb-5">
-          <h2 className="text-base font-bold text-white mb-4">Why patients choose us</h2>
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm mb-5">
+          <h2 className="text-base font-bold text-slate-900 mb-4">Why patients choose us</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {TRUST_ITEMS.map(item => (
-              <div key={item.title} className="bg-white/3 rounded-2xl p-4 border border-white/5">
-                <p className="text-sm font-semibold text-teal-300 mb-1 leading-tight">{item.title}</p>
-                <p className="text-xs text-white/45 leading-relaxed">{item.body}</p>
+              <div key={item.title} className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                <p className="text-sm font-semibold text-teal-700 mb-1 leading-tight">{item.title}</p>
+                <p className="text-xs text-slate-500 leading-relaxed">{item.body}</p>
               </div>
             ))}
           </div>
@@ -454,15 +452,15 @@ export default function Refer() {
           {TESTIMONIALS.map(t => (
             <div
               key={t.author}
-              className="bg-[#0f2040] border border-white/8 rounded-2xl px-5 py-4 shadow-lg"
+              className="bg-white border border-slate-200 rounded-2xl px-5 py-4 shadow-sm"
             >
               <div className="flex gap-0.5 mb-2">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-3 h-3 text-teal-400 fill-teal-400" />
+                  <Star key={i} className="w-3 h-3 text-teal-500 fill-teal-500" />
                 ))}
               </div>
-              <p className="text-sm text-white/70 leading-relaxed italic mb-2">"{t.quote}"</p>
-              <p className="text-xs text-white/35 font-medium">— {t.author}</p>
+              <p className="text-sm text-slate-600 leading-relaxed italic mb-2">"{t.quote}"</p>
+              <p className="text-xs text-slate-400 font-medium">— {t.author}</p>
             </div>
           ))}
         </div>
@@ -472,15 +470,15 @@ export default function Refer() {
           <div
             ref={formRef}
             id="appt-form"
-            className="bg-[#0f2040] border border-white/10 rounded-3xl p-7 shadow-2xl scroll-mt-4 mb-5"
+            className="bg-white border border-slate-200 rounded-3xl p-7 shadow-md scroll-mt-4 mb-5"
           >
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-9 h-9 rounded-xl bg-teal-500/10 flex items-center justify-center">
-                <Calendar className="w-4 h-4 text-teal-400" />
+              <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-teal-600" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-white leading-tight">Request an Appointment</h2>
-                <p className="text-white/40 text-xs mt-0.5">We'll reach out within one business day.</p>
+                <h2 className="text-lg font-bold text-slate-900 leading-tight">Request an Appointment</h2>
+                <p className="text-slate-400 text-xs mt-0.5">We'll reach out within one business day.</p>
               </div>
             </div>
 
@@ -488,44 +486,44 @@ export default function Refer() {
               {/* Name */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-white/55 mb-1.5">First Name *</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">First Name *</label>
                   <input
                     value={firstName}
                     onChange={e => setFirstName(e.target.value)}
                     placeholder="Jane"
                     autoComplete="given-name"
-                    className="w-full px-4 py-2.5 bg-[#0a1628] border border-white/10 rounded-xl text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-teal-400/50 transition-colors"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-white/55 mb-1.5">Last Name *</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Last Name *</label>
                   <input
                     value={lastName}
                     onChange={e => setLastName(e.target.value)}
                     placeholder="Doe"
                     autoComplete="family-name"
-                    className="w-full px-4 py-2.5 bg-[#0a1628] border border-white/10 rounded-xl text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-teal-400/50 transition-colors"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors"
                   />
                 </div>
               </div>
 
               {/* Phone */}
               <div>
-                <label className="block text-xs font-medium text-white/55 mb-1.5">Phone Number *</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">Phone Number *</label>
                 <input
                   type="tel"
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
                   placeholder="(615) 555-0100"
                   autoComplete="tel"
-                  className="w-full px-4 py-2.5 bg-[#0a1628] border border-white/10 rounded-xl text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-teal-400/50 transition-colors"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors"
                 />
               </div>
 
               {/* Email */}
               <div>
-                <label className="block text-xs font-medium text-white/55 mb-1.5">
-                  Email <span className="text-white/25">(optional)</span>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                  Email <span className="text-slate-400">(optional)</span>
                 </label>
                 <input
                   type="email"
@@ -533,20 +531,20 @@ export default function Refer() {
                   onChange={e => setEmail(e.target.value)}
                   placeholder="jane@example.com"
                   autoComplete="email"
-                  className="w-full px-4 py-2.5 bg-[#0a1628] border border-white/10 rounded-xl text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-teal-400/50 transition-colors"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors"
                 />
               </div>
 
               {/* Preferred location */}
               <div>
-                <label className="block text-xs font-medium text-white/55 mb-1.5">
-                  <MapPin className="w-3 h-3 inline mr-1 text-teal-400" />
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                  <MapPin className="w-3 h-3 inline mr-1 text-teal-600" />
                   Preferred Location
                 </label>
                 <select
                   value={selectedOffice}
                   onChange={e => setSelectedOffice(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-[#0a1628] border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-teal-400/50 transition-colors"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors"
                 >
                   <option value="">No preference</option>
                   {OFFICE_CONFIG.map(o => (
@@ -559,7 +557,7 @@ export default function Refer() {
 
               {/* Contact preference */}
               <div>
-                <label className="block text-xs font-medium text-white/55 mb-2">
+                <label className="block text-xs font-medium text-slate-500 mb-2">
                   Best way to reach you
                 </label>
                 <div className="flex gap-2">
@@ -575,8 +573,8 @@ export default function Refer() {
                       className={cn(
                         "flex-1 py-2 rounded-xl text-xs font-semibold border transition-colors",
                         contactPref === opt.value
-                          ? "bg-teal-500/15 border-teal-400/40 text-teal-300"
-                          : "bg-white/3 border-white/8 text-white/50 hover:border-white/20",
+                          ? "bg-teal-50 border-teal-400 text-teal-700"
+                          : "bg-white border-slate-200 text-slate-500 hover:border-slate-300",
                       )}
                     >
                       {opt.label}
@@ -587,17 +585,17 @@ export default function Refer() {
 
               {/* Message */}
               <div>
-                <label className="block text-xs font-medium text-white/55 mb-1.5">
-                  <MessageSquare className="w-3 h-3 inline mr-1 text-teal-400" />
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                  <MessageSquare className="w-3 h-3 inline mr-1 text-teal-600" />
                   Anything we should know?{" "}
-                  <span className="text-white/25">(optional)</span>
+                  <span className="text-slate-400">(optional)</span>
                 </label>
                 <textarea
                   value={message}
                   onChange={e => setMessage(e.target.value)}
                   placeholder="Insurance info, concerns, scheduling needs…"
                   rows={3}
-                  className="w-full px-4 py-2.5 bg-[#0a1628] border border-white/10 rounded-xl text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-teal-400/50 transition-colors resize-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors resize-none"
                 />
               </div>
 
@@ -607,16 +605,16 @@ export default function Refer() {
                 value={refCode || referrerInfo?.referral_code || ""}
               />
 
-              {formError && <p className="text-red-400 text-sm">{formError}</p>}
+              {formError && <p className="text-red-600 text-sm">{formError}</p>}
 
               <button
                 type="submit"
                 disabled={submitting}
                 className={cn(
-                  "w-full py-4 rounded-2xl font-bold text-white text-sm transition-all shadow-lg shadow-teal-500/20",
+                  "w-full py-4 rounded-2xl font-bold text-white text-sm transition-all shadow-md shadow-teal-500/15",
                   submitting
                     ? "bg-teal-500/50 cursor-not-allowed"
-                    : "bg-teal-500 hover:bg-teal-400 active:bg-teal-600",
+                    : "bg-teal-600 hover:bg-teal-500 active:bg-teal-700",
                 )}
               >
                 {submitting ? (
@@ -634,9 +632,9 @@ export default function Refer() {
                 href={phoneHref(
                   selectedOfficeConfig?.phone || OFFICE_CONFIG[0].phone,
                 )}
-                className="flex items-center justify-center gap-2 py-3 px-4 bg-white/4 hover:bg-white/8 border border-white/10 text-white/70 hover:text-white rounded-2xl font-semibold transition-colors text-sm w-full"
+                className="flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 rounded-2xl font-semibold transition-colors text-sm w-full"
               >
-                <Phone className="w-4 h-4 text-teal-400" />
+                <Phone className="w-4 h-4 text-teal-600" />
                 Call us instead
               </a>
             </form>
@@ -646,11 +644,11 @@ export default function Refer() {
         {/* ── Footer ───────────────────────────────────────────────────────── */}
         <div className="text-center pt-6 space-y-1">
           {referrerName && (
-            <p className="text-xs text-white/30">
+            <p className="text-xs text-slate-400">
               This invitation was shared by a Hallmark Dental patient via Rippl
             </p>
           )}
-          <p className="text-xs text-white/15">
+          <p className="text-xs text-slate-300">
             © {new Date().getFullYear()} {isDemoPage ? "Demo Office" : "Hallmark Dental"} · Powered by Rippl
           </p>
         </div>

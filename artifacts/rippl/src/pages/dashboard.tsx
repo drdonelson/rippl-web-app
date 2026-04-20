@@ -296,7 +296,7 @@ export default function Dashboard() {
                     <div className="flex items-center gap-4">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
                         ${idx === 0 ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30' : 
-                          idx === 1 ? 'bg-slate-400/20 text-slate-300 border border-slate-400/30' : 
+                          idx === 1 ? 'bg-slate-200 text-slate-500 border border-slate-300' :
                           idx === 2 ? 'bg-amber-700/20 text-amber-500 border border-amber-700/30' : 
                           'bg-muted text-muted-foreground'}`}
                       >

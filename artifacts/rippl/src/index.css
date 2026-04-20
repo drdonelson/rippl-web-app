@@ -33,33 +33,33 @@
 }
 
 :root {
-  /* Dark Navy Theme */
-  --background: 215 60% 10%; /* #0a1628 */
-  --foreground: 210 40% 98%; /* #f8fafc */
-  
-  --card: 216 58% 15%; /* #112240 */
-  --card-foreground: 210 40% 98%;
-  
-  --popover: 216 58% 15%;
-  --popover-foreground: 210 40% 98%;
-  
+  /* Light Mode Theme */
+  --background: 210 40% 96%; /* #f1f5f9 */
+  --foreground: 222 47% 11%; /* #0f172a */
+
+  --card: 0 0% 100%; /* #ffffff */
+  --card-foreground: 222 47% 11%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+
   --primary: 175 84% 32%; /* Teal #0d9488 */
   --primary-foreground: 0 0% 100%;
-  
-  --secondary: 215 40% 25%;
-  --secondary-foreground: 210 40% 98%;
-  
-  --muted: 215 40% 20%;
-  --muted-foreground: 215 20% 65%;
-  
+
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
+
+  --muted: 210 40% 98%; /* #f8fafc */
+  --muted-foreground: 215 16% 47%; /* #64748b */
+
   --accent: 175 84% 32%;
   --accent-foreground: 0 0% 100%;
-  
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 98%;
 
-  --border: 215 32% 22%;
-  --input: 215 32% 22%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 214 32% 91%; /* #e2e8f0 */
+  --input: 214 32% 91%;
   --ring: 175 84% 32%;
 }
 
