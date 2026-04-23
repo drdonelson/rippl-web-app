@@ -108,8 +108,8 @@ export function buildHeaders(customerKey?: string): Record<string, string> {
  *   { RefAttachNum, ReferralNum, referralName, PatNum, ReferralType, ... }
  * The PatNum of the REFERRING patient is NOT here — it lives in the Referral record.
  */
-async function fetchRefAttaches(newPatientPatNum: string, headers: Record<string, string>): Promise<RefAttach[]> {
-  const url = new URL("/api/v1/refattaches", OPEN_DENTAL_URL!);
+async function fetchRefAttaches(newPatientPatNum: string, headers: Record<string, string>, baseUrl: string = OPEN_DENTAL_URL ?? ""): Promise<RefAttach[]> {
+  const url = new URL("/api/v1/refattaches", baseUrl);
   url.searchParams.set("PatNum", newPatientPatNum);
 
   const response = await fetch(url.toString(), {
@@ -133,8 +133,8 @@ async function fetchRefAttaches(newPatientPatNum: string, headers: Record<string
  *   PatNum — the referring patient's OD PatNum (0 if an external/non-patient referrer)
  *   LName, FName — name of the referral source
  */
-async function fetchReferral(referralNum: number, headers: Record<string, string>): Promise<OdReferral | null> {
-  const url = new URL(`/api/v1/referrals/${referralNum}`, OPEN_DENTAL_URL!);
+async function fetchReferral(referralNum: number, headers: Record<string, string>, baseUrl: string = OPEN_DENTAL_URL ?? ""): Promise<OdReferral | null> {
+  const url = new URL(`/api/v1/referrals/${referralNum}`, baseUrl);
 
   const response = await fetch(url.toString(), {
     method: "GET",
@@ -158,9 +158,10 @@ async function fetchReferral(referralNum: number, headers: Record<string, string
  */
 async function lookupReferringPatNum(
   newPatientPatNum: string,
-  headers: Record<string, string>
+  headers: Record<string, string>,
+  baseUrl: string = OPEN_DENTAL_URL ?? ""
 ): Promise<{ refAttaches: RefAttach[]; referralRecord: OdReferral | null; referringPatNum: string | null }> {
-  const refAttaches = await fetchRefAttaches(newPatientPatNum, headers);
+  const refAttaches = await fetchRefAttaches(newPatientPatNum, headers, baseUrl);
 
   if (refAttaches.length === 0) {
     return { refAttaches, referralRecord: null, referringPatNum: null };
@@ -174,7 +175,7 @@ async function lookupReferringPatNum(
     return { refAttaches, referralRecord: null, referringPatNum: null };
   }
 
-  const referralRecord = await fetchReferral(attach.ReferralNum, headers);
+  const referralRecord = await fetchReferral(attach.ReferralNum, headers, baseUrl);
 
   // PatNum = 0 means external (non-patient) referral source — not trackable in Rippl
   const patNum = referralRecord?.PatNum ?? 0;
@@ -193,7 +194,8 @@ async function lookupReferringPatNum(
 export async function resolveNewPatientName(
   newPatientPatNum: string,
   officeId: string | null | undefined,
-  headers: Record<string, string>
+  headers: Record<string, string>,
+  baseUrl: string = OPEN_DENTAL_URL ?? ""
 ): Promise<string> {
   // ── 1. Check referrers table ──────────────────────────────────────────────
   try {
@@ -222,7 +224,7 @@ export async function resolveNewPatientName(
   try {
     const patNum = parseInt(newPatientPatNum, 10);
     if (!isNaN(patNum) && patNum > 0) {
-      const patient = await fetchOdPatient(patNum, headers);
+      const patient = await fetchOdPatient(patNum, headers, baseUrl);
       if (patient) {
         const name = `${(patient.FName ?? "").trim()} ${(patient.LName ?? "").trim()}`.trim();
         if (name) {
@@ -255,9 +257,10 @@ export async function resolveNewPatientName(
 async function fetchCompletedAppointments(
   headers: Record<string, string>,
   dateStart: string,
-  dateEnd: string
+  dateEnd: string,
+  baseUrl: string = OPEN_DENTAL_URL ?? ""
 ): Promise<OdAppointment[]> {
-  const url = new URL("/api/v1/appointments", OPEN_DENTAL_URL!);
+  const url = new URL("/api/v1/appointments", baseUrl);
   url.searchParams.set("Status", "2");           // 2 = Complete in Open Dental
   url.searchParams.set("dateStart", dateStart);
   url.searchParams.set("dateEnd", dateEnd);
@@ -283,9 +286,10 @@ async function fetchCompletedAppointments(
  */
 async function fetchOdPatient(
   patNum: number,
-  headers: Record<string, string>
+  headers: Record<string, string>,
+  baseUrl: string = OPEN_DENTAL_URL ?? ""
 ): Promise<OdPatient | null> {
-  const url = new URL(`/api/v1/patients/${patNum}`, OPEN_DENTAL_URL!);
+  const url = new URL(`/api/v1/patients/${patNum}`, baseUrl);
 
   const response = await fetch(url.toString(), {
     method: "GET",
@@ -316,7 +320,8 @@ async function fetchOdPatient(
  */
 async function runOnboardingSweep(
   headers: Record<string, string>,
-  officeId: string
+  officeId: string,
+  baseUrl: string = OPEN_DENTAL_URL ?? ""
 ): Promise<void> {
   const dateEnd   = new Date().toISOString().split("T")[0];
   const dateStart = new Date(Date.now() - 86_400_000).toISOString().split("T")[0];
@@ -325,7 +330,7 @@ async function runOnboardingSweep(
 
   let appointments: OdAppointment[] = [];
   try {
-    appointments = await fetchCompletedAppointments(headers, dateStart, dateEnd);
+    appointments = await fetchCompletedAppointments(headers, dateStart, dateEnd, baseUrl);
   } catch (err) {
     logger.error({ err, officeId }, "[onboarding-sweep] Failed to fetch appointments — aborting sweep");
     return;
@@ -342,7 +347,7 @@ async function runOnboardingSweep(
 
     try {
       // Fetch patient details from OD to get contact info + Medicaid status
-      const patient = await fetchOdPatient(patNum, headers);
+      const patient = await fetchOdPatient(patNum, headers, baseUrl);
       if (!patient) continue;
 
       // Prefer wireless/mobile phone for SMS; fall back to home phone
@@ -420,7 +425,7 @@ async function runOnboardingSweep(
 
 export async function syncOpenDental(options?: {
   force?: boolean;
-  office?: { id: string; name: string; customer_key: string };
+  office?: { id: string; name: string; customer_key: string; od_url?: string | null };
 }): Promise<SyncResult> {
   const force    = options?.force ?? false;
   const office   = options?.office ?? null;
@@ -428,8 +433,11 @@ export async function syncOpenDental(options?: {
     od_total: 0, fetched: 0, inserted: 0, skipped: 0, unmatched: 0, errors: [],
   };
 
-  if (!OPEN_DENTAL_URL) {
-    const msg = "Open Dental not configured — set OPEN_DENTAL_URL";
+  const odUrl = office?.od_url ?? OPEN_DENTAL_URL;
+  if (!odUrl) {
+    const msg = office
+      ? `Office "${office.name}" has no OD URL configured and OPEN_DENTAL_URL env var is not set`
+      : "Open Dental not configured — set OPEN_DENTAL_URL or configure od_url on the office";
     logger.warn(msg);
     result.errors.push(msg);
     return result;
@@ -450,7 +458,7 @@ export async function syncOpenDental(options?: {
   // ── Step 1: Fetch completed REF-COMP procedure logs ───────────────────────
   let procedures: OpenDentalProcedureLog[] = [];
   try {
-    const url = new URL("/api/v1/procedurelogs", OPEN_DENTAL_URL);
+    const url = new URL("/api/v1/procedurelogs", odUrl);
     url.searchParams.set("procCode", "R0150");
     url.searchParams.set("ProcStatus", "C");
 
@@ -524,7 +532,8 @@ export async function syncOpenDental(options?: {
       try {
         ({ refAttaches, referralRecord, referringPatNum } = await lookupReferringPatNum(
           newPatientPatNum,
-          headers
+          headers,
+          odUrl
         ));
         logger.info(
           { procNum, newPatientPatNum, refattachCount: refAttaches.length, referringPatNum },
@@ -621,7 +630,7 @@ export async function syncOpenDental(options?: {
       }
 
       // ── Resolve new patient name (referrers table → OD API → fallback) ───────
-      const newPatientName = await resolveNewPatientName(newPatientPatNum, office?.id, headers);
+      const newPatientName = await resolveNewPatientName(newPatientPatNum, office?.id, headers, odUrl);
 
       // ── Create referral event ─────────────────────────────────────────────
       const [newEvent] = await db
@@ -735,7 +744,7 @@ export async function syncOpenDental(options?: {
   // Runs after REF-COMP processing. Errors here are isolated — they never
   // affect the SyncResult returned to the caller.
   try {
-    await runOnboardingSweep(headers, office?.id ?? "default");
+    await runOnboardingSweep(headers, office?.id ?? "default", odUrl);
   } catch (err) {
     logger.error({ err }, "[onboarding-sweep] Uncaught sweep error — REF-COMP results unaffected");
   }
@@ -748,18 +757,13 @@ export async function syncOpenDental(options?: {
  * Falls back to the legacy single-key mode if no offices are configured.
  */
 export async function syncAllOffices(options?: { force?: boolean }): Promise<SyncResult[]> {
-  if (!OPEN_DENTAL_URL) {
-    logger.warn("OPEN_DENTAL_URL not set — skipping multi-office sync");
-    return [];
-  }
-
   const offices = await db
     .select()
     .from(officesTable)
     .where(eq(officesTable.active, true));
 
   if (offices.length === 0) {
-    // No offices configured — fall back to single-key mode
+    // No offices configured — fall back to single-key / env-var mode
     logger.info("No active offices in DB — falling back to single-key mode");
     const result = await syncOpenDental(options);
     return [result];
@@ -771,7 +775,10 @@ export async function syncAllOffices(options?: { force?: boolean }): Promise<Syn
   for (const office of offices) {
     logger.info({ officeId: office.id, officeName: office.name }, "Syncing office");
     try {
-      const result = await syncOpenDental({ ...options, office });
+      const result = await syncOpenDental({
+        ...options,
+        office: { id: office.id, name: office.name, customer_key: office.customer_key, od_url: office.od_url },
+      });
       results.push(result);
     } catch (err) {
       logger.error({ err, officeId: office.id }, "Error syncing office");
@@ -784,8 +791,7 @@ let pollerTimer: ReturnType<typeof setInterval> | null = null;
 
 export function startOpenDentalPoller(): void {
   if (!OPEN_DENTAL_URL) {
-    logger.warn("OPEN_DENTAL_URL not set — Open Dental poller disabled");
-    return;
+    logger.warn("OPEN_DENTAL_URL not set — will rely on per-office od_url values in DB");
   }
 
   logger.info({ intervalMs: POLL_INTERVAL_MS }, "Starting Open Dental poller");

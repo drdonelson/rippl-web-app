@@ -12,7 +12,7 @@ router.get("/profile", getProfileHandler);
 
 // POST /api/auth/onboard — create a new practice admin account (super_admin only)
 router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
-  const { practice_name, doctor_name, email, password, customer_key, location_code } = req.body;
+  const { practice_name, doctor_name, email, password, customer_key, location_code, od_url } = req.body;
 
   if (!practice_name || !email || !password || !customer_key || !location_code) {
     res.status(400).json({ error: "Missing required fields" });
@@ -39,6 +39,7 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
       name: practice_name,
       customer_key,
       location_code,
+      od_url: od_url || null,
       active: true,
     }).returning();
 

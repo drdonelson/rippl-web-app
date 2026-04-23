@@ -46,7 +46,7 @@ export default function Onboard() {
   // ── Practice form ─────────────────────────────────────────────────────────
   const [practiceForm, setPracticeForm] = useState({
     practice_name: "", doctor_name: "", email: "", password: "",
-    customer_key: "", location_code: "",
+    customer_key: "", location_code: "", od_url: "",
   });
   const [practiceSubmitting, setPracticeSubmitting] = useState(false);
   const [practiceError, setPracticeError] = useState<string | null>(null);
@@ -216,7 +216,7 @@ export default function Onboard() {
             <button
               onClick={() => {
                 setPracticeSuccess(false);
-                setPracticeForm({ practice_name: "", doctor_name: "", email: "", password: "", customer_key: "", location_code: "" });
+                setPracticeForm({ practice_name: "", doctor_name: "", email: "", password: "", customer_key: "", location_code: "", od_url: "" });
               }}
               className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 text-sm transition-colors"
             >
@@ -305,6 +305,11 @@ export default function Onboard() {
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1.5">Open Dental Customer Key</label>
                 <input value={practiceForm.customer_key} onChange={e => setPracticeForm(f => ({ ...f, customer_key: e.target.value }))} required placeholder="16-character key" className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Open Dental Server URL</label>
+                <input value={practiceForm.od_url} onChange={e => setPracticeForm(f => ({ ...f, od_url: e.target.value }))} placeholder="https://od.theirpractice.com (leave blank to use default)" className={inputClass} />
+                <p className="text-xs text-slate-400 mt-1">Only needed if this practice has a different OD server than Hallmark.</p>
               </div>
               {practiceError && (
                 <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{practiceError}</p>

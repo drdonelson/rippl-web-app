@@ -15,6 +15,7 @@ interface OfficeRow {
   id: string;
   name: string;
   customer_key: string;
+  od_url: string | null;
 }
 
 interface BackfillReport {
@@ -46,7 +47,7 @@ router.post("/unknown-names", async (req, res) => {
     }
 
     const { rows: officeRows } = await db.execute(sql`
-      SELECT id, name, customer_key FROM offices WHERE active = true
+      SELECT id, name, customer_key, od_url FROM offices WHERE active = true
     `);
     const officeMap = new Map<string, OfficeRow>();
     for (const o of officeRows as unknown as OfficeRow[]) officeMap.set(o.id, o);
@@ -60,9 +61,10 @@ router.post("/unknown-names", async (req, res) => {
 
       const office = evt.office_id ? officeMap.get(evt.office_id) : null;
       const headers = buildHeaders(office?.customer_key);
+      const odUrl = office?.od_url ?? process.env.OPEN_DENTAL_URL ?? "";
 
       try {
-        const name = await resolveNewPatientName(evt.new_patient_pat_num, evt.office_id, headers);
+        const name = await resolveNewPatientName(evt.new_patient_pat_num, evt.office_id, headers, odUrl);
 
         if (name && name !== "Unknown Patient") {
           await db.execute(sql`
