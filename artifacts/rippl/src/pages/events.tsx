@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useGetReferrers, useCreateReward, useUpdateReferralStatus, customFetch } from "@workspace/api-client-react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Gift, Search, MoreHorizontal, CheckCircle2, ChevronDown, ShieldAlert, ShieldCheck, Plus, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Gift, Search, MoreHorizontal, CheckCircle2, ChevronDown, ShieldAlert, ShieldCheck, Plus, ArrowUpDown, ArrowUp, ArrowDown, Mail } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { cn } from "@/lib/utils";
 import { useForm } from "react-hook-form";
@@ -447,13 +447,18 @@ export default function Events() {
                           Override &amp; Reward
                         </button>
                       ) : event.status === "Exam Completed" ? (
-                        <button
-                          onClick={() => setSelectedEventId(event.id)}
-                          className="px-4 py-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg text-sm font-semibold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 transition-all flex items-center gap-2 ml-auto"
-                        >
-                          <Gift className="w-4 h-4" />
-                          Send Reward
-                        </button>
+                        <div className="flex flex-col items-end gap-1.5 ml-auto">
+                          <div className="flex items-center gap-1.5 text-primary text-xs font-medium">
+                            <Mail className="w-3.5 h-3.5" />
+                            Claim email sent
+                          </div>
+                          <button
+                            onClick={() => setSelectedEventId(event.id)}
+                            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                          >
+                            Manual override
+                          </button>
+                        </div>
                       ) : event.status === "Reward Sent" ? (
                         <div className="flex items-center justify-end gap-2 text-primary font-medium text-sm">
                           <CheckCircle2 className="w-4 h-4" />
@@ -576,8 +581,8 @@ export default function Events() {
       <Modal
         isOpen={!!selectedEventId}
         onClose={() => setSelectedEventId(null)}
-        title="Select Reward"
-        description="The patient has completed their exam. Choose a reward to send to the referrer."
+        title="Manual Reward Override"
+        description="The claim email was already sent automatically. Only use this if the referrer never responded and you want to process their reward directly."
       >
         <div className="space-y-4">
           {REWARD_OPTIONS.map((option) => (
