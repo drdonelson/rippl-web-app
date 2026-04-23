@@ -337,7 +337,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
       className="w-full text-left bg-white border border-slate-200 rounded-2xl px-5 py-4 transition-colors hover:border-slate-300"
     >
       <div className="flex items-start justify-between gap-3">
-        <span className="text-slate-800 font-semibold text-sm leading-snug">{q}</span>
+        <span className="text-slate-800 font-semibold text-base leading-snug">{q}</span>
         <ChevronDown
           className={cn(
             "w-4 h-4 text-slate-400 shrink-0 mt-0.5 transition-transform duration-200",
@@ -345,7 +345,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
           )}
         />
       </div>
-      {open && <p className="text-slate-500 text-sm mt-3 leading-relaxed">{a}</p>}
+      {open && <p className="text-slate-500 text-base mt-3 leading-relaxed">{a}</p>}
     </button>
   );
 }
@@ -465,7 +465,7 @@ export default function Practices() {
             <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">
               Stop paying for clicks. Pay for patients.
             </h2>
-            <p className="text-slate-500 text-sm max-w-xl mx-auto">
+            <p className="text-slate-500 text-base max-w-xl mx-auto">
               Traditional dental marketing charges you whether or not a patient ever books.
               Rippl charges only on verified, completed first visits.
             </p>
@@ -550,7 +550,7 @@ export default function Practices() {
               <div key={item.title} className="bg-white border border-slate-200 rounded-2xl p-4">
                 <div className="text-2xl mb-2">{item.icon}</div>
                 <p className="text-slate-800 font-bold text-sm mb-1">{item.title}</p>
-                <p className="text-slate-500 text-xs leading-relaxed">{item.body}</p>
+                <p className="text-slate-500 text-sm leading-relaxed">{item.body}</p>
               </div>
             ))}
           </motion.div>
@@ -567,7 +567,7 @@ export default function Practices() {
             <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">
               Whichever channel you're running, Rippl beats it
             </h2>
-            <p className="text-slate-500 text-sm max-w-xl mx-auto">
+            <p className="text-slate-500 text-base max-w-xl mx-auto">
               Most practices run one marketing approach, not all of them. Here's what each
               typically costs a single-office practice in a saturated metro — and what Rippl
               costs to deliver the same patients.
@@ -724,7 +724,7 @@ export default function Practices() {
         >
           <motion.div variants={fadeUp} className="text-center mb-8">
             <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">How Rippl works</h2>
-            <p className="text-slate-500 text-sm max-w-lg mx-auto">
+            <p className="text-slate-500 text-base max-w-lg mx-auto">
               Four steps — the last three happen with zero intervention from your team.
             </p>
           </motion.div>
@@ -740,11 +740,11 @@ export default function Practices() {
                   {step.emoji}
                 </div>
                 <div>
-                  <p className="text-slate-800 font-bold text-sm mb-1">
+                  <p className="text-slate-800 font-bold text-base mb-1">
                     <span className="text-teal-600 mr-1.5">{i + 1}.</span>
                     {step.title}
                   </p>
-                  <p className="text-slate-500 text-sm leading-relaxed">{step.body}</p>
+                  <p className="text-slate-500 text-base leading-relaxed">{step.body}</p>
                 </div>
               </motion.div>
             ))}
@@ -760,7 +760,7 @@ export default function Practices() {
         >
           <motion.div variants={fadeUp} className="text-center mb-8">
             <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">Everything included</h2>
-            <p className="text-slate-500 text-sm">No add-ons. No monthly fees. One flat $20-per-referral model after onboarding.</p>
+            <p className="text-slate-500 text-base">No add-ons. No monthly fees. One flat $20-per-referral model after onboarding.</p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-6">
@@ -774,8 +774,8 @@ export default function Practices() {
                   <f.icon className="w-5 h-5 text-teal-600" />
                 </div>
                 <div>
-                  <p className="text-slate-800 font-bold text-sm mb-1">{f.title}</p>
-                  <p className="text-slate-500 text-sm leading-relaxed">{f.body}</p>
+                  <p className="text-slate-800 font-bold text-base mb-1">{f.title}</p>
+                  <p className="text-slate-500 text-base leading-relaxed">{f.body}</p>
                 </div>
               </motion.div>
             ))}
@@ -795,7 +795,7 @@ export default function Practices() {
                 "Staff onboarding tools",
                 "Role-based access control",
               ].map((item) => (
-                <div key={item} className="flex items-start gap-2 text-slate-500 text-xs">
+                <div key={item} className="flex items-start gap-2 text-slate-500 text-sm">
                   <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0 mt-0.5" />
                   {item}
                 </div>
@@ -822,7 +822,7 @@ export default function Practices() {
               <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">
                 Two numbers. That's the whole model.
               </h2>
-              <p className="text-slate-500 text-sm max-w-lg mx-auto">
+              <p className="text-slate-500 text-base max-w-lg mx-auto">
                 No monthly fees. No card markup. No long-term contract. You pay only when
                 a patient actually walks in.
               </p>
@@ -872,7 +872,7 @@ export default function Practices() {
                       Ends Aug 31, 2026
                     </span>
                   </div>
-                  <p className="text-slate-300 text-sm leading-relaxed">
+                  <p className="text-slate-300 text-base leading-relaxed">
                     Every practice that signs up and goes live before August 31, 2026 gets the
                     $499 setup fee waived — in exchange for a brief case study after 90 days of use
                     and referenceable launch-partner status. After August 31, the setup fee
@@ -914,7 +914,7 @@ export default function Practices() {
                 <span className="text-slate-900 font-black">Your total</span>
                 <span className="font-black text-slate-900 text-lg tabular-nums">$1,760</span>
               </div>
-              <p className="text-slate-400 text-xs mt-3 leading-relaxed">
+              <p className="text-slate-400 text-sm mt-3 leading-relaxed">
                 That's ~$80 per new patient, all-in. A typical Google Ads program in a
                 saturated metro would cost you $6,000+ for the same 22 patients.
               </p>
@@ -927,7 +927,7 @@ export default function Practices() {
               >
                 Claim a Founding Practice spot <ArrowRight className="w-5 h-5" />
               </button>
-              <p className="text-slate-400 text-xs mt-4">We'll walk through your Open Dental setup and get you live same day.</p>
+              <p className="text-slate-400 text-sm mt-4">We'll walk through your Open Dental setup and get you live same day.</p>
             </div>
           </motion.div>
         </motion.section>
@@ -957,7 +957,7 @@ export default function Practices() {
             <h3 className="text-slate-900 font-black text-2xl md:text-3xl mb-3">
               Ready to make your patients your best marketers?
             </h3>
-            <p className="text-slate-500 text-sm leading-relaxed mb-6 max-w-lg mx-auto">
+            <p className="text-slate-500 text-base leading-relaxed mb-6 max-w-lg mx-auto">
               We'll connect to your Open Dental instance, walk through the admin dashboard,
               and get you live — in one call.
             </p>
@@ -967,7 +967,7 @@ export default function Practices() {
             >
               Request a Demo <ArrowRight className="w-5 h-5" />
             </button>
-            <p className="text-slate-400 text-xs mt-4">
+            <p className="text-slate-400 text-sm mt-4">
               Questions? Email us at{" "}
               <a href="mailto:hello@joinrippl.com" className="text-teal-600 hover:text-teal-500">
                 hello@joinrippl.com
