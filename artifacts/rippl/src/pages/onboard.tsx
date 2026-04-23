@@ -188,7 +188,7 @@ export default function Onboard() {
     setResettingId(id);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: "https://www.joinrippl.com/reset-password",
       });
       if (error) {
         toast.error(`Failed to send reset email: ${error.message}`);
