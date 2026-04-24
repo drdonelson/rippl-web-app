@@ -100,6 +100,7 @@ export default function HelpPage() {
               src={LOOM_VIDEO_1}
               frameBorder="0"
               allowFullScreen
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               className="absolute inset-0 w-full h-full"
               title="Open Dental workflow walkthrough"
             />
@@ -118,6 +119,7 @@ export default function HelpPage() {
                 src={LOOM_VIDEO_2}
                 frameBorder="0"
                 allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 className="absolute inset-0 w-full h-full"
                 title="Rippl dashboard walkthrough"
               />
