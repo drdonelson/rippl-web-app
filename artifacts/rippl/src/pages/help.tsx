@@ -1,7 +1,7 @@
 import { BookOpen, CheckCircle2, AlertTriangle, PlayCircle } from "lucide-react";
 
-// ── Replace this URL after recording your Loom ────────────────────────────────
-const LOOM_EMBED_URL = ""; // e.g. "https://www.loom.com/embed/abc123"
+const LOOM_VIDEO_1 = "https://www.loom.com/embed/d054cba4b20f4a5187c96cf05a4eb47a";
+const LOOM_VIDEO_2 = ""; // second video — add URL when ready
 
 const STEPS = [
   {
@@ -88,30 +88,47 @@ export default function HelpPage() {
       </div>
 
       {/* Video section */}
-      <div className="rounded-2xl border border-border bg-card/30 overflow-hidden">
-        {LOOM_EMBED_URL ? (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Video 1 */}
+        <div className="rounded-2xl border border-border bg-card/30 overflow-hidden">
+          <div className="px-4 pt-4 pb-2">
+            <p className="text-sm font-semibold text-foreground">Part 1 — Open Dental Workflow</p>
+            <p className="text-xs text-muted-foreground mt-0.5">How to enter referrals and attach R0150</p>
+          </div>
           <div className="relative" style={{ paddingTop: "56.25%" }}>
             <iframe
-              src={LOOM_EMBED_URL}
+              src={LOOM_VIDEO_1}
               frameBorder="0"
               allowFullScreen
               className="absolute inset-0 w-full h-full"
-              title="Staff training walkthrough"
+              title="Open Dental workflow walkthrough"
             />
           </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center gap-4 py-16 px-8 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-              <PlayCircle className="w-8 h-8 text-primary/60" />
-            </div>
-            <div>
-              <p className="font-semibold text-foreground">Training video coming soon</p>
-              <p className="text-muted-foreground text-sm mt-1">
-                Follow the written steps below in the meantime.
-              </p>
-            </div>
+        </div>
+
+        {/* Video 2 */}
+        <div className="rounded-2xl border border-border bg-card/30 overflow-hidden">
+          <div className="px-4 pt-4 pb-2">
+            <p className="text-sm font-semibold text-foreground">Part 2 — Rippl Dashboard</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Reading referral events and admin tasks</p>
           </div>
-        )}
+          {LOOM_VIDEO_2 ? (
+            <div className="relative" style={{ paddingTop: "56.25%" }}>
+              <iframe
+                src={LOOM_VIDEO_2}
+                frameBorder="0"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full"
+                title="Rippl dashboard walkthrough"
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-3 py-12 px-6 text-center">
+              <PlayCircle className="w-8 h-8 text-muted-foreground/30" />
+              <p className="text-sm text-muted-foreground">Coming soon</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Critical callout */}
