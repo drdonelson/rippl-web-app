@@ -95,13 +95,15 @@ export default function HelpPage() {
             <p className="text-sm font-semibold text-foreground">Part 1 — Open Dental Workflow</p>
             <p className="text-xs text-muted-foreground mt-0.5">How to enter referrals and attach R0150</p>
           </div>
-          <div className="relative" style={{ paddingTop: "56.25%" }}>
+          <div style={{ position: "relative", paddingBottom: "64.98194945848375%", height: 0 }}>
             <iframe
               src={LOOM_VIDEO_1}
               frameBorder="0"
+              // @ts-ignore
+              webkitallowfullscreen="true"
+              mozallowfullscreen="true"
               allowFullScreen
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              className="absolute inset-0 w-full h-full"
+              style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
               title="Open Dental workflow walkthrough"
             />
           </div>
@@ -114,13 +116,15 @@ export default function HelpPage() {
             <p className="text-xs text-muted-foreground mt-0.5">Reading referral events and admin tasks</p>
           </div>
           {LOOM_VIDEO_2 ? (
-            <div className="relative" style={{ paddingTop: "56.25%" }}>
+            <div style={{ position: "relative", paddingBottom: "64.98194945848375%", height: 0 }}>
               <iframe
                 src={LOOM_VIDEO_2}
                 frameBorder="0"
+                // @ts-ignore
+                webkitallowfullscreen="true"
+                mozallowfullscreen="true"
                 allowFullScreen
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                className="absolute inset-0 w-full h-full"
+                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
                 title="Rippl dashboard walkthrough"
               />
             </div>
