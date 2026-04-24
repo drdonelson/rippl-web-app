@@ -88,11 +88,11 @@ export async function scheduleOnboardingSms(params: {
 
   if (existing.length > 0) {
     const referrer = existing[0];
-    if (referrer.onboarding_sms_sent) {
-      logger.info({ phone, referrerId: referrer.id }, "Onboarding SMS already sent — skipping");
+    if (referrer.onboarding_sms_sent || referrer.onboarding_sms_scheduled_at) {
+      logger.info({ phone, referrerId: referrer.id }, "Onboarding SMS already sent or scheduled — skipping");
       return { success: true, skipped: true, referrerId: referrer.id, referralCode: referrer.referral_code };
     }
-    // Referrer exists but SMS not yet sent — schedule it
+    // Referrer exists but SMS not yet sent or scheduled — schedule it
     scheduleDelayedSms(referrer.id, newPatientName, phone, referrer.referral_code);
     return { success: true, referrerId: referrer.id, referralCode: referrer.referral_code };
   }

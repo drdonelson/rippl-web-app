@@ -362,12 +362,13 @@ async function runOnboardingSweep(
         continue;
       }
 
-      // Check our referrers table by phone — skip if opted out or already onboarded
+      // Check our referrers table by phone — skip if opted out, already sent, or already scheduled
       const existing = await db
         .select({
-          onboarding_sms_sent:   referrersTable.onboarding_sms_sent,
-          sms_opt_out:           referrersTable.sms_opt_out,
-          sms_opt_out_permanent: referrersTable.sms_opt_out_permanent,
+          onboarding_sms_sent:         referrersTable.onboarding_sms_sent,
+          onboarding_sms_scheduled_at: referrersTable.onboarding_sms_scheduled_at,
+          sms_opt_out:                 referrersTable.sms_opt_out,
+          sms_opt_out_permanent:       referrersTable.sms_opt_out_permanent,
         })
         .from(referrersTable)
         .where(eq(referrersTable.phone, phone));
@@ -386,8 +387,8 @@ async function runOnboardingSweep(
         continue;
       }
 
-      if (existing.length > 0 && existing[0].onboarding_sms_sent) {
-        logger.debug({ patNum, officeId }, "[onboarding-sweep] Already onboarded — skipping");
+      if (existing.length > 0 && (existing[0].onboarding_sms_sent || existing[0].onboarding_sms_scheduled_at)) {
+        logger.debug({ patNum, officeId }, "[onboarding-sweep] Already onboarded or scheduled — skipping");
         continue;
       }
 

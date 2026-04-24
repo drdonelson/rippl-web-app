@@ -9,7 +9,7 @@ const STEPS = [
     title: "New patient mentions a referral at intake",
     who: "Front Desk",
     items: [
-      "Ask: "Who referred you?" — get the full name of the referring patient.",
+      'Ask the patient: "Who referred you?" — get the full name of the referring patient.',
       "Look up the referring patient in Open Dental to confirm they are an active patient.",
       "Create the new patient record as normal.",
     ],
