@@ -24,6 +24,7 @@ const Refer      = lazy(() => import("@/pages/refer"));
 const Demo       = lazy(() => import("@/pages/demo"));
 const Onboard    = lazy(() => import("@/pages/onboard"));
 const Staff      = lazy(() => import("@/pages/staff"));
+const Help       = lazy(() => import("@/pages/help"));
 const Privacy    = lazy(() => import("@/pages/privacy"));
 const Terms      = lazy(() => import("@/pages/terms"));
 const HowItWorks = lazy(() => import("@/pages/how-it-works"));
@@ -79,6 +80,7 @@ function Router() {
                   <Route path="/partners"    component={Partners}   />
                   <Route path="/offices"     component={Offices}    />
                   <Route path="/analytics"   component={Analytics}  />
+                  <Route path="/help"        component={Help}       />
                   <Route component={NotFound} />
                 </Switch>
               </Suspense>

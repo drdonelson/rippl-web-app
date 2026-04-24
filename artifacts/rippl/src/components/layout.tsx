@@ -5,7 +5,7 @@ import {
   LayoutDashboard, CalendarDays, Users, Droplets,
   ChevronDown, MapPin, LogOut, AlertTriangle, Menu, X,
   Store, CheckSquare, Building2, TrendingUp, ExternalLink,
-  GraduationCap, Link2, Shield, FileText, Gift, Megaphone, UserCog,
+  GraduationCap, Link2, Shield, FileText, Gift, Megaphone, UserCog, BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useOffice } from "@/contexts/office-context";
@@ -81,6 +81,13 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "https://www.joinrippl.com/claim?token=demo-claim-preview-token-screenshot", label: "Demo Claim Page",   icon: Gift,     external: true },
       { href: "https://www.joinrippl.com/privacy",                                         label: "Privacy Policy",    icon: Shield,   external: true, minRole: "super_admin" },
       { href: "https://www.joinrippl.com/terms",                                           label: "Terms",             icon: FileText, external: true, minRole: "super_admin" },
+    ],
+  },
+  {
+    label: "Resources",
+    demoVisible: true,
+    items: [
+      { href: "/help", label: "Staff Training", icon: BookOpen },
     ],
   },
 ];
