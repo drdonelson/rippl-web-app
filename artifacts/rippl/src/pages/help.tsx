@@ -1,7 +1,7 @@
 import { BookOpen, CheckCircle2, AlertTriangle, PlayCircle } from "lucide-react";
 
 const LOOM_VIDEO_1 = "https://www.loom.com/embed/d054cba4b20f4a5187c96cf05a4eb47a";
-const LOOM_VIDEO_2 = ""; // second video — add URL when ready
+const LOOM_VIDEO_2 = "https://www.loom.com/embed/84aad24c5ea34363acc8735b344ed046";
 
 const STEPS = [
   {
