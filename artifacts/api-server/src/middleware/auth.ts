@@ -137,6 +137,15 @@ export function requireSuperAdmin(req: Request, res: Response, next: NextFunctio
   next();
 }
 
+export function requirePracticeAdmin(req: Request, res: Response, next: NextFunction) {
+  const role = req.authUser?.role;
+  if (role !== "super_admin" && role !== "practice_admin") {
+    res.status(403).json({ error: "Practice admin access required" });
+    return;
+  }
+  next();
+}
+
 // GET /api/auth/profile — called by the frontend immediately after Supabase login.
 // Accepts x-user-id + Authorization header. Auto-creates profile for bootstrap accounts.
 export async function getProfileHandler(req: Request, res: Response) {

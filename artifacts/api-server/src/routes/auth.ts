@@ -3,7 +3,7 @@ import { db } from "@workspace/db";
 import { userProfilesTable, officesTable } from "@workspace/db/schema";
 import { eq, like } from "drizzle-orm";
 import { supabaseAdmin } from "../lib/supabase";
-import { getProfileHandler, requireAuth, requireSuperAdmin } from "../middleware/auth";
+import { getProfileHandler, requireAuth, requireSuperAdmin, requirePracticeAdmin } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -58,9 +58,13 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
   }
 });
 
-// POST /api/auth/onboard-staff — create a staff account and assign it to an existing office
-router.post("/onboard-staff", requireAuth, requireSuperAdmin, async (req, res) => {
-  const { email, password, full_name, office_id } = req.body;
+// POST /api/auth/onboard-staff — create a staff account for an office
+// super_admin: can specify any office_id in body
+// practice_admin: always scoped to their own practice_id
+router.post("/onboard-staff", requireAuth, requirePracticeAdmin, async (req, res) => {
+  const caller = req.authUser!;
+  const { email, password, full_name } = req.body;
+  const office_id = caller.role === "practice_admin" ? caller.practice_id : req.body.office_id;
 
   if (!email || !password || !office_id) {
     res.status(400).json({ error: "Missing required fields: email, password, office_id" });
@@ -68,10 +72,14 @@ router.post("/onboard-staff", requireAuth, requireSuperAdmin, async (req, res) =
   }
 
   try {
-    // 1. Verify the office exists
+    // 1. Verify the office exists (and belongs to caller if practice_admin)
     const [office] = await db.select().from(officesTable).where(eq(officesTable.id, office_id));
     if (!office) {
       res.status(400).json({ error: "Office not found" });
+      return;
+    }
+    if (caller.role === "practice_admin" && office.id !== caller.practice_id) {
+      res.status(403).json({ error: "Cannot create staff for another office" });
       return;
     }
 
@@ -107,11 +115,13 @@ router.post("/onboard-staff", requireAuth, requireSuperAdmin, async (req, res) =
   }
 });
 
-// GET /api/auth/staff-accounts — list all staff profiles (super_admin only)
-router.get("/staff-accounts", requireAuth, requireSuperAdmin, async (_req, res) => {
+// GET /api/auth/staff-accounts — list staff profiles
+// super_admin: all staff; practice_admin: only their office's staff
+router.get("/staff-accounts", requireAuth, requirePracticeAdmin, async (req, res) => {
+  const caller = req.authUser!;
   try {
-    // 1. Fetch all user_profiles with a staff_ role
-    const profiles = await db
+    // 1. Fetch user_profiles with a staff_ role, scoped for practice_admin
+    const query = db
       .select({
         id:          userProfilesTable.id,
         full_name:   userProfilesTable.full_name,
@@ -122,8 +132,13 @@ router.get("/staff-accounts", requireAuth, requireSuperAdmin, async (_req, res) 
         location_code: officesTable.location_code,
       })
       .from(userProfilesTable)
-      .leftJoin(officesTable, eq(userProfilesTable.practice_id, officesTable.id))
-      .where(like(userProfilesTable.role, "staff_%"));
+      .leftJoin(officesTable, eq(userProfilesTable.practice_id, officesTable.id));
+
+    const profiles = caller.role === "practice_admin" && caller.practice_id
+      ? await query.where(
+          like(userProfilesTable.role, "staff_%")
+        ).then(rows => rows.filter(r => r.practice_id === caller.practice_id))
+      : await query.where(like(userProfilesTable.role, "staff_%"));
 
     if (profiles.length === 0) {
       res.json([]);
@@ -155,12 +170,23 @@ router.get("/staff-accounts", requireAuth, requireSuperAdmin, async (_req, res) 
   }
 });
 
-// DELETE /api/auth/staff-accounts/:id — remove a staff account (super_admin only)
-router.delete("/staff-accounts/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+// DELETE /api/auth/staff-accounts/:id — remove a staff account
+// practice_admin: can only delete staff belonging to their office
+router.delete("/staff-accounts/:id", requireAuth, requirePracticeAdmin, async (req, res) => {
   const { id } = req.params;
+  const caller = req.authUser!;
   if (!id) { res.status(400).json({ error: "Missing id" }); return; }
 
   try {
+    // For practice_admin, verify the target staff belongs to their office
+    if (caller.role === "practice_admin") {
+      const [target] = await db.select().from(userProfilesTable).where(eq(userProfilesTable.id, id));
+      if (!target || target.practice_id !== caller.practice_id) {
+        res.status(403).json({ error: "Cannot delete staff from another office" });
+        return;
+      }
+    }
+
     // 1. Delete from Supabase auth (ignore error if user doesn't exist there)
     await supabaseAdmin.auth.admin.deleteUser(id);
 

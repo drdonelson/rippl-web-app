@@ -34,6 +34,7 @@ interface ClaimData {
     new_patient_name: string;
     office: string | null;
     office_id: string | null;
+    office_logo_url: string | null;
   };
   localPartner: {
     id: string;
@@ -357,10 +358,16 @@ export default function Claim() {
           >
             {/* Logo */}
             <div className="flex items-center gap-2 mb-8">
-              <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center">
-                <Droplets className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-slate-900 font-bold text-lg">Rippl</span>
+              {result && claimData?.referral?.office_logo_url ? (
+                <img src={claimData.referral.office_logo_url} alt="Practice logo" className="h-8 max-w-[120px] object-contain" />
+              ) : (
+                <>
+                  <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center">
+                    <Droplets className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-slate-900 font-bold text-lg">Rippl</span>
+                </>
+              )}
             </div>
 
             {/* Checkmark */}
@@ -523,9 +530,13 @@ export default function Claim() {
 
         {/* Logo + Office */}
         <div className="flex items-center gap-2 mb-7">
-          <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center">
-            <Droplets className="w-5 h-5 text-white" />
-          </div>
+          {referral?.office_logo_url ? (
+            <img src={referral.office_logo_url} alt="Practice logo" className="h-8 max-w-[120px] object-contain" />
+          ) : (
+            <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center">
+              <Droplets className="w-5 h-5 text-white" />
+            </div>
+          )}
           <span className="text-slate-600 text-sm font-medium">{office}</span>
         </div>
 

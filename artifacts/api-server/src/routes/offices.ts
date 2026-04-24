@@ -2,6 +2,8 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { officesTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
+import { supabaseAdmin } from "../lib/supabase";
+import { requireAuth, requirePracticeAdmin } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -10,6 +12,7 @@ const safeColumns = {
   id:            officesTable.id,
   name:          officesTable.name,
   location_code: officesTable.location_code,
+  logo_url:      officesTable.logo_url,
   active:        officesTable.active,
 };
 
@@ -30,6 +33,98 @@ router.get("/active", async (_req, res) => {
     .where(eq(officesTable.active, true))
     .orderBy(officesTable.name);
   res.json(offices);
+});
+
+// GET /api/offices/managed — returns offices the caller can manage
+// super_admin: all offices; practice_admin: only their own office
+router.get("/managed", requireAuth, requirePracticeAdmin, async (req, res) => {
+  const caller = req.authUser!;
+  try {
+    const offices = caller.role === "practice_admin" && caller.practice_id
+      ? await db.select(safeColumns).from(officesTable).where(eq(officesTable.id, caller.practice_id))
+      : await db.select(safeColumns).from(officesTable).orderBy(officesTable.name);
+    res.json(offices);
+  } catch (err) {
+    console.error("[offices/managed] Error:", err);
+    res.status(500).json({ error: "Failed to fetch offices" });
+  }
+});
+
+// POST /api/offices/:id/logo — upload a logo and save the public URL
+// Accepts JSON: { filename: string, mimeType: string, data: string (base64) }
+router.post("/:id/logo", requireAuth, requirePracticeAdmin, async (req, res) => {
+  const { id } = req.params;
+  const caller = req.authUser!;
+  const { filename, mimeType, data } = req.body;
+
+  if (!filename || !mimeType || !data) {
+    res.status(400).json({ error: "Missing filename, mimeType, or data" });
+    return;
+  }
+
+  // practice_admin can only update their own office
+  if (caller.role === "practice_admin" && caller.practice_id !== id) {
+    res.status(403).json({ error: "Cannot update another office's logo" });
+    return;
+  }
+
+  try {
+    // Verify office exists
+    const [office] = await db.select({ id: officesTable.id }).from(officesTable).where(eq(officesTable.id, id));
+    if (!office) {
+      res.status(404).json({ error: "Office not found" });
+      return;
+    }
+
+    // Ensure the bucket exists (public)
+    await supabaseAdmin.storage.createBucket("office-logos", { public: true }).catch(() => {});
+
+    // Decode base64 → buffer
+    const buffer = Buffer.from(data, "base64");
+    const path = `${id}/${filename}`;
+
+    // Upload to Supabase Storage (upsert so re-uploads work)
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from("office-logos")
+      .upload(path, buffer, { contentType: mimeType, upsert: true });
+
+    if (uploadError) {
+      console.error("[offices/logo] Upload error:", uploadError);
+      res.status(500).json({ error: "Failed to upload logo" });
+      return;
+    }
+
+    // Get public URL
+    const { data: urlData } = supabaseAdmin.storage.from("office-logos").getPublicUrl(path);
+    const logo_url = urlData.publicUrl;
+
+    // Save to DB
+    await db.update(officesTable).set({ logo_url }).where(eq(officesTable.id, id));
+
+    res.json({ success: true, logo_url });
+  } catch (err) {
+    console.error("[offices/logo] Error:", err);
+    res.status(500).json({ error: "Failed to save logo" });
+  }
+});
+
+// DELETE /api/offices/:id/logo — remove a logo
+router.delete("/:id/logo", requireAuth, requirePracticeAdmin, async (req, res) => {
+  const { id } = req.params;
+  const caller = req.authUser!;
+
+  if (caller.role === "practice_admin" && caller.practice_id !== id) {
+    res.status(403).json({ error: "Cannot update another office's logo" });
+    return;
+  }
+
+  try {
+    await db.update(officesTable).set({ logo_url: null }).where(eq(officesTable.id, id));
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[offices/logo delete] Error:", err);
+    res.status(500).json({ error: "Failed to remove logo" });
+  }
 });
 
 export default router;

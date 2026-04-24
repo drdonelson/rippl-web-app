@@ -6,6 +6,7 @@ import {
   referrersTable,
   adminTasksTable,
   localPartnersTable,
+  officesTable,
 } from "@workspace/db/schema";
 import { eq, sql, and } from "drizzle-orm";
 import { sendAmazonRewardLink } from "../services/tango";
@@ -62,20 +63,24 @@ router.get("/by-token/:token", async (req, res) => {
   ]);
 
   let localPartner = null;
+  let officeLogo: string | null = null;
   const officeId = referral?.office_id ?? null;
   if (officeId) {
-    const [partner] = await db
-      .select()
-      .from(localPartnersTable)
-      .where(and(
-        eq(localPartnersTable.office_id, officeId),
-        eq(localPartnersTable.active, true),
-      ))
-      .limit(1);
-    localPartner = partner ?? null;
+    const [partner, officeRow] = await Promise.all([
+      db.select().from(localPartnersTable)
+        .where(and(eq(localPartnersTable.office_id, officeId), eq(localPartnersTable.active, true)))
+        .limit(1)
+        .then(r => r[0] ?? null),
+      db.select({ logo_url: officesTable.logo_url }).from(officesTable)
+        .where(eq(officesTable.id, officeId))
+        .limit(1)
+        .then(r => r[0] ?? null),
+    ]);
+    localPartner = partner;
+    officeLogo = officeRow?.logo_url ?? null;
   }
 
-  res.json({ claim, referrer, referral, localPartner });
+  res.json({ claim, referrer, referral: { ...referral, office_logo_url: officeLogo }, localPartner });
 });
 
 // ── POST /api/claim ───────────────────────────────────────────────────────────

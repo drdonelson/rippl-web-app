@@ -39,12 +39,12 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     label: "Manage",
-    minRole: "practice_admin",
     items: [
       { href: "/partners",    label: "Local Partners", icon: Store,       minRole: "super_admin"    },
-      { href: "/campaigns",   label: "Campaigns",      icon: Megaphone                              },
+      { href: "/campaigns",   label: "Campaigns",      icon: Megaphone,   minRole: "practice_admin" },
       { href: "/admin-tasks", label: "Admin Tasks",    icon: CheckSquare                            },
-      { href: "/offices",     label: "Offices",        icon: Building2,   minRole: "super_admin"    },
+      { href: "/offices",     label: "Offices",        icon: Building2,   minRole: "practice_admin" },
+      { href: "/staff",       label: "Staff Accounts", icon: UserCog,     minRole: "practice_admin" },
     ],
   },
   {
@@ -74,13 +74,13 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     label: "Patient Links",
-    minRole: "super_admin",
     demoVisible: true,
     items: [
-      { href: "https://www.joinrippl.com/how-it-works",                                    label: "How It Works",      icon: Link2,    external: true },
+      { href: "https://www.joinrippl.com/refer",                                           label: "Referral Page",     icon: Link2,    external: true },
+      { href: "https://www.joinrippl.com/how-it-works",                                    label: "How It Works",      icon: GraduationCap, external: true },
+      { href: "https://www.joinrippl.com/claim?token=demo-claim-preview-token-screenshot", label: "Demo Claim Page",   icon: Gift,     external: true },
       { href: "https://www.joinrippl.com/privacy",                                         label: "Privacy Policy",    icon: Shield,   external: true, minRole: "super_admin" },
       { href: "https://www.joinrippl.com/terms",                                           label: "Terms",             icon: FileText, external: true, minRole: "super_admin" },
-      { href: "https://www.joinrippl.com/claim?token=demo-claim-preview-token-screenshot", label: "Demo Claim Page",  icon: Gift,     external: true },
     ],
   },
 ];
