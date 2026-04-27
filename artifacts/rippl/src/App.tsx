@@ -65,6 +65,9 @@ function Router() {
         {/* Onboarding — no sidebar, auth-protected inside component */}
         <Route path="/onboard" component={Onboard} />
 
+        {/* Public training page — move inside ProtectedRoute to make private again */}
+        <Route path="/help" component={Help} />
+
         {/* Protected internal app routes with sidebar */}
         <Route>
           <ProtectedRoute>
@@ -80,7 +83,6 @@ function Router() {
                   <Route path="/partners"    component={Partners}   />
                   <Route path="/offices"     component={Offices}    />
                   <Route path="/analytics"   component={Analytics}  />
-                  <Route path="/help"        component={Help}       />
                   <Route component={NotFound} />
                 </Switch>
               </Suspense>
