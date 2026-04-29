@@ -101,7 +101,6 @@ export default function PosterPrint() {
               width={200}
               height={200}
             />
-            </div>
             <div className="text-center">
               <p className="text-white font-bold text-[13px]">Scan to get your link</p>
               <p className="text-white/40 text-[11px] font-mono mt-0.5">joinrippl.com/find</p>
