@@ -93,14 +93,12 @@ export default function CardPrint() {
 
           {/* Right — QR */}
           <div className="w-1/2 h-full flex flex-col items-center justify-center gap-3">
-            <div className="bg-white rounded-xl p-2.5 shadow-lg">
-              <img
-                src={FLOWCODE_QR_URL}
-                alt="Scan to find your referral link"
-                width={120}
-                height={120}
-              />
-            </div>
+            <img
+              src={FLOWCODE_QR_URL}
+              alt="Scan to find your referral link"
+              width={120}
+              height={120}
+            />
             <p className="text-white/60 text-[9px] text-center px-4">
               Scan to find your<br />personal referral link
             </p>

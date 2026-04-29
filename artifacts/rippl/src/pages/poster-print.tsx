@@ -95,13 +95,12 @@ export default function PosterPrint() {
 
           {/* QR code */}
           <div className="flex flex-col items-center justify-center gap-4 shrink-0">
-            <div className="bg-white rounded-2xl p-4 shadow-xl">
-              <img
-                src={FLOWCODE_QR_URL}
-                alt="Scan to find your referral link"
-                width={200}
-                height={200}
-              />
+            <img
+              src={FLOWCODE_QR_URL}
+              alt="Scan to find your referral link"
+              width={200}
+              height={200}
+            />
             </div>
             <div className="text-center">
               <p className="text-white font-bold text-[13px]">Scan to get your link</p>
