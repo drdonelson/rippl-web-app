@@ -1,7 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db } from "@workspace/db";
 import { referrersTable } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import rateLimit from "express-rate-limit";
 
 const router: IRouter = Router();
@@ -14,7 +14,6 @@ const lookupLimiter = rateLimit({
 
 const REFERRAL_BASE_URL = (process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://joinrippl.com").replace(/\/$/, "");
 
-// Normalize phone: strip everything except digits, accept last 10
 function normalizePhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");
   return digits.length >= 10 ? digits.slice(-10) : digits;
@@ -33,30 +32,16 @@ router.post("/lookup", lookupLimiter, async (req: Request, res: Response) => {
     return;
   }
 
-  // Try exact stored value first, then normalized
+  // Strip all non-digits from stored phone on both sides so any format matches:
+  // "615-481-8556", "(615) 481-8556", "+16154818556", "6154818556" all resolve to same 10 digits
   const rows = await db
     .select({ name: referrersTable.name, referral_code: referrersTable.referral_code })
     .from(referrersTable)
-    .where(eq(referrersTable.phone, normalized))
+    .where(sql`right(regexp_replace(${referrersTable.phone}, '[^0-9]', '', 'g'), 10) = ${normalized}`)
     .limit(1);
 
   if (rows.length === 0) {
-    // Also try with +1 prefix in case stored differently
-    const withPrefix = `+1${normalized}`;
-    const rows2 = await db
-      .select({ name: referrersTable.name, referral_code: referrersTable.referral_code })
-      .from(referrersTable)
-      .where(eq(referrersTable.phone, withPrefix))
-      .limit(1);
-
-    if (rows2.length === 0) {
-      res.status(404).json({ error: "No referral account found for that number. Ask the front desk for help." });
-      return;
-    }
-
-    const { name, referral_code } = rows2[0];
-    const firstName = name.trim().split(/\s+/)[0];
-    res.json({ firstName, referralCode: referral_code, shareUrl: `${REFERRAL_BASE_URL}/refer?ref=${referral_code}` });
+    res.status(404).json({ error: "No referral account found for that number. Ask the front desk for help." });
     return;
   }
 
