@@ -3,7 +3,7 @@
  * Open /card-print in browser, Cmd+P → Save as PDF → send to printer.
  */
 
-const FLOWCODE_QR_URL = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https%3A%2F%2Fjoinrippl.com%2Ffind&margin=8";
+const FLOWCODE_QR_URL = "/flowcode-qr.png";
 
 export default function CardPrint() {
   return (

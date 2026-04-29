@@ -3,7 +3,7 @@
  * Open /poster-print in browser, Cmd+P → Save as PDF → print on card stock or glossy paper.
  */
 
-const FLOWCODE_QR_URL = "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https%3A%2F%2Fjoinrippl.com%2Ffind&margin=10";
+const FLOWCODE_QR_URL = "/flowcode-qr.png";
 
 const STEPS = [
   { n: "1", text: "Scan the QR code below" },
