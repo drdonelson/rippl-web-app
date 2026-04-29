@@ -12,10 +12,12 @@ export default function Poster5x7() {
     <>
       <style>{`
         * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; width: 5in; height: 7in; }
-        @page { size: 5in 7in portrait; margin: 0; }
+        html, body { margin: 0; padding: 0; }
+        @page { size: 8.5in 11in portrait; margin: 0; }
+        .poster-wrap { width: 8.5in; height: 11in; display: flex; align-items: center; justify-content: center; background: white; }
       `}</style>
 
+      <div className="poster-wrap">
       <div style={{
         width: "5in",
         height: "7in",
@@ -101,6 +103,7 @@ export default function Poster5x7() {
 
         {/* Bottom accent bar */}
         <div style={{ height: 7, background: "linear-gradient(to right, #2dd4bf, #99f6e4, #2dd4bf)", flexShrink: 0 }} />
+      </div>
       </div>
     </>
   );
