@@ -28,6 +28,7 @@ const Help       = lazy(() => import("@/pages/help"));
 const Find        = lazy(() => import("@/pages/find"));
 const IconExport  = lazy(() => import("@/pages/icon-export"));
 const CardPrint   = lazy(() => import("@/pages/card-print"));
+const CardBack    = lazy(() => import("@/pages/card-back"));
 const PosterPrint = lazy(() => import("@/pages/poster-print"));
 const Privacy    = lazy(() => import("@/pages/privacy"));
 const Terms      = lazy(() => import("@/pages/terms"));
@@ -74,6 +75,7 @@ function Router() {
         <Route path="/find" component={Find} />
         <Route path="/icon" component={IconExport} />
         <Route path="/card-print" component={CardPrint} />
+        <Route path="/card-back" component={CardBack} />
         <Route path="/poster-print" component={PosterPrint} />
 
         {/* Protected internal app routes with sidebar */}
