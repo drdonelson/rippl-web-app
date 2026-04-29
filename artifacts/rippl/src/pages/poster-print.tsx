@@ -3,7 +3,7 @@
  * Open /poster-print in browser, Cmd+P → Save as PDF → print on card stock or glossy paper.
  */
 
-const FLOWCODE_QR_URL = "/flowcode-qr.png";
+const FLOWCODE_QR_URL = "/flowcode-qr-poster.png";
 
 const STEPS = [
   { n: "1", text: "Scan the QR code below" },
