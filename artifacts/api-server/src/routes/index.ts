@@ -15,6 +15,7 @@ import authRouter from "./auth";
 import importJobsRouter from "./importJobs";
 import referralRouter from "./referral";
 import publicClaimRouter from "./publicClaim";
+import publicLookupRouter from "./publicLookup";
 import demoRouter from "./demo";
 import backfillRouter from "./backfill";
 import { requireAuth } from "../middleware/auth";
@@ -28,6 +29,7 @@ router.use("/auth", authRouter);
 router.use("/test", testRouter);
 router.use("/referral", referralRouter);
 router.use("/claim", publicClaimRouter);
+router.use("/public", publicLookupRouter);
 router.use("/demo", demoRouter);
 
 // Semi-public routes (non-sensitive data)
