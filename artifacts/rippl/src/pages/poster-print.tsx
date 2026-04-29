@@ -1,8 +1,3 @@
-/**
- * Printable office poster — 8.5×11in portrait.
- * Open /poster-print in browser, Cmd+P → Save as PDF → print on card stock or glossy paper.
- */
-
 const FLOWCODE_QR_URL = "/flowcode-qr-poster.png";
 
 const STEPS = [
@@ -14,111 +9,101 @@ const STEPS = [
 
 export default function PosterPrint() {
   return (
-    <div className="bg-white min-h-screen flex flex-col items-center justify-center py-12 px-6">
+    <>
       <style>{`
-        @media print {
-          body { margin: 0; }
-          .no-print { display: none !important; }
-        }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; width: 8.5in; height: 11in; }
         @page { size: 8.5in 11in portrait; margin: 0; }
+        .no-print { display: none !important; }
       `}</style>
 
-      <p className="no-print text-slate-500 text-sm text-center mb-8">
-        Cmd+P → Save as PDF → Print 8.5×11 on glossy or card stock
-      </p>
-
-      {/* Poster */}
-      <div
-        style={{ width: "8.5in", minHeight: "11in" }}
-        className="relative overflow-hidden rounded-3xl shadow-2xl flex flex-col bg-[#1a2e5a]"
-      >
+      <div style={{
+        width: "8.5in",
+        height: "11in",
+        background: "#1a2e5a",
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+        overflow: "hidden",
+        fontFamily: "system-ui, -apple-system, sans-serif",
+      }}>
         {/* Top accent bar */}
-        <div className="h-2 w-full bg-gradient-to-r from-teal-400 via-teal-300 to-teal-500" />
+        <div style={{ height: 10, background: "linear-gradient(to right, #2dd4bf, #99f6e4, #2dd4bf)", flexShrink: 0 }} />
 
         {/* Header */}
-        <div className="flex items-center justify-between px-12 pt-10 pb-6">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "40px 64px 24px" }}>
           <div>
-            <p className="text-[11px] font-bold tracking-[0.25em] text-[#c9a84c] uppercase">Hallmark</p>
-            <p className="text-[11px] font-bold tracking-[0.25em] text-[#c9a84c] uppercase">Dental</p>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", color: "#c9a84c", textTransform: "uppercase" }}>Hallmark</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", color: "#c9a84c", textTransform: "uppercase" }}>Dental</div>
           </div>
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5">
-            <div className="w-2 h-2 rounded-full bg-teal-400" />
-            <p className="text-white/70 text-[10px] font-semibold tracking-wider uppercase">Referral Rewards</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 999, padding: "6px 16px" }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#2dd4bf" }} />
+            <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>Referral Rewards</span>
           </div>
         </div>
 
-        {/* Hero headline */}
-        <div className="px-12 pt-4 pb-8">
-          <h1 className="text-[64px] font-black text-white leading-none tracking-tight">
+        {/* Hero */}
+        <div style={{ padding: "16px 64px 32px" }}>
+          <div style={{ fontSize: 72, fontWeight: 900, color: "white", lineHeight: 1, letterSpacing: "-0.02em" }}>
             Share a<br />
-            <span className="text-teal-400 italic">Smile.</span>
-          </h1>
-          <p className="text-white/60 text-[18px] mt-4 leading-relaxed max-w-lg">
-            Love your smile? Help a friend get one too —
-            and earn a <span className="text-teal-300 font-semibold">gift card reward</span> when they become a patient.
-          </p>
+            <span style={{ color: "#2dd4bf", fontStyle: "italic" }}>Smile.</span>
+          </div>
+          <div style={{ fontSize: 18, color: "rgba(255,255,255,0.6)", marginTop: 16, lineHeight: 1.6, maxWidth: 480 }}>
+            Love your smile? Help a friend get one too — and earn a{" "}
+            <span style={{ color: "#5eead4", fontWeight: 600 }}>gift card reward</span> when they become a patient.
+          </div>
         </div>
 
         {/* Divider */}
-        <div className="mx-12 h-px bg-white/10 mb-10" />
+        <div style={{ margin: "0 64px 40px", height: 1, background: "rgba(255,255,255,0.1)" }} />
 
-        {/* Main content: steps + QR */}
-        <div className="flex gap-10 px-12 flex-1">
+        {/* Main content */}
+        <div style={{ display: "flex", gap: 48, padding: "0 64px", flex: 1 }}>
           {/* Steps */}
-          <div className="flex-1 flex flex-col justify-center gap-6">
-            <p className="text-white/40 text-[11px] font-bold tracking-widest uppercase mb-2">How it works</p>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: 24 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", color: "rgba(255,255,255,0.4)", textTransform: "uppercase", marginBottom: 8 }}>How it works</div>
             {STEPS.map(({ n, text }) => (
-              <div key={n} className="flex items-start gap-4">
-                <div className="w-9 h-9 rounded-full bg-teal-400 flex items-center justify-center shrink-0">
-                  <span className="text-[#1a2e5a] font-black text-[15px]">{n}</span>
+              <div key={n} style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+                <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#2dd4bf", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span style={{ color: "#1a2e5a", fontWeight: 900, fontSize: 15 }}>{n}</span>
                 </div>
-                <p className="text-white text-[18px] font-medium leading-snug pt-1">{text}</p>
+                <div style={{ color: "white", fontSize: 18, fontWeight: 500, lineHeight: 1.3, paddingTop: 6 }}>{text}</div>
               </div>
             ))}
 
-            <div className="mt-6 bg-white/5 border border-white/10 rounded-2xl px-6 py-4">
-              <p className="text-white/40 text-[10px] font-bold tracking-widest uppercase mb-1">Your rewards</p>
-              <div className="flex gap-6 mt-2">
-                {[
-                  { tier: "1 referral", reward: "$35 gift card" },
-                  { tier: "3 referrals", reward: "$50 gift card" },
-                  { tier: "6 referrals", reward: "$75 gift card" },
-                ].map(({ tier, reward }) => (
+            {/* Reward tiers */}
+            <div style={{ marginTop: 24, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: "16px 24px" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", color: "rgba(255,255,255,0.4)", textTransform: "uppercase", marginBottom: 8 }}>Your rewards</div>
+              <div style={{ display: "flex", gap: 32, marginTop: 8 }}>
+                {[{ tier: "1 referral", reward: "$35 gift card" }, { tier: "3 referrals", reward: "$50 gift card" }, { tier: "6 referrals", reward: "$75 gift card" }].map(({ tier, reward }) => (
                   <div key={tier}>
-                    <p className="text-teal-300 font-bold text-[15px]">{reward}</p>
-                    <p className="text-white/40 text-[11px]">{tier}</p>
+                    <div style={{ color: "#5eead4", fontWeight: 700, fontSize: 16 }}>{reward}</div>
+                    <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 2 }}>{tier}</div>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* QR code */}
-          <div className="flex flex-col items-center justify-center gap-4 shrink-0">
-            <img
-              src={FLOWCODE_QR_URL}
-              alt="Scan to find your referral link"
-              width={200}
-              height={200}
-            />
-            <div className="text-center">
-              <p className="text-white font-bold text-[13px]">Scan to get your link</p>
-              <p className="text-white/40 text-[11px] font-mono mt-0.5">joinrippl.com/find</p>
+          {/* QR */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, flexShrink: 0 }}>
+            <img src={FLOWCODE_QR_URL} alt="Scan to find your referral link" width={220} height={220} />
+            <div style={{ textAlign: "center" }}>
+              <div style={{ color: "white", fontWeight: 700, fontSize: 14 }}>Scan to get your link</div>
+              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontFamily: "monospace", marginTop: 4 }}>joinrippl.com/find</div>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="mx-12 mt-10 mb-8 pt-6 border-t border-white/10 flex items-center justify-between">
-          <p className="text-white/30 text-[10px]">
-            Ask the front desk if you need help finding your account.
-          </p>
-          <p className="text-white/20 text-[9px] font-medium tracking-widest uppercase">Powered by Rippl</p>
+        <div style={{ margin: "32px 64px 24px", paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.1)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 10 }}>Ask the front desk if you need help finding your account.</div>
+          <div style={{ color: "rgba(255,255,255,0.2)", fontSize: 9, fontWeight: 500, letterSpacing: "0.15em", textTransform: "uppercase" }}>Powered by Rippl</div>
         </div>
 
         {/* Bottom accent bar */}
-        <div className="h-2 w-full bg-gradient-to-r from-teal-500 via-teal-300 to-teal-400" />
+        <div style={{ height: 10, background: "linear-gradient(to right, #2dd4bf, #99f6e4, #2dd4bf)", flexShrink: 0 }} />
       </div>
-    </div>
+    </>
   );
 }
