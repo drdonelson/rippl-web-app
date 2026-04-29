@@ -30,6 +30,7 @@ const IconExport  = lazy(() => import("@/pages/icon-export"));
 const CardPrint   = lazy(() => import("@/pages/card-print"));
 const CardBack    = lazy(() => import("@/pages/card-back"));
 const PosterPrint = lazy(() => import("@/pages/poster-print"));
+const Poster5x7   = lazy(() => import("@/pages/poster-5x7"));
 const Privacy    = lazy(() => import("@/pages/privacy"));
 const Terms      = lazy(() => import("@/pages/terms"));
 const HowItWorks = lazy(() => import("@/pages/how-it-works"));
@@ -77,6 +78,7 @@ function Router() {
         <Route path="/card-print" component={CardPrint} />
         <Route path="/card-back" component={CardBack} />
         <Route path="/poster-print" component={PosterPrint} />
+        <Route path="/poster-5x7" component={Poster5x7} />
 
         {/* Protected internal app routes with sidebar */}
         <Route>

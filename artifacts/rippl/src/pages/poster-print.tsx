@@ -20,7 +20,7 @@ export default function PosterPrint() {
           body { margin: 0; }
           .no-print { display: none !important; }
         }
-        @page { size: portrait; margin: 0; }
+        @page { size: 8.5in 11in portrait; margin: 0; }
       `}</style>
 
       <p className="no-print text-slate-500 text-sm text-center mb-8">
