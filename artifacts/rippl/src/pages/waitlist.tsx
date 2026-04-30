@@ -121,7 +121,7 @@ export default function Waitlist() {
             </div>
 
             <p className="text-center text-xs text-slate-400 mt-6">
-              Built by a dentist, for dental practices. Currently live at Hallmark Dental, Brentwood TN.
+              Built by a dentist, for dental practices.
             </p>
           </>
         ) : (
