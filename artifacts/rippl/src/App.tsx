@@ -26,6 +26,7 @@ const Onboard    = lazy(() => import("@/pages/onboard"));
 const Staff      = lazy(() => import("@/pages/staff"));
 const Help       = lazy(() => import("@/pages/help"));
 const Find        = lazy(() => import("@/pages/find"));
+const BlinqBg     = lazy(() => import("@/pages/blinq-bg"));
 const Waitlist    = lazy(() => import("@/pages/waitlist"));
 const IconExport  = lazy(() => import("@/pages/icon-export"));
 const CardPrint   = lazy(() => import("@/pages/card-print"));
@@ -75,6 +76,7 @@ function Router() {
         {/* Public training page — move inside ProtectedRoute to make private again */}
         <Route path="/help" component={Help} />
         <Route path="/find" component={Find} />
+        <Route path="/blinq-bg" component={BlinqBg} />
         <Route path="/join" component={Waitlist} />
         <Route path="/icon" component={IconExport} />
         <Route path="/card-print" component={CardPrint} />
