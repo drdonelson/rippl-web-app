@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Building2, Upload, X, Loader2, ImageIcon, CheckCircle2 } from "lucide-react";
+import { Building2, Upload, X, Loader2, ImageIcon, CheckCircle2, Plus, ToggleLeft, ToggleRight } from "lucide-react";
 import { customFetch } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,7 @@ interface Office {
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-function OfficeLogoCard({ office }: { office: Office }) {
+function OfficeLogoCard({ office, isSuperAdmin }: { office: Office; isSuperAdmin: boolean }) {
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(office.logo_url);
@@ -30,6 +30,16 @@ function OfficeLogoCard({ office }: { office: Office }) {
       qc.invalidateQueries({ queryKey: ["/api/offices/managed"] });
     },
     onError: () => setError("Failed to remove logo"),
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: (active: boolean) =>
+      customFetch(`${BASE}/api/offices/${office.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ active }),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/offices/managed"] }),
+    onError: () => setError("Failed to update status"),
   });
 
   async function handleFile(file: File) {
@@ -68,12 +78,27 @@ function OfficeLogoCard({ office }: { office: Office }) {
         <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
           <Building2 className="w-5 h-5 text-primary/60" />
         </div>
-        <div>
+        <div className="flex-1 min-w-0">
           <p className="font-semibold text-foreground">{office.name}</p>
           <p className="text-xs text-muted-foreground uppercase tracking-wider">{office.location_code}</p>
         </div>
-        {!office.active && (
-          <span className="ml-auto text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Inactive</span>
+        {isSuperAdmin && (
+          <button
+            onClick={() => toggleMutation.mutate(!office.active)}
+            disabled={toggleMutation.isPending}
+            className="flex items-center gap-1.5 text-xs font-medium transition-colors disabled:opacity-50"
+          >
+            {toggleMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            ) : office.active ? (
+              <><ToggleRight className="w-5 h-5 text-primary" /><span className="text-primary">Active</span></>
+            ) : (
+              <><ToggleLeft className="w-5 h-5 text-muted-foreground" /><span className="text-muted-foreground">Inactive</span></>
+            )}
+          </button>
+        )}
+        {!isSuperAdmin && !office.active && (
+          <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Inactive</span>
         )}
       </div>
 
@@ -143,8 +168,87 @@ function OfficeLogoCard({ office }: { office: Office }) {
   );
 }
 
+const emptyForm = { name: "", location_code: "", customer_key: "", od_url: "" };
+
+function AddPracticeForm({ onDone }: { onDone: () => void }) {
+  const qc = useQueryClient();
+  const [form, setForm] = useState(emptyForm);
+  const [error, setError] = useState<string | null>(null);
+
+  const createMutation = useMutation({
+    mutationFn: () =>
+      customFetch<Office>(`${BASE}/api/offices`, {
+        method: "POST",
+        body: JSON.stringify(form),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/offices/managed"] });
+      setForm(emptyForm);
+      onDone();
+    },
+    onError: (err: any) => setError(err?.data?.error ?? "Failed to create office"),
+  });
+
+  const fields = [
+    { key: "name",          label: "Practice Name",       placeholder: "Smile Dental Group",       type: "text" },
+    { key: "location_code", label: "Location Code",        placeholder: "brentwood",                 type: "text",
+      hint: "Lowercase identifier used internally (e.g. brentwood, lewisburg)" },
+    { key: "customer_key",  label: "Open Dental Customer Key", placeholder: "ODKEY-XXXX",          type: "text" },
+    { key: "od_url",        label: "Open Dental URL (optional)", placeholder: "https://192.168.x.x:8080", type: "text" },
+  ] as const;
+
+  return (
+    <div className="bg-card/30 border border-primary/20 rounded-2xl p-6 space-y-5">
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+          <Plus className="w-5 h-5 text-primary" />
+        </div>
+        <div>
+          <p className="font-semibold text-foreground">Add New Practice</p>
+          <p className="text-xs text-muted-foreground">Connects the practice to the Rippl poller</p>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {fields.map(({ key, label, placeholder, type, hint }) => (
+          <div key={key}>
+            <label className="block text-sm font-medium text-foreground mb-1">{label}</label>
+            {hint && <p className="text-xs text-muted-foreground mb-1">{hint}</p>}
+            <input
+              type={type}
+              placeholder={placeholder}
+              value={form[key as keyof typeof form]}
+              onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+              className="w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground placeholder-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 text-sm"
+            />
+          </div>
+        ))}
+      </div>
+
+      {error && <p className="text-sm text-destructive">{error}</p>}
+
+      <div className="flex items-center gap-3 pt-1">
+        <button
+          onClick={() => createMutation.mutate()}
+          disabled={createMutation.isPending || !form.name || !form.location_code || !form.customer_key}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {createMutation.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</> : <><Plus className="w-4 h-4" /> Create Practice</>}
+        </button>
+        <button
+          onClick={onDone}
+          className="px-4 py-2 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function OfficesPage() {
   const { profile } = useAuth();
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const { data: offices = [], isLoading, error } = useQuery<Office[]>({
     queryKey: ["/api/offices/managed"],
@@ -152,18 +256,31 @@ export default function OfficesPage() {
   });
 
   const isPracticeAdmin = profile?.role === "practice_admin";
+  const isSuperAdmin    = profile?.role === "super_admin";
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">
-          {isPracticeAdmin ? "Office Settings" : "Offices"}
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          {isPracticeAdmin
-            ? "Manage your practice logo and settings."
-            : "Manage all offices and their logos."}
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-foreground">
+            {isPracticeAdmin ? "Office Settings" : "Offices"}
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {isPracticeAdmin
+              ? "Manage your practice logo and settings."
+              : "Manage all offices and their logos."}
+          </p>
+        </div>
+
+        {isSuperAdmin && !showAddForm && (
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground transition-colors shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            Add Practice
+          </button>
+        )}
       </div>
 
       {isLoading ? (
@@ -172,16 +289,21 @@ export default function OfficesPage() {
         </div>
       ) : error ? (
         <p className="text-destructive text-sm">Failed to load offices.</p>
-      ) : offices.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-4 rounded-2xl border border-dashed border-border bg-muted/10">
-          <Building2 className="w-10 h-10 text-muted-foreground/40" />
-          <p className="text-muted-foreground text-sm">No offices found.</p>
-        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {offices.map(office => (
-            <OfficeLogoCard key={office.id} office={office} />
-          ))}
+          {showAddForm && (
+            <AddPracticeForm onDone={() => setShowAddForm(false)} />
+          )}
+          {offices.length === 0 && !showAddForm ? (
+            <div className="col-span-full flex flex-col items-center justify-center py-24 gap-4 rounded-2xl border border-dashed border-border bg-muted/10">
+              <Building2 className="w-10 h-10 text-muted-foreground/40" />
+              <p className="text-muted-foreground text-sm">No offices found.</p>
+            </div>
+          ) : (
+            offices.map(office => (
+              <OfficeLogoCard key={office.id} office={office} isSuperAdmin={isSuperAdmin} />
+            ))
+          )}
         </div>
       )}
     </div>

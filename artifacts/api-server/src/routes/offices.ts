@@ -3,7 +3,7 @@ import { db } from "@workspace/db";
 import { officesTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { supabaseAdmin } from "../lib/supabase";
-import { requireAuth, requirePracticeAdmin } from "../middleware/auth";
+import { requireAuth, requirePracticeAdmin, requireSuperAdmin } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -47,6 +47,53 @@ router.get("/managed", requireAuth, requirePracticeAdmin, async (req, res) => {
   } catch (err) {
     console.error("[offices/managed] Error:", err);
     res.status(500).json({ error: "Failed to fetch offices" });
+  }
+});
+
+// POST /api/offices — create a new office (super_admin only)
+router.post("/", requireAuth, requireSuperAdmin, async (req, res) => {
+  const { name, location_code, customer_key, od_url } = req.body as Record<string, string>;
+  if (!name?.trim() || !location_code?.trim() || !customer_key?.trim()) {
+    res.status(400).json({ error: "name, location_code, and customer_key are required" });
+    return;
+  }
+  try {
+    const [office] = await db
+      .insert(officesTable)
+      .values({
+        name:          name.trim(),
+        location_code: location_code.trim().toLowerCase(),
+        customer_key:  customer_key.trim(),
+        od_url:        od_url?.trim() || null,
+        active:        true,
+      })
+      .returning(safeColumns);
+    res.status(201).json(office);
+  } catch (err) {
+    console.error("[offices/create] Error:", err);
+    res.status(500).json({ error: "Failed to create office" });
+  }
+});
+
+// PATCH /api/offices/:id — update active status (super_admin only)
+router.patch("/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { active } = req.body as { active?: boolean };
+  if (typeof active !== "boolean") {
+    res.status(400).json({ error: "active (boolean) is required" });
+    return;
+  }
+  try {
+    const [office] = await db
+      .update(officesTable)
+      .set({ active })
+      .where(eq(officesTable.id, id))
+      .returning(safeColumns);
+    if (!office) { res.status(404).json({ error: "Office not found" }); return; }
+    res.json(office);
+  } catch (err) {
+    console.error("[offices/patch] Error:", err);
+    res.status(500).json({ error: "Failed to update office" });
   }
 });
 
