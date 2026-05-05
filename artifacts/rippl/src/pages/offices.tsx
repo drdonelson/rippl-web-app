@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Building2, Upload, X, Loader2, ImageIcon, CheckCircle2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Building2, Upload, X, Loader2, ImageIcon, CheckCircle2, ToggleLeft, ToggleRight, Wifi, WifiOff } from "lucide-react";
 import { customFetch } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,18 @@ interface Office {
   location_code: string;
   logo_url: string | null;
   active: boolean;
+  last_poll_at: string | null;
+}
+
+function formatPollAge(last_poll_at: string | null): { label: string; ok: boolean } {
+  if (!last_poll_at) return { label: "Never polled", ok: false };
+  const ageMs = Date.now() - new Date(last_poll_at).getTime();
+  const mins = Math.floor(ageMs / 60_000);
+  if (mins < 1)  return { label: "Polled just now", ok: true };
+  if (mins < 60) return { label: `Polled ${mins}m ago`, ok: true };
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return { label: `Polled ${hrs}h ago`, ok: hrs < 12 };
+  return { label: `Polled ${Math.floor(hrs / 24)}d ago`, ok: false };
 }
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -82,24 +94,40 @@ function OfficeLogoCard({ office, isSuperAdmin }: { office: Office; isSuperAdmin
           <p className="font-semibold text-foreground">{office.name}</p>
           <p className="text-xs text-muted-foreground uppercase tracking-wider">{office.location_code}</p>
         </div>
-        {isSuperAdmin && (
-          <button
-            onClick={() => toggleMutation.mutate(!office.active)}
-            disabled={toggleMutation.isPending}
-            className="flex items-center gap-1.5 text-xs font-medium transition-colors disabled:opacity-50"
-          >
-            {toggleMutation.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-            ) : office.active ? (
-              <><ToggleRight className="w-5 h-5 text-primary" /><span className="text-primary">Active</span></>
-            ) : (
-              <><ToggleLeft className="w-5 h-5 text-muted-foreground" /><span className="text-muted-foreground">Inactive</span></>
-            )}
-          </button>
-        )}
-        {!isSuperAdmin && !office.active && (
-          <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Inactive</span>
-        )}
+        <div className="flex items-center gap-2 ml-auto">
+          {(() => {
+            const poll = formatPollAge(office.last_poll_at);
+            return (
+              <span className={cn(
+                "flex items-center gap-1 text-xs font-medium",
+                poll.ok ? "text-teal-600" : "text-amber-500",
+              )}>
+                {poll.ok
+                  ? <Wifi className="w-3.5 h-3.5" />
+                  : <WifiOff className="w-3.5 h-3.5" />}
+                {poll.label}
+              </span>
+            );
+          })()}
+          {isSuperAdmin && (
+            <button
+              onClick={() => toggleMutation.mutate(!office.active)}
+              disabled={toggleMutation.isPending}
+              className="flex items-center gap-1.5 text-xs font-medium transition-colors disabled:opacity-50"
+            >
+              {toggleMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              ) : office.active ? (
+                <><ToggleRight className="w-5 h-5 text-primary" /><span className="text-primary">Active</span></>
+              ) : (
+                <><ToggleLeft className="w-5 h-5 text-muted-foreground" /><span className="text-muted-foreground">Inactive</span></>
+              )}
+            </button>
+          )}
+          {!isSuperAdmin && !office.active && (
+            <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Inactive</span>
+          )}
+        </div>
       </div>
 
       <div className="border-t border-border pt-4">

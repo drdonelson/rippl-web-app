@@ -785,6 +785,7 @@ export async function syncAllOffices(options?: { force?: boolean }): Promise<Syn
         office: { id: office.id, name: office.name, customer_key: office.customer_key, od_url: office.od_url },
       });
       results.push(result);
+      await db.update(officesTable).set({ last_poll_at: new Date() }).where(eq(officesTable.id, office.id));
     } catch (err) {
       logger.error({ err, officeId: office.id }, "Error syncing office");
     }

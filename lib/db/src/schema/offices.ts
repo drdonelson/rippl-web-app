@@ -9,6 +9,7 @@ export const officesTable = pgTable("offices", {
   logo_url:      text("logo_url"),               // public URL for practice logo (used on claim page + Tango customization)
   active:                boolean("active").notNull().default(true),
   agreement_accepted_at: timestamp("agreement_accepted_at"),
+  last_poll_at:          timestamp("last_poll_at"),
   created_at:            timestamp("created_at").notNull().defaultNow(),
 });
 

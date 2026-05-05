@@ -62,6 +62,7 @@ export default function Onboard() {
   const [practiceSubmitting, setPracticeSubmitting] = useState(false);
   const [practiceError, setPracticeError] = useState<string | null>(null);
   const [practiceSuccess, setPracticeSuccess] = useState(false);
+  const [practiceSuccessEmail, setPracticeSuccessEmail] = useState<string | null>(null);
   const [odTestResult, setOdTestResult] = useState<OdTestResult>(null);
   const [odTesting, setOdTesting] = useState(false);
 
@@ -190,7 +191,7 @@ export default function Onboard() {
       });
       const data = await res.json();
       if (!res.ok) setPracticeError(data.error || "Failed to create practice account.");
-      else setPracticeSuccess(true);
+      else { setPracticeSuccess(true); setPracticeSuccessEmail(practiceForm.email); }
     } catch {
       setPracticeError("Network error. Please try again.");
     } finally {
@@ -275,11 +276,12 @@ export default function Onboard() {
             <CheckCircle2 className="w-9 h-9 text-teal-600" />
           </div>
           <h2 className="text-2xl font-bold text-slate-900">Practice Created!</h2>
-          <p className="text-slate-500 text-sm">The practice admin account has been created. A welcome email with a setup link has been sent.</p>
+          <p className="text-slate-500 text-sm">Practice admin account created. A welcome email with a setup link was sent to <span className="font-medium text-slate-700">{practiceSuccessEmail}</span>.</p>
           <div className="flex gap-3 justify-center mt-6">
             <button
               onClick={() => {
                 setPracticeSuccess(false);
+                setPracticeSuccessEmail(null);
                 setPracticeForm({ practice_name: "", doctor_name: "", email: "", password: "", customer_key: "", location_code: "", od_url: "" });
                 setAgreementChecked(false);
                 setOdTestResult(null);

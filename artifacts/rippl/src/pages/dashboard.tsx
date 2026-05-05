@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Users, UserPlus, Gift, Trophy, ArrowRight, Activity, CheckCircle2, ClipboardList } from "lucide-react";
+import { Users, UserPlus, Gift, Trophy, ArrowRight, Activity, CheckCircle2, ClipboardList, X, Building2, UserCog, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
 import { useOffice } from "@/contexts/office-context";
@@ -127,12 +127,53 @@ export default function Dashboard() {
     { label: "Active Referrers", value: stats.active_referrers, icon: UserPlus, color: "text-purple-400", bg: "bg-purple-400/10", border: "border-purple-400/20", href: "/patients" },
   ];
 
+  const isPracticeAdmin = profile?.role === "practice_admin";
+  const [welcomeDismissed, setWelcomeDismissed] = useState(() => {
+    try { return localStorage.getItem(`rippl_welcome_dismissed_${profile?.id}`) === "1"; } catch { return false; }
+  });
+  const dismissWelcome = () => {
+    try { localStorage.setItem(`rippl_welcome_dismissed_${profile?.id}`, "1"); } catch {}
+    setWelcomeDismissed(true);
+  };
+  const showWelcomeBanner = !isDemo && isPracticeAdmin && !welcomeDismissed && stats.total_referrals === 0;
+
   return (
     <div className="space-y-10">
       <header>
         <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">Welcome back</h1>
         <p className="text-muted-foreground mt-2 text-base md:text-lg">Here's what's happening with your referral program today.</p>
       </header>
+
+      {/* Welcome banner — shown to new practice_admin until first referral event */}
+      {showWelcomeBanner && (
+        <div className="relative bg-teal-500/10 border border-teal-500/20 rounded-2xl p-6">
+          <button
+            onClick={dismissWelcome}
+            className="absolute top-4 right-4 text-teal-600/50 hover:text-teal-600 transition-colors"
+            aria-label="Dismiss"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <h2 className="text-lg font-bold text-teal-700 mb-1">You're live on Rippl</h2>
+          <p className="text-teal-700/80 text-sm mb-4 max-w-lg">
+            Rippl monitors your Open Dental for completed new-patient referral exams. When one is detected, the referring patient is notified and can claim their reward automatically. Your first reward notification will fire within the next poll cycle.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Link href="/offices" className="flex items-center gap-2.5 px-4 py-3 bg-white/60 hover:bg-white/90 border border-teal-200 rounded-xl text-sm font-medium text-teal-800 transition-colors">
+              <Building2 className="w-4 h-4 text-teal-500 shrink-0" />
+              Upload your practice logo
+            </Link>
+            <Link href="/staff" className="flex items-center gap-2.5 px-4 py-3 bg-white/60 hover:bg-white/90 border border-teal-200 rounded-xl text-sm font-medium text-teal-800 transition-colors">
+              <UserCog className="w-4 h-4 text-teal-500 shrink-0" />
+              Invite front desk staff
+            </Link>
+            <a href="https://www.joinrippl.com/how-it-works" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 px-4 py-3 bg-white/60 hover:bg-white/90 border border-teal-200 rounded-xl text-sm font-medium text-teal-800 transition-colors">
+              <ExternalLink className="w-4 h-4 text-teal-500 shrink-0" />
+              Share Rippl with your patients
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Stats Grid — each tile navigates to the relevant filtered view */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
