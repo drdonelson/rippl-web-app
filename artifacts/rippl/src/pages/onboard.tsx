@@ -324,39 +324,49 @@ export default function Onboard() {
           <button
             onClick={() => setActiveTab("practice")}
             className={cn(
-              "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all",
+              "flex-1 flex items-center justify-center gap-1.5 py-3 rounded-lg text-sm font-medium transition-all",
               activeTab === "practice" ? "bg-teal-500 text-white shadow" : "text-slate-500 hover:text-slate-900",
             )}
           >
-            <Building2 className="w-4 h-4" />
-            New Practice
+            <Building2 className="w-4 h-4 shrink-0" />
+            Practice
           </button>
           <button
             onClick={() => setActiveTab("staff")}
             className={cn(
-              "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all",
+              "flex-1 flex items-center justify-center gap-1.5 py-3 rounded-lg text-sm font-medium transition-all",
               activeTab === "staff" ? "bg-teal-500 text-white shadow" : "text-slate-500 hover:text-slate-900",
             )}
           >
-            <UserPlus className="w-4 h-4" />
-            New Staff Account
+            <UserPlus className="w-4 h-4 shrink-0" />
+            Staff
           </button>
           <button
             onClick={() => setActiveTab("leads")}
             className={cn(
-              "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all",
+              "flex-1 flex items-center justify-center gap-1.5 py-3 rounded-lg text-sm font-medium transition-all",
               activeTab === "leads" ? "bg-teal-500 text-white shadow" : "text-slate-500 hover:text-slate-900",
             )}
           >
-            <Users className="w-4 h-4" />
+            <Users className="w-4 h-4 shrink-0" />
             Leads
+            {leads.length > 0 && (
+              <span className={cn(
+                "ml-1 text-xs font-semibold px-1.5 py-0.5 rounded-full",
+                activeTab === "leads" ? "bg-white/20 text-white" : "bg-teal-100 text-teal-700",
+              )}>
+                {leads.length}
+              </span>
+            )}
           </button>
         </div>
 
         {/* ── Practice form ── */}
         {activeTab === "practice" && (
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-8 shadow-2xl">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-8">
             <form onSubmit={handlePracticeSubmit} className="space-y-4">
+
+              {/* Practice Identity */}
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1.5">Practice Name</label>
                 <input value={practiceForm.practice_name} onChange={e => setPracticeForm(f => ({ ...f, practice_name: e.target.value }))} required placeholder="My Practice – Nashville" className={inputClass} />
@@ -373,52 +383,59 @@ export default function Onboard() {
                 <label className="block text-sm font-medium text-slate-600 mb-1.5">Temporary Password</label>
                 <input type="password" value={practiceForm.password} onChange={e => setPracticeForm(f => ({ ...f, password: e.target.value }))} required placeholder="Min. 8 characters" minLength={8} className={inputClass} />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1.5">Location Code</label>
-                <input value={practiceForm.location_code} onChange={e => setPracticeForm(f => ({ ...f, location_code: e.target.value }))} required placeholder="springfield" className={inputClass} />
-                <p className="text-xs text-slate-400 mt-1">Lowercase, no spaces (used internally)</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1.5">Open Dental Customer Key</label>
-                <input value={practiceForm.customer_key} onChange={e => { setPracticeForm(f => ({ ...f, customer_key: e.target.value })); setOdTestResult(null); }} required placeholder="16-character key" className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1.5">
-                  Open Dental Server URL <span className="text-red-400">*</span>
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    value={practiceForm.od_url}
-                    onChange={e => { setPracticeForm(f => ({ ...f, od_url: e.target.value })); setOdTestResult(null); }}
-                    required
-                    placeholder="https://od.theirpractice.com"
-                    className={cn(inputClass, "flex-1")}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleTestOd}
-                    disabled={odTesting || !practiceForm.od_url || !practiceForm.customer_key}
-                    className="shrink-0 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:border-teal-400 hover:text-teal-600 text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {odTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Test"}
-                  </button>
+
+              {/* Technical Setup */}
+              <div className="border-t border-slate-100 pt-4">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Technical Setup</p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-600 mb-1.5">Location Code</label>
+                    <input value={practiceForm.location_code} onChange={e => setPracticeForm(f => ({ ...f, location_code: e.target.value }))} required placeholder="springfield" className={inputClass} />
+                    <p className="text-xs text-slate-400 mt-1">Lowercase, no spaces (used internally)</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-600 mb-1.5">Open Dental Customer Key</label>
+                    <input value={practiceForm.customer_key} onChange={e => { setPracticeForm(f => ({ ...f, customer_key: e.target.value })); setOdTestResult(null); }} required placeholder="16-character key" className={inputClass} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-600 mb-1.5">
+                      Open Dental Server URL <span className="text-red-400">*</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        value={practiceForm.od_url}
+                        onChange={e => { setPracticeForm(f => ({ ...f, od_url: e.target.value })); setOdTestResult(null); }}
+                        required
+                        placeholder="https://od.theirpractice.com"
+                        className={cn(inputClass, "flex-1")}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleTestOd}
+                        disabled={odTesting || !practiceForm.od_url || !practiceForm.customer_key}
+                        className="shrink-0 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:border-teal-400 hover:text-teal-600 text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {odTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Test"}
+                      </button>
+                    </div>
+                    {odTestResult !== null && (
+                      <div className={cn(
+                        "mt-2 flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium",
+                        odTestResult.ok === true && "bg-teal-50 border-teal-200 text-teal-700",
+                        odTestResult.ok === "reachable" && "bg-amber-50 border-amber-200 text-amber-700",
+                        odTestResult.ok === false && "bg-red-50 border-red-200 text-red-600",
+                      )}>
+                        {odTestResult.ok === true && <><Wifi className="w-4 h-4 shrink-0" /> Connected</>}
+                        {odTestResult.ok === "reachable" && <><Wifi className="w-4 h-4 shrink-0" /> Server reachable — check customer key</>}
+                        {odTestResult.ok === false && <><WifiOff className="w-4 h-4 shrink-0" /> {(odTestResult as any).error ?? "Connection failed"}</>}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                {odTestResult !== null && (
-                  <p className={cn(
-                    "text-xs mt-1.5 flex items-center gap-1.5",
-                    odTestResult.ok === true && "text-teal-600",
-                    odTestResult.ok === "reachable" && "text-amber-600",
-                    odTestResult.ok === false && "text-red-500",
-                  )}>
-                    {odTestResult.ok === true && <><Wifi className="w-3.5 h-3.5" /> Connected</>}
-                    {odTestResult.ok === "reachable" && <><Wifi className="w-3.5 h-3.5" /> Server reachable — check customer key</>}
-                    {odTestResult.ok === false && <><WifiOff className="w-3.5 h-3.5" /> {(odTestResult as any).error ?? "Connection failed"}</>}
-                  </p>
-                )}
               </div>
 
-              {/* Agreement checkbox */}
-              <div className="pt-1">
+              {/* Agreement */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input
                     type="checkbox"
@@ -426,8 +443,8 @@ export default function Onboard() {
                     onChange={e => setAgreementChecked(e.target.checked)}
                     className="mt-0.5 h-4 w-4 rounded border-slate-300 text-teal-500 focus:ring-teal-500/30"
                   />
-                  <span className="text-sm text-slate-600">
-                    I agree to Rippl referral pricing terms ($20 per completed referral, no monthly fee)
+                  <span className="text-sm text-slate-700 leading-relaxed">
+                    I agree to Rippl referral pricing terms — <span className="font-semibold">$20 per completed referral, no monthly fee</span>
                   </span>
                 </label>
               </div>
@@ -435,13 +452,18 @@ export default function Onboard() {
               {practiceError && (
                 <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{practiceError}</p>
               )}
-              <button
-                type="submit"
-                disabled={practiceSubmitting || !agreementChecked}
-                className="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 mt-2"
-              >
-                {practiceSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</> : "Create Practice Admin"}
-              </button>
+              <div>
+                <button
+                  type="submit"
+                  disabled={practiceSubmitting || !agreementChecked}
+                  className="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  {practiceSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</> : "Create Practice Admin"}
+                </button>
+                {!agreementChecked && (
+                  <p className="text-xs text-slate-400 text-center mt-2">Accept the pricing terms above to continue</p>
+                )}
+              </div>
             </form>
           </div>
         )}
@@ -622,8 +644,10 @@ export default function Onboard() {
                 <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
               </div>
             ) : leads.length === 0 ? (
-              <div className="bg-white border border-slate-200 rounded-2xl px-5 py-6 text-center">
-                <p className="text-slate-400 text-sm">No leads yet.</p>
+              <div className="bg-white border border-slate-200 rounded-2xl px-5 py-10 flex flex-col items-center gap-3 text-center">
+                <Users className="w-8 h-8 text-slate-300" />
+                <p className="text-slate-700 font-medium text-sm">No leads yet</p>
+                <p className="text-slate-400 text-xs max-w-xs">Practices interested in Rippl appear here after filling out the form at joinrippl.com/join.</p>
               </div>
             ) : (
               <div className="space-y-2">
