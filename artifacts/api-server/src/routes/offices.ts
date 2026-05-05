@@ -50,28 +50,38 @@ router.get("/managed", requireAuth, requirePracticeAdmin, async (req, res) => {
   }
 });
 
-// POST /api/offices — create a new office (super_admin only)
-router.post("/", requireAuth, requireSuperAdmin, async (req, res) => {
-  const { name, location_code, customer_key, od_url } = req.body as Record<string, string>;
-  if (!name?.trim() || !location_code?.trim() || !customer_key?.trim()) {
-    res.status(400).json({ error: "name, location_code, and customer_key are required" });
+// POST /api/offices/test-od — test OD connectivity (super_admin only)
+router.post("/test-od", requireAuth, requireSuperAdmin, async (req, res) => {
+  const { od_url, customer_key } = req.body as { od_url?: string; customer_key?: string };
+  if (!od_url?.trim() || !customer_key?.trim()) {
+    res.status(400).json({ error: "od_url and customer_key are required" });
     return;
   }
+  const developerKey = process.env.OPEN_DENTAL_DEVELOPER_KEY?.trim();
+  if (!developerKey) {
+    res.status(500).json({ error: "Server not configured with developer key" });
+    return;
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
   try {
-    const [office] = await db
-      .insert(officesTable)
-      .values({
-        name:          name.trim(),
-        location_code: location_code.trim().toLowerCase(),
-        customer_key:  customer_key.trim(),
-        od_url:        od_url?.trim() || null,
-        active:        true,
-      })
-      .returning(safeColumns);
-    res.status(201).json(office);
-  } catch (err) {
-    console.error("[offices/create] Error:", err);
-    res.status(500).json({ error: "Failed to create office" });
+    const response = await fetch(
+      `${od_url.trim()}/api/v1/procedureCodes?Abbr=R0150`,
+      {
+        headers: { Authorization: `ODFHIR ${developerKey}/${customer_key.trim()}` },
+        signal: controller.signal,
+      }
+    );
+    clearTimeout(timeout);
+    if (response.ok) {
+      res.json({ ok: true });
+    } else {
+      res.json({ ok: "reachable" });
+    }
+  } catch (err: any) {
+    clearTimeout(timeout);
+    const isTimeout = err?.name === "AbortError";
+    res.json({ ok: false, error: isTimeout ? "Connection timed out" : (err?.message ?? "Connection failed") });
   }
 });
 

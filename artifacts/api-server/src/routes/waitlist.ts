@@ -1,7 +1,9 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db } from "@workspace/db";
-import { sql } from "drizzle-orm";
+import { waitlistTable } from "@workspace/db/schema";
+import { desc } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import { requireAuth, requireSuperAdmin } from "../middleware/auth";
 import rateLimit from "express-rate-limit";
 
 const router: IRouter = Router();
@@ -15,23 +17,42 @@ router.post("/waitlist", limiter, async (req: Request, res: Response) => {
     return;
   }
 
-  // Store in a simple waitlist table (created via raw SQL below if needed)
-  // Falls back to logging if table doesn't exist yet
   try {
-    await db.execute(sql`
-      INSERT INTO waitlist (name, practice, email, phone, created_at)
-      VALUES (${name.trim()}, ${practice.trim()}, ${email.trim().toLowerCase()}, ${(phone ?? "").trim()}, now())
-      ON CONFLICT (email) DO UPDATE SET
-        name = EXCLUDED.name,
-        practice = EXCLUDED.practice,
-        phone = EXCLUDED.phone
-    `);
+    await db
+      .insert(waitlistTable)
+      .values({
+        name:     name.trim(),
+        practice: practice.trim(),
+        email:    email.trim().toLowerCase(),
+        phone:    (phone ?? "").trim(),
+      })
+      .onConflictDoUpdate({
+        target: waitlistTable.email,
+        set: {
+          name:     name.trim(),
+          practice: practice.trim(),
+          phone:    (phone ?? "").trim(),
+        },
+      });
     logger.info({ name, practice, email }, "Waitlist signup");
     res.json({ success: true });
   } catch (err) {
-    logger.error({ err, name, practice, email }, "Waitlist insert failed — logging only");
-    // Don't fail the user — just log it
-    res.json({ success: true });
+    logger.error({ err, name, practice, email }, "Waitlist insert failed");
+    res.status(500).json({ error: "Failed to save. Please try again." });
+  }
+});
+
+// GET /admin/waitlist-leads — super_admin only
+router.get("/waitlist-leads", requireAuth, requireSuperAdmin, async (_req: Request, res: Response) => {
+  try {
+    const leads = await db
+      .select()
+      .from(waitlistTable)
+      .orderBy(desc(waitlistTable.created_at));
+    res.json(leads);
+  } catch (err) {
+    logger.error({ err }, "Failed to fetch waitlist leads");
+    res.status(500).json({ error: "Failed to fetch leads" });
   }
 });
 

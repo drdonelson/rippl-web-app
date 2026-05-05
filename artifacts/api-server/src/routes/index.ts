@@ -32,6 +32,7 @@ router.use("/referral", referralRouter);
 router.use("/claim", publicClaimRouter);
 router.use("/public", publicLookupRouter);
 router.use("/public", waitlistRouter);
+router.use("/admin", requireAuth, waitlistRouter);
 router.use("/demo", demoRouter);
 
 // Semi-public routes (non-sensitive data)

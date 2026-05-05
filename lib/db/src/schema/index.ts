@@ -11,3 +11,4 @@ export * from "./local_partners";
 export * from "./partner_reward_tiers";
 export * from "./reward_claims";
 export * from "./campaigns";
+export * from "./waitlist";

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/auth-context";
 import {
   Droplets, Loader2, CheckCircle2, ArrowLeft, Building2,
   UserPlus, Eye, EyeOff, Trash2, AlertTriangle, KeyRound,
+  Wifi, WifiOff, Users,
 } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
@@ -31,6 +31,17 @@ interface StaffAccount {
   created_at: string;
 }
 
+interface WaitlistLead {
+  id: string;
+  name: string;
+  practice: string;
+  email: string;
+  phone: string;
+  created_at: string;
+}
+
+type OdTestResult = { ok: true } | { ok: "reachable" } | { ok: false; error: string } | null;
+
 function roleLabel(role: string): string {
   return role
     .replace("staff_", "")
@@ -40,17 +51,19 @@ function roleLabel(role: string): string {
 
 export default function Onboard() {
   const { profile, session } = useAuth();
-  const [, navigate] = useLocation();
-  const [activeTab, setActiveTab] = useState<"practice" | "staff">("practice");
+  const [activeTab, setActiveTab] = useState<"practice" | "staff" | "leads">("practice");
 
   // ── Practice form ─────────────────────────────────────────────────────────
   const [practiceForm, setPracticeForm] = useState({
     practice_name: "", doctor_name: "", email: "", password: "",
     customer_key: "", location_code: "", od_url: "",
   });
+  const [agreementChecked, setAgreementChecked] = useState(false);
   const [practiceSubmitting, setPracticeSubmitting] = useState(false);
   const [practiceError, setPracticeError] = useState<string | null>(null);
   const [practiceSuccess, setPracticeSuccess] = useState(false);
+  const [odTestResult, setOdTestResult] = useState<OdTestResult>(null);
+  const [odTesting, setOdTesting] = useState(false);
 
   // ── Staff form ────────────────────────────────────────────────────────────
   const [offices, setOffices] = useState<ActiveOffice[]>([]);
@@ -69,6 +82,10 @@ export default function Onboard() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [resettingId, setResettingId] = useState<string | null>(null);
 
+  // ── Leads ─────────────────────────────────────────────────────────────────
+  const [leads, setLeads] = useState<WaitlistLead[]>([]);
+  const [leadsLoading, setLeadsLoading] = useState(false);
+
   const authHeaders = useCallback(() => ({
     "Content-Type": "application/json",
     ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
@@ -84,6 +101,16 @@ export default function Onboard() {
     }
   }, [authHeaders]);
 
+  const fetchLeads = useCallback(async () => {
+    setLeadsLoading(true);
+    try {
+      const res = await fetch(`${BASE}/api/admin/waitlist-leads`, { headers: authHeaders() });
+      if (res.ok) setLeads(await res.json());
+    } catch { /* ignore */ } finally {
+      setLeadsLoading(false);
+    }
+  }, [authHeaders]);
+
   useEffect(() => {
     fetch(`${BASE}/api/offices/active`)
       .then(r => r.json())
@@ -96,10 +123,19 @@ export default function Onboard() {
 
   useEffect(() => {
     if (activeTab === "staff" && session) fetchStaffAccounts();
-  }, [activeTab, session, fetchStaffAccounts]);
+    if (activeTab === "leads" && session) fetchLeads();
+  }, [activeTab, session, fetchStaffAccounts, fetchLeads]);
 
-  // Access guard
-  if (profile && profile.role !== "super_admin") {
+  // Access guard — undefined = still loading, null/missing role = not authorized
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-teal-500" />
+      </div>
+    );
+  }
+
+  if (profile.role !== "super_admin") {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
         <div className="text-center space-y-4">
@@ -113,9 +149,37 @@ export default function Onboard() {
     );
   }
 
+  // ── OD connectivity test ──────────────────────────────────────────────────
+  const handleTestOd = async () => {
+    if (!practiceForm.od_url || !practiceForm.customer_key) return;
+    setOdTesting(true);
+    setOdTestResult(null);
+    try {
+      const res = await fetch(`${BASE}/api/offices/test-od`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ od_url: practiceForm.od_url, customer_key: practiceForm.customer_key }),
+      });
+      const data = await res.json();
+      setOdTestResult(data);
+    } catch {
+      setOdTestResult({ ok: false, error: "Network error" });
+    } finally {
+      setOdTesting(false);
+    }
+  };
+
   // ── Practice submit ───────────────────────────────────────────────────────
   const handlePracticeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!practiceForm.od_url.trim()) {
+      setPracticeError("Open Dental Server URL is required.");
+      return;
+    }
+    if (!agreementChecked) {
+      setPracticeError("Please accept the pricing terms before submitting.");
+      return;
+    }
     setPracticeError(null);
     setPracticeSubmitting(true);
     try {
@@ -211,12 +275,14 @@ export default function Onboard() {
             <CheckCircle2 className="w-9 h-9 text-teal-600" />
           </div>
           <h2 className="text-2xl font-bold text-slate-900">Practice Created!</h2>
-          <p className="text-slate-500 text-sm">The practice admin account has been created and can now log in.</p>
+          <p className="text-slate-500 text-sm">The practice admin account has been created. A welcome email with a setup link has been sent.</p>
           <div className="flex gap-3 justify-center mt-6">
             <button
               onClick={() => {
                 setPracticeSuccess(false);
                 setPracticeForm({ practice_name: "", doctor_name: "", email: "", password: "", customer_key: "", location_code: "", od_url: "" });
+                setAgreementChecked(false);
+                setOdTestResult(null);
               }}
               className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 text-sm transition-colors"
             >
@@ -275,6 +341,16 @@ export default function Onboard() {
             <UserPlus className="w-4 h-4" />
             New Staff Account
           </button>
+          <button
+            onClick={() => setActiveTab("leads")}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all",
+              activeTab === "leads" ? "bg-teal-500 text-white shadow" : "text-slate-500 hover:text-slate-900",
+            )}
+          >
+            <Users className="w-4 h-4" />
+            Leads
+          </button>
         </div>
 
         {/* ── Practice form ── */}
@@ -304,17 +380,66 @@ export default function Onboard() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1.5">Open Dental Customer Key</label>
-                <input value={practiceForm.customer_key} onChange={e => setPracticeForm(f => ({ ...f, customer_key: e.target.value }))} required placeholder="16-character key" className={inputClass} />
+                <input value={practiceForm.customer_key} onChange={e => { setPracticeForm(f => ({ ...f, customer_key: e.target.value })); setOdTestResult(null); }} required placeholder="16-character key" className={inputClass} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1.5">Open Dental Server URL</label>
-                <input value={practiceForm.od_url} onChange={e => setPracticeForm(f => ({ ...f, od_url: e.target.value }))} placeholder="https://od.theirpractice.com (leave blank to use default)" className={inputClass} />
-                <p className="text-xs text-slate-400 mt-1">Only needed if this practice has a different OD server than Hallmark.</p>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">
+                  Open Dental Server URL <span className="text-red-400">*</span>
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    value={practiceForm.od_url}
+                    onChange={e => { setPracticeForm(f => ({ ...f, od_url: e.target.value })); setOdTestResult(null); }}
+                    required
+                    placeholder="https://od.theirpractice.com"
+                    className={cn(inputClass, "flex-1")}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleTestOd}
+                    disabled={odTesting || !practiceForm.od_url || !practiceForm.customer_key}
+                    className="shrink-0 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:border-teal-400 hover:text-teal-600 text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {odTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Test"}
+                  </button>
+                </div>
+                {odTestResult !== null && (
+                  <p className={cn(
+                    "text-xs mt-1.5 flex items-center gap-1.5",
+                    odTestResult.ok === true && "text-teal-600",
+                    odTestResult.ok === "reachable" && "text-amber-600",
+                    odTestResult.ok === false && "text-red-500",
+                  )}>
+                    {odTestResult.ok === true && <><Wifi className="w-3.5 h-3.5" /> Connected</>}
+                    {odTestResult.ok === "reachable" && <><Wifi className="w-3.5 h-3.5" /> Server reachable — check customer key</>}
+                    {odTestResult.ok === false && <><WifiOff className="w-3.5 h-3.5" /> {(odTestResult as any).error ?? "Connection failed"}</>}
+                  </p>
+                )}
               </div>
+
+              {/* Agreement checkbox */}
+              <div className="pt-1">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={agreementChecked}
+                    onChange={e => setAgreementChecked(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-teal-500 focus:ring-teal-500/30"
+                  />
+                  <span className="text-sm text-slate-600">
+                    I agree to Rippl referral pricing terms ($20 per completed referral, no monthly fee)
+                  </span>
+                </label>
+              </div>
+
               {practiceError && (
                 <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{practiceError}</p>
               )}
-              <button type="submit" disabled={practiceSubmitting} className="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 mt-2">
+              <button
+                type="submit"
+                disabled={practiceSubmitting || !agreementChecked}
+                className="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 mt-2"
+              >
                 {practiceSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</> : "Create Practice Admin"}
               </button>
             </form>
@@ -480,6 +605,46 @@ export default function Onboard() {
               )}
             </div>
           </>
+        )}
+
+        {/* ── Leads tab ── */}
+        {activeTab === "leads" && (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-slate-900 font-semibold text-sm">Waitlist Leads</h2>
+              <button onClick={fetchLeads} disabled={leadsLoading} className="text-xs text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-40">
+                {leadsLoading ? <Loader2 className="w-3 h-3 animate-spin inline" /> : "Refresh"}
+              </button>
+            </div>
+
+            {leadsLoading && leads.length === 0 ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
+              </div>
+            ) : leads.length === 0 ? (
+              <div className="bg-white border border-slate-200 rounded-2xl px-5 py-6 text-center">
+                <p className="text-slate-400 text-sm">No leads yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {leads.map(lead => (
+                  <div key={lead.id} className="bg-white border border-slate-200 rounded-xl px-4 py-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-slate-900 text-sm font-medium">{lead.name}</p>
+                        <p className="text-slate-500 text-xs">{lead.practice}</p>
+                      </div>
+                      <p className="text-slate-400 text-xs shrink-0">{new Date(lead.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5">
+                      <a href={`mailto:${lead.email}`} className="text-xs text-teal-600 hover:underline">{lead.email}</a>
+                      {lead.phone && <span className="text-xs text-slate-400">{lead.phone}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

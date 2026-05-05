@@ -774,6 +774,10 @@ export async function syncAllOffices(options?: { force?: boolean }): Promise<Syn
 
   const results: SyncResult[] = [];
   for (const office of offices) {
+    if (!office.od_url) {
+      logger.warn({ officeId: office.id, officeName: office.name }, "Skipping office — od_url is null (configure it in the DB before this office can sync)");
+      continue;
+    }
     logger.info({ officeId: office.id, officeName: office.name }, "Syncing office");
     try {
       const result = await syncOpenDental({

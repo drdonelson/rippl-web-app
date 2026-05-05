@@ -2,8 +2,12 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { userProfilesTable, officesTable } from "@workspace/db/schema";
 import { eq, like } from "drizzle-orm";
+import sgMail from "@sendgrid/mail";
 import { supabaseAdmin } from "../lib/supabase";
 import { getProfileHandler, requireAuth, requireSuperAdmin, requirePracticeAdmin } from "../middleware/auth";
+
+const SENDGRID_API_KEY    = process.env.SENDGRID_API_KEY;
+const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "hello@joinrippl.com";
 
 const router: IRouter = Router();
 
@@ -19,6 +23,9 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
     return;
   }
 
+  let userId: string | null = null;
+  let officeId: string | null = null;
+
   try {
     // 1. Create Supabase auth user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -32,7 +39,7 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
       return;
     }
 
-    const userId = authData.user.id;
+    userId = authData.user.id;
 
     // 2. Create office record
     const [office] = await db.insert(officesTable).values({
@@ -41,7 +48,9 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
       location_code,
       od_url: od_url || null,
       active: true,
+      agreement_accepted_at: new Date(),
     }).returning();
+    officeId = office.id;
 
     // 3. Create user_profile
     await db.insert(userProfilesTable).values({
@@ -51,9 +60,42 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
       full_name: doctor_name || null,
     });
 
+    // 4. Send welcome email with one-time setup link (non-fatal)
+    try {
+      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+        type: "recovery",
+        email,
+      });
+      if (!linkError && linkData?.properties?.action_link && SENDGRID_API_KEY) {
+        sgMail.setApiKey(SENDGRID_API_KEY);
+        await sgMail.send({
+          to: email,
+          from: { email: SENDGRID_FROM_EMAIL, name: "Rippl" },
+          subject: "Welcome to Rippl — set up your account",
+          html: `<p>Hi${doctor_name ? ` ${doctor_name}` : ""},</p>
+<p>Your Rippl practice account has been created. Click the link below to set your password and get started:</p>
+<p><a href="${linkData.properties.action_link}">Set up my account</a></p>
+<p>If you have any questions, reply to this email.</p>
+<p>— The Rippl Team</p>`,
+        });
+      }
+    } catch (emailErr) {
+      console.warn("[onboard] Welcome email failed (non-fatal):", emailErr);
+    }
+
     res.status(201).json({ success: true, office_id: office.id });
   } catch (err) {
     console.error("[onboard] Error:", err);
+    if (userId) {
+      await supabaseAdmin.auth.admin.deleteUser(userId).catch(e =>
+        console.error("[onboard] Failed to clean up orphaned auth user:", e)
+      );
+    }
+    if (officeId) {
+      await db.delete(officesTable).where(eq(officesTable.id, officeId)).catch(e =>
+        console.error("[onboard] Failed to clean up orphaned office:", e)
+      );
+    }
     res.status(500).json({ error: "Failed to create practice admin account" });
   }
 });
@@ -70,6 +112,8 @@ router.post("/onboard-staff", requireAuth, requirePracticeAdmin, async (req, res
     res.status(400).json({ error: "Missing required fields: email, password, office_id" });
     return;
   }
+
+  let userId: string | null = null;
 
   try {
     // 1. Verify the office exists (and belongs to caller if practice_admin)
@@ -98,7 +142,7 @@ router.post("/onboard-staff", requireAuth, requirePracticeAdmin, async (req, res
       return;
     }
 
-    const userId = authData.user.id;
+    userId = authData.user.id;
 
     // 4. Create user_profile with staff role + assigned office as practice_id
     await db.insert(userProfilesTable).values({
@@ -111,6 +155,11 @@ router.post("/onboard-staff", requireAuth, requirePracticeAdmin, async (req, res
     res.status(201).json({ success: true, role, office_id: office.id });
   } catch (err) {
     console.error("[onboard-staff] Error:", err);
+    if (userId) {
+      await supabaseAdmin.auth.admin.deleteUser(userId).catch(e =>
+        console.error("[onboard-staff] Failed to clean up orphaned auth user:", e)
+      );
+    }
     res.status(500).json({ error: "Failed to create staff account" });
   }
 });
