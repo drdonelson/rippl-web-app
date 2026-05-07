@@ -87,7 +87,7 @@ const NAV_SECTIONS: NavSection[] = [
     label: "Resources",
     demoVisible: true,
     items: [
-      { href: "/help", label: "Staff Training", icon: BookOpen },
+      { href: "/help", label: "Help", icon: BookOpen },
     ],
   },
 ];
