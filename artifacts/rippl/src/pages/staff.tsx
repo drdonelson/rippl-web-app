@@ -114,17 +114,28 @@ export default function StaffPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // super_admin goes to the full onboard page
-  if (!isDemo && profile?.role === "super_admin") {
-    navigate("/onboard");
-    return null;
-  }
+  // All hooks must come before any early returns
+  const { data: staff = [], isLoading, error } = useQuery<StaffAccount[]>({
+    queryKey: ["/api/auth/staff-accounts"],
+    queryFn: () => customFetch<StaffAccount[]>(`${BASE}/api/auth/staff-accounts`),
+    enabled: !isDemo && profile?.role === "practice_admin",
+  });
 
-  // staff_* can't manage other staff
-  if (!isDemo && profile?.role?.startsWith("staff_")) {
-    navigate("/dashboard");
-    return null;
-  }
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => customFetch(`${BASE}/api/auth/staff-accounts/${id}`, { method: "DELETE" }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/auth/staff-accounts"] }); setDeletingId(null); },
+  });
+
+  // Redirect in effect, not during render — avoids blank flash
+  React.useEffect(() => {
+    if (!profile) return;
+    if (!isDemo && profile.role === "super_admin") navigate("/onboard");
+    if (!isDemo && profile.role.startsWith("staff_")) navigate("/dashboard");
+  }, [profile, isDemo, navigate]);
+
+  // Show nothing while we're about to redirect
+  if (!isDemo && profile?.role === "super_admin") return null;
+  if (!isDemo && profile?.role?.startsWith("staff_")) return null;
 
   // ── Demo view ──────────────────────────────────────────────────────────────
   if (isDemo) {
@@ -170,17 +181,6 @@ export default function StaffPage() {
   }
 
   // ── Real practice_admin view ───────────────────────────────────────────────
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const { data: staff = [], isLoading, error } = useQuery<StaffAccount[]>({
-    queryKey: ["/api/auth/staff-accounts"],
-    queryFn: () => customFetch<StaffAccount[]>(`${BASE}/api/auth/staff-accounts`),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => customFetch(`${BASE}/api/auth/staff-accounts/${id}`, { method: "DELETE" }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/auth/staff-accounts"] }); setDeletingId(null); },
-  });
 
   const roleLabel = (role: string) => {
     if (role === "practice_admin") return "Practice Admin";
