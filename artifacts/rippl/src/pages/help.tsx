@@ -79,7 +79,7 @@ const STEPS = [
 
 export default function HelpPage() {
   return (
-    <div className="space-y-8 max-w-3xl">
+    <div className="space-y-8 max-w-3xl mx-auto">
       <div>
         <h1 className="text-3xl font-display font-bold text-foreground">Staff Training</h1>
         <p className="text-muted-foreground mt-1">
