@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Droplets, CheckCircle2, ArrowRight, ChevronDown, TrendingUp, Users, Zap, Shield, X, Loader2 } from "lucide-react";
+import { CheckCircle2, ArrowRight, ChevronDown, TrendingUp, Users, Zap, Shield, X, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -203,8 +203,8 @@ function DemoModal({ onClose }: { onClose: () => void }) {
 
         {state === "success" ? (
           <div className="text-center py-6">
-            <div className="w-14 h-14 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="w-7 h-7 text-teal-600" />
+            <div className="w-14 h-14 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-7 h-7 text-[#E0622A]" />
             </div>
             <h3 className="text-slate-900 font-black text-xl mb-2">You're on the list!</h3>
             <p className="text-slate-500 text-sm leading-relaxed max-w-xs mx-auto">
@@ -212,7 +212,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
             </p>
             <button
               onClick={onClose}
-              className="mt-6 inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm"
+              className="mt-6 inline-flex items-center gap-2 bg-[#E0622A] hover:bg-[#C9551E] text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm"
             >
               Done
             </button>
@@ -221,10 +221,9 @@ function DemoModal({ onClose }: { onClose: () => void }) {
           <>
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-1">
-                <div className="w-7 h-7 rounded-lg bg-teal-600 flex items-center justify-center">
-                  <Droplets className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-slate-900 font-bold text-sm">Rippl</span>
+                <span className="font-display font-bold text-base">
+                  <span className="text-slate-900">rip</span><span className="text-[#E0622A]">pl</span>
+                </span>
               </div>
               <h3 className="text-slate-900 font-black text-xl mt-3 mb-1">Request a Demo</h3>
               <p className="text-slate-500 text-sm">We'll walk through your Open Dental setup and get you live — in one call.</p>
@@ -239,7 +238,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
                     value={form.name}
                     onChange={set("name")}
                     placeholder="Dr. Jane Smith"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-[#E0622A] focus:ring-1 focus:ring-[#E0622A]/30 transition-colors"
                   />
                 </div>
                 <div>
@@ -250,7 +249,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
                     value={form.email}
                     onChange={set("email")}
                     placeholder="jane@mypractice.com"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-[#E0622A] focus:ring-1 focus:ring-[#E0622A]/30 transition-colors"
                   />
                 </div>
                 <div>
@@ -261,7 +260,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
                     value={form.phone}
                     onChange={set("phone")}
                     placeholder="(615) 555-0100"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-[#E0622A] focus:ring-1 focus:ring-[#E0622A]/30 transition-colors"
                   />
                 </div>
                 <div className="col-span-2">
@@ -271,7 +270,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
                     value={form.practice}
                     onChange={set("practice")}
                     placeholder="Smith Family Dentistry"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-[#E0622A] focus:ring-1 focus:ring-[#E0622A]/30 transition-colors"
                   />
                 </div>
                 <div>
@@ -279,7 +278,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
                   <select
                     value={form.emr}
                     onChange={set("emr")}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 text-sm focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors appearance-none"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 text-sm focus:outline-none focus:border-[#E0622A] focus:ring-1 focus:ring-[#E0622A]/30 transition-colors appearance-none"
                   >
                     <option value="">Select EMR…</option>
                     {EMR_OPTIONS.map((o) => (
@@ -292,7 +291,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
                   <select
                     value={form.locations}
                     onChange={set("locations")}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 text-sm focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors appearance-none"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 text-sm focus:outline-none focus:border-[#E0622A] focus:ring-1 focus:ring-[#E0622A]/30 transition-colors appearance-none"
                   >
                     <option value="">How many?</option>
                     {LOCATION_OPTIONS.map((o) => (
@@ -312,7 +311,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
               <button
                 type="submit"
                 disabled={state === "submitting"}
-                className="w-full flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-500 disabled:opacity-60 text-white font-bold px-6 py-3 rounded-xl transition-colors shadow-lg shadow-teal-600/20 text-sm mt-1"
+                className="w-full flex items-center justify-center gap-2 bg-[#E0622A] hover:bg-[#C9551E] disabled:opacity-60 text-white font-bold px-6 py-3 rounded-xl transition-colors shadow-lg shadow-[#E0622A]/20 text-sm mt-1"
               >
                 {state === "submitting" ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>
@@ -362,22 +361,21 @@ export default function Practices() {
 
       {/* ── Subtle glow ────────────────────────────────────────────────── */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-teal-500/6 rounded-full blur-[120px]" />
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-orange-500/6 rounded-full blur-[120px]" />
       </div>
 
       <div className="relative max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-14 pb-20">
 
         {/* ── Nav bar ──────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between mb-14">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center shadow-lg shadow-teal-600/20">
-              <Droplets className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-slate-900 font-bold text-xl">Rippl</span>
+          <div className="flex items-center">
+            <span className="font-display font-bold text-xl">
+              <span className="text-slate-900">rip</span><span className="text-[#E0622A]">pl</span>
+            </span>
           </div>
           <button
             onClick={() => setShowModal(true)}
-            className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors shadow-md shadow-teal-600/20"
+            className="inline-flex items-center gap-2 bg-[#E0622A] hover:bg-[#C9551E] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors shadow-md shadow-[#E0622A]/20"
           >
             Request a Demo <ArrowRight className="w-4 h-4" />
           </button>
@@ -391,7 +389,7 @@ export default function Practices() {
           className="text-center mb-16"
         >
           <motion.div variants={fadeUp}>
-            <span className="inline-block bg-teal-50 border border-teal-200 text-teal-700 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full mb-6">
+            <span className="inline-block bg-orange-50 border border-orange-200 text-orange-700 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full mb-6">
               For Dental Practices
             </span>
           </motion.div>
@@ -402,7 +400,7 @@ export default function Practices() {
           >
             Your patients are your
             <br />
-            <span className="text-teal-600">best marketing channel.</span>
+            <span className="text-[#E0622A]">best marketing channel.</span>
           </motion.h1>
 
           <motion.p
@@ -417,7 +415,7 @@ export default function Practices() {
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
               onClick={() => setShowModal(true)}
-              className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold px-7 py-3.5 rounded-2xl transition-colors shadow-xl shadow-teal-600/25 text-base"
+              className="inline-flex items-center gap-2 bg-[#E0622A] hover:bg-[#C9551E] text-white font-bold px-7 py-3.5 rounded-2xl transition-colors shadow-xl shadow-[#E0622A]/25 text-base"
             >
               Request a Demo <ArrowRight className="w-5 h-5" />
             </button>
@@ -447,7 +445,7 @@ export default function Practices() {
               variants={fadeUp}
               className="bg-white border border-slate-200 rounded-2xl p-4 md:p-5 text-center"
             >
-              <p className="text-3xl md:text-4xl font-black text-teal-600 mb-1">{s.value}</p>
+              <p className="text-3xl md:text-4xl font-black text-[#E0622A] mb-1">{s.value}</p>
               <p className="text-slate-800 font-semibold text-xs md:text-sm leading-tight mb-1">{s.label}</p>
               <p className="text-slate-400 text-xs leading-snug">{s.sub}</p>
             </motion.div>
@@ -488,33 +486,33 @@ export default function Practices() {
                     className={cn(
                       "border-b border-slate-200/60 last:border-0 transition-colors",
                       ch.highlight
-                        ? "bg-teal-50/80"
+                        ? "bg-orange-50/80"
                         : "bg-white hover:bg-slate-50",
                       i === CHANNELS.length - 1 && "last:rounded-b-2xl",
                     )}
                   >
                     <td className="px-5 py-4">
-                      <span className={cn("font-bold", ch.highlight ? "text-teal-700" : "text-slate-700")}>
+                      <span className={cn("font-bold", ch.highlight ? "text-orange-700" : "text-slate-700")}>
                         {ch.name}
                       </span>
                       {ch.highlight && (
-                        <span className="ml-2 bg-teal-100 border border-teal-200 text-teal-700 text-[10px] font-semibold px-1.5 py-0.5 rounded-md uppercase tracking-wide">
+                        <span className="ml-2 bg-orange-100 border border-orange-200 text-orange-700 text-[10px] font-semibold px-1.5 py-0.5 rounded-md uppercase tracking-wide">
                           You are here
                         </span>
                       )}
                     </td>
                     <td className="px-5 py-4">
-                      <span className={cn("font-black text-base", ch.highlight ? "text-teal-600" : "text-slate-500")}>
+                      <span className={cn("font-black text-base", ch.highlight ? "text-[#E0622A]" : "text-slate-500")}>
                         {ch.costPerPatient}
                       </span>
                     </td>
                     <td className="px-5 py-4 hidden sm:table-cell">
-                      <span className={ch.highlight ? "text-teal-700 font-semibold" : "text-slate-500"}>
+                      <span className={ch.highlight ? "text-orange-700 font-semibold" : "text-slate-500"}>
                         {ch.leadQuality}
                       </span>
                     </td>
                     <td className="px-5 py-4 hidden md:table-cell">
-                      <span className={ch.highlight ? "text-teal-700 font-semibold" : "text-slate-500"}>
+                      <span className={ch.highlight ? "text-orange-700 font-semibold" : "text-slate-500"}>
                         {ch.effort}
                       </span>
                     </td>
@@ -605,12 +603,12 @@ export default function Practices() {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-teal-50 to-white border-2 border-teal-200 rounded-2xl p-6">
+              <div className="bg-gradient-to-br from-orange-50 to-white border-2 border-orange-200 rounded-2xl p-6">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xl">💧</span>
                   <p className="text-slate-900 font-bold text-base">Same 450 patients via Rippl</p>
                 </div>
-                <p className="text-teal-700 text-xs mb-4 font-semibold">Pay only when they walk in</p>
+                <p className="text-orange-700 text-xs mb-4 font-semibold">Pay only when they walk in</p>
                 <div className="space-y-2.5 mb-5">
                   <div className="flex items-center justify-between gap-3 text-sm">
                     <span className="text-slate-700">Platform fee (450 × $20)</span>
@@ -625,17 +623,17 @@ export default function Practices() {
                     <span className="font-semibold text-slate-900 tabular-nums">$0</span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between gap-3 pt-4 border-t border-teal-200">
+                <div className="flex items-center justify-between gap-3 pt-4 border-t border-orange-200">
                   <span className="text-slate-900 font-bold">Total / year</span>
-                  <span className="font-black text-teal-700 text-lg tabular-nums">$38,250</span>
+                  <span className="font-black text-orange-700 text-lg tabular-nums">$38,250</span>
                 </div>
                 <div className="flex items-center justify-between gap-3 mt-2">
                   <span className="text-slate-500 text-sm">Cost per new patient</span>
-                  <span className="font-bold text-teal-700 text-sm tabular-nums">$85</span>
+                  <span className="font-bold text-orange-700 text-sm tabular-nums">$85</span>
                 </div>
               </div>
             </div>
-            <div className="mt-3 bg-teal-600 text-white rounded-xl px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
+            <div className="mt-3 bg-[#E0622A] text-white rounded-xl px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
               <p className="font-bold text-sm">Savings vs. digital plan</p>
               <span className="font-black text-lg tabular-nums">$34K–$88K / year</span>
             </div>
@@ -672,12 +670,12 @@ export default function Practices() {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-teal-50 to-white border-2 border-teal-200 rounded-2xl p-6">
+              <div className="bg-gradient-to-br from-orange-50 to-white border-2 border-orange-200 rounded-2xl p-6">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xl">💧</span>
                   <p className="text-slate-900 font-bold text-base">Same 60 patients via Rippl</p>
                 </div>
-                <p className="text-teal-700 text-xs mb-4 font-semibold">No print, no postage, no design cycle</p>
+                <p className="text-orange-700 text-xs mb-4 font-semibold">No print, no postage, no design cycle</p>
                 <div className="space-y-2.5 mb-5">
                   <div className="flex items-center justify-between gap-3 text-sm">
                     <span className="text-slate-700">Platform fee (60 × $20)</span>
@@ -692,17 +690,17 @@ export default function Practices() {
                     <span className="font-semibold text-slate-900 tabular-nums">$0</span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between gap-3 pt-4 border-t border-teal-200">
+                <div className="flex items-center justify-between gap-3 pt-4 border-t border-orange-200">
                   <span className="text-slate-900 font-bold">Total / year</span>
-                  <span className="font-black text-teal-700 text-lg tabular-nums">$5,100</span>
+                  <span className="font-black text-orange-700 text-lg tabular-nums">$5,100</span>
                 </div>
                 <div className="flex items-center justify-between gap-3 mt-2">
                   <span className="text-slate-500 text-sm">Cost per new patient</span>
-                  <span className="font-bold text-teal-700 text-sm tabular-nums">$85</span>
+                  <span className="font-bold text-orange-700 text-sm tabular-nums">$85</span>
                 </div>
               </div>
             </div>
-            <div className="mt-3 bg-teal-600 text-white rounded-xl px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
+            <div className="mt-3 bg-[#E0622A] text-white rounded-xl px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
               <p className="font-bold text-sm">Savings vs. EDDM program</p>
               <span className="font-black text-lg tabular-nums">$4.9K–$9.9K / year</span>
             </div>
@@ -741,7 +739,7 @@ export default function Practices() {
                 </div>
                 <div>
                   <p className="text-slate-800 font-bold text-base mb-1">
-                    <span className="text-teal-600 mr-1.5">{i + 1}.</span>
+                    <span className="text-[#E0622A] mr-1.5">{i + 1}.</span>
                     {step.title}
                   </p>
                   <p className="text-slate-500 text-base leading-relaxed">{step.body}</p>
@@ -770,8 +768,8 @@ export default function Practices() {
                 variants={fadeUp}
                 className="flex items-start gap-4 bg-white border border-slate-200 rounded-2xl p-5"
               >
-                <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center shrink-0">
-                  <f.icon className="w-5 h-5 text-teal-600" />
+                <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center shrink-0">
+                  <f.icon className="w-5 h-5 text-[#E0622A]" />
                 </div>
                 <div>
                   <p className="text-slate-800 font-bold text-base mb-1">{f.title}</p>
@@ -796,7 +794,7 @@ export default function Practices() {
                 "Role-based access control",
               ].map((item) => (
                 <div key={item} className="flex items-start gap-2 text-slate-500 text-sm">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#E0622A] shrink-0 mt-0.5" />
                   {item}
                 </div>
               ))}
@@ -813,10 +811,10 @@ export default function Practices() {
         >
           <motion.div
             variants={fadeUp}
-            className="bg-gradient-to-br from-teal-50 to-slate-50 border border-teal-200 rounded-3xl p-8 md:p-10"
+            className="bg-gradient-to-br from-orange-50 to-slate-50 border border-orange-200 rounded-3xl p-8 md:p-10"
           >
             <div className="text-center mb-8">
-              <span className="inline-block bg-teal-100 border border-teal-200 text-teal-700 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full mb-5">
+              <span className="inline-block bg-orange-100 border border-orange-200 text-orange-700 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full mb-5">
                 Transparent pricing
               </span>
               <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">
@@ -841,13 +839,13 @@ export default function Practices() {
                   Open Dental integration, staff training, tier & reward configuration,
                   office setup.
                 </p>
-                <p className="mt-3 inline-block bg-teal-100 border border-teal-200 text-teal-700 text-[11px] font-semibold px-2 py-1 rounded-md uppercase tracking-wide">
+                <p className="mt-3 inline-block bg-orange-100 border border-orange-200 text-orange-700 text-[11px] font-semibold px-2 py-1 rounded-md uppercase tracking-wide">
                   Waived if live by Aug 31, 2026
                 </p>
               </div>
 
-              <div className="bg-white border-2 border-teal-500 rounded-2xl p-6 text-center">
-                <p className="text-xs font-semibold uppercase tracking-widest text-teal-700 mb-2">
+              <div className="bg-white border-2 border-[#E0622A] rounded-2xl p-6 text-center">
+                <p className="text-xs font-semibold uppercase tracking-widest text-orange-700 mb-2">
                   Per verified referral
                 </p>
                 <div className="flex items-end justify-center gap-1 mb-2">
@@ -868,7 +866,7 @@ export default function Practices() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <p className="font-black text-base">Founding Practice program</p>
-                    <span className="inline-block bg-teal-500/20 border border-teal-400/40 text-teal-300 text-[10px] font-semibold px-2 py-0.5 rounded-md uppercase tracking-wide">
+                    <span className="inline-block bg-orange-500/20 border border-orange-400/40 text-orange-200 text-[10px] font-semibold px-2 py-0.5 rounded-md uppercase tracking-wide">
                       Ends Aug 31, 2026
                     </span>
                   </div>
@@ -923,7 +921,7 @@ export default function Practices() {
             <div className="text-center">
               <button
                 onClick={() => setShowModal(true)}
-                className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold px-8 py-4 rounded-2xl transition-colors shadow-xl shadow-teal-600/25 text-base"
+                className="inline-flex items-center gap-2 bg-[#E0622A] hover:bg-[#C9551E] text-white font-bold px-8 py-4 rounded-2xl transition-colors shadow-xl shadow-[#E0622A]/25 text-base"
               >
                 Claim a Founding Practice spot <ArrowRight className="w-5 h-5" />
               </button>
@@ -953,7 +951,9 @@ export default function Practices() {
           className="text-center"
         >
           <div className="bg-gradient-to-br from-slate-100 to-white border border-slate-200 rounded-3xl p-8 md:p-12">
-            <Droplets className="w-10 h-10 mb-4 mx-auto text-teal-600" />
+            <div className="text-3xl font-display font-bold mb-4">
+              <span className="text-slate-900">rip</span><span className="text-[#E0622A]">pl</span>
+            </div>
             <h3 className="text-slate-900 font-black text-2xl md:text-3xl mb-3">
               Ready to make your patients your best marketers?
             </h3>
@@ -963,13 +963,13 @@ export default function Practices() {
             </p>
             <button
               onClick={() => setShowModal(true)}
-              className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold px-8 py-4 rounded-2xl transition-colors shadow-xl shadow-teal-600/25 text-base"
+              className="inline-flex items-center gap-2 bg-[#E0622A] hover:bg-[#C9551E] text-white font-bold px-8 py-4 rounded-2xl transition-colors shadow-xl shadow-[#E0622A]/25 text-base"
             >
               Request a Demo <ArrowRight className="w-5 h-5" />
             </button>
             <p className="text-slate-400 text-sm mt-4">
               Questions? Email us at{" "}
-              <a href="mailto:hello@joinrippl.com" className="text-teal-600 hover:text-teal-500">
+              <a href="mailto:hello@joinrippl.com" className="text-[#E0622A] hover:text-[#E0622A]">
                 hello@joinrippl.com
               </a>
             </p>

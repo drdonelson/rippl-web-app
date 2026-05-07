@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Droplets, Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
 import { useAuth, staffOfficeLabel } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 
@@ -15,11 +15,13 @@ export default function Login() {
   const [loginSuccess, setLoginSuccess] = useState(false);
   const [loginLabel, setLoginLabel] = useState<string | null>(null);
 
+  // Auto-redirect already-logged-in users; skip during an active login flow
+  // (loginSuccess=true means we just submitted — let the second effect handle navigation)
   useEffect(() => {
-    if (!isLoading && session && !loginSuccess) {
+    if (!isLoading && session && !loginSuccess && !submitting) {
       navigate("/dashboard");
     }
-  }, [session, isLoading, loginSuccess, navigate]);
+  }, [session, isLoading, loginSuccess, submitting, navigate]);
 
   useEffect(() => {
     if (!loginSuccess || !profile) return;
@@ -49,7 +51,7 @@ export default function Login() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-teal-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-[#E0622A] animate-spin" />
       </div>
     );
   }
@@ -57,18 +59,17 @@ export default function Login() {
   return (
     <div className="min-h-screen flex">
       {/* ── Left brand panel ───────────────────────────────────────────── */}
-      <div className="hidden md:flex w-[45%] bg-gradient-to-br from-teal-600 to-teal-800 flex-col justify-between p-12 relative overflow-hidden shrink-0">
+      <div className="hidden md:flex w-[45%] flex-col justify-between p-12 relative overflow-hidden shrink-0" style={{ background: "linear-gradient(135deg, #F5A623 0%, #E0622A 100%)" }}>
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
-          <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-teal-900/30 rounded-full blur-2xl" />
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-black/10 rounded-full blur-2xl" />
         </div>
 
         {/* Logo */}
         <div className="relative flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-            <Droplets className="w-6 h-6 text-white" />
-          </div>
-          <span className="text-white font-bold text-2xl">Rippl</span>
+          <span className="font-display font-bold text-2xl">
+            <span className="text-white/70">rip</span><span className="text-white">pl</span>
+          </span>
         </div>
 
         {/* Headline + bullets */}
@@ -76,7 +77,7 @@ export default function Login() {
           <h2 className="text-white font-black text-4xl leading-tight mb-4">
             Turn patients into your best marketers.
           </h2>
-          <p className="text-teal-100 text-base leading-relaxed mb-10">
+          <p className="text-white text-base leading-relaxed mb-10">
             Automated referral rewards — fully integrated with Open Dental.
           </p>
           <div className="space-y-4">
@@ -97,7 +98,7 @@ export default function Login() {
 
         {/* Footer */}
         <div className="relative">
-          <p className="text-teal-100/50 text-xs">
+          <p className="text-white/50 text-xs">
             © 2026 Rippl · Made by dentists, for dentists.
           </p>
         </div>
@@ -107,11 +108,10 @@ export default function Login() {
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 bg-white">
         {/* Mobile logo */}
         <div className="flex flex-col items-center mb-8 md:hidden">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center shadow-lg mb-3">
-            <Droplets className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900">Rippl</h1>
-          <p className="text-slate-500 text-sm mt-1">Referral rewards for dental practices</p>
+          <h1 className="text-3xl font-display font-bold mb-1">
+            <span className="text-slate-900">rip</span><span className="text-[#E0622A]">pl</span>
+          </h1>
+          <p className="text-slate-500 text-sm">Referral rewards for dental practices</p>
         </div>
 
         <div className="w-full max-w-sm">
@@ -132,7 +132,7 @@ export default function Login() {
                 placeholder="you@yourpractice.com"
                 className={cn(
                   "w-full bg-slate-50 border rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400",
-                  "focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-all",
+                  "focus:outline-none focus:ring-2 focus:ring-[#E0622A]/30 focus:border-[#E0622A] transition-all",
                   error ? "border-red-400" : "border-slate-200"
                 )}
               />
@@ -150,7 +150,7 @@ export default function Login() {
                   placeholder="••••••••"
                   className={cn(
                     "w-full bg-slate-50 border rounded-xl px-4 py-3 pr-11 text-slate-900 placeholder:text-slate-400",
-                    "focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-all",
+                    "focus:outline-none focus:ring-2 focus:ring-[#E0622A]/30 focus:border-[#E0622A] transition-all",
                     error ? "border-red-400" : "border-slate-200"
                   )}
                 />
@@ -172,15 +172,15 @@ export default function Login() {
             )}
 
             {loginLabel && (
-              <div className="flex items-center gap-2 py-2 px-3 bg-teal-50 border border-teal-200 rounded-lg">
-                <CheckCircle2 className="w-4 h-4 text-teal-600 flex-shrink-0" />
-                <span className="text-teal-700 text-sm font-medium">{loginLabel}</span>
+              <div className="flex items-center gap-2 py-2 px-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <CheckCircle2 className="w-4 h-4 text-[#E0622A] flex-shrink-0" />
+                <span className="text-orange-700 text-sm font-medium">{loginLabel}</span>
               </div>
             )}
 
             {loginSuccess && !loginLabel && (
               <div className="flex items-center justify-center gap-2 py-2">
-                <Loader2 className="w-4 h-4 text-teal-600 animate-spin" />
+                <Loader2 className="w-4 h-4 text-[#E0622A] animate-spin" />
                 <span className="text-slate-500 text-sm">Signing in…</span>
               </div>
             )}
@@ -188,7 +188,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={submitting || loginSuccess}
-              className="w-full bg-teal-600 hover:bg-teal-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-all shadow-md shadow-teal-500/15 hover:shadow-teal-500/25 flex items-center justify-center gap-2 mt-2"
+              className="w-full bg-[#E0622A] hover:bg-[#C9551E] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-all shadow-md shadow-[#E0622A]/20 flex items-center justify-center gap-2 mt-2"
             >
               {submitting ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Signing in…</>

@@ -82,17 +82,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    let nullSessionTimer: ReturnType<typeof setTimeout> | null = null;
+
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       loadProfile(data.session).finally(() => setIsLoading(false));
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
-      setSession(sess);
-      loadProfile(sess);
+      if (sess) {
+        // Valid session — apply immediately
+        if (nullSessionTimer) { clearTimeout(nullSessionTimer); nullSessionTimer = null; }
+        setSession(sess);
+        loadProfile(sess);
+      } else {
+        // Null session — debounce 500ms to survive SIGNED_OUT → SIGNED_IN transitions
+        nullSessionTimer = setTimeout(() => {
+          setSession(null);
+          loadProfile(null);
+        }, 500);
+      }
     });
 
     return () => {
+      if (nullSessionTimer) clearTimeout(nullSessionTimer);
       subscription.unsubscribe();
       setAuthTokenGetter(null);
     };
