@@ -98,7 +98,7 @@ function OfficeBookingCard({
           onBook(office.key);
         }
       }}
-      className="group relative flex flex-col gap-4 p-5 rounded-2xl border border-slate-200 bg-white hover:bg-teal-50/60 hover:border-teal-300 active:bg-teal-50 active:scale-[0.99] transition-all duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/50 select-none"
+      className="group relative flex flex-col gap-4 p-5 rounded-2xl border border-slate-200 bg-white hover:bg-orange-50/60 hover:border-orange-300 active:bg-orange-50 active:scale-[0.99] transition-all duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E0622A]/50 select-none"
     >
       {/* Header row */}
       <div className="flex items-start justify-between gap-3">
@@ -106,19 +106,19 @@ function OfficeBookingCard({
           <p className="font-bold text-slate-900 text-base leading-snug">
             Hallmark Dental
           </p>
-          <p className="text-teal-600 font-semibold text-sm leading-tight mt-0.5">
+          <p className="text-[#E0622A] font-semibold text-sm leading-tight mt-0.5">
             {office.label}
           </p>
           <p className="text-slate-400 text-xs mt-1 leading-relaxed">{office.address}</p>
         </div>
-        <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center flex-shrink-0 group-hover:bg-teal-100 transition-colors mt-0.5">
-          <MapPin className="w-4 h-4 text-teal-600" />
+        <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0 group-hover:bg-orange-100 transition-colors mt-0.5">
+          <MapPin className="w-4 h-4 text-[#E0622A]" />
         </div>
       </div>
 
       {/* Book CTA row */}
       <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-        <span className="flex items-center gap-1.5 text-sm font-bold text-teal-600 group-hover:text-teal-500 group-hover:gap-2.5 transition-all duration-150">
+        <span className="flex items-center gap-1.5 text-sm font-bold text-[#E0622A] group-hover:text-[#E0622A] group-hover:gap-2.5 transition-all duration-150">
           Book Online
           <ArrowRight className="w-3.5 h-3.5" />
         </span>
@@ -128,7 +128,7 @@ function OfficeBookingCard({
           href={phoneHref(office.phone)}
           onClick={e => e.stopPropagation()}
           onKeyDown={e => e.stopPropagation()}
-          className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-teal-600 hover:bg-teal-50 px-2.5 py-1.5 rounded-lg transition-colors"
+          className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-[#E0622A] hover:bg-orange-50 px-2.5 py-1.5 rounded-lg transition-colors"
           aria-label={`Call ${office.label} at ${office.phone}`}
         >
           <Phone className="w-3 h-3" />
@@ -302,7 +302,7 @@ export default function Refer() {
   if (infoLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-teal-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-[#E0622A] animate-spin" />
       </div>
     );
   }
@@ -312,8 +312,8 @@ export default function Refer() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white border border-slate-200 rounded-3xl p-8 text-center shadow-md">
-          <div className="w-20 h-20 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 className="w-10 h-10 text-teal-600" />
+          <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle2 className="w-10 h-10 text-[#E0622A]" />
           </div>
           <h2 className="text-2xl font-bold text-slate-900 mb-3">You're all set!</h2>
           <p className="text-slate-500 mb-4 leading-relaxed">
@@ -324,7 +324,7 @@ export default function Refer() {
             . Our team will reach out shortly to get you scheduled.
           </p>
           {referrerName && (
-            <p className="text-sm text-teal-600 font-medium">
+            <p className="text-sm text-[#E0622A] font-medium">
               Thanks to {referrerName} for the recommendation!
             </p>
           )}
@@ -333,7 +333,7 @@ export default function Refer() {
               Questions? Call us at{" "}
               <a
                 href={phoneHref(selectedOfficeConfig?.phone || OFFICE_CONFIG[0].phone)}
-                className="text-teal-600 underline underline-offset-2"
+                className="text-[#E0622A] underline underline-offset-2"
               >
                 {selectedOfficeConfig?.phone || OFFICE_CONFIG[0].phone}
               </a>
@@ -350,18 +350,18 @@ export default function Refer() {
 
       {/* Ambient glow */}
       <div aria-hidden className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-[36rem] h-[36rem] bg-teal-500/5 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-[36rem] h-[36rem] bg-primary/5 rounded-full blur-3xl" />
       </div>
 
       <main className="relative z-10 flex-1 w-full max-w-5xl mx-auto px-4 sm:px-8 pt-10 pb-16">
 
         {/* ── Logo / Brand ─────────────────────────────────────────────────── */}
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center shadow-lg shadow-teal-500/20 flex-shrink-0">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-orange-400 to-[#C9551E] flex items-center justify-center shadow-lg shadow-[#E0622A]/20 flex-shrink-0">
             <Droplets className="w-6 h-6 text-white" />
           </div>
           <div>
-            <p className="text-xs text-teal-600 font-medium tracking-wider uppercase">
+            <p className="text-xs text-[#E0622A] font-medium tracking-wider uppercase">
               {isDemoPage ? "Demo Office" : "Hallmark Dental"}
             </p>
             <p className="text-sm text-slate-400">Powered by Rippl</p>
@@ -372,7 +372,7 @@ export default function Refer() {
         <div className="mb-8 max-w-2xl">
           {referrerName ? (
             <>
-              <span className="inline-block text-teal-700 text-xs font-semibold tracking-widest uppercase mb-6 px-3 py-1 bg-teal-50 rounded-full border border-teal-200">
+              <span className="inline-block text-orange-700 text-xs font-semibold tracking-widest uppercase mb-6 px-3 py-1 bg-orange-50 rounded-full border border-orange-200">
                 Personal Invitation
               </span>
               <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-6 leading-tight">
@@ -384,7 +384,7 @@ export default function Refer() {
             </>
           ) : (
             <>
-              <span className="inline-block text-teal-700 text-xs font-semibold tracking-widest uppercase mb-6 px-3 py-1 bg-teal-50 rounded-full border border-teal-200">
+              <span className="inline-block text-orange-700 text-xs font-semibold tracking-widest uppercase mb-6 px-3 py-1 bg-orange-50 rounded-full border border-orange-200">
                 New Patient Welcome
               </span>
               <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-6 leading-tight">
@@ -435,7 +435,7 @@ export default function Refer() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {TRUST_ITEMS.map(item => (
               <div key={item.title} className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                <p className="text-sm font-semibold text-teal-700 mb-1 leading-tight">{item.title}</p>
+                <p className="text-sm font-semibold text-orange-700 mb-1 leading-tight">{item.title}</p>
                 <p className="text-xs text-slate-500 leading-relaxed">{item.body}</p>
               </div>
             ))}
@@ -456,7 +456,7 @@ export default function Refer() {
             >
               <div className="flex gap-0.5 mb-2">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-3 h-3 text-teal-500 fill-teal-500" />
+                  <Star key={i} className="w-3 h-3 text-[#E0622A] fill-[#E0622A]" />
                 ))}
               </div>
               <p className="text-sm text-slate-600 leading-relaxed italic mb-2">"{t.quote}"</p>
@@ -473,8 +473,8 @@ export default function Refer() {
             className="bg-white border border-slate-200 rounded-3xl p-7 shadow-md scroll-mt-4 mb-5"
           >
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center">
-                <Calendar className="w-4 h-4 text-teal-600" />
+              <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-[#E0622A]" />
               </div>
               <div>
                 <h2 className="text-lg font-bold text-slate-900 leading-tight">Request an Appointment</h2>
@@ -492,7 +492,7 @@ export default function Refer() {
                     onChange={e => setFirstName(e.target.value)}
                     placeholder="Jane"
                     autoComplete="given-name"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-[#E0622A] focus:ring-1 focus:ring-[#E0622A]/30 transition-colors"
                   />
                 </div>
                 <div>
@@ -502,7 +502,7 @@ export default function Refer() {
                     onChange={e => setLastName(e.target.value)}
                     placeholder="Doe"
                     autoComplete="family-name"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-[#E0622A] focus:ring-1 focus:ring-[#E0622A]/30 transition-colors"
                   />
                 </div>
               </div>
@@ -516,7 +516,7 @@ export default function Refer() {
                   onChange={e => setPhone(e.target.value)}
                   placeholder="(615) 555-0100"
                   autoComplete="tel"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-[#E0622A] focus:ring-1 focus:ring-[#E0622A]/30 transition-colors"
                 />
               </div>
 
@@ -531,20 +531,20 @@ export default function Refer() {
                   onChange={e => setEmail(e.target.value)}
                   placeholder="jane@example.com"
                   autoComplete="email"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-[#E0622A] focus:ring-1 focus:ring-[#E0622A]/30 transition-colors"
                 />
               </div>
 
               {/* Preferred location */}
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1.5">
-                  <MapPin className="w-3 h-3 inline mr-1 text-teal-600" />
+                  <MapPin className="w-3 h-3 inline mr-1 text-[#E0622A]" />
                   Preferred Location
                 </label>
                 <select
                   value={selectedOffice}
                   onChange={e => setSelectedOffice(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-[#E0622A] focus:ring-1 focus:ring-[#E0622A]/30 transition-colors"
                 >
                   <option value="">No preference</option>
                   {OFFICE_CONFIG.map(o => (
@@ -573,7 +573,7 @@ export default function Refer() {
                       className={cn(
                         "flex-1 py-2 rounded-xl text-xs font-semibold border transition-colors",
                         contactPref === opt.value
-                          ? "bg-teal-50 border-teal-400 text-teal-700"
+                          ? "bg-orange-50 border-[#E0622A] text-orange-700"
                           : "bg-white border-slate-200 text-slate-500 hover:border-slate-300",
                       )}
                     >
@@ -586,7 +586,7 @@ export default function Refer() {
               {/* Message */}
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1.5">
-                  <MessageSquare className="w-3 h-3 inline mr-1 text-teal-600" />
+                  <MessageSquare className="w-3 h-3 inline mr-1 text-[#E0622A]" />
                   Anything we should know?{" "}
                   <span className="text-slate-400">(optional)</span>
                 </label>
@@ -595,7 +595,7 @@ export default function Refer() {
                   onChange={e => setMessage(e.target.value)}
                   placeholder="Insurance info, concerns, scheduling needs…"
                   rows={3}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-colors resize-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-[#E0622A] focus:ring-1 focus:ring-[#E0622A]/30 transition-colors resize-none"
                 />
               </div>
 
@@ -611,10 +611,10 @@ export default function Refer() {
                 type="submit"
                 disabled={submitting}
                 className={cn(
-                  "w-full py-4 rounded-2xl font-bold text-white text-sm transition-all shadow-md shadow-teal-500/15",
+                  "w-full py-4 rounded-2xl font-bold text-white text-sm transition-all shadow-md shadow-[#E0622A]/15",
                   submitting
-                    ? "bg-teal-500/50 cursor-not-allowed"
-                    : "bg-teal-600 hover:bg-teal-500 active:bg-teal-700",
+                    ? "bg-primary/50 cursor-not-allowed"
+                    : "bg-[#E0622A] hover:bg-[#E0622A] active:bg-[#C9551E]",
                 )}
               >
                 {submitting ? (
@@ -634,7 +634,7 @@ export default function Refer() {
                 )}
                 className="flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 rounded-2xl font-semibold transition-colors text-sm w-full"
               >
-                <Phone className="w-4 h-4 text-teal-600" />
+                <Phone className="w-4 h-4 text-[#E0622A]" />
                 Call us instead
               </a>
             </form>

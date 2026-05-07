@@ -100,7 +100,7 @@ function OfficeLogoCard({ office, isSuperAdmin }: { office: Office; isSuperAdmin
             return (
               <span className={cn(
                 "flex items-center gap-1 text-xs font-medium",
-                poll.ok ? "text-teal-600" : "text-amber-500",
+                poll.ok ? "text-[#E0622A]" : "text-amber-500",
               )}>
                 {poll.ok
                   ? <Wifi className="w-3.5 h-3.5" />

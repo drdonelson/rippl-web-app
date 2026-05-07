@@ -42,7 +42,7 @@ export default function InsuranceCards({ officeKey, className }: InsuranceCardsP
           </p>
           <a
             href={mailtoHref}
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-teal-300 text-teal-700 text-xs font-semibold hover:bg-teal-50 transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-orange-300 text-orange-700 text-xs font-semibold hover:bg-orange-50 transition-colors"
           >
             Request a Free Benefits Check →
           </a>
@@ -59,7 +59,7 @@ export default function InsuranceCards({ officeKey, className }: InsuranceCardsP
             href={HALLMARK_CARE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-teal-300 text-teal-700 text-xs font-semibold hover:bg-teal-50 transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-orange-300 text-orange-700 text-xs font-semibold hover:bg-orange-50 transition-colors"
           >
             Learn About Hallmark Care →
           </a>

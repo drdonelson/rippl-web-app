@@ -5,15 +5,15 @@ export default function Privacy() {
     <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Subtle background texture */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-teal-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-teal-400/4 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-[#E0622A]/4 rounded-full blur-3xl" />
       </div>
 
       <main className="relative z-10 max-w-3xl mx-auto px-6 py-16">
 
         {/* Brand */}
         <div className="flex items-center gap-3 mb-12">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-400 to-[#C9551E] flex items-center justify-center shadow-lg shadow-[#E0622A]/20">
             <Droplets className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -24,8 +24,8 @@ export default function Privacy() {
 
         {/* Page header */}
         <div className="flex items-start gap-4 mb-10">
-          <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center flex-shrink-0 mt-1">
-            <Shield className="w-5 h-5 text-teal-600" />
+          <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0 mt-1">
+            <Shield className="w-5 h-5 text-[#E0622A]" />
           </div>
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Privacy Policy</h1>
@@ -57,7 +57,7 @@ export default function Privacy() {
                 { label: "Email address", desc: "Used to send reward confirmation and follow-up communications." },
               ].map(({ label, desc }) => (
                 <li key={label} className="flex gap-2">
-                  <span className="text-teal-600 flex-shrink-0 mt-0.5">·</span>
+                  <span className="text-[#E0622A] flex-shrink-0 mt-0.5">·</span>
                   <span><span className="text-slate-900 font-medium">{label}</span> — {desc}</span>
                 </li>
               ))}
@@ -77,7 +77,7 @@ export default function Privacy() {
                 "To allow dental practice staff to manage the referral program and track reward status.",
               ].map((item, i) => (
                 <li key={i} className="flex gap-2">
-                  <span className="text-teal-600 flex-shrink-0 mt-0.5">·</span>
+                  <span className="text-[#E0622A] flex-shrink-0 mt-0.5">·</span>
                   <span>{item}</span>
                 </li>
               ))}
@@ -100,7 +100,7 @@ export default function Privacy() {
                 "Service providers who help us deliver SMS and email notifications (subject to confidentiality obligations).",
               ].map((item, i) => (
                 <li key={i} className="flex gap-2">
-                  <span className="text-teal-600 flex-shrink-0 mt-0.5">·</span>
+                  <span className="text-[#E0622A] flex-shrink-0 mt-0.5">·</span>
                   <span>{item}</span>
                 </li>
               ))}
@@ -131,7 +131,7 @@ export default function Privacy() {
             </p>
             <a
               href="mailto:hello@joinrippl.com"
-              className="inline-flex items-center gap-2 text-teal-400 hover:text-teal-300 transition-colors font-medium"
+              className="inline-flex items-center gap-2 text-[#E0622A] hover:text-orange-300 transition-colors font-medium"
             >
               <Mail className="w-4 h-4" />
               hello@joinrippl.com

@@ -42,7 +42,7 @@ function taskLabel(task_type: string): { icon: React.ReactNode; label: string; c
     return {
       icon: <Building2 className="w-4 h-4" />,
       label: "In-House Credit",
-      color: "text-teal-700 bg-teal-50 border-teal-200",
+      color: "text-orange-700 bg-orange-50 border-orange-200",
     };
   }
   if (task_type === "charity_donation") {

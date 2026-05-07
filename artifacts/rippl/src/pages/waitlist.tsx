@@ -34,7 +34,7 @@ export default function Waitlist() {
 
         {/* Brand */}
         <div className="flex items-center gap-2.5 mb-12">
-          <div className="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center shadow-lg shadow-teal-600/20">
+          <div className="w-9 h-9 rounded-xl bg-[#E0622A] flex items-center justify-center shadow-lg shadow-[#E0622A]/20">
             <Droplets className="w-5 h-5 text-white" />
           </div>
           <span className="text-slate-900 font-bold text-xl">Rippl</span>
@@ -43,15 +43,15 @@ export default function Waitlist() {
         {!submitted ? (
           <>
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-50 border border-teal-200 mb-6">
-              <div className="w-1.5 h-1.5 rounded-full bg-teal-500" />
-              <span className="text-teal-700 text-xs font-semibold tracking-wider uppercase">Beta Partner Program</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-50 border border-orange-200 mb-6">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#E0622A]" />
+              <span className="text-orange-700 text-xs font-semibold tracking-wider uppercase">Beta Partner Program</span>
             </div>
 
             {/* Headline */}
             <h1 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight mb-4">
               Turn referrals into<br />
-              <span className="text-teal-600">automatic rewards.</span>
+              <span className="text-[#E0622A]">automatic rewards.</span>
             </h1>
             <p className="text-slate-500 text-lg leading-relaxed mb-10">
               Rippl detects when a referred patient completes their first appointment and automatically sends a gift card reward — no staff effort required.
@@ -65,8 +65,8 @@ export default function Waitlist() {
                 { icon: Gift,  label: "Gift card rewards",   desc: "$35–$100 sent instantly" },
               ].map(({ icon: Icon, label, desc }) => (
                 <div key={label} className="bg-white border border-slate-200 rounded-2xl p-4">
-                  <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center mb-3">
-                    <Icon className="w-4 h-4 text-teal-600" />
+                  <div className="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center mb-3">
+                    <Icon className="w-4 h-4 text-[#E0622A]" />
                   </div>
                   <p className="text-slate-800 font-semibold text-sm mb-0.5">{label}</p>
                   <p className="text-slate-400 text-xs leading-snug">{desc}</p>
@@ -96,7 +96,7 @@ export default function Waitlist() {
                       required
                       value={form[key as keyof typeof form]}
                       onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#E0622A]/40 focus:border-transparent"
                     />
                   </div>
                 ))}
@@ -106,7 +106,7 @@ export default function Waitlist() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-50 transition-colors mt-2"
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-white bg-[#E0622A] hover:bg-[#C9551E] disabled:opacity-50 transition-colors mt-2"
                 >
                   {loading ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -126,14 +126,14 @@ export default function Waitlist() {
           </>
         ) : (
           <div className="flex flex-col items-center justify-center text-center py-20">
-            <div className="w-20 h-20 rounded-full bg-teal-50 border border-teal-200 flex items-center justify-center mb-6">
-              <CheckCircle2 className="w-10 h-10 text-teal-600" />
+            <div className="w-20 h-20 rounded-full bg-orange-50 border border-orange-200 flex items-center justify-center mb-6">
+              <CheckCircle2 className="w-10 h-10 text-[#E0622A]" />
             </div>
             <h2 className="text-3xl font-black text-slate-900 mb-3">You're on the list.</h2>
             <p className="text-slate-500 text-lg mb-2">We'll be in touch within 48 hours.</p>
             <p className="text-sm text-slate-400">
               Questions? Email{" "}
-              <a href="mailto:hello@joinrippl.com" className="text-teal-600 hover:underline">hello@joinrippl.com</a>
+              <a href="mailto:hello@joinrippl.com" className="text-[#E0622A] hover:underline">hello@joinrippl.com</a>
             </p>
           </div>
         )}

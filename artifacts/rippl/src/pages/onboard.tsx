@@ -13,7 +13,7 @@ import { toast } from "sonner";
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
 const inputClass =
-  "w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-all";
+  "w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E0622A]/30 focus:border-[#E0622A] transition-all";
 
 interface ActiveOffice {
   id: string;
@@ -131,7 +131,7 @@ export default function Onboard() {
   if (!profile) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-teal-500" />
+        <Loader2 className="w-6 h-6 animate-spin text-[#E0622A]" />
       </div>
     );
   }
@@ -142,7 +142,7 @@ export default function Onboard() {
         <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold text-slate-900">Access Denied</h1>
           <p className="text-slate-500">Only super admins can access this page.</p>
-          <Link href="/dashboard" className="inline-block mt-4 text-teal-600 hover:text-teal-500 underline text-sm">
+          <Link href="/dashboard" className="inline-block mt-4 text-[#E0622A] hover:text-[#E0622A] underline text-sm">
             Return to dashboard
           </Link>
         </div>
@@ -272,8 +272,8 @@ export default function Onboard() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
         <div className="text-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center mx-auto">
-            <CheckCircle2 className="w-9 h-9 text-teal-600" />
+          <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center mx-auto">
+            <CheckCircle2 className="w-9 h-9 text-[#E0622A]" />
           </div>
           <h2 className="text-2xl font-bold text-slate-900">Practice Created!</h2>
           <p className="text-slate-500 text-sm">Practice admin account created. A welcome email with a setup link was sent to <span className="font-medium text-slate-700">{practiceSuccessEmail}</span>.</p>
@@ -290,7 +290,7 @@ export default function Onboard() {
             >
               Add another
             </button>
-            <Link href="/dashboard" className="px-4 py-2 bg-teal-500 hover:bg-teal-400 rounded-lg text-white font-semibold text-sm transition-colors">
+            <Link href="/dashboard" className="px-4 py-2 bg-[#E0622A] hover:bg-[#E0622A] rounded-lg text-white font-semibold text-sm transition-colors">
               Back to dashboard
             </Link>
           </div>
@@ -312,7 +312,7 @@ export default function Onboard() {
         </Link>
 
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-[#C9551E] flex items-center justify-center shadow-lg shadow-[#E0622A]/20">
             <Droplets className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -327,7 +327,7 @@ export default function Onboard() {
             onClick={() => setActiveTab("practice")}
             className={cn(
               "flex-1 flex items-center justify-center gap-1.5 py-3 rounded-lg text-sm font-medium transition-all",
-              activeTab === "practice" ? "bg-teal-500 text-white shadow" : "text-slate-500 hover:text-slate-900",
+              activeTab === "practice" ? "bg-[#E0622A] text-white shadow" : "text-slate-500 hover:text-slate-900",
             )}
           >
             <Building2 className="w-4 h-4 shrink-0" />
@@ -337,7 +337,7 @@ export default function Onboard() {
             onClick={() => setActiveTab("staff")}
             className={cn(
               "flex-1 flex items-center justify-center gap-1.5 py-3 rounded-lg text-sm font-medium transition-all",
-              activeTab === "staff" ? "bg-teal-500 text-white shadow" : "text-slate-500 hover:text-slate-900",
+              activeTab === "staff" ? "bg-[#E0622A] text-white shadow" : "text-slate-500 hover:text-slate-900",
             )}
           >
             <UserPlus className="w-4 h-4 shrink-0" />
@@ -347,7 +347,7 @@ export default function Onboard() {
             onClick={() => setActiveTab("leads")}
             className={cn(
               "flex-1 flex items-center justify-center gap-1.5 py-3 rounded-lg text-sm font-medium transition-all",
-              activeTab === "leads" ? "bg-teal-500 text-white shadow" : "text-slate-500 hover:text-slate-900",
+              activeTab === "leads" ? "bg-[#E0622A] text-white shadow" : "text-slate-500 hover:text-slate-900",
             )}
           >
             <Users className="w-4 h-4 shrink-0" />
@@ -355,7 +355,7 @@ export default function Onboard() {
             {leads.length > 0 && (
               <span className={cn(
                 "ml-1 text-xs font-semibold px-1.5 py-0.5 rounded-full",
-                activeTab === "leads" ? "bg-white/20 text-white" : "bg-teal-100 text-teal-700",
+                activeTab === "leads" ? "bg-white/20 text-white" : "bg-orange-100 text-orange-700",
               )}>
                 {leads.length}
               </span>
@@ -415,7 +415,7 @@ export default function Onboard() {
                         type="button"
                         onClick={handleTestOd}
                         disabled={odTesting || !practiceForm.od_url || !practiceForm.customer_key}
-                        className="shrink-0 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:border-teal-400 hover:text-teal-600 text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="shrink-0 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:border-[#E0622A] hover:text-[#E0622A] text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         {odTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Test"}
                       </button>
@@ -423,7 +423,7 @@ export default function Onboard() {
                     {odTestResult !== null && (
                       <div className={cn(
                         "mt-2 flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium",
-                        odTestResult.ok === true && "bg-teal-50 border-teal-200 text-teal-700",
+                        odTestResult.ok === true && "bg-orange-50 border-orange-200 text-orange-700",
                         odTestResult.ok === "reachable" && "bg-amber-50 border-amber-200 text-amber-700",
                         odTestResult.ok === false && "bg-red-50 border-red-200 text-red-600",
                       )}>
@@ -443,7 +443,7 @@ export default function Onboard() {
                     type="checkbox"
                     checked={agreementChecked}
                     onChange={e => setAgreementChecked(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-teal-500 focus:ring-teal-500/30"
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#E0622A] focus:ring-[#E0622A]/30"
                   />
                   <span className="text-sm text-slate-700 leading-relaxed">
                     I agree to Rippl referral pricing terms — <span className="font-semibold">$20 per completed referral, no monthly fee</span>
@@ -458,7 +458,7 @@ export default function Onboard() {
                 <button
                   type="submit"
                   disabled={practiceSubmitting || !agreementChecked}
-                  className="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+                  className="w-full bg-[#E0622A] hover:bg-[#E0622A] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
                 >
                   {practiceSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</> : "Create Practice Admin"}
                 </button>
@@ -475,11 +475,11 @@ export default function Onboard() {
           <>
             {/* ── Staff success banner ── */}
             {staffSuccessEmail && (
-              <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4 mb-4 flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" />
+              <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 mb-4 flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 text-[#E0622A] shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-teal-700 font-semibold text-sm">Account created!</p>
-                  <p className="text-teal-600 text-xs mt-0.5">
+                  <p className="text-orange-700 font-semibold text-sm">Account created!</p>
+                  <p className="text-[#E0622A] text-xs mt-0.5">
                     <span className="font-mono">{staffSuccessEmail}</span> can now log in at joinrippl.com
                   </p>
                 </div>
@@ -529,7 +529,7 @@ export default function Onboard() {
                       value={staffForm.office_id}
                       onChange={e => setStaffForm(f => ({ ...f, office_id: e.target.value }))}
                       required
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-all"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#E0622A]/30 focus:border-[#E0622A] transition-all"
                     >
                       {offices.map(o => {
                         const d = o.name.lastIndexOf("–");
@@ -539,9 +539,9 @@ export default function Onboard() {
                     </select>
                   )}
                   {derivedRole && (
-                    <p className="text-xs text-teal-600 mt-1.5 flex items-center gap-1">
+                    <p className="text-xs text-[#E0622A] mt-1.5 flex items-center gap-1">
                       <span className="text-slate-400">Role assigned:</span>
-                      <code className="font-mono bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded text-teal-700">{derivedRole}</code>
+                      <code className="font-mono bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded text-orange-700">{derivedRole}</code>
                     </p>
                   )}
                 </div>
@@ -551,7 +551,7 @@ export default function Onboard() {
                 <button
                   type="submit"
                   disabled={staffSubmitting || offices.length === 0}
-                  className="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 mt-2"
+                  className="w-full bg-[#E0622A] hover:bg-[#E0622A] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 mt-2"
                 >
                   {staffSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</> : "Create Staff Account"}
                 </button>
@@ -606,7 +606,7 @@ export default function Onboard() {
                       <button
                         onClick={() => handleResetPassword(acct.id, acct.email)}
                         disabled={resettingId === acct.id}
-                        className="shrink-0 p-2 rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-500/10 transition-all disabled:opacity-40"
+                        className="shrink-0 p-2 rounded-lg text-slate-400 hover:text-[#E0622A] hover:bg-primary/10 transition-all disabled:opacity-40"
                         title={`Send password reset email to ${acct.email}`}
                       >
                         {resettingId === acct.id
@@ -663,7 +663,7 @@ export default function Onboard() {
                       <p className="text-slate-400 text-xs shrink-0">{new Date(lead.created_at).toLocaleDateString()}</p>
                     </div>
                     <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5">
-                      <a href={`mailto:${lead.email}`} className="text-xs text-teal-600 hover:underline">{lead.email}</a>
+                      <a href={`mailto:${lead.email}`} className="text-xs text-[#E0622A] hover:underline">{lead.email}</a>
                       {lead.phone && <span className="text-xs text-slate-400">{lead.phone}</span>}
                     </div>
                   </div>

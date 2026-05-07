@@ -75,7 +75,7 @@ export default function FindPage() {
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-4 py-12">
       {/* Brand */}
       <div className="flex items-center gap-3 mb-10">
-        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-400 to-[#C9551E] flex items-center justify-center shadow-lg shadow-[#E0622A]/20">
           <Droplets className="w-5 h-5 text-white" />
         </div>
         <div>
@@ -101,7 +101,7 @@ export default function FindPage() {
                   placeholder="(615) 555-0100"
                   value={phone}
                   onChange={e => setPhone(formatPhone(e.target.value))}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 text-lg tracking-wide focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 text-lg tracking-wide focus:outline-none focus:ring-2 focus:ring-[#E0622A]/40 focus:border-transparent"
                 />
               </div>
 
@@ -115,7 +115,7 @@ export default function FindPage() {
               <button
                 type="submit"
                 disabled={digits.length < 10 || loading}
-                className="w-full flex items-center justify-center gap-2 bg-teal-500 hover:bg-teal-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-colors"
+                className="w-full flex items-center justify-center gap-2 bg-[#E0622A] hover:bg-[#E0622A] disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-colors"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -134,8 +134,8 @@ export default function FindPage() {
           </div>
         ) : (
           <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/60 p-8 text-center">
-            <div className="w-12 h-12 rounded-full bg-teal-50 border border-teal-200 flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="w-6 h-6 text-teal-500" />
+            <div className="w-12 h-12 rounded-full bg-orange-50 border border-orange-200 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-6 h-6 text-[#E0622A]" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900 mb-1">Hey {result.firstName}!</h2>
             <p className="text-slate-500 text-sm mb-6">
@@ -145,7 +145,7 @@ export default function FindPage() {
             {/* QR code */}
             {qrUrl && (
               <div className="flex justify-center mb-6">
-                <div className="p-3 rounded-2xl border-2 border-teal-100 bg-white inline-block">
+                <div className="p-3 rounded-2xl border-2 border-orange-100 bg-white inline-block">
                   <img src={qrUrl} alt="Your referral QR code" width={220} height={220} className="rounded-xl" />
                 </div>
               </div>
@@ -160,7 +160,7 @@ export default function FindPage() {
             <div className="flex gap-3">
               <button
                 onClick={handleShare}
-                className="flex-1 flex items-center justify-center gap-2 bg-teal-500 hover:bg-teal-600 text-white font-semibold py-3 rounded-xl transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 bg-[#E0622A] hover:bg-[#E0622A] text-white font-semibold py-3 rounded-xl transition-colors"
               >
                 <Share2 className="w-4 h-4" />
                 Share
@@ -169,7 +169,7 @@ export default function FindPage() {
                 onClick={handleCopy}
                 className="flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition-colors"
               >
-                {copied ? <CheckCircle2 className="w-4 h-4 text-teal-500" /> : <Copy className="w-4 h-4" />}
+                {copied ? <CheckCircle2 className="w-4 h-4 text-[#E0622A]" /> : <Copy className="w-4 h-4" />}
                 {copied ? "Copied!" : "Copy link"}
               </button>
             </div>
@@ -186,7 +186,7 @@ export default function FindPage() {
 
       <p className="text-xs text-slate-400 mt-8 text-center">
         Questions? Visit the front desk or email{" "}
-        <a href="mailto:hello@joinrippl.com" className="text-teal-500 hover:underline">hello@joinrippl.com</a>
+        <a href="mailto:hello@joinrippl.com" className="text-[#E0622A] hover:underline">hello@joinrippl.com</a>
       </p>
     </div>
   );

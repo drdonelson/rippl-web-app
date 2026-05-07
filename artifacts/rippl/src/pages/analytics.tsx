@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/auth-context";
 // ── Demo data (shown to demo accounts only) ───────────────────────────────────
 
 const DEMO_STATS = [
-  { label: "Total Referrals",   value: "142",  sub: "+18 this month",  icon: TrendingUp,    color: "text-teal-400",   bg: "bg-teal-500/10",   border: "border-teal-500/20"  },
+  { label: "Total Referrals",   value: "142",  sub: "+18 this month",  icon: TrendingUp,    color: "text-[#E0622A]",   bg: "bg-primary/10",   border: "border-[#E0622A]/20"  },
   { label: "Active Referrers",  value: "61",   sub: "across 3 offices", icon: Users,         color: "text-violet-400", bg: "bg-violet-500/10", border: "border-violet-500/20" },
   { label: "Rewards Issued",    value: "89",   sub: "$4,150 total value", icon: Gift,         color: "text-amber-400",  bg: "bg-amber-500/10",  border: "border-amber-500/20"  },
   { label: "Conversion Rate",   value: "62%",  sub: "referral → appt",  icon: Percent,       color: "text-green-400",  bg: "bg-green-500/10",  border: "border-green-500/20"  },
@@ -29,7 +29,7 @@ const DEMO_TOP_REFERRERS = [
 ];
 
 const DEMO_REWARDS = [
-  { type: "Gift Card",      count: 38, pct: 43, color: "bg-teal-500"    },
+  { type: "Gift Card",      count: 38, pct: 43, color: "bg-[#E0622A]"    },
   { type: "Dental Credit",  count: 29, pct: 33, color: "bg-violet-500"  },
   { type: "Local Partner",  count: 14, pct: 16, color: "bg-amber-500"   },
   { type: "Charity",        count: 8,  pct: 9,  color: "bg-pink-500"    },
@@ -104,7 +104,7 @@ function DemoAnalytics() {
                   <p className="text-sm font-semibold text-foreground">{r.name}</p>
                   <p className="text-xs text-muted-foreground">{r.tier} · {r.reward}</p>
                 </div>
-                <div className="flex items-center gap-1 text-teal-400 text-sm font-semibold">
+                <div className="flex items-center gap-1 text-[#E0622A] text-sm font-semibold">
                   <ArrowUpRight className="w-3 h-3" />
                   {r.referrals}
                 </div>

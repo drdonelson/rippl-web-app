@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Droplets, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { TIER_CONFIG } from "@/lib/tier-config";
@@ -95,10 +95,7 @@ export default function HowItWorks() {
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <div className="pb-8 text-center">
           <div className="flex items-center justify-center gap-2 mb-6">
-            <div className="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center shadow-lg shadow-teal-600/20">
-              <Droplets className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-slate-900 font-bold text-xl">Rippl</span>
+            <span className="font-display font-bold text-lg"><span className="text-[#E0622A]">rip</span><span className="text-[#E0622A]">pl</span></span>
           </div>
           <h1 className="text-3xl md:text-4xl font-black text-slate-900 leading-tight mb-3">
             Refer friends.<br />Earn rewards.
@@ -128,7 +125,7 @@ export default function HowItWorks() {
                 </div>
                 <div>
                   <p className="text-slate-800 font-bold text-sm mb-0.5">
-                    <span className="text-teal-600 mr-1.5">Step {i + 1}.</span>
+                    <span className="text-[#E0622A] mr-1.5">Step {i + 1}.</span>
                     {step.title}
                   </p>
                   <p className="text-slate-500 text-sm leading-relaxed">{step.body}</p>
@@ -213,9 +210,9 @@ export default function HowItWorks() {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-teal-50 to-slate-50 border border-teal-200 rounded-3xl p-6 md:p-8 text-center"
+          className="bg-gradient-to-br from-orange-50 to-slate-50 border border-orange-200 rounded-3xl p-6 md:p-8 text-center"
         >
-          <Droplets className="w-8 h-8 mb-3 mx-auto text-teal-600" />
+          <span className="font-display font-bold text-lg block mb-3"><span className="text-[#E0622A]">rip</span><span className="text-[#E0622A]">pl</span></span>
           <h3 className="text-slate-800 font-bold text-lg mb-2">Your referral link is ready</h3>
           <p className="text-slate-500 text-sm leading-relaxed mb-4 max-w-md mx-auto">
             Ask your dentist for your personal link at your next visit, or check your email from Hallmark Dental.
@@ -224,7 +221,7 @@ export default function HowItWorks() {
             href="https://www.hallmarkdds.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-teal-600 text-sm font-semibold hover:text-teal-500 transition-colors"
+            className="inline-flex items-center gap-1.5 text-[#E0622A] text-sm font-semibold hover:text-[#E0622A] transition-colors"
           >
             Not a patient yet? Book your first visit →
           </a>
