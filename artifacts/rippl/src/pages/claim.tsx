@@ -1,8 +1,19 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Droplets, CheckCircle2, Loader2, AlertTriangle, Clock, Gift, ArrowLeft } from "lucide-react";
+import { motion, AnimatePresence, useMotionValue, animate } from "framer-motion";
+import { CheckCircle2, Loader2, AlertTriangle, Clock, Gift, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getTierConfig, getProgressMessage, TIER_CONFIG } from "@/lib/tier-config";
+
+function useCountUp(target: number, duration = 0.9) {
+  const mv = useMotionValue(0);
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    const ctrl = animate(mv, target, { duration, ease: "easeOut" });
+    const unsub = mv.on("change", v => setDisplay(Math.round(v)));
+    return () => { ctrl.stop(); unsub(); };
+  }, [target, duration]);
+  return display;
+}
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 const PUBLIC_APP_URL = "https://www.joinrippl.com";
@@ -113,7 +124,7 @@ function RewardCard({
   onSelect: () => void;
   disabled?: boolean;
   badge?: string;
-  badgeColor?: "teal" | "amber";
+  badgeColor?: "orange" | "amber";
   icon: React.ReactNode;
   title: string;
   subtitle: string;
@@ -128,7 +139,7 @@ function RewardCard({
           "absolute -top-3 right-4 z-10 text-[10px] font-bold uppercase tracking-wider px-2.5 py-[5px] rounded-full leading-none pointer-events-none",
           badgeColor === "amber"
             ? "bg-amber-100 text-amber-700 border border-amber-200"
-            : "bg-teal-100 text-teal-700 border border-teal-200",
+            : "bg-orange-100 text-[#E0622A] border border-orange-200",
         )}>
           {badge}
         </span>
@@ -141,20 +152,20 @@ function RewardCard({
           "w-full text-left rounded-2xl p-4 border transition-all duration-200 relative overflow-hidden",
           "disabled:cursor-not-allowed",
           isSelected
-            ? "bg-teal-50 border-teal-500 shadow-lg shadow-teal-500/10"
+            ? "bg-orange-50 border-[#E0622A] shadow-lg shadow-[#E0622A]/10"
             : "bg-white border-slate-200 hover:border-slate-300 active:scale-[0.99]",
         )}
       >
         <div className="flex items-start gap-4 pr-16">
           <div className={cn(
             "w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 mt-0.5",
-            isSelected ? "bg-teal-100" : "bg-slate-100",
+            isSelected ? "bg-orange-100" : "bg-slate-100",
           )}>
             {icon}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-base font-bold text-slate-900 leading-tight">{title}</p>
-            <p className="text-teal-600 text-sm font-medium mt-0.5">{subtitle}</p>
+            <p className="text-[#E0622A] text-sm font-medium mt-0.5">{subtitle}</p>
             <p className="text-slate-500 text-xs mt-1 leading-relaxed">{detail}</p>
             {children}
           </div>
@@ -162,7 +173,7 @@ function RewardCard({
 
         <div className={cn(
           "absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 mt-3",
-          isSelected ? "bg-teal-500 border-teal-500" : "border-slate-300",
+          isSelected ? "bg-[#E0622A] border-[#E0622A]" : "border-slate-300",
         )}>
           {isSelected && (
             <svg viewBox="0 0 20 20" fill="white" className="w-full h-full p-0.5">
@@ -228,6 +239,7 @@ export default function Claim() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [result, setResult]           = useState<ClaimResult | null>(null);
   const [copied, setCopied]           = useState(false);
+  const animatedReward = useCountUp(claimData?.claim?.reward_value ?? 0);
 
   useEffect(() => {
     if (!token) { setPhase("invalid"); return; }
@@ -293,7 +305,7 @@ export default function Claim() {
   if (phase === "loading") {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-teal-600 animate-spin" />
+        <Loader2 className="w-10 h-10 text-[#E0622A] animate-spin" />
       </div>
     );
   }
@@ -324,7 +336,7 @@ export default function Claim() {
   if (phase === "already_claimed") {
     return (
       <ErrorCard
-        icon={<CheckCircle2 className="w-8 h-8 text-teal-400" />}
+        icon={<CheckCircle2 className="w-8 h-8 text-[#E0622A]" />}
         title="Already Claimed"
         body={errorDetail?.claimedAt
           ? `This reward was already claimed on ${formatDate(errorDetail.claimedAt)}.`
@@ -349,102 +361,93 @@ export default function Claim() {
   // ── Success ───────────────────────────────────────────────────────────────
   if (phase === "success" && result) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col">
-        <div className="flex-1 flex flex-col max-w-md mx-auto w-full px-5 py-8 justify-center">
+      <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(135deg, #F5A623 0%, #E8842A 100%)" }}>
+        {/* Hero */}
+        <div className="px-5 pt-10 pb-20 text-white text-center">
+          <div className="flex items-center justify-center gap-2 mb-8">
+            {claimData?.referral?.office_logo_url ? (
+              <img src={claimData.referral.office_logo_url} alt="Practice logo" className="h-8 max-w-[120px] object-contain brightness-0 invert" />
+            ) : (
+              <span className="font-display font-bold text-2xl">
+                <span className="text-white/70">rip</span><span className="text-white">pl</span>
+              </span>
+            )}
+          </div>
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center text-center"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", damping: 12, delay: 0.1 }}
+            className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4"
           >
-            {/* Logo */}
-            <div className="flex items-center gap-2 mb-8">
-              {result && claimData?.referral?.office_logo_url ? (
-                <img src={claimData.referral.office_logo_url} alt="Practice logo" className="h-8 max-w-[120px] object-contain" />
-              ) : (
-                <>
-                  <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center">
-                    <Droplets className="w-5 h-5 text-white" />
-                  </div>
-                  <span className="text-slate-900 font-bold text-lg">Rippl</span>
-                </>
-              )}
-            </div>
-
-            {/* Checkmark */}
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", damping: 12, delay: 0.15 }}
-              className="w-20 h-20 bg-gradient-to-br from-teal-400 to-emerald-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-teal-500/30"
-            >
-              <CheckCircle2 className="w-10 h-10 text-white" />
-            </motion.div>
-
-            <h2 className="text-2xl font-bold text-slate-900 mb-1">Reward Claimed!</h2>
-            <p className="text-slate-500 text-sm mb-6">Thank you for being a loyal patient, {firstName}.</p>
-
-            {/* Reward-specific message */}
-            <div className="w-full bg-white border border-slate-200 rounded-2xl p-5 mb-5 text-left">
-              {result.reward_type === "local-partner" && result.pin_code ? (
-                <>
-                  <p className="text-6xl font-black text-white tracking-[0.2em] text-center py-2 font-mono">
-                    {result.pin_code}
-                  </p>
-                  <p className="text-slate-400 text-xs text-center mt-2">
-                    Your redemption PIN: <span className="text-white font-semibold">{result.pin_code}</span> — Show this screen at {localPartner?.business_name ?? "the store"} to redeem.
-                  </p>
-                </>
-              ) : result.reward_type === "gift-card" ? (
-                <>
-                  <p className="text-slate-900 font-semibold mb-1">🎁 {result.tango_order_id ? "Gift card on its way!" : "Request received!"}</p>
-                  <p className="text-slate-500 text-sm">
-                    {result.tango_order_id
-                      ? `Your ${result.gift_card_brand ?? "Amazon"} gift card is on its way! Check your email — it usually arrives within a few minutes.`
-                      : "Your gift card request has been received — we'll email it to you within 24 hours."}
-                  </p>
-                </>
-              ) : result.reward_type === "in-house-credit" ? (
-                <>
-                  <p className="text-slate-900 font-semibold mb-1">🦷 Credit incoming!</p>
-                  <p className="text-slate-500 text-sm">
-                    Your $100 dental credit will be applied to your account within 24 hours. You'll see it at your next appointment.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-slate-900 font-semibold mb-1">❤️ Donation confirmed!</p>
-                  <p className="text-slate-500 text-sm">
-                    We'll make a ${result.reward_value} donation in your name and send you a confirmation email.
-                  </p>
-                </>
-              )}
-            </div>
-
-            {/* Tier progress */}
-            <div className="w-full bg-white border border-slate-200 rounded-2xl p-4 mb-5">
-              <p className="text-slate-400 text-xs uppercase tracking-wider font-semibold mb-3 text-center">Your Referral Progress</p>
-              <TierProgressBar tierName={referrer.tier} totalReferrals={referrer.total_referrals} />
-            </div>
-
-            {/* Share CTA */}
-            <button
-              onClick={handleShare}
-              className="w-full py-3.5 rounded-2xl font-semibold text-sm transition-all mb-2 bg-teal-50 border border-teal-200 text-teal-600 hover:bg-teal-100"
-            >
-              📤 Share with a friend
-            </button>
-            <button
-              onClick={handleCopy}
-              className={cn(
-                "w-full py-2.5 rounded-2xl font-semibold text-sm transition-all mb-6",
-                copied
-                  ? "bg-teal-50 border border-teal-200 text-teal-600"
-                  : "bg-white border border-slate-200 text-slate-500 hover:text-slate-700 hover:border-slate-300",
-              )}
-            >
-              {copied ? "✓ Link Copied!" : "Or copy link"}
-            </button>
+            <CheckCircle2 className="w-10 h-10 text-white" />
           </motion.div>
+          <h2 className="text-3xl font-bold text-white mb-1">Reward Claimed!</h2>
+          <p className="text-white/80 text-base">Thank you for being a loyal patient, {firstName}.</p>
+        </div>
+
+        {/* White card */}
+        <div className="bg-white rounded-t-3xl -mt-12 flex-1 px-5 pt-6 pb-10 max-w-md mx-auto w-full">
+          {/* Reward-specific message */}
+          <div className="bg-orange-50 border border-orange-100 rounded-2xl p-5 mb-5 text-left">
+            {result.reward_type === "local-partner" && result.pin_code ? (
+              <>
+                <p className="text-4xl font-black text-[#E0622A] tracking-[0.2em] text-center py-2 font-mono">
+                  {result.pin_code}
+                </p>
+                <p className="text-slate-500 text-xs text-center mt-2">
+                  Show this PIN at {localPartner?.business_name ?? "the store"} to redeem.
+                </p>
+              </>
+            ) : result.reward_type === "gift-card" ? (
+              <>
+                <p className="text-slate-900 font-semibold mb-1">🎁 {result.tango_order_id ? "Gift card on its way!" : "Request received!"}</p>
+                <p className="text-slate-500 text-sm">
+                  {result.tango_order_id
+                    ? `Your ${result.gift_card_brand ?? "Amazon"} gift card is on its way! Check your email — it usually arrives within a few minutes.`
+                    : "Your gift card request has been received — we'll email it to you within 24 hours."}
+                </p>
+              </>
+            ) : result.reward_type === "in-house-credit" ? (
+              <>
+                <p className="text-slate-900 font-semibold mb-1">🦷 Credit incoming!</p>
+                <p className="text-slate-500 text-sm">
+                  Your $100 dental credit will be applied to your account within 24 hours. You'll see it at your next appointment.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-slate-900 font-semibold mb-1">❤️ Donation confirmed!</p>
+                <p className="text-slate-500 text-sm">
+                  We'll make a ${result.reward_value} donation in your name and send you a confirmation email.
+                </p>
+              </>
+            )}
+          </div>
+
+          {/* Tier progress */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 mb-5">
+            <p className="text-slate-400 text-xs uppercase tracking-wider font-semibold mb-3 text-center">Your Referral Progress</p>
+            <TierProgressBar tierName={referrer.tier} totalReferrals={referrer.total_referrals} />
+          </div>
+
+          {/* Share CTAs */}
+          <button
+            onClick={handleShare}
+            className="w-full py-3.5 rounded-2xl font-semibold text-sm transition-all mb-2 bg-[#E0622A] text-white hover:bg-[#C9551E]"
+          >
+            📤 Share with a friend
+          </button>
+          <button
+            onClick={handleCopy}
+            className={cn(
+              "w-full py-2.5 rounded-2xl font-semibold text-sm transition-all",
+              copied
+                ? "bg-orange-50 border border-orange-200 text-[#E0622A]"
+                : "bg-white border border-slate-200 text-slate-500 hover:text-slate-700 hover:border-slate-300",
+            )}
+          >
+            {copied ? "✓ Link Copied!" : "Or copy referral link"}
+          </button>
         </div>
       </div>
     );
@@ -483,7 +486,7 @@ export default function Claim() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500">Value</span>
-                <span className="text-teal-600 font-bold">{lbl.value}</span>
+                <span className="text-[#E0622A] font-bold">{lbl.value}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500">Delivery</span>
@@ -501,7 +504,7 @@ export default function Claim() {
             <button
               onClick={handleConfirm}
               disabled={isSubmitting}
-              className="w-full py-4 rounded-2xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-base transition-all shadow-lg shadow-teal-600/25 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-3"
+              className="w-full py-4 rounded-2xl bg-[#E0622A] hover:bg-[#C9551E] text-white font-bold text-base transition-all shadow-lg shadow-[#E0622A]/25 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-3"
             >
               {isSubmitting ? (
                 <><Loader2 className="w-5 h-5 animate-spin" /> Claiming…</>
@@ -525,42 +528,48 @@ export default function Claim() {
 
   // ── Selecting ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-4xl mx-auto px-4 md:px-6 py-6 md:py-12 pb-10 md:pb-16">
+    <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(135deg, #F5A623 0%, #E8842A 100%)" }}>
 
-        {/* Logo + Office */}
-        <div className="flex items-center gap-2 mb-7">
+      {/* Gradient hero */}
+      <div className="px-5 pt-10 pb-24 text-white text-center">
+        {/* Logo / office */}
+        <div className="flex items-center justify-center gap-2 mb-8">
           {referral?.office_logo_url ? (
-            <img src={referral.office_logo_url} alt="Practice logo" className="h-8 max-w-[120px] object-contain" />
+            <img src={referral.office_logo_url} alt="Practice logo" className="h-8 max-w-[120px] object-contain brightness-0 invert" />
           ) : (
-            <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center">
-              <Droplets className="w-5 h-5 text-white" />
-            </div>
+            <span className="font-display font-bold text-xl">
+              <span className="text-white/70">rip</span><span className="text-white">pl</span>
+            </span>
           )}
-          <span className="text-slate-600 text-sm font-medium">{office}</span>
         </div>
 
-        {/* Header */}
-        <div className="mb-7 md:text-center md:py-4">
-          <h1 className="text-3xl md:text-4xl font-black text-slate-900 leading-tight mb-3">
-            Congratulations, {firstName}! 🎉
-          </h1>
-          <div className="flex items-center gap-3 mb-2 md:justify-center">
-            <TierPill tierName={referrer.tier} />
-          </div>
-          <p className="text-teal-600 font-semibold text-lg mt-2">
-            You've earned a ${rewardValue} reward
-          </p>
-          <p className="text-slate-500 text-sm mt-1">
-            {getProgressMessage(referrer.tier, referrer.total_referrals)}
-          </p>
-          <p className="text-slate-400 text-xs mt-1">
-            {referral?.new_patient_name ?? "a friend"} just completed their visit — pick your reward below.
-          </p>
-        </div>
+        <p className="text-white/80 text-base font-medium mb-1">Hey {firstName} —</p>
+        <p className="text-white/80 text-sm mb-6 font-medium italic" style={{ fontFamily: "var(--font-fraunces)" }}>
+          You've earned it.
+        </p>
 
-        {/* Reward cards — 2-col on sm+, single-col on mobile */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-3 mb-6">
+        {/* Count-up reward amount */}
+        <div
+          className="text-[96px] font-bold leading-none text-white mb-2 tracking-tight"
+          style={{ fontFamily: "var(--font-fraunces)" }}
+        >
+          ${animatedReward}
+        </div>
+        <p className="text-white/80 text-base font-medium">reward for you</p>
+
+        <div className="flex items-center justify-center mt-5">
+          <TierPill tierName={referrer.tier} />
+        </div>
+      </div>
+
+      {/* White card pulls up */}
+      <div className="bg-white rounded-t-3xl -mt-12 flex-1 px-5 pt-6 pb-10">
+        <p className="text-slate-400 text-xs uppercase tracking-wider font-semibold mb-4 text-center">
+          {referral?.new_patient_name ?? "A friend"} just completed their visit — pick your reward:
+        </p>
+
+        {/* Reward cards */}
+        <div className="space-y-3 mb-6">
 
           {/* In-house credit — shown first */}
           <RewardCard
@@ -579,7 +588,7 @@ export default function Claim() {
             isSelected={selected === "gift-card"}
             onSelect={() => setSelected("gift-card")}
             badge="Most Popular"
-            badgeColor="teal"
+            badgeColor="orange"
             icon="🎁"
             title={`$${rewardValue} Gift Card`}
             subtitle="Delivered instantly to your email"
@@ -594,7 +603,7 @@ export default function Claim() {
                   className="mt-3 overflow-hidden"
                 >
                   <p className="text-slate-400 text-xs mb-2">Choose brand:</p>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
+                  <div className="grid grid-cols-2 gap-1.5">
                     {GIFT_CARD_BRANDS.map((b) => (
                       <button
                         key={b}
@@ -602,7 +611,7 @@ export default function Claim() {
                         className={cn(
                           "py-1.5 px-2 rounded-lg text-xs font-semibold transition-all border",
                           brand === b
-                            ? "bg-teal-600 border-teal-500 text-white"
+                            ? "bg-[#E0622A] border-[#E0622A] text-white"
                             : "bg-white border-slate-200 text-slate-700 hover:border-slate-300",
                         )}
                       >
@@ -648,11 +657,10 @@ export default function Claim() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 12 }}
-              className="md:flex md:justify-center"
             >
               <button
                 onClick={() => setPhase("confirming")}
-                className="w-full md:max-w-[400px] py-4 rounded-2xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-base transition-all shadow-lg shadow-teal-600/25"
+                className="w-full py-4 rounded-2xl bg-[#E0622A] hover:bg-[#C9551E] text-white font-bold text-base transition-all shadow-lg shadow-[#E0622A]/25"
               >
                 Continue with {
                   selected === "gift-card" ? `${brand} Gift Card` :

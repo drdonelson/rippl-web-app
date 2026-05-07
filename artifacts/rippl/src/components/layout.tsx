@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard, CalendarDays, Users, Droplets,
+  LayoutDashboard, CalendarDays, Users,
   ChevronDown, MapPin, LogOut, AlertTriangle, Menu, X,
   Store, CheckSquare, Building2, TrendingUp, ExternalLink,
   GraduationCap, Link2, Shield, FileText, Gift, Megaphone, UserCog, BookOpen,
@@ -193,11 +193,10 @@ function SidebarContent({
     <>
       {/* Logo */}
       <div className="px-6 pt-6 pb-4 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20">
-          <Droplets className="w-6 h-6 text-primary-foreground" />
-        </div>
         <div>
-          <h1 className="text-2xl font-display font-bold text-foreground leading-none">Rippl</h1>
+          <h1 className="text-2xl font-display font-bold leading-none">
+            <span className="text-foreground">rip</span><span className="text-primary">pl</span>
+          </h1>
           <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-1">
             {subtitleText}
           </p>
@@ -371,10 +370,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shrink-0">
-            <Droplets className="w-3.5 h-3.5 text-primary-foreground" />
-          </div>
-          <span className="text-base font-display font-bold text-foreground leading-none shrink-0">Rippl</span>
+          <span className="text-base font-display font-bold leading-none shrink-0">
+            <span className="text-foreground">rip</span><span className="text-primary">pl</span>
+          </span>
           <div className="flex-1 min-w-0">
             <OfficePicker compact />
           </div>

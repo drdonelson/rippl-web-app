@@ -1,9 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,300&family=Geist+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: 'Plus Jakarta Sans', sans-serif;
-  --font-display: 'Outfit', sans-serif;
+  --font-sans: 'DM Sans', sans-serif;
+  --font-display: 'DM Sans', sans-serif;
+  --font-fraunces: 'Fraunces', serif;
+  --font-mono: 'Geist Mono', monospace;
 
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -43,7 +45,7 @@
   --popover: 0 0% 100%;
   --popover-foreground: 222 47% 11%;
 
-  --primary: 175 84% 32%; /* Teal #0d9488 */
+  --primary: 18 74% 52%; /* Orange #E0622A */
   --primary-foreground: 0 0% 100%;
 
   --secondary: 210 40% 96%;
@@ -52,7 +54,7 @@
   --muted: 210 40% 98%; /* #f8fafc */
   --muted-foreground: 215 16% 47%; /* #64748b */
 
-  --accent: 175 84% 32%;
+  --accent: 18 74% 52%;
   --accent-foreground: 0 0% 100%;
 
   --destructive: 0 84% 60%;
@@ -60,7 +62,7 @@
 
   --border: 214 32% 91%; /* #e2e8f0 */
   --input: 214 32% 91%;
-  --ring: 175 84% 32%;
+  --ring: 18 74% 52%;
 }
 
 @layer base {

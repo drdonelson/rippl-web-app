@@ -2,6 +2,12 @@
 
 > Read this file at the start of every session before making any changes.
 
+## Design System
+Always read `DESIGN.md` before making any visual or UI changes.
+Font choices, colors, spacing, border-radius, and motion are all defined there.
+Do not deviate without explicit user approval.
+Key rules: Fraunces for display/reward numbers, DM Sans for all UI, Geist Mono for data. Orange `#E0622A` is the primary accent (logo "pl", buttons, badges). No teal. No Inter.
+
 ---
 
 ## What is Rippl?
