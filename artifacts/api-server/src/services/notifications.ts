@@ -115,7 +115,7 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
           <!-- ── HEADER ── -->
           <tr>
             <td align="center" style="padding:36px 40px 28px;background-color:#060e1a;border-bottom:1px solid #1e3352;">
-              <p style="margin:0;font-family:${font};font-size:32px;font-weight:700;color:#2dd4bf;letter-spacing:2px;line-height:1;">Rippl</p>
+              <p style="margin:0;font-family:${font};font-size:32px;font-weight:700;color:#E0622A;letter-spacing:2px;line-height:1;">Rippl</p>
               <p style="margin:8px 0 0;font-family:${font};font-size:11px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#64748b;">Hallmark Dental</p>
             </td>
           </tr>
@@ -163,7 +163,7 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
                         <td align="center" style="padding:0;">
                           <a href="${claimUrl}&amp;reward=in-house-credit" target="_blank" style="display:block;text-decoration:none;color:inherit;padding:20px 12px;">
                             <p style="margin:0 0 8px;font-family:${font};font-size:26px;line-height:1;">&#x1F48E;</p>
-                            <p style="margin:0 0 4px;font-family:${font};font-size:22px;font-weight:700;color:#2dd4bf;line-height:1;">$100</p>
+                            <p style="margin:0 0 4px;font-family:${font};font-size:22px;font-weight:700;color:#E0622A;line-height:1;">$100</p>
                             <p style="margin:0 0 6px;font-family:${font};font-size:12px;font-weight:700;color:#f8fafc;line-height:1.3;">In-House Credit</p>
                             <p style="margin:0;font-family:${font};font-size:11px;color:#64748b;line-height:1.5;">Applied to your next visit</p>
                           </a>
@@ -179,7 +179,7 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
                         <td align="center" style="padding:0;">
                           <a href="${claimUrl}&amp;reward=amazon-gift-card" target="_blank" style="display:block;text-decoration:none;color:inherit;padding:20px 12px;">
                             <p style="margin:0 0 8px;font-family:${font};font-size:26px;line-height:1;">&#x1F381;</p>
-                            <p style="margin:0 0 4px;font-family:${font};font-size:22px;font-weight:700;color:#2dd4bf;line-height:1;">$${rv}</p>
+                            <p style="margin:0 0 4px;font-family:${font};font-size:22px;font-weight:700;color:#E0622A;line-height:1;">$${rv}</p>
                             <p style="margin:0 0 6px;font-family:${font};font-size:12px;font-weight:700;color:#f8fafc;line-height:1.3;">Gift Card</p>
                             <p style="margin:0;font-family:${font};font-size:11px;color:#64748b;line-height:1.5;">Sent to your email</p>
                           </a>
@@ -195,7 +195,7 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
                         <td align="center" style="padding:0;">
                           <a href="${claimUrl}&amp;reward=charity-donation" target="_blank" style="display:block;text-decoration:none;color:inherit;padding:20px 12px;">
                             <p style="margin:0 0 8px;font-family:${font};font-size:26px;line-height:1;">&#x1F49B;</p>
-                            <p style="margin:0 0 4px;font-family:${font};font-size:22px;font-weight:700;color:#2dd4bf;line-height:1;">$${rv}</p>
+                            <p style="margin:0 0 4px;font-family:${font};font-size:22px;font-weight:700;color:#E0622A;line-height:1;">$${rv}</p>
                             <p style="margin:0 0 6px;font-family:${font};font-size:12px;font-weight:700;color:#f8fafc;line-height:1.3;">Charity Donation</p>
                             <p style="margin:0;font-family:${font};font-size:11px;color:#64748b;line-height:1.5;">We donate on your behalf</p>
                           </a>
@@ -214,7 +214,7 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
             <td align="center" style="padding:0 40px 16px;background-color:#0a1628;">
               <p style="margin:0;font-family:${font};font-size:12px;color:#475569;line-height:1.6;">
                 Cards not clickable? Visit:<br/>
-                <a href="${claimUrl}" target="_blank" style="color:#2dd4bf;text-decoration:underline;word-break:break-all;">${escHtml(claimUrl)}</a>
+                <a href="${claimUrl}" target="_blank" style="color:#E0622A;text-decoration:underline;word-break:break-all;">${escHtml(claimUrl)}</a>
               </p>
             </td>
           </tr>
@@ -222,7 +222,7 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
           <!-- HOW IT WORKS LINK -->
           <tr>
             <td align="center" style="padding:0 40px 24px;background-color:#0a1628;">
-              <a href="https://www.joinrippl.com/how-it-works" target="_blank" style="font-family:${font};font-size:13px;color:#2dd4bf;text-decoration:none;">
+              <a href="https://www.joinrippl.com/how-it-works" target="_blank" style="font-family:${font};font-size:13px;color:#E0622A;text-decoration:none;">
                 Learn how the referral program works &#8594;
               </a>
             </td>
@@ -243,7 +243,7 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
           <tr>
             <td align="center" style="padding:24px 40px 28px;background-color:#060e1a;">
               <p style="margin:0;font-family:${font};font-size:12px;color:#475569;line-height:1.7;">
-                Sent with <span style="color:#2dd4bf;font-weight:700;">Rippl</span> by Hallmark Dental<br/>
+                Sent with <span style="color:#E0622A;font-weight:700;">Rippl</span> by Hallmark Dental<br/>
                 You&#39;re receiving this because you referred a patient to our practice.
               </p>
             </td>

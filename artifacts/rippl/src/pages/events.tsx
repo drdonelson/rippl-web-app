@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useGetReferrers, useCreateReward, useUpdateReferralStatus, customFetch } from "@workspace/api-client-react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Gift, Search, MoreHorizontal, CheckCircle2, ChevronDown, ShieldAlert, ShieldCheck, Plus, ArrowUpDown, ArrowUp, ArrowDown, Mail } from "lucide-react";
+import { Gift, Search, MoreHorizontal, CheckCircle2, ChevronDown, ShieldAlert, ShieldCheck, Plus, ArrowUpDown, ArrowUp, ArrowDown, Mail, Send, Loader2 } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { cn } from "@/lib/utils";
 import { useForm } from "react-hook-form";
@@ -98,6 +98,16 @@ function useOverrideHousehold() {
   });
 }
 
+function useResendNotification() {
+  return useMutation({
+    mutationFn: (eventId: string) =>
+      customFetch<{ success: boolean; sms?: string; email?: string; errors: string[] }>(
+        `${BASE}/api/referrals/${eventId}/resend-notification`,
+        { method: "POST" }
+      ),
+  });
+}
+
 type TabId = "all" | "lead" | "booked" | "exam-completed" | "reward-sent" | "flagged";
 type SortField = "date" | "new_patient_name" | "referrer_name" | "status" | "reward_type";
 type SortDir = "asc" | "desc";
@@ -125,8 +135,6 @@ export default function Events() {
   // Gate queries until auth is fully resolved — prevents API calls from firing
   // before profile loads (when isDemo is still false at first render).
   const queryEnabled = !authIsLoading && !isDemo;
-
-  console.log("[Events] isDemo:", isDemo, "authIsLoading:", authIsLoading, "role:", profile?.role);
 
   const { data: fetchedEvents, isLoading } = useReferralEvents(selectedOfficeId, queryEnabled);
   const { data: fetchedReferrers } = useGetReferrers({ query: { enabled: queryEnabled } });
@@ -167,6 +175,8 @@ export default function Events() {
   });
 
   const overrideHousehold = useOverrideHousehold();
+  const resendNotification = useResendNotification();
+  const [resentEventId, setResentEventId] = useState<string | null>(null);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -448,16 +458,44 @@ export default function Events() {
                         </button>
                       ) : event.status === "Exam Completed" ? (
                         <div className="flex flex-col items-end gap-1.5 ml-auto">
-                          <div className="flex items-center gap-1.5 text-primary text-xs font-medium">
-                            <Mail className="w-3.5 h-3.5" />
-                            Claim email sent
+                          {resentEventId === event.id ? (
+                            <div className="flex items-center gap-1.5 text-green-400 text-xs font-medium">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              Resent!
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5 text-primary text-xs font-medium">
+                              <Mail className="w-3.5 h-3.5" />
+                              Claim email sent
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                resendNotification.mutate(event.id, {
+                                  onSuccess: () => {
+                                    setResentEventId(event.id);
+                                    setTimeout(() => setResentEventId(null), 4000);
+                                  },
+                                });
+                              }}
+                              disabled={resendNotification.isPending && resendNotification.variables === event.id}
+                              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors disabled:opacity-50"
+                              title="Resend claim email and SMS"
+                            >
+                              {resendNotification.isPending && resendNotification.variables === event.id
+                                ? <Loader2 className="w-3 h-3 animate-spin" />
+                                : <Send className="w-3 h-3" />}
+                              Resend
+                            </button>
+                            <span className="text-muted-foreground/40 text-xs">·</span>
+                            <button
+                              onClick={() => setSelectedEventId(event.id)}
+                              className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                            >
+                              Override
+                            </button>
                           </div>
-                          <button
-                            onClick={() => setSelectedEventId(event.id)}
-                            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
-                          >
-                            Manual override
-                          </button>
                         </div>
                       ) : event.status === "Reward Sent" ? (
                         <div className="flex items-center justify-end gap-2 text-primary font-medium text-sm">

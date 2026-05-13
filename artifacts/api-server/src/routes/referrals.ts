@@ -256,6 +256,60 @@ router.patch("/:id/override-household", async (req, res) => {
   res.json({ ...updatedEvent, referrer_name: referrer?.name ?? null });
 });
 
+// POST /api/referrals/:id/resend-notification
+// Resend the reward claim email (and SMS if enabled) for an "Exam Completed" event.
+router.post("/:id/resend-notification", async (req, res) => {
+  const { id } = req.params;
+
+  const [event] = await db
+    .select()
+    .from(referralEventsTable)
+    .where(eq(referralEventsTable.id, id));
+
+  if (!event) {
+    res.status(404).json({ error: "Referral event not found" });
+    return;
+  }
+
+  if (event.status !== "Exam Completed") {
+    res.status(400).json({ error: "Can only resend for events with status 'Exam Completed'" });
+    return;
+  }
+
+  const [referrer] = await db
+    .select()
+    .from(referrersTable)
+    .where(eq(referrersTable.id, event.referrer_id));
+
+  if (!referrer) {
+    res.status(404).json({ error: "Referrer not found" });
+    return;
+  }
+
+  // Get existing claim token
+  const [claim] = await db
+    .select()
+    .from(rewardClaimsTable)
+    .where(eq(rewardClaimsTable.referral_event_id, id));
+
+  const claimToken = claim?.claim_token ?? referrer.referral_code;
+  const rewardValue = claim?.reward_value ?? referrer.reward_value ?? 35;
+
+  req.log.info({ eventId: id, referrerId: referrer.id, claimToken }, "Resending reward notification");
+
+  const result = await sendRewardNotification(
+    referrer.name,
+    referrer.phone,
+    referrer.email ?? null,
+    event.new_patient_name,
+    claimToken,
+    event.office ?? "Hallmark Dental",
+    rewardValue,
+  );
+
+  res.json({ success: true, ...result });
+});
+
 router.get("/by-token/:token", async (req, res) => {
   const { token } = GetReferralByTokenParams.parse(req.params);
 
