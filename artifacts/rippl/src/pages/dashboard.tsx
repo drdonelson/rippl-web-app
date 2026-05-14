@@ -209,17 +209,19 @@ export default function Dashboard() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {adminTasks.map(task => {
               const isHouseholdDupe = task.task_type === "household-duplicate-review";
-              const isGiftCard = task.task_type === "amazon-gift-card";
 
               const accent = isHouseholdDupe
                 ? { border: "border-orange-500/20", bg: "bg-orange-500/10", text: "text-orange-400", badgeBg: "bg-orange-500/10", badgeBorder: "border-orange-500/20", btnBg: "bg-orange-500/10 hover:bg-orange-500/20", btnBorder: "border-orange-500/20" }
                 : { border: "border-yellow-500/20", bg: "bg-yellow-500/10", text: "text-yellow-400", badgeBg: "bg-yellow-500/10", badgeBorder: "border-yellow-500/20", btnBg: "bg-yellow-500/10 hover:bg-yellow-500/20", btnBorder: "border-yellow-500/20" };
 
-              const taskLabel = isHouseholdDupe
-                ? "🏠 Household Review"
-                : isGiftCard
-                ? "📦 Gift Card"
-                : "💛 Charity Donation";
+              const taskLabel =
+                task.task_type === "household-duplicate-review" ? "🏠 Household Review" :
+                task.task_type === "apply-credit"               ? "💎 In-House Credit" :
+                task.task_type === "gift-card"                  ? "📦 Gift Card" :
+                task.task_type === "amazon-gift-card"           ? "📦 Gift Card" :
+                task.task_type === "charity-donation"           ? "💛 Charity Donation" :
+                task.task_type === "charity"                    ? "💛 Charity Donation" :
+                task.task_type;
 
               return (
                 <div key={task.id} className={`bg-card rounded-2xl border ${accent.border} p-5 flex flex-col gap-3`}>
