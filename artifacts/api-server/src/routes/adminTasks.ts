@@ -6,20 +6,42 @@ const router: IRouter = Router();
 
 router.get("/", async (req, res) => {
   try {
-    const { rows } = await db.execute(sql`
-      SELECT
-        t.id, t.task_type, t.amount, t.notes,
-        COALESCE(t.status, 'pending') AS status,
-        t.referral_event_id, t.created_at,
-        r.name  AS referrer_name,
-        r.email AS referrer_email,
-        re.new_patient_name
-      FROM admin_tasks t
-      LEFT JOIN referrers         r  ON t.referrer_id       = r.id
-      LEFT JOIN referral_events   re ON t.referral_event_id = re.id
-      WHERE COALESCE(t.status, 'pending') = 'pending'
-      ORDER BY t.created_at DESC
-    `);
+    const user = req.authUser!;
+    // Scope to office for non-super-admins: use practice_id (office UUID) when set
+    const officeId = user.role !== "super_admin" ? (user.practice_id ?? null) : null;
+
+    const { rows } = await db.execute(
+      officeId
+        ? sql`
+            SELECT
+              t.id, t.task_type, t.amount, t.notes,
+              COALESCE(t.status, 'pending') AS status,
+              t.referral_event_id, t.created_at,
+              r.name  AS referrer_name,
+              r.email AS referrer_email,
+              re.new_patient_name
+            FROM admin_tasks t
+            LEFT JOIN referrers         r  ON t.referrer_id       = r.id
+            LEFT JOIN referral_events   re ON t.referral_event_id = re.id
+            WHERE COALESCE(t.status, 'pending') = 'pending'
+              AND re.office_id = ${officeId}
+            ORDER BY t.created_at DESC
+          `
+        : sql`
+            SELECT
+              t.id, t.task_type, t.amount, t.notes,
+              COALESCE(t.status, 'pending') AS status,
+              t.referral_event_id, t.created_at,
+              r.name  AS referrer_name,
+              r.email AS referrer_email,
+              re.new_patient_name
+            FROM admin_tasks t
+            LEFT JOIN referrers         r  ON t.referrer_id       = r.id
+            LEFT JOIN referral_events   re ON t.referral_event_id = re.id
+            WHERE COALESCE(t.status, 'pending') = 'pending'
+            ORDER BY t.created_at DESC
+          `
+    );
     res.json(rows);
   } catch (err) {
     req.log.error({ err }, "[admin-tasks] GET query failed");
