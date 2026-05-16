@@ -59,39 +59,112 @@ function EmailMockup() {
           <div className="w-2 h-2 rounded-full bg-green-400" />
         </div>
         <div className="flex-1 bg-slate-600 rounded px-2 py-0.5">
-          <p className="text-[10px] text-slate-300 truncate">You started a Rippl 🎊 — Hallmark Dental</p>
+          <p className="text-[10px] text-slate-300 truncate">You've earned a reward 🎁 — Hallmark Dental</p>
         </div>
       </div>
-      {/* Email body */}
-      <div className="bg-[#060e1a] px-5 py-5">
-        <div className="text-center mb-4">
-          <p className="font-bold text-[#E0622A] text-lg tracking-widest">Rippl</p>
-          <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-0.5">Hallmark Dental</p>
-        </div>
-        <div className="bg-[#0f1f38] rounded-xl px-4 py-4 text-center mb-3">
-          <p className="text-white font-bold text-sm mb-1.5">You started a Rippl 🎊</p>
-          <p className="text-slate-400 text-xs leading-relaxed">
-            Hi <span className="text-white font-semibold">Sarah</span> —{" "}
-            <span className="text-white font-semibold">James Wilson</span> just completed their first visit.<br />
+      {/* Email body — matches new warm orange design */}
+      <div className="bg-[#f5f5f5] px-4 py-4">
+        <div className="bg-white rounded-xl overflow-hidden border border-slate-100">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+            <span className="font-bold text-[#E0622A] text-base tracking-wide">Rippl</span>
+            <span className="text-[10px] text-slate-400 font-medium">Hallmark Dental</span>
+          </div>
+          {/* Hero gradient */}
+          <div className="text-center py-5 px-4" style={{ background: "linear-gradient(135deg, #F5A623, #E0622A)" }}>
+            <p className="text-white/85 text-xs font-medium mb-1">Hey Sarah —</p>
+            <p className="text-white/75 text-xs italic mb-3">You've earned it.</p>
+            <p className="text-white font-bold leading-none mb-1" style={{ fontSize: 44, fontFamily: "Georgia, serif" }}>$35</p>
+            <p className="text-white/85 text-xs font-medium">reward for you</p>
+          </div>
+          {/* Trigger */}
+          <p className="text-center text-xs text-slate-500 px-4 pt-3 pb-2 leading-relaxed">
+            <strong className="text-slate-800">James Wilson</strong> just completed their first visit.<br />
             Choose your reward below.
           </p>
-        </div>
-        <div className="grid grid-cols-3 gap-1.5 mb-3">
-          {[
-            { emoji: "💎", amount: "$100", label: "In-House Credit" },
-            { emoji: "🎁",  amount: "$35",  label: "Gift Card"       },
-            { emoji: "💛",  amount: "$35",  label: "Charity"         },
-          ].map((r) => (
-            <div key={r.label} className="bg-[#0a1628] border border-[#1e3352] rounded-lg p-2.5 text-center">
-              <p className="text-base mb-1">{r.emoji}</p>
-              <p className="text-[#E0622A] font-bold text-sm">{r.amount}</p>
-              <p className="text-white text-[9px] font-semibold leading-tight mt-0.5">{r.label}</p>
+          {/* Reward cards */}
+          <div className="grid grid-cols-3 gap-1.5 px-3 pb-3">
+            {[
+              { emoji: "💎", amount: "$100", label: "Account Credit", highlight: true },
+              { emoji: "🎁",  amount: "$35",  label: "Gift Card",      highlight: false },
+              { emoji: "❤️",  amount: "$35",  label: "Charity",        highlight: false },
+            ].map((r) => (
+              <div
+                key={r.label}
+                className={cn(
+                  "rounded-lg p-2.5 text-center border-2",
+                  r.highlight ? "bg-orange-50 border-[#E0622A]" : "bg-slate-50 border-slate-200",
+                )}
+              >
+                <p className="text-base mb-1">{r.emoji}</p>
+                <p className="text-[#E0622A] font-bold text-sm">{r.amount}</p>
+                <p className="text-slate-700 text-[9px] font-semibold leading-tight mt-0.5">{r.label}</p>
+              </div>
+            ))}
+          </div>
+          {/* CTA */}
+          <div className="px-4 pb-4 text-center">
+            <div className="inline-block bg-[#E0622A] text-white text-xs font-bold px-5 py-2 rounded-full">
+              Claim My Reward →
             </div>
-          ))}
+          </div>
+          {/* Footer */}
+          <div className="bg-slate-50 border-t border-slate-100 px-4 py-3 text-center">
+            <p className="text-[10px] text-slate-400">
+              Sent with <span className="text-[#E0622A] font-semibold">Rippl</span> by Hallmark Dental
+            </p>
+          </div>
         </div>
-        <p className="text-center text-[10px] text-slate-500">
-          Sent with <span className="text-[#E0622A] font-semibold">Rippl</span> by Hallmark Dental
-        </p>
+      </div>
+    </div>
+  );
+}
+
+function GiftCardMockup() {
+  return (
+    <div className="mt-4 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+      {/* Browser chrome */}
+      <div className="bg-slate-700 px-3 py-2 flex items-center gap-2">
+        <div className="flex gap-1">
+          <div className="w-2 h-2 rounded-full bg-red-400" />
+          <div className="w-2 h-2 rounded-full bg-yellow-400" />
+          <div className="w-2 h-2 rounded-full bg-green-400" />
+        </div>
+        <div className="flex-1 bg-slate-600 rounded px-2 py-0.5">
+          <p className="text-[10px] text-slate-300 truncate">Your $35 Amazon Gift Card — Tango Card</p>
+        </div>
+      </div>
+      <div className="bg-[#f5f5f5] px-4 py-4">
+        <div className="bg-white rounded-xl overflow-hidden border border-slate-100">
+          {/* Header */}
+          <div className="bg-[#232F3E] px-4 py-3 text-center">
+            <p className="text-[#FF9900] font-bold text-base tracking-tight">amazon</p>
+          </div>
+          {/* Body */}
+          <div className="px-5 py-5 text-center">
+            <p className="text-slate-400 text-[10px] uppercase tracking-widest font-semibold mb-1">Gift Card</p>
+            <p className="text-slate-900 font-bold text-2xl mb-0.5">$35.00</p>
+            <p className="text-slate-400 text-xs mb-4">From: Hallmark Dental via Rippl</p>
+            {/* Mock gift card */}
+            <div className="bg-gradient-to-br from-[#232F3E] to-[#374151] rounded-xl p-4 mb-4 text-left">
+              <p className="text-[#FF9900] font-bold text-sm mb-3">amazon</p>
+              <div className="bg-white/10 rounded-lg px-3 py-2 mb-2">
+                <p className="text-white/50 text-[9px] uppercase tracking-wider mb-0.5">Claim Code</p>
+                <p className="text-white font-mono font-bold text-sm tracking-widest">XXXX-XXXXXX-XXXX</p>
+              </div>
+              <p className="text-white/50 text-[10px] text-right mt-2">Balance: $35.00</p>
+            </div>
+            <div className="inline-block bg-[#FF9900] text-white text-xs font-bold px-5 py-2 rounded-full">
+              Redeem at amazon.com →
+            </div>
+          </div>
+          {/* Footer */}
+          <div className="bg-slate-50 border-t border-slate-100 px-4 py-3 text-center">
+            <p className="text-[10px] text-slate-400">
+              Delivered by <span className="font-semibold text-slate-600">Tango Card</span> · on behalf of Hallmark Dental
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -140,7 +213,7 @@ const STEPS = [
     blue: true,
     timing: "Same moment as SMS",
     description:
-      "A branded reward email sent simultaneously. Dark navy design with the reward amount and three redemption choices. Patient clicks directly from their inbox.",
+      "A branded reward email sent simultaneously. Orange gradient design with the reward amount and three redemption choices. Patient clicks directly from their inbox.",
     mockup: "email" as const,
     emoji: "✉️",
   },
@@ -155,6 +228,17 @@ const STEPS = [
     href: `${APP_URL}/claim?token=${DEMO_TOKEN}`,
     linkLabel: "Preview Claim Page",
     emoji: "🎁",
+  },
+  {
+    n: 6,
+    title: "Gift Card Delivery",
+    audience: "Existing patient",
+    blue: true,
+    timing: "Within minutes of choosing gift card (if selected)",
+    description:
+      "If the patient picks a gift card, Tango Card sends this email automatically with their Amazon, Visa, Target, or Starbucks gift card. No manual fulfillment — delivered directly to their inbox.",
+    mockup: "giftcard" as const,
+    emoji: "🛍️",
   },
 ];
 
@@ -216,8 +300,9 @@ export default function PatientJourney() {
               </p>
 
               <div className="ml-11">
-                {step.mockup === "sms"   && <SmsMockup />}
-                {step.mockup === "email" && <EmailMockup />}
+                {step.mockup === "sms"      && <SmsMockup />}
+                {step.mockup === "email"    && <EmailMockup />}
+                {step.mockup === "giftcard" && <GiftCardMockup />}
                 {"href" in step && step.href && (
                   <a
                     href={step.href}

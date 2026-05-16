@@ -138,158 +138,142 @@ export async function sendRewardNotification(
 }
 
 function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: string, officeName: string, rewardValue: number = 50, referralTrigger = "completed their first visit"): string {
-  const practice = officeName;
-  const font     = "system-ui,-apple-system,sans-serif";
-  const rv       = rewardValue;
+  const practice  = officeName;
+  const font      = "system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
+  const rv        = rewardValue;
+  const firstName = referrerName.split(" ")[0] || referrerName;
 
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>You started a Rippl &#x1F38A;</title>
+  <title>You've earned a reward &#x1F381;</title>
 </head>
-<body style="margin:0;padding:0;background-color:#060e1a;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<body style="margin:0;padding:0;background-color:#f5f5f5;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
 
-  <!-- OUTER WRAPPER -->
-  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#060e1a;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f5f5f5;">
     <tr>
-      <td align="center" style="padding:40px 16px;">
+      <td align="center" style="padding:32px 16px;">
 
         <!-- CARD -->
-        <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;width:100%;background-color:#0a1628;border:1px solid #1e3352;">
+        <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e8e8e8;">
 
           <!-- ── HEADER ── -->
           <tr>
-            <td align="center" style="padding:36px 40px 28px;background-color:#060e1a;border-bottom:1px solid #1e3352;">
-              <p style="margin:0;font-family:${font};font-size:32px;font-weight:700;color:#E0622A;letter-spacing:2px;line-height:1;">Rippl</p>
-              <p style="margin:8px 0 0;font-family:${font};font-size:11px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#64748b;">${escHtml(practice)}</p>
+            <td style="padding:20px 32px;border-bottom:1px solid #f0f0f0;">
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td>
+                    <span style="font-family:${font};font-size:22px;font-weight:700;color:#E0622A;letter-spacing:1px;">Rippl</span>
+                  </td>
+                  <td align="right">
+                    <span style="font-family:${font};font-size:12px;color:#999999;font-weight:500;">${escHtml(practice)}</span>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
           <!-- ── HERO ── -->
           <tr>
-            <td align="center" style="padding:40px 40px 8px;background-color:#0f1f38;">
-              <p style="margin:0 0 16px;font-family:${font};font-size:28px;font-weight:700;color:#f8fafc;line-height:1.3;">You started a Rippl &#x1F38A;</p>
-              <p style="margin:0;font-family:${font};font-size:16px;color:#94a3b8;line-height:1.7;">
-                Hi <span style="color:#f8fafc;font-weight:700;">${escHtml(referrerName)}</span> &#8212;<br/>
-                <span style="color:#f8fafc;font-weight:700;">${escHtml(newPatientName)}</span> just ${escHtml(referralTrigger)} at ${escHtml(practice)}.<br/><br/>
-                As a thank you for your referral, choose your reward below.
+            <td align="center" style="background:linear-gradient(135deg,#F5A623 0%,#E0622A 100%);padding:40px 32px;">
+              <p style="margin:0 0 6px;font-family:${font};font-size:16px;font-weight:500;color:rgba(255,255,255,0.88);">Hey ${escHtml(firstName)} &#8212;</p>
+              <p style="margin:0 0 20px;font-family:Georgia,Times,'Times New Roman',serif;font-size:16px;font-style:italic;font-weight:300;color:rgba(255,255,255,0.80);">You've earned it.</p>
+              <p style="margin:0;font-family:Georgia,Times,'Times New Roman',serif;font-size:80px;font-weight:700;color:#ffffff;line-height:1;">$${rv}</p>
+              <p style="margin:8px 0 0;font-family:${font};font-size:15px;color:rgba(255,255,255,0.85);font-weight:500;">reward for you</p>
+            </td>
+          </tr>
+
+          <!-- ── TRIGGER MESSAGE ── -->
+          <tr>
+            <td align="center" style="padding:28px 40px 8px;">
+              <p style="margin:0;font-family:${font};font-size:15px;color:#555555;line-height:1.7;">
+                <strong style="color:#111111;">${escHtml(newPatientName)}</strong> just ${escHtml(referralTrigger)} at ${escHtml(practice)}.<br/>
+                Choose your reward below.
               </p>
             </td>
           </tr>
 
           <!-- DIVIDER -->
           <tr>
-            <td style="padding:32px 40px 0;background-color:#0f1f38;">
+            <td style="padding:20px 32px 0;">
               <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                <tr>
-                  <td style="height:1px;background-color:#1e3352;font-size:0;line-height:0;">&nbsp;</td>
-                </tr>
+                <tr><td style="height:1px;background-color:#f0f0f0;font-size:0;line-height:0;">&nbsp;</td></tr>
               </table>
             </td>
           </tr>
 
           <!-- CHOOSE YOUR REWARD LABEL -->
           <tr>
-            <td align="center" style="padding:24px 40px 16px;background-color:#0f1f38;">
-              <p style="margin:0;font-family:${font};font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#64748b;">Choose your reward</p>
+            <td align="center" style="padding:20px 32px 12px;">
+              <p style="margin:0;font-family:${font};font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#aaaaaa;">Choose your reward</p>
             </td>
           </tr>
 
-          <!-- ── 3 REWARD CARDS ── -->
+          <!-- ── REWARD CARDS ── -->
           <tr>
-            <td style="padding:0 32px 32px;background-color:#0f1f38;">
+            <td style="padding:0 24px 24px;">
               <table border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
 
-                  <!-- $100 In-House Credit -->
-                  <td width="33%" valign="top" style="padding:0 6px 0 0;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:2px solid #1e3352;">
-                      <tr>
-                        <td align="center" style="padding:0;">
-                          <a href="${claimUrl}&amp;reward=in-house-credit" target="_blank" style="display:block;text-decoration:none;color:inherit;padding:20px 12px;">
-                            <p style="margin:0 0 8px;font-family:${font};font-size:26px;line-height:1;">&#x1F48E;</p>
-                            <p style="margin:0 0 4px;font-family:${font};font-size:22px;font-weight:700;color:#E0622A;line-height:1;">$100</p>
-                            <p style="margin:0 0 6px;font-family:${font};font-size:12px;font-weight:700;color:#f8fafc;line-height:1.3;">In-House Credit</p>
-                            <p style="margin:0;font-family:${font};font-size:11px;color:#64748b;line-height:1.5;">Applied to your next visit</p>
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
+                  <!-- In-house credit (highlighted) -->
+                  <td width="33%" valign="top" style="padding:0 4px 0 0;">
+                    <a href="${claimUrl}" target="_blank" style="display:block;text-decoration:none;background-color:#fff7f2;border:2px solid #E0622A;border-radius:12px;padding:18px 10px;text-align:center;">
+                      <p style="margin:0 0 6px;font-family:${font};font-size:24px;line-height:1;">&#x1F48E;</p>
+                      <p style="margin:0 0 3px;font-family:${font};font-size:20px;font-weight:700;color:#E0622A;line-height:1;">$100</p>
+                      <p style="margin:0 0 4px;font-family:${font};font-size:11px;font-weight:700;color:#333333;line-height:1.3;">Account Credit</p>
+                      <p style="margin:0;font-family:${font};font-size:10px;color:#E0622A;font-weight:600;">Most Valuable</p>
+                    </a>
                   </td>
 
-                  <!-- Gift Card -->
-                  <td width="33%" valign="top" style="padding:0 3px;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:2px solid #1e3352;">
-                      <tr>
-                        <td align="center" style="padding:0;">
-                          <a href="${claimUrl}&amp;reward=amazon-gift-card" target="_blank" style="display:block;text-decoration:none;color:inherit;padding:20px 12px;">
-                            <p style="margin:0 0 8px;font-family:${font};font-size:26px;line-height:1;">&#x1F381;</p>
-                            <p style="margin:0 0 4px;font-family:${font};font-size:22px;font-weight:700;color:#E0622A;line-height:1;">$${rv}</p>
-                            <p style="margin:0 0 6px;font-family:${font};font-size:12px;font-weight:700;color:#f8fafc;line-height:1.3;">Gift Card</p>
-                            <p style="margin:0;font-family:${font};font-size:11px;color:#64748b;line-height:1.5;">Sent to your email</p>
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
+                  <!-- Gift card -->
+                  <td width="33%" valign="top" style="padding:0 2px;">
+                    <a href="${claimUrl}" target="_blank" style="display:block;text-decoration:none;background-color:#fafafa;border:2px solid #e8e8e8;border-radius:12px;padding:18px 10px;text-align:center;">
+                      <p style="margin:0 0 6px;font-family:${font};font-size:24px;line-height:1;">&#x1F381;</p>
+                      <p style="margin:0 0 3px;font-family:${font};font-size:20px;font-weight:700;color:#E0622A;line-height:1;">$${rv}</p>
+                      <p style="margin:0 0 4px;font-family:${font};font-size:11px;font-weight:700;color:#333333;line-height:1.3;">Gift Card</p>
+                      <p style="margin:0;font-family:${font};font-size:10px;color:#888888;">Sent to email</p>
+                    </a>
                   </td>
 
-                  <!-- Charity Donation -->
-                  <td width="33%" valign="top" style="padding:0 0 0 6px;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1628;border:2px solid #1e3352;">
-                      <tr>
-                        <td align="center" style="padding:0;">
-                          <a href="${claimUrl}&amp;reward=charity-donation" target="_blank" style="display:block;text-decoration:none;color:inherit;padding:20px 12px;">
-                            <p style="margin:0 0 8px;font-family:${font};font-size:26px;line-height:1;">&#x1F49B;</p>
-                            <p style="margin:0 0 4px;font-family:${font};font-size:22px;font-weight:700;color:#E0622A;line-height:1;">$${rv}</p>
-                            <p style="margin:0 0 6px;font-family:${font};font-size:12px;font-weight:700;color:#f8fafc;line-height:1.3;">Charity Donation</p>
-                            <p style="margin:0;font-family:${font};font-size:11px;color:#64748b;line-height:1.5;">We donate on your behalf</p>
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
+                  <!-- Charity -->
+                  <td width="33%" valign="top" style="padding:0 0 0 4px;">
+                    <a href="${claimUrl}" target="_blank" style="display:block;text-decoration:none;background-color:#fafafa;border:2px solid #e8e8e8;border-radius:12px;padding:18px 10px;text-align:center;">
+                      <p style="margin:0 0 6px;font-family:${font};font-size:24px;line-height:1;">&#x2764;&#xFE0F;</p>
+                      <p style="margin:0 0 3px;font-family:${font};font-size:20px;font-weight:700;color:#E0622A;line-height:1;">$${rv}</p>
+                      <p style="margin:0 0 4px;font-family:${font};font-size:11px;font-weight:700;color:#333333;line-height:1.3;">Charity</p>
+                      <p style="margin:0;font-family:${font};font-size:10px;color:#888888;">In your name</p>
+                    </a>
                   </td>
 
                 </tr>
               </table>
+            </td>
+          </tr>
+
+          <!-- ── CTA BUTTON ── -->
+          <tr>
+            <td align="center" style="padding:0 32px 24px;">
+              <a href="${claimUrl}" target="_blank" style="display:inline-block;background-color:#E0622A;color:#ffffff;font-family:${font};font-size:15px;font-weight:700;padding:14px 40px;border-radius:9999px;text-decoration:none;">
+                Claim My Reward &#8594;
+              </a>
             </td>
           </tr>
 
           <!-- FALLBACK LINK -->
           <tr>
-            <td align="center" style="padding:0 40px 16px;background-color:#0a1628;">
-              <p style="margin:0;font-family:${font};font-size:12px;color:#475569;line-height:1.6;">
-                Cards not clickable? Visit:<br/>
-                <a href="${claimUrl}" target="_blank" style="color:#E0622A;text-decoration:underline;word-break:break-all;">${escHtml(claimUrl)}</a>
+            <td align="center" style="padding:0 32px 24px;">
+              <p style="margin:0;font-family:${font};font-size:11px;color:#aaaaaa;line-height:1.6;">
+                Button not working? <a href="${claimUrl}" target="_blank" style="color:#E0622A;text-decoration:underline;word-break:break-all;">${escHtml(claimUrl)}</a>
               </p>
-            </td>
-          </tr>
-
-          <!-- HOW IT WORKS LINK -->
-          <tr>
-            <td align="center" style="padding:0 40px 24px;background-color:#0a1628;">
-              <a href="https://www.joinrippl.com/how-it-works" target="_blank" style="font-family:${font};font-size:13px;color:#E0622A;text-decoration:none;">
-                Learn how the referral program works &#8594;
-              </a>
-            </td>
-          </tr>
-
-          <!-- DIVIDER -->
-          <tr>
-            <td style="padding:0 40px;background-color:#0a1628;">
-              <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                <tr>
-                  <td style="height:1px;background-color:#1e3352;font-size:0;line-height:0;">&nbsp;</td>
-                </tr>
-              </table>
             </td>
           </tr>
 
           <!-- ── FOOTER ── -->
           <tr>
-            <td align="center" style="padding:24px 40px 28px;background-color:#060e1a;">
-              <p style="margin:0;font-family:${font};font-size:12px;color:#475569;line-height:1.7;">
+            <td align="center" style="background-color:#fafafa;border-top:1px solid #f0f0f0;padding:20px 32px 24px;">
+              <p style="margin:0;font-family:${font};font-size:12px;color:#aaaaaa;line-height:1.7;">
                 Sent with <span style="color:#E0622A;font-weight:700;">Rippl</span> by ${escHtml(practice)}<br/>
                 You&#39;re receiving this because you referred a patient to our practice.
               </p>
@@ -297,12 +281,9 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
           </tr>
 
         </table>
-        <!-- /CARD -->
-
       </td>
     </tr>
   </table>
-  <!-- /OUTER WRAPPER -->
 
 </body>
 </html>`;

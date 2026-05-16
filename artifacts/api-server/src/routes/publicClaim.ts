@@ -32,6 +32,18 @@ router.get("/by-token/:token", async (req, res) => {
     return;
   }
 
+  // Demo token: return fake data so the Patient Journey preview works without a real DB record
+  if (token === DEMO_TOKEN) {
+    res.json({
+      claim:       { id: "demo", reward_value: 35, expires_at: null, claimed_at: null, status: "pending" },
+      referrer:    { id: "demo", name: "Sarah Johnson", tier: "starter", total_referrals: 1, reward_value: 35, referral_code: "SARAHJ" },
+      referral:    { id: "demo", new_patient_name: "James Wilson", office: "Hallmark Dental – Brentwood", office_id: null, office_logo_url: null },
+      localPartner: null,
+      practice:    { name: "Hallmark Dental", vertical: "dental", white_label_name: null, white_label_logo_url: null, white_label_primary_color: null, show_powered_by_rippl: true, in_house_credit_label: "$100 Dental Account Credit", in_house_credit_value: 100 },
+    });
+    return;
+  }
+
   const [claim] = await db
     .select()
     .from(rewardClaimsTable)
