@@ -168,6 +168,15 @@ router.post("/", async (req, res) => {
     return;
   }
 
+  // Look up practice for per-practice Tango template ID
+  const practiceId = claim.practice_id ?? null;
+  const practiceForClaim = practiceId
+    ? await db.select({ tango_email_template_id: practicesTable.tango_email_template_id })
+        .from(practicesTable).where(eq(practicesTable.id, practiceId)).limit(1)
+        .then(r => r[0] ?? null)
+    : null;
+  const tangoTemplateId = practiceForClaim?.tango_email_template_id ?? null;
+
   const rewardValue    = claim.reward_value;
   const isDemo         = token === DEMO_TOKEN;
   let pinCode: string | null = null;
@@ -195,6 +204,7 @@ router.post("/", async (req, res) => {
           },
           rewardValue,
           claim.id,
+          tangoTemplateId,
         );
       }
 

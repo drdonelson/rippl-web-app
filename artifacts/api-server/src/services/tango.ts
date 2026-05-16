@@ -46,7 +46,8 @@ function getAuthHeader(): string {
 export async function sendAmazonRewardLink(
   recipient: TangoRecipient,
   amountDollars: number,
-  externalRefId: string
+  externalRefId: string,
+  emailTemplateId?: string | null,
 ): Promise<SendRewardResult> {
   if (!TANGO_ACCOUNT_ID || !TANGO_CUSTOMER_ID) {
     return { success: false, error: "Tango account not configured (TANGO_ACCOUNT_ID, TANGO_CUSTOMER_ID)" };
@@ -58,7 +59,7 @@ export async function sendAmazonRewardLink(
     amount:             amountDollars,
     utid:               REWARD_LINK_UTID,
     sendEmail:          true,
-    emailTemplateId:    TANGO_EMAIL_TEMPLATE,
+    emailTemplateId:    emailTemplateId ?? TANGO_EMAIL_TEMPLATE,
     externalRefID:      externalRefId,
     recipient: {
       email:     recipient.email,
