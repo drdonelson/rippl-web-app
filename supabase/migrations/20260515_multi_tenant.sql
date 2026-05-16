@@ -1,11 +1,13 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Multi-tenancy groundwork: practices table + practice_id on all data tables
--- Run once against Supabase SQL editor.
+-- All ID/FK columns use TEXT to match the existing Drizzle schema convention.
+-- Run once against Supabase SQL editor. Safe to re-run (IF NOT EXISTS everywhere).
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- 1. Create practices table
+--    id is text (Drizzle uses text PKs via crypto.randomUUID(), not the uuid type)
 CREATE TABLE IF NOT EXISTS practices (
-  id                      uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  id                      text DEFAULT gen_random_uuid()::text PRIMARY KEY,
   name                    text NOT NULL,
   slug                    text UNIQUE NOT NULL,
   vertical                text DEFAULT 'dental',
@@ -23,22 +25,22 @@ CREATE TABLE IF NOT EXISTS practices (
   created_at              timestamp DEFAULT now()
 );
 
--- 2. Add practice_id to all data tables (nullable for safe zero-downtime migration)
-ALTER TABLE offices          ADD COLUMN IF NOT EXISTS practice_id uuid REFERENCES practices(id);
-ALTER TABLE referrers        ADD COLUMN IF NOT EXISTS practice_id uuid REFERENCES practices(id);
-ALTER TABLE referral_events  ADD COLUMN IF NOT EXISTS practice_id uuid REFERENCES practices(id);
-ALTER TABLE reward_claims    ADD COLUMN IF NOT EXISTS practice_id uuid REFERENCES practices(id);
-ALTER TABLE admin_tasks      ADD COLUMN IF NOT EXISTS practice_id uuid REFERENCES practices(id);
-ALTER TABLE campaigns        ADD COLUMN IF NOT EXISTS practice_id uuid REFERENCES practices(id);
+-- 2. Add practice_id to all data tables (nullable, text to match practices.id)
+ALTER TABLE offices          ADD COLUMN IF NOT EXISTS practice_id text REFERENCES practices(id);
+ALTER TABLE referrers        ADD COLUMN IF NOT EXISTS practice_id text REFERENCES practices(id);
+ALTER TABLE referral_events  ADD COLUMN IF NOT EXISTS practice_id text REFERENCES practices(id);
+ALTER TABLE reward_claims    ADD COLUMN IF NOT EXISTS practice_id text REFERENCES practices(id);
+ALTER TABLE admin_tasks      ADD COLUMN IF NOT EXISTS practice_id text REFERENCES practices(id);
+ALTER TABLE campaigns        ADD COLUMN IF NOT EXISTS practice_id text REFERENCES practices(id);
 
--- 3. Add office_id to user_profiles
---    The current practice_id column stores an office UUID — copy it to office_id,
---    then re-purpose practice_id to reference the practices table.
-ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS office_id uuid REFERENCES offices(id);
+-- 3. Add office_id to user_profiles (text to match offices.id type)
+--    The current practice_id column stores an office UUID as text —
+--    copy it to office_id, then re-purpose practice_id to reference practices.
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS office_id text REFERENCES offices(id);
 
--- Copy existing practice_id (office UUIDs) → office_id
+-- Copy existing practice_id (office UUIDs stored as text) → office_id
 UPDATE user_profiles
-SET office_id = practice_id::uuid
+SET office_id = practice_id
 WHERE practice_id IS NOT NULL
   AND practice_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
 
@@ -84,7 +86,7 @@ UPDATE user_profiles
 SET practice_id = 'a1b2c3d4-0000-0000-0000-000000000001'
 WHERE practice_id IS NOT NULL;
 
--- Add new FK to practices
+-- Add new FK to practices (both practice_id and practices.id are text)
 ALTER TABLE user_profiles
   ADD CONSTRAINT user_profiles_practice_id_fkey
   FOREIGN KEY (practice_id) REFERENCES practices(id);
