@@ -767,15 +767,16 @@ async function syncDentalPractice(practice: Practice, options?: { force?: boolea
     .where(and(eq(officesTable.active, true), eq(officesTable.practice_id, practice.id)));
 
   for (const office of offices) {
-    if (!office.od_url) {
-      logger.warn({ officeId: office.id, officeName: office.name }, "Skipping dental office — od_url is null");
+    const odUrl = office.od_url ?? OPEN_DENTAL_URL ?? null;
+    if (!odUrl) {
+      logger.warn({ officeId: office.id, officeName: office.name }, "Skipping dental office — no od_url and OPEN_DENTAL_URL env var not set");
       continue;
     }
     logger.info({ officeId: office.id, officeName: office.name }, "Syncing dental office");
     try {
       const result = await syncOpenDental({
         ...options,
-        office: { id: office.id, name: office.name, customer_key: office.customer_key ?? "", od_url: office.od_url },
+        office: { id: office.id, name: office.name, customer_key: office.customer_key ?? "", od_url: odUrl },
       });
       results.push(result);
       await db.update(officesTable).set({ last_poll_at: new Date() }).where(eq(officesTable.id, office.id));
