@@ -1,7 +1,9 @@
 import { pgTable, text, boolean, timestamp } from "drizzle-orm/pg-core";
+import { practicesTable } from "./practices";
 
 export const officesTable = pgTable("offices", {
   id:            text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  practice_id:   text("practice_id").references(() => practicesTable.id), // tenant
   name:          text("name").notNull(),
   customer_key:  text("customer_key").notNull(),
   location_code: text("location_code").notNull(), // brentwood | lewisburg | greenbrier

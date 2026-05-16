@@ -10,17 +10,20 @@ router.get("/", async (req, res) => {
   const rawOfficeId = typeof req.query.office_id === "string" && req.query.office_id !== "all"
     ? req.query.office_id
     : null;
-  const officeId = user.role !== "super_admin" && user.practice_id
-    ? user.practice_id
+  const officeId = user.role !== "super_admin" && user.office_id
+    ? user.office_id
     : rawOfficeId;
+  const practiceId = user.role !== "super_admin" ? user.practice_id : null;
 
   try {
-    const officeFilter = officeId
-      ? eq(referralEventsTable.office_id, officeId)
-      : undefined;
+    const officeFilter   = officeId   ? eq(referralEventsTable.office_id,   officeId)   : undefined;
+    const practiceFilter = practiceId ? eq(referralEventsTable.practice_id, practiceId) : undefined;
 
-    const examCondition = officeFilter
-      ? and(eq(referralEventsTable.status, "Exam Completed"), officeFilter)
+    const baseFilter = officeFilter ?? practiceFilter;
+    const bothFilters = officeFilter && practiceFilter ? and(officeFilter, practiceFilter) : baseFilter;
+
+    const examCondition = bothFilters
+      ? and(eq(referralEventsTable.status, "Exam Completed"), bothFilters)
       : eq(referralEventsTable.status, "Exam Completed");
 
     const [
@@ -34,7 +37,7 @@ router.get("/", async (req, res) => {
       // 1. Total referrals
       db.select({ count: sql<number>`count(*)::int` })
         .from(referralEventsTable)
-        .where(officeFilter),
+        .where(bothFilters),
 
       // 2. Exams completed
       db.select({ count: sql<number>`count(*)::int` })
@@ -42,21 +45,21 @@ router.get("/", async (req, res) => {
         .where(examCondition),
 
       // 3. Rewards issued
-      officeId
+      bothFilters
         ? db.select({ count: sql<number>`count(*)::int` })
             .from(rewardsTable)
             .leftJoin(referralEventsTable, eq(rewardsTable.referral_event_id, referralEventsTable.id))
-            .where(eq(referralEventsTable.office_id, officeId))
+            .where(bothFilters)
         : db.select({ count: sql<number>`count(*)::int` })
             .from(rewardsTable),
 
       // 4. Active referrers (distinct)
       db.select({ count: sql<number>`count(distinct ${referralEventsTable.referrer_id})::int` })
         .from(referralEventsTable)
-        .where(officeFilter),
+        .where(bothFilters),
 
       // 5. Top referrers
-      officeId
+      bothFilters
         ? db.select({
               id: referrersTable.id,
               name: referrersTable.name,
@@ -65,7 +68,7 @@ router.get("/", async (req, res) => {
             })
             .from(referralEventsTable)
             .leftJoin(referrersTable, eq(referralEventsTable.referrer_id, referrersTable.id))
-            .where(eq(referralEventsTable.office_id, officeId))
+            .where(bothFilters)
             .groupBy(referrersTable.id, referrersTable.name, referrersTable.total_rewards_issued)
             .orderBy(sql`count(${referralEventsTable.id}) desc`)
             .limit(5) as Promise<{ id: string; name: string; total_referrals: number; total_rewards_issued: number }[]>
@@ -95,7 +98,7 @@ router.get("/", async (req, res) => {
         })
         .from(referralEventsTable)
         .leftJoin(referrersTable, eq(referralEventsTable.referrer_id, referrersTable.id))
-        .where(officeFilter)
+        .where(bothFilters)
         .orderBy(sql`${referralEventsTable.created_at} desc`)
         .limit(10),
     ]);

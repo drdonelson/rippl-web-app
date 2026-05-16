@@ -285,6 +285,7 @@ router.post("/send", async (req, res) => {
       message_template: message_template.trim(),
       status:           "draft",
       created_by:       req.authUser!.id,
+      practice_id:      req.authUser!.practice_id ?? undefined,
       sent_count:       0,
       failed_count:     0,
     })

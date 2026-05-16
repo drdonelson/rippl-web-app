@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { userProfilesTable, officesTable } from "@workspace/db/schema";
+import { userProfilesTable, officesTable, practicesTable } from "@workspace/db/schema";
 import { eq, like } from "drizzle-orm";
 import sgMail from "@sendgrid/mail";
 import { supabaseAdmin } from "../lib/supabase";
@@ -15,8 +15,11 @@ const router: IRouter = Router();
 router.get("/profile", getProfileHandler);
 
 // POST /api/auth/onboard — create a new practice admin account (super_admin only)
+// Body: { practice_name, doctor_name, email, password, customer_key, location_code, od_url, practice_id? }
+// If practice_id is provided, the office is linked to that existing practice.
+// If omitted, a new practice record is auto-created with the same name as the office.
 router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
-  const { practice_name, doctor_name, email, password, customer_key, location_code, od_url } = req.body;
+  const { practice_name, doctor_name, email, password, customer_key, location_code, od_url, practice_id: bodyPracticeId } = req.body;
 
   if (!practice_name || !email || !password || !customer_key || !location_code) {
     res.status(400).json({ error: "Missing required fields" });
@@ -25,9 +28,29 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
 
   let userId: string | null = null;
   let officeId: string | null = null;
+  let createdPracticeId: string | null = null;
 
   try {
-    // 1. Create Supabase auth user
+    // 1. Resolve or create the practice
+    let practiceId: string;
+    if (bodyPracticeId) {
+      const [existing] = await db.select({ id: practicesTable.id }).from(practicesTable).where(eq(practicesTable.id, bodyPracticeId));
+      if (!existing) {
+        res.status(400).json({ error: "practice_id not found" });
+        return;
+      }
+      practiceId = existing.id;
+    } else {
+      const [newPractice] = await db.insert(practicesTable).values({
+        name: practice_name,
+        slug: practice_name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        vertical: "dental",
+      }).returning();
+      practiceId = newPractice.id;
+      createdPracticeId = practiceId;
+    }
+
+    // 2. Create Supabase auth user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -35,14 +58,16 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
     });
 
     if (authError || !authData.user) {
+      if (createdPracticeId) await db.delete(practicesTable).where(eq(practicesTable.id, createdPracticeId)).catch(() => {});
       res.status(400).json({ error: authError?.message ?? "Failed to create auth user" });
       return;
     }
 
     userId = authData.user.id;
 
-    // 2. Create office record
+    // 3. Create office record linked to the practice
     const [office] = await db.insert(officesTable).values({
+      practice_id: practiceId,
       name: practice_name,
       customer_key,
       location_code,
@@ -52,15 +77,16 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
     }).returning();
     officeId = office.id;
 
-    // 3. Create user_profile
+    // 4. Create user_profile with both practice_id (tenant) and office_id (null = sees all offices in practice)
     await db.insert(userProfilesTable).values({
       id: userId,
       role: "practice_admin",
-      practice_id: office.id,
+      practice_id: practiceId,
+      office_id: null,
       full_name: doctor_name || null,
     });
 
-    // 4. Send welcome email with one-time setup link (non-fatal)
+    // 5. Send welcome email with one-time setup link (non-fatal)
     try {
       const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
         type: "recovery",
@@ -96,19 +122,23 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
         console.error("[onboard] Failed to clean up orphaned office:", e)
       );
     }
+    if (createdPracticeId) {
+      await db.delete(practicesTable).where(eq(practicesTable.id, createdPracticeId)).catch(e =>
+        console.error("[onboard] Failed to clean up orphaned practice:", e)
+      );
+    }
     res.status(500).json({ error: "Failed to create practice admin account" });
   }
 });
 
 // POST /api/auth/onboard-staff — create a staff account for an office
-// super_admin: can specify any office_id in body
-// practice_admin: always scoped to their own practice_id
+// super_admin or practice_admin must provide office_id in body
+// practice_admin: can only assign staff to offices in their own practice
 router.post("/onboard-staff", requireAuth, requirePracticeAdmin, async (req, res) => {
   const caller = req.authUser!;
-  const { email, password, full_name } = req.body;
-  const office_id = caller.role === "practice_admin" ? caller.practice_id : req.body.office_id;
+  const { email, password, full_name, office_id: bodyOfficeId } = req.body;
 
-  if (!email || !password || !office_id) {
+  if (!email || !password || !bodyOfficeId) {
     res.status(400).json({ error: "Missing required fields: email, password, office_id" });
     return;
   }
@@ -116,14 +146,14 @@ router.post("/onboard-staff", requireAuth, requirePracticeAdmin, async (req, res
   let userId: string | null = null;
 
   try {
-    // 1. Verify the office exists (and belongs to caller if practice_admin)
-    const [office] = await db.select().from(officesTable).where(eq(officesTable.id, office_id));
+    // 1. Verify the office exists (and belongs to caller's practice if practice_admin)
+    const [office] = await db.select().from(officesTable).where(eq(officesTable.id, bodyOfficeId));
     if (!office) {
       res.status(400).json({ error: "Office not found" });
       return;
     }
-    if (caller.role === "practice_admin" && office.id !== caller.practice_id) {
-      res.status(403).json({ error: "Cannot create staff for another office" });
+    if (caller.role === "practice_admin" && office.practice_id !== caller.practice_id) {
+      res.status(403).json({ error: "Cannot create staff for another practice's office" });
       return;
     }
 
@@ -144,11 +174,12 @@ router.post("/onboard-staff", requireAuth, requirePracticeAdmin, async (req, res
 
     userId = authData.user.id;
 
-    // 4. Create user_profile with staff role + assigned office as practice_id
+    // 4. Create user_profile: office_id = assigned office, practice_id = practice it belongs to
     await db.insert(userProfilesTable).values({
       id: userId,
       role,
-      practice_id: office.id,
+      practice_id: office.practice_id ?? null,
+      office_id: office.id,
       full_name: full_name || null,
     });
 
@@ -176,12 +207,13 @@ router.get("/staff-accounts", requireAuth, requirePracticeAdmin, async (req, res
         full_name:   userProfilesTable.full_name,
         role:        userProfilesTable.role,
         practice_id: userProfilesTable.practice_id,
+        office_id:   userProfilesTable.office_id,
         created_at:  userProfilesTable.created_at,
         office_name: officesTable.name,
         location_code: officesTable.location_code,
       })
       .from(userProfilesTable)
-      .leftJoin(officesTable, eq(userProfilesTable.practice_id, officesTable.id));
+      .leftJoin(officesTable, eq(userProfilesTable.office_id, officesTable.id));
 
     const profiles = caller.role === "practice_admin" && caller.practice_id
       ? await query.where(
@@ -206,7 +238,7 @@ router.get("/staff-accounts", requireAuth, requirePracticeAdmin, async (req, res
       full_name:     p.full_name ?? "",
       email:         emailMap.get(p.id) ?? "(unknown)",
       role:          p.role,
-      office_id:     p.practice_id ?? "",
+      office_id:     p.office_id ?? "",
       office_name:   p.office_name ?? "",
       location_code: p.location_code ?? "",
       created_at:    p.created_at,

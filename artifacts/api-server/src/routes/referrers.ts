@@ -22,16 +22,17 @@ function generateReferralCode(name: string): string {
 
 router.get("/", async (req, res) => {
   const user = req.authUser!;
-  // Non-super-admins are always scoped to their own practice
   const rawOfficeId = typeof req.query.office_id === "string" && req.query.office_id !== "all"
     ? req.query.office_id : undefined;
-  const effectiveOfficeId = user.role !== "super_admin" && user.practice_id
-    ? user.practice_id
+  const effectiveOfficeId = user.role !== "super_admin" && user.office_id
+    ? user.office_id
     : rawOfficeId;
+  const practiceId = user.role !== "super_admin" ? user.practice_id : null;
 
-  const conditions = effectiveOfficeId
-    ? [eq(referrersTable.office_id, effectiveOfficeId)]
-    : [];
+  const conditions = [
+    effectiveOfficeId ? eq(referrersTable.office_id, effectiveOfficeId) : undefined,
+    practiceId        ? eq(referrersTable.practice_id, practiceId)       : undefined,
+  ].filter(Boolean) as ReturnType<typeof eq>[];
 
   try {
     const referrers = await db
@@ -54,17 +55,18 @@ router.post("/", async (req, res) => {
 
     // Staff can only create patients tagged to their own assigned office.
     if (isStaff(user)) {
-      if (!user.practice_id) {
+      if (!user.office_id) {
         res.status(403).json({ error: "Your staff account has no assigned office." });
         return;
       }
-      body.office_id = user.practice_id;
+      body.office_id = user.office_id;
     }
 
     const referral_code = generateReferralCode(body.name);
     const [referrer] = await db.insert(referrersTable).values({
       ...body,
       referral_code,
+      practice_id: user.practice_id ?? undefined,
     }).returning();
     res.status(201).json(referrer);
   } catch (err) {

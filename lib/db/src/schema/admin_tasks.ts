@@ -1,11 +1,13 @@
 import { pgTable, text, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { practicesTable } from "./practices";
 import { referrersTable } from "./referrers";
 import { referralEventsTable } from "./referral_events";
 
 export const adminTasksTable = pgTable("admin_tasks", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  practice_id: text("practice_id").references(() => practicesTable.id), // tenant
   task_type: text("task_type").notNull(),
   referrer_id: text("referrer_id").references(() => referrersTable.id),
   referral_event_id: text("referral_event_id").references(() => referralEventsTable.id),

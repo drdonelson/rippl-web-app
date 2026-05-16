@@ -1,10 +1,12 @@
 import { pgTable, text, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { practicesTable } from "./practices";
 import { officesTable } from "./offices";
 
 export const referrersTable = pgTable("referrers", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  practice_id: text("practice_id").references(() => practicesTable.id), // tenant
   patient_id: text("patient_id").notNull(),
   name: text("name").notNull(),
   phone: text("phone").notNull(),

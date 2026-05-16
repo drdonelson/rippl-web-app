@@ -51,8 +51,9 @@ const NAV_SECTIONS: NavSection[] = [
     label: "Platform",
     minRole: "super_admin",
     items: [
-      { href: "/onboard",   label: "Onboard",   icon: GraduationCap },
-      { href: "/analytics", label: "Analytics", icon: TrendingUp    },
+      { href: "/practice-admin", label: "Practices", icon: Building2    },
+      { href: "/onboard",        label: "Onboard",   icon: GraduationCap },
+      { href: "/analytics",      label: "Analytics", icon: TrendingUp    },
     ],
   },
   {

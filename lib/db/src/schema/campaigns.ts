@@ -1,7 +1,9 @@
 import { pgTable, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { practicesTable } from "./practices";
 
 export const campaignsTable = pgTable("campaigns", {
   id:               text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  practice_id:      text("practice_id").references(() => practicesTable.id), // tenant
   name:             text("name").notNull(),
   channel:          text("channel").notNull(),          // 'sms' | 'email'
   audience_filter:  text("audience_filter").notNull(),  // see filter keys in campaigns route

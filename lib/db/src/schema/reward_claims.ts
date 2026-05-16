@@ -1,11 +1,13 @@
 import { pgTable, text, integer, timestamp, uuid } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import { practicesTable } from "./practices";
 import { referralEventsTable } from "./referral_events";
 import { referrersTable } from "./referrers";
 import { localPartnersTable } from "./local_partners";
 
 export const rewardClaimsTable = pgTable("reward_claims", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  practice_id: text("practice_id").references(() => practicesTable.id), // tenant
   // referral_event_id and referrer_id are text to match their existing PK types
   referral_event_id: text("referral_event_id").references(() => referralEventsTable.id),
   referrer_id: text("referrer_id").references(() => referrersTable.id),

@@ -17,17 +17,22 @@ const router: IRouter = Router();
 
 router.get("/", async (req, res) => {
   const user = req.authUser!;
-  // Non-super-admins are always scoped to their own practice
+
+  // office_id: intra-practice scoping (staff/practice_admin → their office)
   const rawOfficeId = typeof req.query.office_id === "string" && req.query.office_id !== "all"
     ? req.query.office_id
     : null;
-  const officeId = user.role !== "super_admin" && user.practice_id
-    ? user.practice_id
+  const officeId = user.role !== "super_admin" && user.office_id
+    ? user.office_id
     : rawOfficeId;
 
-  const officeFilter = officeId
-    ? eq(referralEventsTable.office_id, officeId)
-    : undefined;
+  // practice_id: cross-tenant isolation
+  const practiceId = user.role !== "super_admin" ? user.practice_id : null;
+
+  const filters = [
+    officeId   ? eq(referralEventsTable.office_id,   officeId)   : undefined,
+    practiceId ? eq(referralEventsTable.practice_id, practiceId) : undefined,
+  ].filter(Boolean) as ReturnType<typeof eq>[];
 
   const events = await db
     .select({
@@ -47,35 +52,33 @@ router.get("/", async (req, res) => {
     })
     .from(referralEventsTable)
     .leftJoin(referrersTable, eq(referralEventsTable.referrer_id, referrersTable.id))
-    .where(officeFilter)
+    .where(filters.length ? and(...filters) : undefined)
     .orderBy(referralEventsTable.created_at);
   res.json(events);
 });
 
 router.post("/", async (req, res) => {
+  const user = req.authUser!;
   const body = CreateReferralBody.parse(req.body);
 
-  // ── Household duplicate check ────────────────────────────────────────────
   const householdResult = await checkHouseholdDuplicate(
     body.new_patient_name,
     body.new_patient_phone
   );
 
-  // Insert the referral event with household fields
   const [event] = await db.insert(referralEventsTable).values({
     ...body,
+    practice_id: user.practice_id,
     status: "Lead",
     household_id: householdResult.household_id,
     household_duplicate: householdResult.is_duplicate,
   }).returning();
 
-  // Increment referrer's total_referrals
   await db
     .update(referrersTable)
     .set({ total_referrals: sql`${referrersTable.total_referrals} + 1` })
     .where(eq(referrersTable.id, body.referrer_id));
 
-  // If duplicate household → create admin task and return early (no reward flow)
   if (householdResult.is_duplicate) {
     req.log.warn(
       { eventId: event.id, householdId: householdResult.household_id, conflictingEventId: householdResult.conflicting_event_id },
@@ -83,10 +86,11 @@ router.post("/", async (req, res) => {
     );
 
     await db.insert(adminTasksTable).values({
-      task_type: "household-duplicate-review",
-      referrer_id: body.referrer_id,
+      practice_id:       user.practice_id,
+      task_type:         "household-duplicate-review",
+      referrer_id:       body.referrer_id,
       referral_event_id: event.id,
-      amount: 0,
+      amount:            0,
       notes: `Household duplicate detected. Existing completed event: ${householdResult.conflicting_event_id ?? "unknown"}. Address match: ${householdResult.od_address_found ? "yes (OD address)" : "name only"}. Review and override if legitimate.`,
       status: "pending",
     });
@@ -117,7 +121,6 @@ router.patch("/:id/status", async (req, res) => {
 
   if (body.status === "Exam Completed") {
     if (referrer) {
-      // ── Update referrer tier ─────────────────────────────────────────────
       try {
         const newTotal    = (referrer.total_referrals ?? 0) + 1;
         const oldTier     = referrer.tier ?? "starter";
@@ -140,19 +143,18 @@ router.patch("/:id/status", async (req, res) => {
         req.log.error({ err: tierErr }, "Failed to update referrer tier");
       }
 
-      // ── Generate one-time claim token ───────────────────────────────────
-      let claimToken: string = referrer.referral_code; // last-resort fallback
+      let claimToken: string = referrer.referral_code;
       try {
         claimToken = crypto.randomUUID();
         await db.insert(rewardClaimsTable).values({
+          practice_id:       event.practice_id,
           claim_token:       claimToken,
           referral_event_id: id,
           referrer_id:       referrer.id,
-          reward_value:      newTierData.rewardValue,
+          reward_value:      (calculateTier((referrer.total_referrals ?? 0) + 1)).rewardValue,
           status:            "pending",
         });
       } catch (claimErr) {
-        // Insert failed (likely duplicate referral_event_id) — look up the existing claim token
         try {
           const [existing] = await db
             .select({ claim_token: rewardClaimsTable.claim_token })
@@ -162,16 +164,16 @@ router.patch("/:id/status", async (req, res) => {
             claimToken = existing.claim_token;
             req.log.info({ claimToken, referralId: id }, "Using existing claim token for event");
           } else {
-            req.log.error({ err: claimErr }, "Failed to create reward_claims record and no existing token found — falling back to referral_code");
+            req.log.error({ err: claimErr }, "Failed to create reward_claims record — falling back to referral_code");
             claimToken = referrer.referral_code;
           }
         } catch {
-          req.log.error({ err: claimErr }, "Failed to create or look up reward_claims record — falling back to referral_code");
+          req.log.error({ err: claimErr }, "Failed to look up reward_claims record — falling back to referral_code");
           claimToken = referrer.referral_code;
         }
       }
 
-      req.log.info({ referralId: id, referrerId: referrer.id }, "Exam completed — sending reward notification to referrer");
+      req.log.info({ referralId: id, referrerId: referrer.id }, "Exam completed — sending reward notification");
       sendRewardNotification(
         referrer.name,
         referrer.phone,
@@ -179,7 +181,8 @@ router.patch("/:id/status", async (req, res) => {
         event.new_patient_name,
         claimToken,
         event.office ?? "Hallmark Dental",
-        newTierData.rewardValue
+        (calculateTier((referrer.total_referrals ?? 0) + 1)).rewardValue,
+        event.practice_id ?? undefined,
       ).then((result) => {
         req.log.info({ result }, "Reward notification result");
       }).catch((err) => {
@@ -207,8 +210,6 @@ router.patch("/:id/status", async (req, res) => {
   res.json({ ...event, referrer_name: referrer?.name ?? null });
 });
 
-// PATCH /api/referrals/:id/override-household
-// Admin override: clear household_duplicate flag and mark the associated admin task done.
 router.patch("/:id/override-household", async (req, res) => {
   const { id } = req.params;
 
@@ -217,82 +218,42 @@ router.patch("/:id/override-household", async (req, res) => {
     .from(referralEventsTable)
     .where(eq(referralEventsTable.id, id));
 
-  if (!event) {
-    res.status(404).json({ error: "Referral event not found" });
-    return;
-  }
+  if (!event) { res.status(404).json({ error: "Referral event not found" }); return; }
+  if (!event.household_duplicate) { res.status(400).json({ error: "This event is not flagged as a household duplicate" }); return; }
 
-  if (!event.household_duplicate) {
-    res.status(400).json({ error: "This event is not flagged as a household duplicate" });
-    return;
-  }
-
-  // Clear duplicate flag
   const [updatedEvent] = await db
     .update(referralEventsTable)
     .set({ household_duplicate: false })
     .where(eq(referralEventsTable.id, id))
     .returning();
 
-  // Mark any associated household-duplicate admin task as complete
   await db
     .update(adminTasksTable)
     .set({ status: "completed", completed: true })
-    .where(
-      and(
-        eq(adminTasksTable.referral_event_id, id),
-        eq(adminTasksTable.task_type, "household-duplicate-review"),
-        eq(adminTasksTable.status, "pending")
-      )
-    );
+    .where(and(
+      eq(adminTasksTable.referral_event_id, id),
+      eq(adminTasksTable.task_type, "household-duplicate-review"),
+      eq(adminTasksTable.status, "pending")
+    ));
 
-  const [referrer] = await db
-    .select()
-    .from(referrersTable)
-    .where(eq(referrersTable.id, event.referrer_id));
+  const [referrer] = await db.select().from(referrersTable).where(eq(referrersTable.id, event.referrer_id));
 
   req.log.info({ eventId: id, referrerId: event.referrer_id }, "Household duplicate overridden by admin");
-
   res.json({ ...updatedEvent, referrer_name: referrer?.name ?? null });
 });
 
-// POST /api/referrals/:id/resend-notification
-// Resend the reward claim email (and SMS if enabled) for an "Exam Completed" event.
 router.post("/:id/resend-notification", async (req, res) => {
   const { id } = req.params;
 
-  const [event] = await db
-    .select()
-    .from(referralEventsTable)
-    .where(eq(referralEventsTable.id, id));
+  const [event] = await db.select().from(referralEventsTable).where(eq(referralEventsTable.id, id));
+  if (!event) { res.status(404).json({ error: "Referral event not found" }); return; }
+  if (event.status !== "Exam Completed") { res.status(400).json({ error: "Can only resend for events with status 'Exam Completed'" }); return; }
 
-  if (!event) {
-    res.status(404).json({ error: "Referral event not found" });
-    return;
-  }
+  const [referrer] = await db.select().from(referrersTable).where(eq(referrersTable.id, event.referrer_id));
+  if (!referrer) { res.status(404).json({ error: "Referrer not found" }); return; }
 
-  if (event.status !== "Exam Completed") {
-    res.status(400).json({ error: "Can only resend for events with status 'Exam Completed'" });
-    return;
-  }
-
-  const [referrer] = await db
-    .select()
-    .from(referrersTable)
-    .where(eq(referrersTable.id, event.referrer_id));
-
-  if (!referrer) {
-    res.status(404).json({ error: "Referrer not found" });
-    return;
-  }
-
-  // Get existing claim token
-  const [claim] = await db
-    .select()
-    .from(rewardClaimsTable)
-    .where(eq(rewardClaimsTable.referral_event_id, id));
-
-  const claimToken = claim?.claim_token ?? referrer.referral_code;
+  const [claim] = await db.select().from(rewardClaimsTable).where(eq(rewardClaimsTable.referral_event_id, id));
+  const claimToken  = claim?.claim_token ?? referrer.referral_code;
   const rewardValue = claim?.reward_value ?? referrer.reward_value ?? 35;
 
   req.log.info({ eventId: id, referrerId: referrer.id, claimToken }, "Resending reward notification");
@@ -305,6 +266,7 @@ router.post("/:id/resend-notification", async (req, res) => {
     claimToken,
     event.office ?? "Hallmark Dental",
     rewardValue,
+    event.practice_id ?? undefined,
   );
 
   res.json({ success: true, ...result });
@@ -313,15 +275,8 @@ router.post("/:id/resend-notification", async (req, res) => {
 router.get("/by-token/:token", async (req, res) => {
   const { token } = GetReferralByTokenParams.parse(req.params);
 
-  const [referrer] = await db
-    .select()
-    .from(referrersTable)
-    .where(eq(referrersTable.referral_code, token));
-
-  if (!referrer) {
-    res.status(404).json({ error: "Invalid referral token" });
-    return;
-  }
+  const [referrer] = await db.select().from(referrersTable).where(eq(referrersTable.referral_code, token));
+  if (!referrer) { res.status(404).json({ error: "Invalid referral token" }); return; }
 
   const [referral] = await db
     .select()
@@ -329,15 +284,9 @@ router.get("/by-token/:token", async (req, res) => {
     .where(eq(referralEventsTable.referrer_id, referrer.id))
     .orderBy(referralEventsTable.created_at);
 
-  if (!referral) {
-    res.status(404).json({ error: "No referral events found for this token" });
-    return;
-  }
+  if (!referral) { res.status(404).json({ error: "No referral events found for this token" }); return; }
 
-  res.json({
-    referral: { ...referral, referrer_name: referrer.name },
-    referrer,
-  });
+  res.json({ referral: { ...referral, referrer_name: referrer.name }, referrer });
 });
 
 export default router;

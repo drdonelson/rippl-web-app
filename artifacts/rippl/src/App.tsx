@@ -37,6 +37,7 @@ const Privacy    = lazy(() => import("@/pages/privacy"));
 const Terms      = lazy(() => import("@/pages/terms"));
 const HowItWorks = lazy(() => import("@/pages/how-it-works"));
 const Practices      = lazy(() => import("@/pages/practices"));
+const PracticeAdmin  = lazy(() => import("@/pages/practice-admin"));
 const ResetPassword  = lazy(() => import("@/pages/reset-password"));
 const NotFound       = lazy(() => import("@/pages/not-found"));
 
@@ -96,9 +97,10 @@ function Router() {
                   <Route path="/admin-tasks" component={AdminTasks} />
                   <Route path="/campaigns"  component={Campaigns}  />
                   <Route path="/staff"      component={Staff}      />
-                  <Route path="/partners"    component={Partners}   />
-                  <Route path="/offices"     component={Offices}    />
-                  <Route path="/analytics"   component={Analytics}  />
+                  <Route path="/partners"         component={Partners}       />
+                  <Route path="/offices"          component={Offices}        />
+                  <Route path="/analytics"        component={Analytics}      />
+                  <Route path="/practice-admin"   component={PracticeAdmin}  />
                   <Route component={NotFound} />
                 </Switch>
               </Suspense>

@@ -12,7 +12,10 @@ export interface AuthUser {
   id: string;
   email: string | undefined;
   role: UserRole;
+  /** UUID from practices table — used for cross-tenant isolation. NULL = super_admin / demo. */
   practice_id: string | null;
+  /** UUID from offices table — used for intra-practice office scoping. NULL = sees all offices in practice. */
+  office_id: string | null;
 }
 
 export function isStaff(user: AuthUser): boolean {
@@ -27,25 +30,16 @@ declare global {
   }
 }
 
-// Known first-party accounts that should always have a profile.
-// These are auto-created on first login so the app never requires manual seeding.
 const BOOTSTRAP_PROFILES: Record<string, { role: UserRole; full_name: string }> = {
-  "hello@joinrippl.com": { role: "super_admin",  full_name: "Rippl Admin"   },
-  "demo@joinrippl.com":  { role: "demo",          full_name: "Demo Account"  },
+  "hello@joinrippl.com": { role: "super_admin", full_name: "Rippl Admin"  },
+  "demo@joinrippl.com":  { role: "demo",         full_name: "Demo Account" },
 };
 
-/**
- * Look up the user_profiles row for a given Supabase user.
- * If the row is missing AND the user's email is a known bootstrap account,
- * the row is created on the spot (self-healing).
- * Returns null only for unknown users who have not been onboarded.
- */
 async function findOrCreateProfile(
   userId: string,
   email: string | undefined,
   logger: Request["log"],
 ): Promise<UserProfile | null> {
-  // Fetch existing profile
   const [existing] = await db
     .select()
     .from(userProfilesTable)
@@ -54,7 +48,6 @@ async function findOrCreateProfile(
 
   if (existing) return existing;
 
-  // No row — see if this is a bootstrap account we can auto-create
   const seed = email ? BOOTSTRAP_PROFILES[email] : undefined;
   if (!seed) {
     logger.warn({ userId, email }, "[auth] No user_profiles row and not a known account — access denied");
@@ -65,11 +58,10 @@ async function findOrCreateProfile(
 
   const [created] = await db
     .insert(userProfilesTable)
-    .values({ id: userId, role: seed.role, practice_id: null, full_name: seed.full_name })
-    .onConflictDoNothing()   // safe to call twice (race condition guard)
+    .values({ id: userId, role: seed.role, practice_id: null, office_id: null, full_name: seed.full_name })
+    .onConflictDoNothing()
     .returning();
 
-  // onConflictDoNothing returns [] if a concurrent insert won the race; re-fetch
   if (!created) {
     const [reloaded] = await db
       .select()
@@ -92,7 +84,6 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   const token = authHeader.slice(7);
 
   try {
-    // Step 1: validate JWT with Supabase and get user identity (including email)
     const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
     if (error || !user) {
       req.log.warn({ supabaseError: error?.message }, "[auth] Supabase getUser rejected token");
@@ -100,7 +91,6 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       return;
     }
 
-    // Step 2: look up (or auto-create) user_profiles row
     let profile: UserProfile | null;
     try {
       profile = await findOrCreateProfile(user.id, user.email, req.log);
@@ -116,10 +106,11 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     }
 
     req.authUser = {
-      id: user.id,
-      email: user.email,
-      role: profile.role as AuthUser["role"],
-      practice_id: profile.practice_id,
+      id:          user.id,
+      email:       user.email,
+      role:        profile.role as AuthUser["role"],
+      practice_id: profile.practice_id ?? null,
+      office_id:   profile.office_id   ?? null,
     };
 
     next();
@@ -146,8 +137,6 @@ export function requirePracticeAdmin(req: Request, res: Response, next: NextFunc
   next();
 }
 
-// GET /api/auth/profile — called by the frontend immediately after Supabase login.
-// Accepts x-user-id + Authorization header. Auto-creates profile for bootstrap accounts.
 export async function getProfileHandler(req: Request, res: Response) {
   const userId = req.headers["x-user-id"] as string;
   if (!userId) {
@@ -156,7 +145,6 @@ export async function getProfileHandler(req: Request, res: Response) {
   }
 
   try {
-    // Fast path: profile already exists
     const [existing] = await db
       .select()
       .from(userProfilesTable)
@@ -168,7 +156,6 @@ export async function getProfileHandler(req: Request, res: Response) {
       return;
     }
 
-    // Profile missing — try to get the user's email to auto-create a bootstrap profile
     const authHeader = req.headers.authorization as string | undefined;
     if (!authHeader?.startsWith("Bearer ")) {
       res.status(404).json({ error: "Profile not found. Contact your administrator." });
@@ -182,7 +169,6 @@ export async function getProfileHandler(req: Request, res: Response) {
       return;
     }
 
-    // Re-use the same auto-create logic
     const noop = { info: () => {}, warn: () => {}, error: () => {} } as unknown as Request["log"];
     const profile = await findOrCreateProfile(user.id, user.email, noop);
     if (!profile) {

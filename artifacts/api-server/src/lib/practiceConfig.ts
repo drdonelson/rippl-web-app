@@ -1,0 +1,45 @@
+import { db } from "@workspace/db";
+import { practicesTable } from "@workspace/db/schema";
+import { eq } from "drizzle-orm";
+import type { Practice } from "@workspace/db/schema";
+
+const cache = new Map<string, { practice: Practice; fetchedAt: number }>();
+const TTL_MS = 60_000; // 1-minute cache — avoids a DB hit per request
+
+export async function getPracticeConfig(practiceId: string | null): Promise<Practice | null> {
+  if (!practiceId) return null;
+
+  const cached = cache.get(practiceId);
+  if (cached && Date.now() - cached.fetchedAt < TTL_MS) return cached.practice;
+
+  const [practice] = await db
+    .select()
+    .from(practicesTable)
+    .where(eq(practicesTable.id, practiceId))
+    .limit(1);
+
+  if (practice) cache.set(practiceId, { practice, fetchedAt: Date.now() });
+  return practice ?? null;
+}
+
+export function invalidatePracticeCache(practiceId: string) {
+  cache.delete(practiceId);
+}
+
+/** Resolve the Twilio from-number for a practice, falling back to the global env var. */
+export function resolveTwilioPhone(practice: Practice | null): string {
+  return practice?.twilio_phone_number ?? process.env.TWILIO_PHONE_NUMBER ?? "";
+}
+
+/** Resolve the SendGrid from-email for a practice, falling back to the global env var. */
+export function resolveSendGridFrom(practice: Practice | null): { email: string; name: string } {
+  return {
+    email: practice?.sendgrid_from_email ?? process.env.SENDGRID_FROM_EMAIL ?? "hello@joinrippl.com",
+    name:  practice?.sendgrid_from_name  ?? practice?.name ?? "Rippl",
+  };
+}
+
+/** Resolve the Tango email template ID for a practice, falling back to the global env var. */
+export function resolveTangoTemplate(practice: Practice | null): string {
+  return practice?.tango_email_template_id ?? process.env.TANGO_EMAIL_TEMPLATE_ID ?? "E813474";
+}

@@ -12,6 +12,7 @@ import launchRouter from "./launch";
 import openDentalRouter from "./openDental";
 import officesRouter from "./offices";
 import authRouter from "./auth";
+import practicesRouter from "./practices";
 import importJobsRouter from "./importJobs";
 import referralRouter from "./referral";
 import publicClaimRouter from "./publicClaim";
@@ -39,6 +40,7 @@ router.use("/demo", demoRouter);
 router.use("/offices", officesRouter);
 
 // Protected routes — require valid Supabase session
+router.use("/practices", requireAuth, practicesRouter);
 router.use("/referrers", requireAuth, referrersRouter);
 router.use("/referrals", requireAuth, referralsRouter);
 router.use("/rewards", requireAuth, rewardsRouter);

@@ -2,6 +2,7 @@ import twilio from "twilio";
 import { SMS_ENABLED } from "../lib/smsEnabled";
 import sgMail from "@sendgrid/mail";
 import { logger } from "../lib/logger";
+import { getPracticeConfig, resolveTwilioPhone, resolveSendGridFrom } from "../lib/practiceConfig";
 
 const APP_URL = (process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://www.joinrippl.com").replace(/\/$/, "");
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
@@ -32,11 +33,16 @@ export async function sendRewardNotification(
   newPatientName: string,
   claimToken: string,
   officeName: string = "Hallmark Dental",
-  rewardValue: number = 50
+  rewardValue: number = 50,
+  practiceId?: string,
 ) {
+  const practice = await getPracticeConfig(practiceId ?? null);
+  const fromPhone = resolveTwilioPhone(practice);
+  const fromEmail = resolveSendGridFrom(practice);
+
   const claimUrl = `${APP_URL}/claim?token=${claimToken}`;
   logger.info({ claimToken, claimUrl }, "sendRewardNotification — claim URL being sent");
-  const smsBody = `Hi ${referrerName} 👋 You started a Rippl — ${newPatientName} just completed their visit at Hallmark Dental. Claim your reward here: ${claimUrl}`;
+  const smsBody = `Hi ${referrerName} 👋 You started a Rippl — ${newPatientName} just completed their visit at ${officeName}. Claim your reward here: ${claimUrl}`;
 
   const results: { sms?: string; email?: string; errors: string[] } = { errors: [] };
 
@@ -46,11 +52,11 @@ export async function sendRewardNotification(
     results.sms = "suppressed";
   } else {
     try {
-      if (!TWILIO_PHONE_NUMBER) throw new Error("TWILIO_PHONE_NUMBER not set");
+      if (!fromPhone) throw new Error("TWILIO_PHONE_NUMBER not set");
       const client = getTwilioClient();
       const msg = await client.messages.create({
         body: smsBody,
-        from: TWILIO_PHONE_NUMBER,
+        from: fromPhone,
         to: referrerPhone,
       });
       results.sms = msg.sid;
@@ -68,7 +74,7 @@ export async function sendRewardNotification(
       const sg = getSendGridClient();
       await sg.send({
         to: referrerEmail,
-        from: { email: SENDGRID_FROM_EMAIL, name: `${officeName} via Rippl` },
+        from: { email: fromEmail.email, name: `${officeName} via Rippl` },
         subject: `You started a Rippl 🎊`,
         html: buildEmailHtml(referrerName, newPatientName, claimUrl, officeName, rewardValue),
         // No text fallback — HTML only

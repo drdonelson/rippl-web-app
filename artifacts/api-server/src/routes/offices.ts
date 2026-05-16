@@ -42,7 +42,7 @@ router.get("/managed", requireAuth, requirePracticeAdmin, async (req, res) => {
   const caller = req.authUser!;
   try {
     const offices = caller.role === "practice_admin" && caller.practice_id
-      ? await db.select(safeColumns).from(officesTable).where(eq(officesTable.id, caller.practice_id))
+      ? await db.select(safeColumns).from(officesTable).where(eq(officesTable.practice_id, caller.practice_id)).orderBy(officesTable.name)
       : await db.select(safeColumns).from(officesTable).orderBy(officesTable.name);
     res.json(offices);
   } catch (err) {
@@ -120,17 +120,15 @@ router.post("/:id/logo", requireAuth, requirePracticeAdmin, async (req, res) => 
     return;
   }
 
-  // practice_admin can only update their own office
-  if (caller.role === "practice_admin" && caller.practice_id !== id) {
-    res.status(403).json({ error: "Cannot update another office's logo" });
-    return;
-  }
-
   try {
-    // Verify office exists
-    const [office] = await db.select({ id: officesTable.id }).from(officesTable).where(eq(officesTable.id, id));
+    // Verify office exists and practice_admin belongs to the same practice
+    const [office] = await db.select({ id: officesTable.id, practice_id: officesTable.practice_id }).from(officesTable).where(eq(officesTable.id, id));
     if (!office) {
       res.status(404).json({ error: "Office not found" });
+      return;
+    }
+    if (caller.role === "practice_admin" && office.practice_id !== caller.practice_id) {
+      res.status(403).json({ error: "Cannot update another practice's office logo" });
       return;
     }
 
@@ -171,12 +169,14 @@ router.delete("/:id/logo", requireAuth, requirePracticeAdmin, async (req, res) =
   const { id } = req.params;
   const caller = req.authUser!;
 
-  if (caller.role === "practice_admin" && caller.practice_id !== id) {
-    res.status(403).json({ error: "Cannot update another office's logo" });
-    return;
-  }
-
   try {
+    if (caller.role === "practice_admin") {
+      const [office] = await db.select({ practice_id: officesTable.practice_id }).from(officesTable).where(eq(officesTable.id, id));
+      if (!office || office.practice_id !== caller.practice_id) {
+        res.status(403).json({ error: "Cannot update another practice's office logo" });
+        return;
+      }
+    }
     await db.update(officesTable).set({ logo_url: null }).where(eq(officesTable.id, id));
     res.json({ success: true });
   } catch (err) {

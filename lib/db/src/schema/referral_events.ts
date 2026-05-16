@@ -1,11 +1,13 @@
 import { pgTable, text, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { practicesTable } from "./practices";
 import { referrersTable } from "./referrers";
 import { officesTable } from "./offices";
 
 export const referralEventsTable = pgTable("referral_events", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  practice_id: text("practice_id").references(() => practicesTable.id), // tenant
   new_patient_name: text("new_patient_name").notNull(),
   new_patient_phone: text("new_patient_phone").notNull(),
   referrer_id: text("referrer_id").notNull().references(() => referrersTable.id),
