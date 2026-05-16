@@ -11,6 +11,7 @@ import {
 } from "@workspace/db/schema";
 import { eq, sql, and } from "drizzle-orm";
 import { sendAmazonRewardLink } from "../services/tango";
+import { getPracticeConfig, resolveTangoTemplate } from "../lib/practiceConfig";
 import pino from "pino";
 
 const router: IRouter = Router();
@@ -168,14 +169,8 @@ router.post("/", async (req, res) => {
     return;
   }
 
-  // Look up practice for per-practice Tango template ID
-  const practiceId = claim.practice_id ?? null;
-  const practiceForClaim = practiceId
-    ? await db.select({ tango_email_template_id: practicesTable.tango_email_template_id })
-        .from(practicesTable).where(eq(practicesTable.id, practiceId)).limit(1)
-        .then(r => r[0] ?? null)
-    : null;
-  const tangoTemplateId = practiceForClaim?.tango_email_template_id ?? null;
+  const practiceForClaim = await getPracticeConfig(claim.practice_id ?? null);
+  const tangoTemplateId = resolveTangoTemplate(practiceForClaim);
 
   const rewardValue    = claim.reward_value;
   const isDemo         = token === DEMO_TOKEN;

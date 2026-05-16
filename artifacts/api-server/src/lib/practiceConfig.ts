@@ -39,7 +39,16 @@ export function resolveSendGridFrom(practice: Practice | null): { email: string;
   };
 }
 
-/** Resolve the Tango email template ID for a practice, falling back to the global env var. */
+const VERTICAL_TANGO_TEMPLATES: Record<string, string> = {
+  dental:     "E813474",
+  salon:      "E336474",
+  automotive: "E301464",
+};
+
+/** Resolve the Tango email template ID for a practice.
+ *  Priority: per-practice override → vertical default → env var → dental fallback. */
 export function resolveTangoTemplate(practice: Practice | null): string {
-  return practice?.tango_email_template_id ?? process.env.TANGO_EMAIL_TEMPLATE_ID ?? "E813474";
+  if (practice?.tango_email_template_id) return practice.tango_email_template_id;
+  const vertical = practice?.vertical ?? "dental";
+  return VERTICAL_TANGO_TEMPLATES[vertical] ?? process.env.TANGO_EMAIL_TEMPLATE_ID ?? "E813474";
 }
