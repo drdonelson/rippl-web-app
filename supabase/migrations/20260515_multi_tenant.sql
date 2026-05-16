@@ -77,9 +77,10 @@ UPDATE admin_tasks     SET practice_id = 'a1b2c3d4-0000-0000-0000-000000000001' 
 UPDATE campaigns       SET practice_id = 'a1b2c3d4-0000-0000-0000-000000000001' WHERE practice_id IS NULL;
 
 -- 6. Update user_profiles.practice_id to reference practices table
---    Drop old FK (pointed to offices), set all non-null rows to Hallmark UUID,
---    then add new FK pointing to practices.
+--    Drop ALL existing FKs on practice_id (name varies by how the table was created),
+--    then set all non-null rows to Hallmark UUID, then add new FK to practices.
 ALTER TABLE user_profiles DROP CONSTRAINT IF EXISTS user_profiles_practice_id_fkey;
+ALTER TABLE user_profiles DROP CONSTRAINT IF EXISTS user_profiles_practice_id_offices_id_fk;
 
 -- Replace old office UUID values with the Hallmark practice UUID
 UPDATE user_profiles
