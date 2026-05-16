@@ -174,10 +174,11 @@ Patient counts: Brentwood 2,132 · Lewisburg 6,267 · Greenbrier 2,850
 | `/` | Login |
 | `/demo` | Demo access (role: demo) |
 | `/how-it-works` | For referrers (existing patients) |
-| `/refer?ref=XXXX` | For prospective patients |
+| `/refer?ref=XXXX` | For prospective patients — multi-vertical, practice name/copy driven by API |
 | `/claim?token=UUID` | Reward claim page |
 | `/privacy` | Privacy policy |
 | `/terms` | SMS terms |
+| `/patient-journey` | 6-step patient journey demo tool (super_admin + demo only) |
 
 ---
 
@@ -231,6 +232,29 @@ Patient counts: Brentwood 2,132 · Lewisburg 6,267 · Greenbrier 2,850
 
 ---
 
+## Multi-Vertical /refer Landing Page
+
+`GET /api/referral/:code` returns a `practice` object alongside referrer info:
+```json
+{ "referrer_id", "referrer_name", "referral_code", "office_name",
+  "practice": { "id", "display_name", "vertical", "logo_url", "primary_color" } }
+```
+- `display_name` = `white_label_name ?? name`
+- `primary_color` = `white_label_primary_color ?? primary_color`
+- `practice` is `null` if referrer has no `practice_id`
+
+Frontend `refer.tsx` behavior by vertical:
+- **dental** — shows OFFICE_CONFIG booking cards (Hallmark Dental hardcoded), InsuranceCards, then fallback form
+- **automotive / salon** — shows single CTA button that opens form directly; no InsuranceCards
+- `VERTICAL_CONTENT` map in `refer.tsx` holds copy/trust items/testimonials per vertical
+- Demo codes (`MIKE1001` etc.) return `DEMO_PRACTICE` (Hallmark Dental dental) from backend
+
+Tango email templates by vertical (`resolveTangoTemplate` in `practiceConfig.ts`):
+- dental → `E813474`, salon → `E336474`, automotive → `E301464`
+- Per-practice `tango_email_template_id` overrides the vertical default
+
+---
+
 ## Known Issues & Watch Points
 
 - `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR` — add `app.set('trust proxy', 1)` before rate limiter if not already done
@@ -260,4 +284,4 @@ Before making any changes in a new session:
 
 ---
 
-*Last updated: May 2026 — Rippl v1.1 multi-vertical (dental/automotive/salon) with Vagaro webhook + DriveCentric poll integration*
+*Last updated: May 2026 — Rippl v1.2: multi-vertical /refer page, vertical-aware Tango templates, Patient Journey demo tool*
