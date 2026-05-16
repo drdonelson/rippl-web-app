@@ -194,6 +194,43 @@ Patient counts: Brentwood 2,132 · Lewisburg 6,267 · Greenbrier 2,850
 
 ---
 
+## Multi-Vertical Integrations
+
+### Vagaro (Salon)
+- **Webhook URL:** `POST /api/webhooks/vagaro` (public — no auth required)
+- **Trigger condition:** `bookingStatus: "Service Completed"` + `appointmentTypeCode: "NR"` (new client)
+- **Form responses:** `formResponseIds[]` in webhook payload → `GET https://api.vagaro.com/v2/formresponses/{id}` with Bearer token
+- **OAuth:** `client_credentials` grant at `https://api.vagaro.com/oauth2/token` using `vagaro_api_key` (client_id) + `vagaro_api_secret` (client_secret) stored in `integration_config`
+- **Referral detection:** field whose `fieldName` matches `/refer/i` — value is the referrer name
+- **Unmatched referrals:** create `admin_task` with `task_type: "unmatched-referral"` — resolved in Admin Tasks UI via "Match Referrer" button
+- **Dedup:** `external_proc_num = appointmentId` per practice — never double-process
+- **Service file:** `artifacts/api-server/src/services/vagaro.ts`
+
+### DriveCentric (Automotive)
+- **Poll method:** scheduled poll of closed deals (daily) via `pollDriveCentric(practiceId)`
+- **API:** `GET https://api.drivecentric.com/v1/dealers/{dealerId}/deals?status=closed&since={iso}`
+- **Auth:** `Authorization: Bearer {drivecentic_api_key}` from `integration_config`
+- **Referral detection:** reads `surveyResponses[].question/answer` — matches configured `survey_referral_question` (default: "How did you hear about us?") and `referral_lead_source_tags` (default CSV: "Customer Referral,Friend,Referral,Word of Mouth")
+- **Name matching:** if survey answer is a tag value (e.g. "Customer Referral"), creates unmatched-referral task. If answer contains a space, treats it as the referrer name and runs `matchReferrerByName`
+- **Dedup:** `external_proc_num = deal.id` per practice
+- **Service file:** `artifacts/api-server/src/services/driveCentric.ts`
+
+### Shared Name Matching — `matchReferrerByName`
+- **File:** `artifacts/api-server/src/lib/matchReferrer.ts`
+- **Tier 1:** Exact full-name match (case-insensitive)
+- **Tier 2:** First + last token both present in referrer name
+- **Tier 3:** Phone digits (last 10) match if `inputPhone` provided
+- Returns `{ referrer, matchType }` or `null` if no match
+
+### Admin Tasks — Unmatched Referrals
+- **task_type:** `"unmatched-referral"` (no `referrer_id`, no `referral_event_id`)
+- **UI:** amber badge + "Match Referrer" dropdown with typeahead search
+- **Match endpoint:** `POST /api/admin-tasks/:id/match-referrer` — body: `{ referrer_id }`
+- **Search endpoint:** `GET /api/admin-tasks/referrers/search?q=…&practice_id=…`
+- **On match:** creates referral_event + reward_claim + sends notification + completes task
+
+---
+
 ## Known Issues & Watch Points
 
 - `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR` — add `app.set('trust proxy', 1)` before rate limiter if not already done
@@ -223,4 +260,4 @@ Before making any changes in a new session:
 
 ---
 
-*Last updated: April 2026 — Rippl v1.0 live at Hallmark Dental Brentwood*
+*Last updated: May 2026 — Rippl v1.1 multi-vertical (dental/automotive/salon) with Vagaro webhook + DriveCentric poll integration*

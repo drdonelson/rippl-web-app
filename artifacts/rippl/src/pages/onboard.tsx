@@ -217,8 +217,9 @@ export default function Onboard() {
     customer_key: "", location_code: "", od_url: "",
     // Automotive (DriveCentric)
     drivecentic_api_key: "", dealer_id: "", lead_source_tag: "",
+    survey_referral_question: "", referral_lead_source_tags: "",
     // Salon (Vagaro)
-    vagaro_business_id: "", vagaro_api_key: "",
+    vagaro_business_id: "", vagaro_api_key: "", vagaro_api_secret: "",
     // White label
     white_label_enabled: false,
     white_label_name: "", white_label_logo_url: "", white_label_primary_color: "",
@@ -342,8 +343,18 @@ export default function Onboard() {
     setPracticeSubmitting(true);
 
     const integration_config: Record<string, string> =
-      pf.vertical === "automotive" ? { drivecentic_api_key: pf.drivecentic_api_key, dealer_id: pf.dealer_id, lead_source_tag: pf.lead_source_tag } :
-      pf.vertical === "salon"      ? { vagaro_business_id: pf.vagaro_business_id, vagaro_api_key: pf.vagaro_api_key } :
+      pf.vertical === "automotive" ? {
+        drivecentic_api_key: pf.drivecentic_api_key,
+        dealer_id: pf.dealer_id,
+        lead_source_tag: pf.lead_source_tag,
+        ...(pf.survey_referral_question ? { survey_referral_question: pf.survey_referral_question } : {}),
+        ...(pf.referral_lead_source_tags ? { referral_lead_source_tags: pf.referral_lead_source_tags } : {}),
+      } :
+      pf.vertical === "salon" ? {
+        vagaro_business_id: pf.vagaro_business_id,
+        vagaro_api_key: pf.vagaro_api_key,
+        ...(pf.vagaro_api_secret ? { vagaro_api_secret: pf.vagaro_api_secret } : {}),
+      } :
       {};
 
     const body = {
@@ -395,7 +406,8 @@ export default function Onboard() {
       practice_name: "", doctor_name: "", email: "", password: "",
       vertical: "dental", customer_key: "", location_code: "", od_url: "",
       drivecentic_api_key: "", dealer_id: "", lead_source_tag: "",
-      vagaro_business_id: "", vagaro_api_key: "",
+      survey_referral_question: "", referral_lead_source_tags: "",
+      vagaro_business_id: "", vagaro_api_key: "", vagaro_api_secret: "",
       white_label_enabled: false, white_label_name: "", white_label_logo_url: "",
       white_label_primary_color: "", show_powered_by_rippl: true,
       in_house_credit_label: "", in_house_credit_value: "",
@@ -663,9 +675,13 @@ export default function Onboard() {
                       <input value={pf.dealer_id} onChange={setPf("dealer_id")}
                         placeholder="dealer_12345" className={inputClass} />
                     </Field>
-                    <Field label="Lead Source Tag" hint="Tag used to filter Rippl referrals (e.g. 'rippl')">
-                      <input value={pf.lead_source_tag} onChange={setPf("lead_source_tag")}
-                        placeholder="rippl" className={inputClass} />
+                    <Field label="Referral Survey Question" hint='Default: "How did you hear about us?" — question Rippl reads from closed-deal surveys'>
+                      <input value={pf.survey_referral_question} onChange={setPf("survey_referral_question")}
+                        placeholder="How did you hear about us?" className={inputClass} />
+                    </Field>
+                    <Field label="Referral Lead Source Tags" hint='Comma-separated answers that mean "a customer referred me" — e.g. Customer Referral, Friend, Word of Mouth'>
+                      <input value={pf.referral_lead_source_tags} onChange={setPf("referral_lead_source_tags")}
+                        placeholder="Customer Referral, Friend, Referral, Word of Mouth" className={inputClass} />
                     </Field>
                   </>)}
 
@@ -675,9 +691,13 @@ export default function Onboard() {
                       <input value={pf.vagaro_business_id} onChange={setPf("vagaro_business_id")}
                         placeholder="your-salon" className={inputClass} />
                     </Field>
-                    <Field label="Vagaro API Key" hint="Partner API key for appointment webhooks">
+                    <Field label="Vagaro API Key (Client ID)" hint="OAuth client_id from Vagaro partner portal">
                       <input value={pf.vagaro_api_key} onChange={setPf("vagaro_api_key")}
                         placeholder="vg_..." className={cn(inputClass, "font-mono text-xs")} />
+                    </Field>
+                    <Field label="Vagaro API Secret" hint="OAuth client_secret — kept server-side, never exposed to browsers">
+                      <input type="password" value={pf.vagaro_api_secret} onChange={setPf("vagaro_api_secret")}
+                        placeholder="••••••••••••••••" className={cn(inputClass, "font-mono text-xs")} />
                     </Field>
                   </>)}
 
