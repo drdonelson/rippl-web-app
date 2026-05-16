@@ -5,7 +5,7 @@ import {
   LayoutDashboard, CalendarDays, Users,
   ChevronDown, MapPin, LogOut, AlertTriangle, Menu, X,
   Store, CheckSquare, Building2, TrendingUp, ExternalLink,
-  GraduationCap, Link2, Shield, FileText, Gift, Megaphone, UserCog, BookOpen,
+  GraduationCap, Megaphone, UserCog, BookOpen, Route,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useOffice } from "@/contexts/office-context";
@@ -51,9 +51,10 @@ const NAV_SECTIONS: NavSection[] = [
     label: "Platform",
     minRole: "super_admin",
     items: [
-      { href: "/practice-admin", label: "Practices", icon: Building2    },
-      { href: "/onboard",        label: "Onboard",   icon: GraduationCap },
-      { href: "/analytics",      label: "Analytics", icon: TrendingUp    },
+      { href: "/practice-admin",  label: "Practices",       icon: Building2     },
+      { href: "/onboard",         label: "Onboard",         icon: GraduationCap },
+      { href: "/analytics",       label: "Analytics",       icon: TrendingUp    },
+      { href: "/patient-journey", label: "Patient Journey", icon: Route         },
     ],
   },
   {
@@ -74,14 +75,11 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: "Patient Links",
+    label: "Demo",
     demoVisible: true,
+    demoOnly: true,
     items: [
-      { href: "https://www.joinrippl.com/refer",                                           label: "Referral Page",     icon: Link2,    external: true },
-      { href: "https://www.joinrippl.com/how-it-works",                                    label: "How It Works",      icon: GraduationCap, external: true },
-      { href: "https://www.joinrippl.com/claim?token=demo-claim-preview-token-screenshot", label: "Demo Claim Page",   icon: Gift,     external: true },
-      { href: "https://www.joinrippl.com/privacy",                                         label: "Privacy Policy",    icon: Shield,   external: true, minRole: "super_admin" },
-      { href: "https://www.joinrippl.com/terms",                                           label: "Terms",             icon: FileText, external: true, minRole: "super_admin" },
+      { href: "/patient-journey", label: "Patient Journey", icon: Route },
     ],
   },
   {

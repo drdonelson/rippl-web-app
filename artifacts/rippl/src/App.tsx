@@ -38,6 +38,7 @@ const Terms      = lazy(() => import("@/pages/terms"));
 const HowItWorks = lazy(() => import("@/pages/how-it-works"));
 const Practices      = lazy(() => import("@/pages/practices"));
 const PracticeAdmin  = lazy(() => import("@/pages/practice-admin"));
+const PatientJourney = lazy(() => import("@/pages/patient-journey"));
 const ResetPassword  = lazy(() => import("@/pages/reset-password"));
 const NotFound       = lazy(() => import("@/pages/not-found"));
 
@@ -101,6 +102,7 @@ function Router() {
                   <Route path="/offices"          component={Offices}        />
                   <Route path="/analytics"        component={Analytics}      />
                   <Route path="/practice-admin"   component={PracticeAdmin}  />
+                  <Route path="/patient-journey" component={PatientJourney} />
                   <Route component={NotFound} />
                 </Switch>
               </Suspense>
