@@ -47,45 +47,116 @@ function loadStoredCode(): string | null {
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
+interface PracticeInfo {
+  id: string;
+  display_name: string;
+  vertical: string;
+  logo_url: string | null;
+  primary_color: string;
+}
+
 interface ReferrerInfo {
   referrer_id: string;
   referrer_name: string;
   referral_code: string;
   office_name: string;
+  practice: PracticeInfo | null;
 }
 
-// ── Trust statements ───────────────────────────────────────────────────────────
+// ── Vertical content ──────────────────────────────────────────────────────────
 
-const TRUST_ITEMS = [
-  { title: "Family-friendly care", body: "All ages welcome — from first teeth to full smile makeovers." },
-  { title: "Modern & comfortable", body: "State-of-the-art technology designed to keep you at ease." },
-  { title: "Transparent pricing", body: "We walk you through every cost before any treatment begins." },
-  { title: "3 convenient locations", body: "Brentwood, Lewisburg, and Greenbrier — always close to home." },
-];
+interface VerticalContent {
+  badge: string;
+  heroNoRef: string;
+  heroWithRef: (name: string, practiceName: string) => string;
+  heroSub: string;
+  heroSubNoRef: string;
+  ctaLabel: string;
+  showOfficeCards: boolean;
+  trustItems: { title: string; body: string }[];
+  testimonials: { quote: string; author: string }[];
+  teamLabel: string;
+}
 
-// ── Testimonials ───────────────────────────────────────────────────────────────
-
-const TESTIMONIALS = [
-  {
-    quote: "Best dental experience I've ever had. The team made me feel completely at home.",
-    author: "Sarah M., Brentwood patient",
+const VERTICAL_CONTENT: Record<string, VerticalContent> = {
+  dental: {
+    badge: "New Patient Welcome",
+    heroNoRef: "Book your first visit",
+    heroWithRef: (name) => `${name} thinks you'll love us`,
+    heroSub: "Pick the location closest to you and book your first visit online — it only takes a minute.",
+    heroSubNoRef: "Choose your nearest location below and book online in seconds.",
+    ctaLabel: "Book Online",
+    showOfficeCards: true,
+    trustItems: [
+      { title: "Family-friendly care", body: "All ages welcome — from first teeth to full smile makeovers." },
+      { title: "Modern & comfortable", body: "State-of-the-art technology designed to keep you at ease." },
+      { title: "Transparent pricing", body: "We walk you through every cost before any treatment begins." },
+      { title: "Convenient locations", body: "Multiple locations — always close to home." },
+    ],
+    testimonials: [
+      { quote: "Best dental experience I've ever had. The team made me feel completely at home.", author: "Sarah M." },
+      { quote: "I'd been putting off a dentist visit for years. They made it so easy to get started.", author: "James T." },
+    ],
+    teamLabel: "dental team",
   },
-  {
-    quote: "I'd been putting off a dentist visit for years. They made it so easy to get started.",
-    author: "James T., Lewisburg patient",
+  automotive: {
+    badge: "You're Invited",
+    heroNoRef: "Visit our showroom",
+    heroWithRef: (name) => `${name} thinks you'll love it`,
+    heroSub: "Stop by, take a test drive, and see for yourself — no pressure, just great vehicles.",
+    heroSubNoRef: "Tell us you're coming and we'll have everything ready for you.",
+    ctaLabel: "Schedule a Visit",
+    showOfficeCards: false,
+    trustItems: [
+      { title: "No-pressure experience", body: "Browse at your own pace with zero hard selling." },
+      { title: "Certified team", body: "Our staff is here to find the right fit for your needs and budget." },
+      { title: "Flexible financing", body: "We work with multiple lenders to get you the best rate." },
+      { title: "Hassle-free process", body: "From test drive to keys — we make it straightforward." },
+    ],
+    testimonials: [
+      { quote: "Best car buying experience I've had. No games, no pressure — just great service.", author: "Marcus L." },
+      { quote: "They found me exactly what I needed and made financing painless.", author: "Jennifer K." },
+    ],
+    teamLabel: "team",
   },
-];
+  salon: {
+    badge: "Personal Invitation",
+    heroNoRef: "Book your first appointment",
+    heroWithRef: (name) => `${name} wants you to experience this`,
+    heroSub: "First-time guests get a little extra love. Book your appointment and see what everyone's talking about.",
+    heroSubNoRef: "Experience the difference. Book your first appointment today.",
+    ctaLabel: "Book an Appointment",
+    showOfficeCards: false,
+    trustItems: [
+      { title: "Expert stylists", body: "Years of training and a passion for making you feel amazing." },
+      { title: "Premium products", body: "We use only top-tier products that are kind to your hair." },
+      { title: "Relaxing atmosphere", body: "A salon experience designed for your comfort and enjoyment." },
+      { title: "New guest welcome", body: "Special attention for first-time guests — you'll love it here." },
+    ],
+    testimonials: [
+      { quote: "I finally found a salon that listens. My hair has never looked better.", author: "Ashley R." },
+      { quote: "The atmosphere is amazing and the stylists are so talented. I won't go anywhere else.", author: "Brittany M." },
+    ],
+    teamLabel: "team",
+  },
+};
+
+const DEFAULT_CONTENT = VERTICAL_CONTENT.dental;
+
+function getContent(vertical: string | null | undefined): VerticalContent {
+  return VERTICAL_CONTENT[vertical ?? "dental"] ?? DEFAULT_CONTENT;
+}
 
 // ── Office booking card ────────────────────────────────────────────────────────
-// Entire card is clickable → directly opens booking for that office.
-// Phone link is nested and stops propagation so tapping the number calls instead.
 
 function OfficeBookingCard({
   office,
   onBook,
+  practiceName,
 }: {
   office: OfficeConfig;
   onBook: (key: string) => void;
+  practiceName: string;
 }) {
   return (
     <div
@@ -100,11 +171,10 @@ function OfficeBookingCard({
       }}
       className="group relative flex flex-col gap-4 p-5 rounded-2xl border border-slate-200 bg-white hover:bg-orange-50/60 hover:border-orange-300 active:bg-orange-50 active:scale-[0.99] transition-all duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E0622A]/50 select-none"
     >
-      {/* Header row */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <p className="font-bold text-slate-900 text-base leading-snug">
-            Hallmark Dental
+            {practiceName}
           </p>
           <p className="text-[#E0622A] font-semibold text-sm leading-tight mt-0.5">
             {office.label}
@@ -116,14 +186,11 @@ function OfficeBookingCard({
         </div>
       </div>
 
-      {/* Book CTA row */}
       <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-        <span className="flex items-center gap-1.5 text-sm font-bold text-[#E0622A] group-hover:text-[#E0622A] group-hover:gap-2.5 transition-all duration-150">
+        <span className="flex items-center gap-1.5 text-sm font-bold text-[#E0622A] group-hover:gap-2.5 transition-all duration-150">
           Book Online
           <ArrowRight className="w-3.5 h-3.5" />
         </span>
-
-        {/* Call link — stops propagation so it doesn't trigger booking */}
         <a
           href={phoneHref(office.phone)}
           onClick={e => e.stopPropagation()}
@@ -143,12 +210,8 @@ function OfficeBookingCard({
 
 export default function Refer() {
   const formRef = useRef<HTMLDivElement>(null);
-
-  // Auth context — safe on public pages; isDemo is true only for the demo account.
-  // Must be called before any early returns (Rules of Hooks).
   const { isDemo } = useAuth();
 
-  // Parse query string once via lazy initializer — stable across renders
   const [refCode] = useState<string>(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -158,22 +221,12 @@ export default function Refer() {
     }
   });
 
-  // Referrer state
   const [referrerInfo, setReferrerInfo] = useState<ReferrerInfo | null>(null);
   const [infoLoading, setInfoLoading] = useState(!!refCode);
-
-  // Office selection (used by the fallback form)
   const [selectedOffice, setSelectedOffice] = useState<string>("");
-
-  // isDemoPage — true when the demo staff account is viewing this page OR when
-  // a known demo referral code is in the URL. Drives the "DEMO OFFICE" branding.
-  // Real patients never trigger this: their referral codes aren't in DEMO_CODES.
   const isDemoPage = isDemo || DEMO_CODES.has(refCode);
-
-  // Fallback form visibility
   const [showForm, setShowForm] = useState(false);
 
-  // Form fields
   const [firstName, setFirstName]     = useState("");
   const [lastName, setLastName]       = useState("");
   const [phone, setPhone]             = useState("");
@@ -184,7 +237,6 @@ export default function Refer() {
   const [submitted, setSubmitted]     = useState(false);
   const [formError, setFormError]     = useState("");
 
-  // ── On mount: validate referral code, store attribution ─────────────────────
   useEffect(() => {
     let code = refCode;
     if (!code) {
@@ -197,7 +249,6 @@ export default function Refer() {
       return;
     }
 
-    // Persist immediately before fetch resolves
     try {
       localStorage.setItem("rippl_referral_code", code);
       sessionStorage.setItem("rippl_referral_code", code);
@@ -208,7 +259,6 @@ export default function Refer() {
       .then((data: ReferrerInfo) => {
         setReferrerInfo(data);
         saveAttribution(code, data.referrer_id, data.referrer_name);
-        // Pre-select office from referrer's home location
         const matched = OFFICE_CONFIG.find(o =>
           data.office_name?.toLowerCase().includes(o.key.toLowerCase()),
         );
@@ -219,47 +269,30 @@ export default function Refer() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Book online handler (called when a tile is clicked) ──────────────────────
   const handleBookOffice = (officeKey: string) => {
     const office = getOffice(officeKey);
     const code = refCode || referrerInfo?.referral_code || undefined;
-
-    // Track selection for the form's location preference
     setSelectedOffice(officeKey);
-
-    // Always persist attribution before leaving the page
     if (code) {
       try {
         localStorage.setItem("rippl_referral_code", code);
         sessionStorage.setItem("rippl_referral_code", code);
       } catch {}
     }
-
     if (office?.bookingUrl) {
-      const finalUrl = code
-        ? buildBookingUrl(office.bookingUrl, code)
-        : office.bookingUrl;
+      const finalUrl = code ? buildBookingUrl(office.bookingUrl, code) : office.bookingUrl;
       window.open(finalUrl, "_blank", "noopener");
     } else {
-      // No booking URL configured — reveal the fallback form
       setShowForm(true);
-      setTimeout(
-        () => formRef.current?.scrollIntoView({ behavior: "smooth" }),
-        80,
-      );
+      setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
     }
   };
 
-  // ── Open fallback form ────────────────────────────────────────────────────────
   const openFallbackForm = () => {
     setShowForm(true);
-    setTimeout(
-      () => formRef.current?.scrollIntoView({ behavior: "smooth" }),
-      80,
-    );
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
   };
 
-  // ── Form submit ───────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
@@ -295,10 +328,13 @@ export default function Refer() {
     }
   };
 
-  const referrerName = referrerInfo?.referrer_name;
+  const referrerName    = referrerInfo?.referrer_name;
+  const practice        = referrerInfo?.practice ?? null;
+  const vertical        = practice?.vertical ?? "dental";
+  const practiceName    = isDemoPage ? "Hallmark Dental" : (practice?.display_name ?? "our practice");
+  const content         = getContent(vertical);
   const selectedOfficeConfig = getOffice(selectedOffice);
 
-  // ── Loading ───────────────────────────────────────────────────────────────────
   if (infoLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -307,7 +343,6 @@ export default function Refer() {
     );
   }
 
-  // ── Success (form submitted) ───────────────────────────────────────────────────
   if (submitted) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -319,9 +354,9 @@ export default function Refer() {
           <p className="text-slate-500 mb-4 leading-relaxed">
             Your request has been sent to{" "}
             <span className="text-slate-900 font-semibold">
-              Hallmark Dental{selectedOffice ? ` — ${selectedOffice}` : ""}
+              {practiceName}{selectedOffice && vertical === "dental" ? ` — ${selectedOffice}` : ""}
             </span>
-            . Our team will reach out shortly to get you scheduled.
+            . Our {content.teamLabel} will reach out shortly to get you scheduled.
           </p>
           {referrerName && (
             <p className="text-sm text-[#E0622A] font-medium">
@@ -344,96 +379,102 @@ export default function Refer() {
     );
   }
 
-  // ── Main page ─────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-
-      {/* Ambient glow */}
       <div aria-hidden className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-[36rem] h-[36rem] bg-primary/5 rounded-full blur-3xl" />
       </div>
 
       <main className="relative z-10 flex-1 w-full max-w-5xl mx-auto px-4 sm:px-8 pt-10 pb-16">
 
-        {/* ── Logo / Brand ─────────────────────────────────────────────────── */}
+        {/* ── Brand ──────────────────────────────────────────────────────────── */}
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-orange-400 to-[#C9551E] flex items-center justify-center shadow-lg shadow-[#E0622A]/20 flex-shrink-0">
-            <Droplets className="w-6 h-6 text-white" />
-          </div>
+          {practice?.logo_url ? (
+            <img src={practice.logo_url} alt={practiceName} className="w-11 h-11 rounded-2xl object-cover" />
+          ) : (
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-orange-400 to-[#C9551E] flex items-center justify-center shadow-lg shadow-[#E0622A]/20 flex-shrink-0">
+              <Droplets className="w-6 h-6 text-white" />
+            </div>
+          )}
           <div>
             <p className="text-xs text-[#E0622A] font-medium tracking-wider uppercase">
-              {isDemoPage ? "Demo Office" : "Hallmark Dental"}
+              {isDemoPage ? "Demo Office" : practiceName}
             </p>
             <p className="text-sm text-slate-400">Powered by Rippl</p>
           </div>
         </div>
 
-        {/* ── Hero ─────────────────────────────────────────────────────────── */}
+        {/* ── Hero ───────────────────────────────────────────────────────────── */}
         <div className="mb-8 max-w-2xl">
           {referrerName ? (
             <>
               <span className="inline-block text-orange-700 text-xs font-semibold tracking-widest uppercase mb-6 px-3 py-1 bg-orange-50 rounded-full border border-orange-200">
-                Personal Invitation
+                {content.badge}
               </span>
               <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-6 leading-tight">
-                {referrerName.split(" ")[0]} thinks you'll love us
+                {content.heroWithRef(referrerName, practiceName)}
               </h1>
-              <p className="text-slate-500 text-base leading-relaxed">
-                Pick the location closest to you and book your first visit online — it only takes a minute.
-              </p>
+              <p className="text-slate-500 text-base leading-relaxed">{content.heroSub}</p>
             </>
           ) : (
             <>
               <span className="inline-block text-orange-700 text-xs font-semibold tracking-widest uppercase mb-6 px-3 py-1 bg-orange-50 rounded-full border border-orange-200">
-                New Patient Welcome
+                {content.badge}
               </span>
               <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-6 leading-tight">
-                Book your first visit at Hallmark Dental
+                {content.heroNoRef} at {practiceName}
               </h1>
-              <p className="text-slate-500 text-base leading-relaxed">
-                Choose your nearest location below and book online in seconds.
-              </p>
+              <p className="text-slate-500 text-base leading-relaxed">{content.heroSubNoRef}</p>
             </>
           )}
         </div>
 
-        {/* ── Office selection ─────────────────────────────────────────────── */}
-        <div className="mb-3">
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
-            Choose your location
-          </h2>
-
-          {/* Cards: single column on mobile, 3-up on desktop */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {OFFICE_CONFIG.map(office => (
-              <OfficeBookingCard
-                key={office.key}
-                office={office}
-                onBook={handleBookOffice}
-              />
-            ))}
+        {/* ── Office cards (dental) or single CTA (other verticals) ──────── */}
+        {content.showOfficeCards ? (
+          <>
+            <div className="mb-3">
+              <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
+                Choose your location
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {OFFICE_CONFIG.map(office => (
+                  <OfficeBookingCard key={office.key} office={office} onBook={handleBookOffice} practiceName={practiceName} />
+                ))}
+              </div>
+            </div>
+            <div className="mb-10">
+              {!showForm && (
+                <button
+                  type="button"
+                  onClick={openFallbackForm}
+                  className="flex items-center gap-2 text-sm text-slate-400 hover:text-slate-600 transition-colors group pt-4"
+                >
+                  <span>Prefer us to reach out to you instead?</span>
+                  <ChevronDown className="w-3.5 h-3.5 group-hover:translate-y-0.5 transition-transform" />
+                </button>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="mb-10">
+            {!showForm && (
+              <button
+                type="button"
+                onClick={openFallbackForm}
+                className="inline-flex items-center gap-2 bg-[#E0622A] hover:bg-[#C9551E] text-white font-bold px-8 py-4 rounded-2xl text-sm shadow-md shadow-[#E0622A]/20 transition-colors"
+              >
+                {content.ctaLabel}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
           </div>
-        </div>
+        )}
 
-        {/* ── Fallback CTA ─────────────────────────────────────────────────── */}
-        <div className="mb-10">
-          {!showForm ? (
-            <button
-              type="button"
-              onClick={openFallbackForm}
-              className="flex items-center gap-2 text-sm text-slate-400 hover:text-slate-600 transition-colors group pt-4"
-            >
-              <span>Prefer us to reach out to you instead?</span>
-              <ChevronDown className="w-3.5 h-3.5 group-hover:translate-y-0.5 transition-transform" />
-            </button>
-          ) : null}
-        </div>
-
-        {/* ── Why Hallmark Dental ──────────────────────────────────────────── */}
+        {/* ── Why us ─────────────────────────────────────────────────────────── */}
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm mb-5">
           <h2 className="text-base font-bold text-slate-900 mb-4">Why patients choose us</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {TRUST_ITEMS.map(item => (
+            {content.trustItems.map(item => (
               <div key={item.title} className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
                 <p className="text-sm font-semibold text-orange-700 mb-1 leading-tight">{item.title}</p>
                 <p className="text-xs text-slate-500 leading-relaxed">{item.body}</p>
@@ -442,14 +483,16 @@ export default function Refer() {
           </div>
         </div>
 
-        {/* ── Insurance / Financial ────────────────────────────────────────── */}
-        <div className="mb-5">
-          <InsuranceCards officeKey={null} />
-        </div>
+        {/* ── Insurance (dental only) ─────────────────────────────────────── */}
+        {vertical === "dental" && (
+          <div className="mb-5">
+            <InsuranceCards officeKey={null} />
+          </div>
+        )}
 
         {/* ── Testimonials ─────────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
-          {TESTIMONIALS.map(t => (
+          {content.testimonials.map(t => (
             <div
               key={t.author}
               className="bg-white border border-slate-200 rounded-2xl px-5 py-4 shadow-sm"
@@ -465,7 +508,7 @@ export default function Refer() {
           ))}
         </div>
 
-        {/* ── Fallback appointment request form ────────────────────────────── */}
+        {/* ── Appointment request form ──────────────────────────────────────── */}
         {showForm && (
           <div
             ref={formRef}
@@ -483,7 +526,6 @@ export default function Refer() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Name */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-1.5">First Name *</label>
@@ -507,7 +549,6 @@ export default function Refer() {
                 </div>
               </div>
 
-              {/* Phone */}
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1.5">Phone Number *</label>
                 <input
@@ -520,7 +561,6 @@ export default function Refer() {
                 />
               </div>
 
-              {/* Email */}
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1.5">
                   Email <span className="text-slate-400">(optional)</span>
@@ -535,27 +575,28 @@ export default function Refer() {
                 />
               </div>
 
-              {/* Preferred location */}
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">
-                  <MapPin className="w-3 h-3 inline mr-1 text-[#E0622A]" />
-                  Preferred Location
-                </label>
-                <select
-                  value={selectedOffice}
-                  onChange={e => setSelectedOffice(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-[#E0622A] focus:ring-1 focus:ring-[#E0622A]/30 transition-colors"
-                >
-                  <option value="">No preference</option>
-                  {OFFICE_CONFIG.map(o => (
-                    <option key={o.key} value={o.key}>
-                      Hallmark Dental — {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Location selector — dental only (multiple offices) */}
+              {vertical === "dental" && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                    <MapPin className="w-3 h-3 inline mr-1 text-[#E0622A]" />
+                    Preferred Location
+                  </label>
+                  <select
+                    value={selectedOffice}
+                    onChange={e => setSelectedOffice(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-[#E0622A] focus:ring-1 focus:ring-[#E0622A]/30 transition-colors"
+                  >
+                    <option value="">No preference</option>
+                    {OFFICE_CONFIG.map(o => (
+                      <option key={o.key} value={o.key}>
+                        {practiceName} — {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
-              {/* Contact preference */}
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-2">
                   Best way to reach you
@@ -563,7 +604,7 @@ export default function Refer() {
                 <div className="flex gap-2">
                   {[
                     { value: "phone", label: "Phone call" },
-                    { value: "text", label: "Text" },
+                    { value: "text",  label: "Text" },
                     { value: "email", label: "Email" },
                   ].map(opt => (
                     <button
@@ -583,7 +624,6 @@ export default function Refer() {
                 </div>
               </div>
 
-              {/* Message */}
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1.5">
                   <MessageSquare className="w-3 h-3 inline mr-1 text-[#E0622A]" />
@@ -599,11 +639,7 @@ export default function Refer() {
                 />
               </div>
 
-              <input
-                type="hidden"
-                name="referral_code"
-                value={refCode || referrerInfo?.referral_code || ""}
-              />
+              <input type="hidden" name="referral_code" value={refCode || referrerInfo?.referral_code || ""} />
 
               {formError && <p className="text-red-600 text-sm">{formError}</p>}
 
@@ -612,9 +648,7 @@ export default function Refer() {
                 disabled={submitting}
                 className={cn(
                   "w-full py-4 rounded-2xl font-bold text-white text-sm transition-all shadow-md shadow-[#E0622A]/15",
-                  submitting
-                    ? "bg-primary/50 cursor-not-allowed"
-                    : "bg-[#E0622A] hover:bg-[#E0622A] active:bg-[#C9551E]",
+                  submitting ? "bg-primary/50 cursor-not-allowed" : "bg-[#E0622A] hover:bg-[#E0622A] active:bg-[#C9551E]",
                 )}
               >
                 {submitting ? (
@@ -627,16 +661,15 @@ export default function Refer() {
                 )}
               </button>
 
-              {/* Secondary call-to-call option below form */}
-              <a
-                href={phoneHref(
-                  selectedOfficeConfig?.phone || OFFICE_CONFIG[0].phone,
-                )}
-                className="flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 rounded-2xl font-semibold transition-colors text-sm w-full"
-              >
-                <Phone className="w-4 h-4 text-[#E0622A]" />
-                Call us instead
-              </a>
+              {vertical === "dental" && (
+                <a
+                  href={phoneHref(selectedOfficeConfig?.phone || OFFICE_CONFIG[0].phone)}
+                  className="flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 rounded-2xl font-semibold transition-colors text-sm w-full"
+                >
+                  <Phone className="w-4 h-4 text-[#E0622A]" />
+                  Call us instead
+                </a>
+              )}
             </form>
           </div>
         )}
@@ -645,11 +678,11 @@ export default function Refer() {
         <div className="text-center pt-6 space-y-1">
           {referrerName && (
             <p className="text-xs text-slate-400">
-              This invitation was shared by a Hallmark Dental patient via Rippl
+              This invitation was shared by a {practiceName} {vertical === "dental" ? "patient" : "customer"} via Rippl
             </p>
           )}
           <p className="text-xs text-slate-300">
-            © {new Date().getFullYear()} {isDemoPage ? "Demo Office" : "Hallmark Dental"} · Powered by Rippl
+            © {new Date().getFullYear()} {isDemoPage ? "Demo Office" : practiceName} · Powered by Rippl
           </p>
         </div>
 

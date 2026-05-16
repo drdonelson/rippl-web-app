@@ -131,38 +131,61 @@ function GiftCardMockup() {
           <div className="w-2 h-2 rounded-full bg-green-400" />
         </div>
         <div className="flex-1 bg-slate-600 rounded px-2 py-0.5">
-          <p className="text-[10px] text-slate-300 truncate">Your $35 Amazon Gift Card — Tango Card</p>
+          <p className="text-[10px] text-slate-300 truncate">Your referral reward is here! — Rippl</p>
         </div>
       </div>
-      <div className="bg-[#f5f5f5] px-4 py-4">
-        <div className="bg-white rounded-xl overflow-hidden border border-slate-100">
-          {/* Header */}
-          <div className="bg-[#232F3E] px-4 py-3 text-center">
-            <p className="text-[#FF9900] font-bold text-base tracking-tight">amazon</p>
+      <div className="bg-[#f0f0f0] px-3 py-3">
+        <div className="bg-white rounded-lg overflow-hidden border border-slate-200">
+          {/* Tango email header — orange Rippl branded */}
+          <div
+            className="flex items-center px-5 py-4 gap-4"
+            style={{ background: "linear-gradient(135deg, #F5A623 0%, #E0622A 100%)" }}
+          >
+            <span className="text-white/70 font-bold text-2xl tracking-tight leading-none">
+              rip<span className="text-white">pl</span>
+            </span>
+            <div className="w-px h-8 bg-white/30" />
+            <div>
+              <p className="text-white font-bold text-xs leading-tight">Your referral reward is here!</p>
+              <p className="text-white/80 text-[10px] mt-0.5">Thank you for sharing us with a friend.</p>
+            </div>
           </div>
           {/* Body */}
-          <div className="px-5 py-5 text-center">
-            <p className="text-slate-400 text-[10px] uppercase tracking-widest font-semibold mb-1">Gift Card</p>
-            <p className="text-slate-900 font-bold text-2xl mb-0.5">$35.00</p>
-            <p className="text-slate-400 text-xs mb-4">From: Hallmark Dental via Rippl</p>
-            {/* Mock gift card */}
-            <div className="bg-gradient-to-br from-[#232F3E] to-[#374151] rounded-xl p-4 mb-4 text-left">
-              <p className="text-[#FF9900] font-bold text-sm mb-3">amazon</p>
-              <div className="bg-white/10 rounded-lg px-3 py-2 mb-2">
-                <p className="text-white/50 text-[9px] uppercase tracking-wider mb-0.5">Claim Code</p>
-                <p className="text-white font-mono font-bold text-sm tracking-widest">XXXX-XXXXXX-XXXX</p>
-              </div>
-              <p className="text-white/50 text-[10px] text-right mt-2">Balance: $35.00</p>
-            </div>
-            <div className="inline-block bg-[#FF9900] text-white text-xs font-bold px-5 py-2 rounded-full">
-              Redeem at amazon.com →
-            </div>
+          <div className="px-5 py-4 text-xs text-slate-600 leading-relaxed">
+            <p>
+              You earned this reward by referring a friend to our practice. We appreciate your loyalty
+              and love having you as a patient. Your gift card code is ready to use — no account needed,
+              no expiration worries. Just click the redemption link below and enjoy!
+            </p>
+          </div>
+          {/* Amount */}
+          <p className="text-center text-sm font-bold text-[#E0622A] pb-3">$35.00</p>
+          {/* Card image placeholder */}
+          <div className="mx-5 mb-3 border-2 border-slate-200 rounded-xl h-20 flex items-center justify-center bg-slate-50">
+            <p className="text-slate-300 text-xs font-medium">Card image</p>
+          </div>
+          {/* Code */}
+          <p className="text-center text-xs pb-2">
+            <span className="text-[#E0622A] font-semibold">Code:</span>{" "}
+            <span className="text-slate-500">{"{code will appear here}"}</span>
+          </p>
+          {/* To Redeem */}
+          <div className="px-5 pb-4">
+            <p className="text-[#E0622A] font-semibold text-xs mb-1">To Redeem</p>
+            <p className="text-slate-500 text-[10px] leading-relaxed">
+              Here you will find redemption instructions for the eGift card.
+              The instructions will vary between brand.
+            </p>
           </div>
           {/* Footer */}
-          <div className="bg-slate-50 border-t border-slate-100 px-4 py-3 text-center">
-            <p className="text-[10px] text-slate-400">
-              Delivered by <span className="font-semibold text-slate-600">Tango Card</span> · on behalf of Hallmark Dental
-            </p>
+          <div className="border-t border-slate-100 px-5 py-3 text-[10px] text-slate-400 leading-relaxed">
+            <p>With gratitude,</p>
+            <p>Your Care Team</p>
+            <p className="mt-1">Powered by Rippl · joinrippl.com</p>
+          </div>
+          {/* Tango branding */}
+          <div className="bg-slate-50 border-t border-slate-100 py-2 text-center">
+            <p className="text-[9px] text-slate-300 uppercase tracking-widest font-semibold">Powered by TANGO</p>
           </div>
         </div>
       </div>
