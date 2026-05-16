@@ -29,7 +29,7 @@ function Badge({ label, blue }: { label: string; blue?: boolean }) {
 
 function SmsMockup() {
   return (
-    <div className="bg-slate-100 rounded-xl p-4 mt-4">
+    <div className="bg-slate-100 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-3">
         <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
           <span className="text-white text-[10px] font-bold">✓</span>
@@ -50,7 +50,7 @@ function SmsMockup() {
 
 function EmailMockup() {
   return (
-    <div className="mt-4 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+    <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm">
       {/* Browser chrome */}
       <div className="bg-slate-700 px-3 py-2 flex items-center gap-2">
         <div className="flex gap-1">
@@ -122,7 +122,7 @@ function EmailMockup() {
 
 function GiftCardMockup() {
   return (
-    <div className="mt-4 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+    <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm">
       {/* Browser chrome */}
       <div className="bg-slate-700 px-3 py-2 flex items-center gap-2">
         <div className="flex gap-1">
@@ -277,7 +277,7 @@ export default function PatientJourney() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       <Link
         href="/dashboard"
         className="inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-700 text-sm mb-8 transition-colors"
@@ -306,37 +306,46 @@ export default function PatientJourney() {
             )}
 
             <div className="relative bg-white border border-slate-200 rounded-2xl p-5 shadow-sm z-10">
-              <div className="flex items-start gap-3 mb-3">
-                <StepNum n={step.n} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                    <h2 className="text-sm font-bold text-slate-900">{step.title}</h2>
-                    <Badge label={step.audience} blue={step.blue} />
+              <div className={step.mockup ? "lg:flex lg:gap-8 lg:items-start" : ""}>
+                <div className={step.mockup ? "lg:flex-1" : ""}>
+                  <div className="flex items-start gap-3 mb-3">
+                    <StepNum n={step.n} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                        <h2 className="text-sm font-bold text-slate-900">{step.title}</h2>
+                        <Badge label={step.audience} blue={step.blue} />
+                      </div>
+                      <p className="text-[11px] text-slate-400 font-medium">{step.timing}</p>
+                    </div>
+                    <span className="text-xl shrink-0 mt-0.5">{step.emoji}</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 font-medium">{step.timing}</p>
+
+                  <p className="text-sm text-slate-500 leading-relaxed ml-11 mb-3">
+                    {step.description}
+                  </p>
+
+                  {"href" in step && step.href && (
+                    <div className="ml-11">
+                      <a
+                        href={step.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#E0622A] hover:text-[#C9551E] transition-colors"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        {step.linkLabel}
+                        <ExternalLink className="w-3 h-3 opacity-60" />
+                      </a>
+                    </div>
+                  )}
                 </div>
-                <span className="text-xl shrink-0 mt-0.5">{step.emoji}</span>
-              </div>
 
-              <p className="text-sm text-slate-500 leading-relaxed ml-11 mb-3">
-                {step.description}
-              </p>
-
-              <div className="ml-11">
-                {step.mockup === "sms"      && <SmsMockup />}
-                {step.mockup === "email"    && <EmailMockup />}
-                {step.mockup === "giftcard" && <GiftCardMockup />}
-                {"href" in step && step.href && (
-                  <a
-                    href={step.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#E0622A] hover:text-[#C9551E] transition-colors"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    {step.linkLabel}
-                    <ExternalLink className="w-3 h-3 opacity-60" />
-                  </a>
+                {step.mockup && (
+                  <div className="mt-4 lg:mt-0 lg:w-80 lg:shrink-0">
+                    {step.mockup === "sms"      && <SmsMockup />}
+                    {step.mockup === "email"    && <EmailMockup />}
+                    {step.mockup === "giftcard" && <GiftCardMockup />}
+                  </div>
                 )}
               </div>
             </div>

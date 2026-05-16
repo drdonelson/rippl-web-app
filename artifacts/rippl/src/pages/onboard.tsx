@@ -716,6 +716,9 @@ export default function Onboard() {
                 </div>
               </div>
 
+              {/* ── Sections 3 + 4: side by side on desktop ── */}
+              <div className="grid lg:grid-cols-2 gap-4">
+
               {/* ── Section 3: White Label ── */}
               <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
                 <button
@@ -779,7 +782,7 @@ export default function Onboard() {
                 )}
               </div>
 
-              {/* ── Section 4: In-house Credit ── */}
+              {/* ── Section 4: In-house Credit (right col on desktop) ── */}
               <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
                 <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
                   <div className="w-5 h-5 rounded-md bg-[#E0622A]/10 flex items-center justify-center">
@@ -799,6 +802,8 @@ export default function Onboard() {
                   </Field>
                 </div>
               </div>
+
+              </div>{/* end sections 3+4 grid */}
 
               {/* ── Section 5: Pricing Agreement ── */}
               <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
