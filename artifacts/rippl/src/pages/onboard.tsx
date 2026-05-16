@@ -473,7 +473,7 @@ export default function Onboard() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-slate-50/50">
-      <div className="max-w-2xl mx-auto px-5 py-10">
+      <div className="max-w-5xl mx-auto px-5 py-10">
 
         {/* Back link */}
         <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-700 text-sm mb-8 transition-colors">
