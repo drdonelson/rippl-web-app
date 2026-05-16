@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { customFetch } from "@workspace/api-client-react";
 import {
-  Users, UserPlus, Trash2, Building2, Loader2, X, Eye, EyeOff,
+  Users, UserPlus, Trash2, Building2, Loader2, X, Eye, EyeOff, ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,10 +33,17 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 // ── Add Staff Modal ────────────────────────────────────────────────────────────
 
+interface Office { id: string; name: string; location_code: string; }
+
 function AddStaffModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [form, setForm] = useState({ full_name: "", email: "", password: "" });
+  const [form, setForm] = useState({ full_name: "", email: "", password: "", office_id: "" });
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { data: offices = [] } = useQuery<Office[]>({
+    queryKey: ["/api/offices/managed"],
+    queryFn: () => customFetch<Office[]>(`${BASE}/api/offices/managed`),
+  });
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -53,6 +60,7 @@ function AddStaffModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
     setForm(f => ({ ...f, [field]: e.target.value }));
 
   const inputClass = "w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm";
+  const selectClass = cn(inputClass, "appearance-none pr-10 cursor-pointer");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -68,6 +76,23 @@ function AddStaffModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">Full name</label>
             <input required value={form.full_name} onChange={set("full_name")} placeholder="Jane Smith" className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Office</label>
+            <div className="relative">
+              <select
+                required
+                value={form.office_id}
+                onChange={e => setForm(f => ({ ...f, office_id: e.target.value }))}
+                className={selectClass}
+              >
+                <option value="">Select office…</option>
+                {offices.map(o => (
+                  <option key={o.id} value={o.id}>{o.name}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>

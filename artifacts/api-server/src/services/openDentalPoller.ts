@@ -644,6 +644,7 @@ export async function syncOpenDental(options?: {
           team_source:         "open-dental-sync",
           office:              office?.name ?? "Hallmark Dental",
           office_id:           office?.id ?? null,
+          practice_id:         office?.practice_id ?? null,
           status:              "Exam Completed",
           external_proc_num:   procNum,
         })
@@ -695,6 +696,7 @@ export async function syncOpenDental(options?: {
           referral_event_id: newEvent.id,
           referrer_id:       referrer.id,
           reward_value:      newTierData.rewardValue,
+          practice_id:       office?.practice_id ?? null,
           status:            "pending",
         });
       } catch (claimErr) {
@@ -725,7 +727,8 @@ export async function syncOpenDental(options?: {
         newEvent.new_patient_name,
         claimToken,
         office?.name ?? "Hallmark Dental",
-        newTierData.rewardValue
+        newTierData.rewardValue,
+        office?.practice_id ?? undefined,
       ).then((notifResult) => {
         logger.info({ notifResult, procNum }, "Notification sent for synced referral");
       }).catch((err) => {
