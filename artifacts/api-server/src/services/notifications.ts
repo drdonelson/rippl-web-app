@@ -3,6 +3,7 @@ import { SMS_ENABLED } from "../lib/smsEnabled";
 import sgMail from "@sendgrid/mail";
 import { logger } from "../lib/logger";
 import { getPracticeConfig, resolveTwilioPhone, resolveSendGridFrom } from "../lib/practiceConfig";
+import type { Practice } from "@workspace/db/schema";
 
 const APP_URL = (process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://www.joinrippl.com").replace(/\/$/, "");
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
@@ -10,6 +11,44 @@ const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
 const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "hello@joinrippl.com";
+
+// ── Vertical-aware notification copy ─────────────────────────────────────────
+
+export interface NotificationCopy {
+  sms: string;            // {{firstName}} and {{claimUrl}} are template tokens
+  email_subject: string;
+  referral_trigger: string;
+}
+
+export function getNotificationCopy(practice: Practice | null): NotificationCopy {
+  const name = practice?.white_label_name ?? practice?.name ?? "your practice";
+  const vertical = practice?.vertical ?? "dental";
+
+  switch (vertical) {
+    case "automotive":
+      return {
+        sms:              `Hi {{firstName}}, your referral just purchased a vehicle at ${name}! Click to claim your reward: {{claimUrl}}`,
+        email_subject:    `Your referral reward from ${name} is ready!`,
+        referral_trigger: "purchased a vehicle",
+      };
+    case "salon":
+      return {
+        sms:              `Hi {{firstName}}, your referred friend completed their first appointment at ${name}! Click to claim your reward: {{claimUrl}}`,
+        email_subject:    `You've earned a reward from ${name}!`,
+        referral_trigger: "completed their first appointment",
+      };
+    default:
+      return {
+        sms:              `Hi {{firstName}}, your referred patient completed their first visit at ${name}! Click to claim your reward: {{claimUrl}}`,
+        email_subject:    `You've earned a reward from ${name}!`,
+        referral_trigger: "completed their first visit",
+      };
+  }
+}
+
+function resolveSmsBody(template: string, vars: Record<string, string>): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? "");
+}
 
 function getTwilioClient() {
   if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
@@ -39,10 +78,12 @@ export async function sendRewardNotification(
   const practice = await getPracticeConfig(practiceId ?? null);
   const fromPhone = resolveTwilioPhone(practice);
   const fromEmail = resolveSendGridFrom(practice);
+  const copy = getNotificationCopy(practice);
 
   const claimUrl = `${APP_URL}/claim?token=${claimToken}`;
   logger.info({ claimToken, claimUrl }, "sendRewardNotification — claim URL being sent");
-  const smsBody = `Hi ${referrerName} 👋 You started a Rippl — ${newPatientName} just completed their visit at ${officeName}. Claim your reward here: ${claimUrl}`;
+  const firstName = referrerName.split(" ")[0] || referrerName;
+  const smsBody = resolveSmsBody(copy.sms, { firstName, claimUrl });
 
   const results: { sms?: string; email?: string; errors: string[] } = { errors: [] };
 
@@ -75,8 +116,8 @@ export async function sendRewardNotification(
       await sg.send({
         to: referrerEmail,
         from: { email: fromEmail.email, name: `${officeName} via Rippl` },
-        subject: `You started a Rippl 🎊`,
-        html: buildEmailHtml(referrerName, newPatientName, claimUrl, officeName, rewardValue),
+        subject: copy.email_subject,
+        html: buildEmailHtml(referrerName, newPatientName, claimUrl, officeName, rewardValue, copy.referral_trigger),
         // No text fallback — HTML only
         trackingSettings: {
           clickTracking: { enable: false, enableText: false },
@@ -96,7 +137,7 @@ export async function sendRewardNotification(
   return results;
 }
 
-function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: string, officeName: string, rewardValue: number = 50): string {
+function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: string, officeName: string, rewardValue: number = 50, referralTrigger = "completed their first visit"): string {
   const practice = officeName;
   const font     = "system-ui,-apple-system,sans-serif";
   const rv       = rewardValue;
@@ -122,7 +163,7 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
           <tr>
             <td align="center" style="padding:36px 40px 28px;background-color:#060e1a;border-bottom:1px solid #1e3352;">
               <p style="margin:0;font-family:${font};font-size:32px;font-weight:700;color:#E0622A;letter-spacing:2px;line-height:1;">Rippl</p>
-              <p style="margin:8px 0 0;font-family:${font};font-size:11px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#64748b;">Hallmark Dental</p>
+              <p style="margin:8px 0 0;font-family:${font};font-size:11px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#64748b;">${escHtml(practice)}</p>
             </td>
           </tr>
 
@@ -132,7 +173,7 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
               <p style="margin:0 0 16px;font-family:${font};font-size:28px;font-weight:700;color:#f8fafc;line-height:1.3;">You started a Rippl &#x1F38A;</p>
               <p style="margin:0;font-family:${font};font-size:16px;color:#94a3b8;line-height:1.7;">
                 Hi <span style="color:#f8fafc;font-weight:700;">${escHtml(referrerName)}</span> &#8212;<br/>
-                <span style="color:#f8fafc;font-weight:700;">${escHtml(newPatientName)}</span> just completed their visit at Hallmark Dental.<br/><br/>
+                <span style="color:#f8fafc;font-weight:700;">${escHtml(newPatientName)}</span> just ${escHtml(referralTrigger)} at ${escHtml(practice)}.<br/><br/>
                 As a thank you for your referral, choose your reward below.
               </p>
             </td>
@@ -249,7 +290,7 @@ function buildEmailHtml(referrerName: string, newPatientName: string, claimUrl: 
           <tr>
             <td align="center" style="padding:24px 40px 28px;background-color:#060e1a;">
               <p style="margin:0;font-family:${font};font-size:12px;color:#475569;line-height:1.7;">
-                Sent with <span style="color:#E0622A;font-weight:700;">Rippl</span> by Hallmark Dental<br/>
+                Sent with <span style="color:#E0622A;font-weight:700;">Rippl</span> by ${escHtml(practice)}<br/>
                 You&#39;re receiving this because you referred a patient to our practice.
               </p>
             </td>

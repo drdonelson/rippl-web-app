@@ -1,5 +1,6 @@
 import { db } from "@workspace/db";
-import { referralEventsTable, referrersTable, officesTable, rewardClaimsTable } from "@workspace/db/schema";
+import { referralEventsTable, referrersTable, officesTable, rewardClaimsTable, practicesTable } from "@workspace/db/schema";
+import type { Practice } from "@workspace/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { sendRewardNotification } from "./notifications";
@@ -756,43 +757,77 @@ export async function syncOpenDental(options?: {
   return result;
 }
 
-/**
- * Loads all active offices from the DB and runs syncOpenDental for each one.
- * Falls back to the legacy single-key mode if no offices are configured.
- */
-export async function syncAllOffices(options?: { force?: boolean }): Promise<SyncResult[]> {
+// ── Vertical-specific pollers ─────────────────────────────────────────────────
+
+/** Poll Open Dental offices for a single dental practice. */
+async function syncDentalPractice(practice: Practice, options?: { force?: boolean }, results: SyncResult[] = []): Promise<void> {
   const offices = await db
     .select()
     .from(officesTable)
-    .where(eq(officesTable.active, true));
+    .where(and(eq(officesTable.active, true), eq(officesTable.practice_id, practice.id)));
 
-  if (offices.length === 0) {
-    // No offices configured — fall back to single-key / env-var mode
-    logger.info("No active offices in DB — falling back to single-key mode");
-    const result = await syncOpenDental(options);
-    return [result];
-  }
-
-  logger.info({ officeCount: offices.length }, "Syncing all active offices");
-
-  const results: SyncResult[] = [];
   for (const office of offices) {
     if (!office.od_url) {
-      logger.warn({ officeId: office.id, officeName: office.name }, "Skipping office — od_url is null (configure it in the DB before this office can sync)");
+      logger.warn({ officeId: office.id, officeName: office.name }, "Skipping dental office — od_url is null");
       continue;
     }
-    logger.info({ officeId: office.id, officeName: office.name }, "Syncing office");
+    logger.info({ officeId: office.id, officeName: office.name }, "Syncing dental office");
     try {
       const result = await syncOpenDental({
         ...options,
-        office: { id: office.id, name: office.name, customer_key: office.customer_key, od_url: office.od_url },
+        office: { id: office.id, name: office.name, customer_key: office.customer_key ?? "", od_url: office.od_url },
       });
       results.push(result);
       await db.update(officesTable).set({ last_poll_at: new Date() }).where(eq(officesTable.id, office.id));
     } catch (err) {
-      logger.error({ err, officeId: office.id }, "Error syncing office");
+      logger.error({ err, officeId: office.id }, "Error syncing dental office");
     }
   }
+}
+
+/** Stub — DriveCentric integration pending API access grant. */
+async function pollDriveCentric(practice: Practice): Promise<void> {
+  logger.info(
+    { practiceId: practice.id, practiceName: practice.name },
+    "[DriveCentric] Poll stub — implementation pending API access",
+  );
+}
+
+/**
+ * Loads all active practices, routes each to the correct vertical poller.
+ * Falls back to single-key dental mode if no practices are configured.
+ */
+export async function syncAllOffices(options?: { force?: boolean }): Promise<SyncResult[]> {
+  const practices = await db
+    .select()
+    .from(practicesTable)
+    .where(eq(practicesTable.status, "active"));
+
+  if (practices.length === 0) {
+    logger.info("No active practices in DB — falling back to single-key dental mode");
+    return [await syncOpenDental(options)];
+  }
+
+  logger.info({ practiceCount: practices.length }, "Syncing all active practices");
+
+  const results: SyncResult[] = [];
+
+  for (const practice of practices) {
+    switch (practice.vertical) {
+      case "dental":
+        await syncDentalPractice(practice, options, results);
+        break;
+      case "automotive":
+        await pollDriveCentric(practice);
+        break;
+      case "salon":
+        logger.info({ practiceId: practice.id }, "Salon practice uses webhooks — skipping poll");
+        break;
+      default:
+        logger.info({ practiceId: practice.id, vertical: practice.vertical }, "Unknown vertical — skipping poll");
+    }
+  }
+
   return results;
 }
 

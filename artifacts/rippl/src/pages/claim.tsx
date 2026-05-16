@@ -53,6 +53,16 @@ interface ClaimData {
     category: string;
     address: string | null;
   } | null;
+  practice: {
+    name: string | null;
+    vertical: string | null;
+    white_label_name: string | null;
+    white_label_logo_url: string | null;
+    white_label_primary_color: string | null;
+    show_powered_by_rippl: boolean | null;
+    in_house_credit_label: string | null;
+    in_house_credit_value: number | null;
+  } | null;
 }
 
 interface ClaimResult {
@@ -118,6 +128,7 @@ function RewardCard({
   title,
   subtitle,
   detail,
+  accentColor = "#E0622A",
   children,
 }: {
   isSelected: boolean;
@@ -129,18 +140,20 @@ function RewardCard({
   title: string;
   subtitle: string;
   detail: string;
+  accentColor?: string;
   children?: React.ReactNode;
 }) {
   return (
     <div className={cn("relative", badge && "mt-5")}>
-      {/* Badge floats above the card border */}
       {badge && (
         <span className={cn(
           "absolute -top-3 right-4 z-10 text-[10px] font-bold uppercase tracking-wider px-2.5 py-[5px] rounded-full leading-none pointer-events-none",
           badgeColor === "amber"
             ? "bg-amber-100 text-amber-700 border border-amber-200"
-            : "bg-orange-100 text-[#E0622A] border border-orange-200",
-        )}>
+            : "bg-orange-100 border border-orange-200",
+        )}
+          style={badgeColor !== "amber" ? { color: accentColor } : undefined}
+        >
           {badge}
         </span>
       )}
@@ -152,29 +165,32 @@ function RewardCard({
           "w-full text-left rounded-2xl p-4 border transition-all duration-200 relative overflow-hidden",
           "disabled:cursor-not-allowed",
           isSelected
-            ? "bg-orange-50 border-[#E0622A] shadow-lg shadow-[#E0622A]/10"
+            ? "bg-orange-50"
             : "bg-white border-slate-200 hover:border-slate-300 active:scale-[0.99]",
         )}
+        style={isSelected ? { borderColor: accentColor, boxShadow: `0 10px 15px -3px ${accentColor}1a` } : undefined}
       >
         <div className="flex items-start gap-4 pr-16">
-          <div className={cn(
-            "w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 mt-0.5",
-            isSelected ? "bg-orange-100" : "bg-slate-100",
-          )}>
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 mt-0.5"
+            style={{ backgroundColor: isSelected ? `${accentColor}1a` : "#f1f5f9" }}
+          >
             {icon}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-base font-bold text-slate-900 leading-tight">{title}</p>
-            <p className="text-[#E0622A] text-sm font-medium mt-0.5">{subtitle}</p>
+            <p className="text-sm font-medium mt-0.5" style={{ color: accentColor }}>{subtitle}</p>
             <p className="text-slate-500 text-xs mt-1 leading-relaxed">{detail}</p>
             {children}
           </div>
         </div>
 
-        <div className={cn(
-          "absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 mt-3",
-          isSelected ? "bg-[#E0622A] border-[#E0622A]" : "border-slate-300",
-        )}>
+        <div
+          className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 mt-3"
+          style={isSelected
+            ? { backgroundColor: accentColor, borderColor: accentColor }
+            : { borderColor: "#cbd5e1" }}
+        >
           {isSelected && (
             <svg viewBox="0 0 20 20" fill="white" className="w-full h-full p-0.5">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -347,29 +363,31 @@ export default function Claim() {
 
   if (!claimData) return null;
 
-  const { referrer, referral, localPartner, claim } = claimData;
+  const { referrer, referral, localPartner, claim, practice } = claimData;
   const rawFirst    = referrer.name.split(" ")[0] ?? referrer.name;
   const firstName   = (!rawFirst || rawFirst === "###") ? "there" : rawFirst;
   const rewardValue = claim.reward_value;
-  const OFFICE_NAMES: Record<string, string> = {
-    brentwood:  "Hallmark Dental – Brentwood",
-    lewisburg:  "Hallmark Dental – Lewisburg",
-    greenbrier: "Hallmark Dental – Greenbrier",
-  };
-  const office = OFFICE_NAMES[referral?.office ?? ""] ?? referral?.office ?? "Hallmark Dental";
+  // Practice branding
+  const rawAccent   = practice?.white_label_primary_color;
+  const accentColor = rawAccent ? `#${rawAccent.replace(/^#/, "")}` : "#E0622A";
+  const brandName   = practice?.white_label_name ?? practice?.name ?? "Rippl";
+  const brandLogoUrl = practice?.white_label_logo_url ?? referral?.office_logo_url ?? null;
+  const showPoweredBy = practice?.show_powered_by_rippl !== false;
+  const creditLabel = practice?.in_house_credit_label ?? "$100 Dental Account Credit";
+  const creditValue = practice?.in_house_credit_value ?? 100;
 
   // ── Success ───────────────────────────────────────────────────────────────
   if (phase === "success" && result) {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(135deg, #F5A623 0%, #E8842A 100%)" }}>
+      <div className="min-h-screen flex flex-col" style={{ background: `linear-gradient(135deg, ${accentColor}bb 0%, ${accentColor} 100%)` }}>
         {/* Hero */}
         <div className="px-5 pt-10 pb-20 text-white text-center">
           <div className="flex items-center justify-center gap-2 mb-8">
-            {claimData?.referral?.office_logo_url ? (
-              <img src={claimData.referral.office_logo_url} alt="Practice logo" className="h-8 max-w-[120px] object-contain brightness-0 invert" />
+            {brandLogoUrl ? (
+              <img src={brandLogoUrl} alt={brandName} className="h-8 max-w-[120px] object-contain brightness-0 invert" />
             ) : (
               <span className="font-display font-bold text-2xl">
-                <span className="text-white/70">rip</span><span className="text-white">pl</span>
+                <span className="text-white/70">{brandName.slice(0, -2)}</span><span className="text-white">{brandName.slice(-2)}</span>
               </span>
             )}
           </div>
@@ -411,7 +429,7 @@ export default function Claim() {
               <>
                 <p className="text-slate-900 font-semibold mb-1">🦷 Credit incoming!</p>
                 <p className="text-slate-500 text-sm">
-                  Your $100 dental credit will be applied to your account within 24 hours. You'll see it at your next appointment.
+                  Your {creditLabel} will be applied to your account within 24 hours. You'll see it at your next appointment.
                 </p>
               </>
             ) : (
@@ -433,7 +451,8 @@ export default function Claim() {
           {/* Share CTAs */}
           <button
             onClick={handleShare}
-            className="w-full py-3.5 rounded-2xl font-semibold text-sm transition-all mb-2 bg-[#E0622A] text-white hover:bg-[#C9551E]"
+            className="w-full py-3.5 rounded-2xl font-semibold text-sm transition-all mb-2 text-white"
+            style={{ backgroundColor: accentColor }}
           >
             📤 Share with a friend
           </button>
@@ -442,12 +461,18 @@ export default function Claim() {
             className={cn(
               "w-full py-2.5 rounded-2xl font-semibold text-sm transition-all",
               copied
-                ? "bg-orange-50 border border-orange-200 text-[#E0622A]"
+                ? "bg-orange-50 border border-orange-200"
                 : "bg-white border border-slate-200 text-slate-500 hover:text-slate-700 hover:border-slate-300",
             )}
+            style={copied ? { color: accentColor } : undefined}
           >
             {copied ? "✓ Link Copied!" : "Or copy referral link"}
           </button>
+          {showPoweredBy && (
+            <p className="text-center text-xs text-slate-400 mt-4">
+              Powered by <span className="font-semibold" style={{ color: accentColor }}>Rippl</span>
+            </p>
+          )}
         </div>
       </div>
     );
@@ -458,7 +483,7 @@ export default function Claim() {
     const labels: Record<RewardType, { icon: string; name: string; value: string; detail: string }> = {
       "gift-card":       { icon: "🎁", name: `${brand} Gift Card`, value: `$${rewardValue}`, detail: "Delivered to your email" },
       "local-partner":   { icon: "🏪", name: localPartner?.business_name ?? "Local Partner", value: `$${rewardValue}`, detail: "Show PIN in store to redeem" },
-      "in-house-credit": { icon: "🦷", name: "Dental Account Credit", value: "$100", detail: "Applied within 24 hours" },
+      "in-house-credit": { icon: "🦷", name: creditLabel, value: `$${creditValue}`, detail: "Applied within 24 hours" },
       "charity":         { icon: "❤️", name: "Charitable Donation", value: `$${rewardValue}`, detail: "Confirmation email sent to you" },
     };
     const lbl = labels[selected];
@@ -504,7 +529,8 @@ export default function Claim() {
             <button
               onClick={handleConfirm}
               disabled={isSubmitting}
-              className="w-full py-4 rounded-2xl bg-[#E0622A] hover:bg-[#C9551E] text-white font-bold text-base transition-all shadow-lg shadow-[#E0622A]/25 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-3"
+              className="w-full py-4 rounded-2xl text-white font-bold text-base transition-all shadow-lg disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-3"
+              style={{ backgroundColor: accentColor }}
             >
               {isSubmitting ? (
                 <><Loader2 className="w-5 h-5 animate-spin" /> Claiming…</>
@@ -528,17 +554,17 @@ export default function Claim() {
 
   // ── Selecting ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(135deg, #F5A623 0%, #E8842A 100%)" }}>
+    <div className="min-h-screen flex flex-col" style={{ background: `linear-gradient(135deg, ${accentColor}bb 0%, ${accentColor} 100%)` }}>
 
       {/* Gradient hero */}
       <div className="px-5 pt-10 pb-24 text-white text-center">
-        {/* Logo / office */}
+        {/* Logo / brand */}
         <div className="flex items-center justify-center gap-2 mb-8">
-          {referral?.office_logo_url ? (
-            <img src={referral.office_logo_url} alt="Practice logo" className="h-8 max-w-[120px] object-contain brightness-0 invert" />
+          {brandLogoUrl ? (
+            <img src={brandLogoUrl} alt={brandName} className="h-8 max-w-[120px] object-contain brightness-0 invert" />
           ) : (
             <span className="font-display font-bold text-xl">
-              <span className="text-white/70">rip</span><span className="text-white">pl</span>
+              <span className="text-white/70">{brandName.slice(0, -2)}</span><span className="text-white">{brandName.slice(-2)}</span>
             </span>
           )}
         </div>
@@ -578,9 +604,10 @@ export default function Claim() {
             badge="Most Valuable"
             badgeColor="amber"
             icon="🦷"
-            title="$100 Dental Account Credit"
-            subtitle="Applied to your account within 24 hours"
-            detail="Worth the most — use it toward any future treatment"
+            title={creditLabel}
+            subtitle={`Applied to your account within 24 hours`}
+            detail={`Worth the most — use it toward any future treatment`}
+            accentColor={accentColor}
           />
 
           {/* Gift card */}
@@ -593,6 +620,7 @@ export default function Claim() {
             title={`$${rewardValue} Gift Card`}
             subtitle="Delivered instantly to your email"
             detail="No account needed · Choose your brand below"
+            accentColor={accentColor}
           >
             <AnimatePresence>
               {selected === "gift-card" && (
@@ -611,9 +639,10 @@ export default function Claim() {
                         className={cn(
                           "py-1.5 px-2 rounded-lg text-xs font-semibold transition-all border",
                           brand === b
-                            ? "bg-[#E0622A] border-[#E0622A] text-white"
+                            ? "text-white"
                             : "bg-white border-slate-200 text-slate-700 hover:border-slate-300",
                         )}
+                        style={brand === b ? { backgroundColor: accentColor, borderColor: accentColor } : undefined}
                       >
                         {b}
                       </button>
@@ -635,6 +664,7 @@ export default function Claim() {
               detail={localPartner.address
                 ? `Show your PIN in store · ${localPartner.address}`
                 : "Show your PIN in store to redeem"}
+              accentColor={accentColor}
             />
           )}
 
@@ -646,6 +676,7 @@ export default function Claim() {
             title={`Donate $${rewardValue} to Charity`}
             subtitle="In your name"
             detail="We'll make a donation and send you a confirmation email"
+            accentColor={accentColor}
           />
         </div>
 
@@ -660,12 +691,13 @@ export default function Claim() {
             >
               <button
                 onClick={() => setPhase("confirming")}
-                className="w-full py-4 rounded-2xl bg-[#E0622A] hover:bg-[#C9551E] text-white font-bold text-base transition-all shadow-lg shadow-[#E0622A]/25"
+                className="w-full py-4 rounded-2xl text-white font-bold text-base transition-all shadow-lg"
+                style={{ backgroundColor: accentColor }}
               >
                 Continue with {
                   selected === "gift-card" ? `${brand} Gift Card` :
                   selected === "local-partner" ? localPartner?.business_name ?? "Local Partner" :
-                  selected === "in-house-credit" ? "Dental Credit" :
+                  selected === "in-house-credit" ? creditLabel :
                   "Charity Donation"
                 } →
               </button>
@@ -676,6 +708,11 @@ export default function Claim() {
         <p className="text-center text-xs text-slate-400 mt-5">
           By claiming, you agree to Rippl's referral program terms.
         </p>
+        {showPoweredBy && (
+          <p className="text-center text-xs text-slate-300 mt-3">
+            Powered by <span className="font-semibold" style={{ color: accentColor }}>Rippl</span>
+          </p>
+        )}
       </div>
     </div>
   );

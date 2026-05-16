@@ -101,20 +101,31 @@ router.patch("/:id", requireAuth, requireSuperAdmin, async (req, res) => {
     name, status, plan, monthly_fee, per_referral_fee,
     reward_value, twilio_phone_number, sendgrid_from_email,
     sendgrid_from_name, tango_email_template_id, primary_color,
-  } = req.body as Record<string, string | number | undefined | null>;
+    vertical, integration_config,
+    white_label_name, white_label_logo_url, white_label_primary_color, show_powered_by_rippl,
+    in_house_credit_label, in_house_credit_value,
+  } = req.body as Record<string, string | number | boolean | undefined | null>;
 
   const updates: Partial<typeof practicesTable.$inferInsert> = {};
-  if (name                    !== undefined) updates.name                    = String(name);
-  if (status                  !== undefined) updates.status                  = String(status);
-  if (plan                    !== undefined) updates.plan                    = String(plan);
-  if (monthly_fee             !== undefined) updates.monthly_fee             = Number(monthly_fee);
-  if (per_referral_fee        !== undefined) updates.per_referral_fee        = Number(per_referral_fee);
-  if (reward_value            !== undefined) updates.reward_value            = Number(reward_value);
-  if (twilio_phone_number     !== undefined) updates.twilio_phone_number     = twilio_phone_number ? String(twilio_phone_number) : null;
-  if (sendgrid_from_email     !== undefined) updates.sendgrid_from_email     = sendgrid_from_email ? String(sendgrid_from_email) : null;
-  if (sendgrid_from_name      !== undefined) updates.sendgrid_from_name      = sendgrid_from_name ? String(sendgrid_from_name) : null;
-  if (tango_email_template_id !== undefined) updates.tango_email_template_id = tango_email_template_id ? String(tango_email_template_id) : null;
-  if (primary_color           !== undefined) updates.primary_color           = primary_color ? String(primary_color).replace("#", "") : "E0622A";
+  if (name                      !== undefined) updates.name                      = String(name);
+  if (status                    !== undefined) updates.status                    = String(status);
+  if (plan                      !== undefined) updates.plan                      = String(plan);
+  if (vertical                  !== undefined) updates.vertical                  = String(vertical);
+  if (monthly_fee               !== undefined) updates.monthly_fee               = Number(monthly_fee);
+  if (per_referral_fee          !== undefined) updates.per_referral_fee          = Number(per_referral_fee);
+  if (reward_value              !== undefined) updates.reward_value              = Number(reward_value);
+  if (twilio_phone_number       !== undefined) updates.twilio_phone_number       = twilio_phone_number ? String(twilio_phone_number) : null;
+  if (sendgrid_from_email       !== undefined) updates.sendgrid_from_email       = sendgrid_from_email ? String(sendgrid_from_email) : null;
+  if (sendgrid_from_name        !== undefined) updates.sendgrid_from_name        = sendgrid_from_name ? String(sendgrid_from_name) : null;
+  if (tango_email_template_id   !== undefined) updates.tango_email_template_id   = tango_email_template_id ? String(tango_email_template_id) : null;
+  if (primary_color             !== undefined) updates.primary_color             = primary_color ? String(primary_color).replace("#", "") : "E0622A";
+  if (integration_config        !== undefined) updates.integration_config        = integration_config as Record<string, string>;
+  if (white_label_name          !== undefined) updates.white_label_name          = white_label_name ? String(white_label_name) : null;
+  if (white_label_logo_url      !== undefined) updates.white_label_logo_url      = white_label_logo_url ? String(white_label_logo_url) : null;
+  if (white_label_primary_color !== undefined) updates.white_label_primary_color = white_label_primary_color ? String(white_label_primary_color).replace("#", "") : null;
+  if (show_powered_by_rippl     !== undefined) updates.show_powered_by_rippl     = Boolean(show_powered_by_rippl);
+  if (in_house_credit_label     !== undefined) updates.in_house_credit_label     = in_house_credit_label ? String(in_house_credit_label) : "$100 Dental Account Credit";
+  if (in_house_credit_value     !== undefined) updates.in_house_credit_value     = Number(in_house_credit_value);
 
   if (Object.keys(updates).length === 0) {
     res.status(400).json({ error: "No fields to update" });

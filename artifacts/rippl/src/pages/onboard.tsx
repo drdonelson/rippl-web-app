@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/auth-context";
 import {
   Loader2, CheckCircle2, ArrowLeft, Building2, UserPlus, Eye, EyeOff,
   Trash2, AlertTriangle, KeyRound, Wifi, WifiOff, Users, ChevronRight,
-  RefreshCw, Sparkles, Copy, Check, ExternalLink,
+  RefreshCw, Sparkles, Copy, Check, ExternalLink, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,14 @@ interface WaitlistLead {
   email: string; phone: string; created_at: string;
 }
 type OdTestResult = { ok: true } | { ok: "reachable" } | { ok: false; error: string } | null;
+type Vertical = "dental" | "automotive" | "salon" | "other";
+
+const VERTICALS: { id: Vertical; label: string; icon: string; subtitle: string }[] = [
+  { id: "dental",     label: "Dental",     icon: "🦷", subtitle: "Open Dental" },
+  { id: "automotive", label: "Automotive", icon: "🚗", subtitle: "DriveCentric" },
+  { id: "salon",      label: "Salon",      icon: "💇", subtitle: "Vagaro" },
+  { id: "other",      label: "Other",      icon: "⚡", subtitle: "Manual trigger" },
+];
 
 // ── Shared input styles ────────────────────────────────────────────────────────
 
@@ -204,8 +212,21 @@ export default function Onboard() {
   // ── Practice form ─────────────────────────────────────────────────────────
   const [practiceForm, setPracticeForm] = useState({
     practice_name: "", doctor_name: "", email: "", password: "",
+    vertical: "dental" as Vertical,
+    // Dental (Open Dental)
     customer_key: "", location_code: "", od_url: "",
+    // Automotive (DriveCentric)
+    drivecentic_api_key: "", dealer_id: "", lead_source_tag: "",
+    // Salon (Vagaro)
+    vagaro_business_id: "", vagaro_api_key: "",
+    // White label
+    white_label_enabled: false,
+    white_label_name: "", white_label_logo_url: "", white_label_primary_color: "",
+    show_powered_by_rippl: true,
+    // In-house credit
+    in_house_credit_label: "", in_house_credit_value: "",
   });
+  const [whiteLabelExpanded, setWhiteLabelExpanded] = useState(false);
   const [agreementChecked, setAgreementChecked] = useState(false);
   const [practiceSubmitting, setPracticeSubmitting] = useState(false);
   const [practiceError, setPracticeError] = useState<string | null>(null);
@@ -221,7 +242,6 @@ export default function Onboard() {
   const [staffForm, setStaffForm] = useState({
     full_name: "", email: "", password: "", office_id: "",
   });
-  const [showPassword, setShowPassword] = useState(false);
   const [staffSubmitting, setStaffSubmitting] = useState(false);
   const [staffError, setStaffError] = useState<string | null>(null);
   const [staffSuccessEmail, setStaffSuccessEmail] = useState<string | null>(null);
@@ -315,23 +335,45 @@ export default function Onboard() {
 
   const handlePracticeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!practiceForm.od_url.trim()) { setPracticeError("Open Dental Server URL is required."); return; }
+    const pf = practiceForm;
+    if (pf.vertical === "dental" && !pf.od_url.trim()) { setPracticeError("Open Dental Server URL is required for dental practices."); return; }
     if (!agreementChecked) { setPracticeError("Accept the pricing terms to continue."); return; }
     setPracticeError(null);
     setPracticeSubmitting(true);
+
+    const integration_config: Record<string, string> =
+      pf.vertical === "automotive" ? { drivecentic_api_key: pf.drivecentic_api_key, dealer_id: pf.dealer_id, lead_source_tag: pf.lead_source_tag } :
+      pf.vertical === "salon"      ? { vagaro_business_id: pf.vagaro_business_id, vagaro_api_key: pf.vagaro_api_key } :
+      {};
+
+    const body = {
+      practice_name: pf.practice_name, doctor_name: pf.doctor_name,
+      email: pf.email, password: pf.password,
+      vertical: pf.vertical, location_code: pf.location_code,
+      customer_key: pf.vertical === "dental" ? pf.customer_key : undefined,
+      od_url: pf.vertical === "dental" ? pf.od_url : undefined,
+      integration_config,
+      white_label_name: pf.white_label_enabled && pf.white_label_name ? pf.white_label_name : undefined,
+      white_label_logo_url: pf.white_label_enabled && pf.white_label_logo_url ? pf.white_label_logo_url : undefined,
+      white_label_primary_color: pf.white_label_enabled && pf.white_label_primary_color ? pf.white_label_primary_color.replace(/^#/, "") : undefined,
+      show_powered_by_rippl: pf.show_powered_by_rippl,
+      in_house_credit_label: pf.in_house_credit_label || undefined,
+      in_house_credit_value: pf.in_house_credit_value ? parseInt(pf.in_house_credit_value, 10) : undefined,
+    };
+
     try {
       const res = await fetch(`${BASE}/api/auth/onboard`, {
-        method: "POST", headers: authHeaders(), body: JSON.stringify(practiceForm),
+        method: "POST", headers: authHeaders(), body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) {
         setPracticeError(data.error || "Failed to create practice account.");
       } else {
         setPracticeSuccess(true);
-        setPracticeSuccessEmail(practiceForm.email);
-        setPracticeSuccessName(practiceForm.practice_name);
+        setPracticeSuccessEmail(pf.email);
+        setPracticeSuccessName(pf.practice_name);
         setNewOfficeId(data.office_id ?? null);
-        fetchOffices(); // refresh the offices list for the staff tab
+        fetchOffices();
       }
     } catch {
       setPracticeError("Network error. Please try again.");
@@ -349,9 +391,18 @@ export default function Onboard() {
     setPracticeSuccessEmail(null);
     setPracticeSuccessName(null);
     setNewOfficeId(null);
-    setPracticeForm({ practice_name: "", doctor_name: "", email: "", password: "", customer_key: "", location_code: "", od_url: "" });
+    setPracticeForm({
+      practice_name: "", doctor_name: "", email: "", password: "",
+      vertical: "dental", customer_key: "", location_code: "", od_url: "",
+      drivecentic_api_key: "", dealer_id: "", lead_source_tag: "",
+      vagaro_business_id: "", vagaro_api_key: "",
+      white_label_enabled: false, white_label_name: "", white_label_logo_url: "",
+      white_label_primary_color: "", show_powered_by_rippl: true,
+      in_house_credit_label: "", in_house_credit_value: "",
+    });
     setAgreementChecked(false);
     setOdTestResult(null);
+    setWhiteLabelExpanded(false);
   };
 
   const handleStaffSubmit = async (e: React.FormEvent) => {
@@ -411,8 +462,13 @@ export default function Onboard() {
   const derivedRole    = selectedOffice ? `staff_${selectedOffice.location_code}` : null;
 
   const pf = practiceForm;
-  const setPf = (field: keyof typeof practiceForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
+  const setPf = (field: keyof typeof practiceForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setPracticeForm(f => ({ ...f, [field]: e.target.value }));
+
+  const integrationLabel = pf.vertical === "dental" ? "Open Dental Setup"
+    : pf.vertical === "automotive" ? "DriveCentric Setup"
+    : pf.vertical === "salon"      ? "Vagaro Setup"
+    : "Integration";
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -480,7 +536,7 @@ export default function Onboard() {
           ) : (
             <form onSubmit={handlePracticeSubmit} className="space-y-4">
 
-              {/* Two-column layout */}
+              {/* ── Section 1+2 grid: Identity + Integration ── */}
               <div className="grid md:grid-cols-2 gap-4">
 
                 {/* Left: Identity */}
@@ -497,7 +553,7 @@ export default function Onboard() {
                       placeholder="Sunrise Dental – Nashville" className={inputClass} />
                   </Field>
 
-                  <Field label="Doctor Name" required>
+                  <Field label="Doctor / Owner Name" required>
                     <input value={pf.doctor_name} onChange={setPf("doctor_name")} required
                       placeholder="Dr. Jane Smith" className={inputClass} />
                   </Field>
@@ -512,18 +568,42 @@ export default function Onboard() {
                   </Field>
                 </div>
 
-                {/* Right: Technical */}
+                {/* Right: Vertical + Integration */}
                 <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
                   <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
                     <div className="w-5 h-5 rounded-md bg-[#E0622A]/10 flex items-center justify-center">
                       <span className="text-[#E0622A] font-bold text-[10px]">2</span>
                     </div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Open Dental Setup</p>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{integrationLabel}</p>
                   </div>
 
+                  {/* Vertical selector */}
+                  <Field label="Business Type" required>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {VERTICALS.map(v => (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => { setPracticeForm(f => ({ ...f, vertical: v.id })); setOdTestResult(null); }}
+                          className={cn(
+                            "flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl border text-center transition-all text-xs font-medium",
+                            pf.vertical === v.id
+                              ? "bg-[#E0622A]/5 border-[#E0622A] text-[#E0622A]"
+                              : "bg-white border-slate-200 text-slate-500 hover:border-slate-300",
+                          )}
+                        >
+                          <span className="text-base leading-none">{v.icon}</span>
+                          <span className="font-semibold">{v.label}</span>
+                          <span className={cn("text-[10px]", pf.vertical === v.id ? "text-[#E0622A]/70" : "text-slate-400")}>{v.subtitle}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </Field>
+
+                  {/* Location code — always shown */}
                   <Field
                     label="Location Code" required
-                    hint={pf.location_code ? `Staff role prefix: staff_${pf.location_code}` : "Lowercase, no spaces — e.g. springfield"}
+                    hint={pf.location_code ? `Staff role: staff_${pf.location_code}` : "Lowercase, no spaces — e.g. springfield"}
                   >
                     <input
                       value={pf.location_code}
@@ -532,52 +612,179 @@ export default function Onboard() {
                     />
                   </Field>
 
-                  <Field label="Customer Key" required hint="16-character key from Open Dental eConnector">
-                    <input value={pf.customer_key} onChange={e => { setPracticeForm(f => ({ ...f, customer_key: e.target.value })); setOdTestResult(null); }}
-                      required placeholder="XXXXXXXXXXXXXXXX" className={cn(inputClass, "font-mono text-xs tracking-widest")} />
-                  </Field>
-
-                  <Field label="Server URL" required>
-                    <div className="space-y-2">
-                      <div className="flex gap-1.5">
-                        <input
-                          value={pf.od_url}
-                          onChange={e => { setPracticeForm(f => ({ ...f, od_url: e.target.value })); setOdTestResult(null); }}
-                          required placeholder="https://od.theirpractice.com"
-                          className={cn(inputClass, "flex-1")}
-                        />
-                        <button
-                          type="button"
-                          onClick={handleTestOd}
-                          disabled={odTesting || !pf.od_url || !pf.customer_key}
-                          className="shrink-0 flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 text-slate-500 hover:border-[#E0622A]/50 hover:text-[#E0622A] text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          {odTesting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wifi className="w-3.5 h-3.5" />}
-                          Test
-                        </button>
-                      </div>
-                      {odTestResult !== null && (
-                        <div className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium",
-                          odTestResult.ok === true    && "bg-emerald-50 border-emerald-200 text-emerald-700",
-                          odTestResult.ok === "reachable" && "bg-amber-50 border-amber-200 text-amber-700",
-                          odTestResult.ok === false   && "bg-red-50 border-red-200 text-red-600",
-                        )}>
-                          {odTestResult.ok === true       && <><div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Connected — credentials verified</>}
-                          {odTestResult.ok === "reachable" && <><Wifi className="w-3.5 h-3.5 shrink-0" /> Server reachable — verify customer key</>}
-                          {odTestResult.ok === false       && <><WifiOff className="w-3.5 h-3.5 shrink-0" /> {(odTestResult as { ok: false; error: string }).error}</>}
+                  {/* Dental fields */}
+                  {pf.vertical === "dental" && (<>
+                    <Field label="Customer Key" required hint="16-character key from Open Dental eConnector">
+                      <input value={pf.customer_key} onChange={e => { setPracticeForm(f => ({ ...f, customer_key: e.target.value })); setOdTestResult(null); }}
+                        required placeholder="XXXXXXXXXXXXXXXX" className={cn(inputClass, "font-mono text-xs tracking-widest")} />
+                    </Field>
+                    <Field label="Server URL" required>
+                      <div className="space-y-2">
+                        <div className="flex gap-1.5">
+                          <input
+                            value={pf.od_url}
+                            onChange={e => { setPracticeForm(f => ({ ...f, od_url: e.target.value })); setOdTestResult(null); }}
+                            required placeholder="https://od.theirpractice.com"
+                            className={cn(inputClass, "flex-1")}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleTestOd}
+                            disabled={odTesting || !pf.od_url || !pf.customer_key}
+                            className="shrink-0 flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 text-slate-500 hover:border-[#E0622A]/50 hover:text-[#E0622A] text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            {odTesting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wifi className="w-3.5 h-3.5" />}
+                            Test
+                          </button>
                         </div>
-                      )}
+                        {odTestResult !== null && (
+                          <div className={cn(
+                            "flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium",
+                            odTestResult.ok === true        && "bg-emerald-50 border-emerald-200 text-emerald-700",
+                            odTestResult.ok === "reachable" && "bg-amber-50 border-amber-200 text-amber-700",
+                            odTestResult.ok === false        && "bg-red-50 border-red-200 text-red-600",
+                          )}>
+                            {odTestResult.ok === true        && <><div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Connected — credentials verified</>}
+                            {odTestResult.ok === "reachable" && <><Wifi className="w-3.5 h-3.5 shrink-0" /> Server reachable — verify customer key</>}
+                            {odTestResult.ok === false        && <><WifiOff className="w-3.5 h-3.5 shrink-0" /> {(odTestResult as { ok: false; error: string }).error}</>}
+                          </div>
+                        )}
+                      </div>
+                    </Field>
+                  </>)}
+
+                  {/* Automotive fields */}
+                  {pf.vertical === "automotive" && (<>
+                    <Field label="DriveCentric API Key" hint="From DriveCentric partner portal">
+                      <input value={pf.drivecentic_api_key} onChange={setPf("drivecentic_api_key")}
+                        placeholder="dc_live_..." className={cn(inputClass, "font-mono text-xs")} />
+                    </Field>
+                    <Field label="Dealer ID" hint="DriveCentric dealer identifier">
+                      <input value={pf.dealer_id} onChange={setPf("dealer_id")}
+                        placeholder="dealer_12345" className={inputClass} />
+                    </Field>
+                    <Field label="Lead Source Tag" hint="Tag used to filter Rippl referrals (e.g. 'rippl')">
+                      <input value={pf.lead_source_tag} onChange={setPf("lead_source_tag")}
+                        placeholder="rippl" className={inputClass} />
+                    </Field>
+                  </>)}
+
+                  {/* Salon fields */}
+                  {pf.vertical === "salon" && (<>
+                    <Field label="Vagaro Business ID" hint="From Vagaro Developer Dashboard">
+                      <input value={pf.vagaro_business_id} onChange={setPf("vagaro_business_id")}
+                        placeholder="your-salon" className={inputClass} />
+                    </Field>
+                    <Field label="Vagaro API Key" hint="Partner API key for appointment webhooks">
+                      <input value={pf.vagaro_api_key} onChange={setPf("vagaro_api_key")}
+                        placeholder="vg_..." className={cn(inputClass, "font-mono text-xs")} />
+                    </Field>
+                  </>)}
+
+                  {/* Other / manual */}
+                  {pf.vertical === "other" && (
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1.5">
+                      <p className="text-xs font-semibold text-slate-500">Webhook trigger URL</p>
+                      <p className="text-xs text-slate-400 leading-relaxed">
+                        After creation, you'll receive a manual trigger endpoint at:
+                      </p>
+                      <code className="block text-[11px] font-mono bg-white border border-slate-200 rounded-lg px-2.5 py-2 text-slate-600 break-all">
+                        POST /api/webhooks/manual/&#123;officeId&#125;
+                      </code>
                     </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Section 3: White Label ── */}
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setWhiteLabelExpanded(v => !v)}
+                  className="w-full flex items-center gap-2 px-5 py-4 text-left hover:bg-slate-50/50 transition-colors"
+                >
+                  <div className="w-5 h-5 rounded-md bg-[#E0622A]/10 flex items-center justify-center shrink-0">
+                    <span className="text-[#E0622A] font-bold text-[10px]">3</span>
+                  </div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex-1">White Label Branding</p>
+                  <span className="text-[10px] text-slate-400 mr-2">optional</span>
+                  {whiteLabelExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                </button>
+
+                {whiteLabelExpanded && (
+                  <div className="px-5 pb-5 space-y-4 border-t border-slate-100 pt-4">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox" checked={pf.white_label_enabled}
+                        onChange={e => setPracticeForm(f => ({ ...f, white_label_enabled: e.target.checked }))}
+                        className="h-4 w-4 rounded border-slate-300 text-[#E0622A] focus:ring-[#E0622A]/30 shrink-0"
+                      />
+                      <span className="text-sm text-slate-700">Enable white label — hide Rippl branding for this practice</span>
+                    </label>
+
+                    {pf.white_label_enabled && (
+                      <div className="space-y-4 pt-1">
+                        <Field label="Brand Name" hint="Shown instead of 'Rippl' on the claim page">
+                          <input value={pf.white_label_name} onChange={setPf("white_label_name")}
+                            placeholder="Sunrise Rewards" className={inputClass} />
+                        </Field>
+                        <Field label="Logo URL" hint="HTTPS URL to a PNG/SVG — shown on the claim page header">
+                          <input value={pf.white_label_logo_url} onChange={setPf("white_label_logo_url")}
+                            placeholder="https://cdn.example.com/logo.png" className={inputClass} />
+                        </Field>
+                        <Field label="Primary Color" hint="Hex code for buttons and accents (without #)">
+                          <div className="flex gap-2">
+                            <input value={pf.white_label_primary_color} onChange={setPf("white_label_primary_color")}
+                              placeholder="E0622A" maxLength={7}
+                              className={cn(inputClass, "flex-1 font-mono text-sm")} />
+                            {pf.white_label_primary_color && (
+                              <div
+                                className="w-10 h-10 rounded-lg border border-slate-200 shrink-0"
+                                style={{ backgroundColor: `#${pf.white_label_primary_color.replace(/^#/, "")}` }}
+                              />
+                            )}
+                          </div>
+                        </Field>
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="checkbox" checked={pf.show_powered_by_rippl}
+                            onChange={e => setPracticeForm(f => ({ ...f, show_powered_by_rippl: e.target.checked }))}
+                            className="h-4 w-4 rounded border-slate-300 text-[#E0622A] focus:ring-[#E0622A]/30 shrink-0"
+                          />
+                          <span className="text-sm text-slate-700">Show "Powered by Rippl" on claim page</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Section 4: In-house Credit ── */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+                <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
+                  <div className="w-5 h-5 rounded-md bg-[#E0622A]/10 flex items-center justify-center">
+                    <span className="text-[#E0622A] font-bold text-[10px]">4</span>
+                  </div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex-1">In-house Credit</p>
+                  <span className="text-[10px] text-slate-400">optional — defaults to $100 dental credit</span>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <Field label="Credit Label" hint="e.g. '$50 Service Credit' or '$100 Account Credit'">
+                    <input value={pf.in_house_credit_label} onChange={setPf("in_house_credit_label")}
+                      placeholder="$100 Dental Account Credit" className={inputClass} />
+                  </Field>
+                  <Field label="Credit Value ($)" hint="Dollar amount applied to the account">
+                    <input type="number" value={pf.in_house_credit_value} onChange={setPf("in_house_credit_value")}
+                      placeholder="100" min="1" max="10000" className={inputClass} />
                   </Field>
                 </div>
               </div>
 
-              {/* Agreement */}
+              {/* ── Section 5: Pricing Agreement ── */}
               <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
                 <div className="flex items-center gap-2 pb-3 mb-3 border-b border-slate-100">
                   <div className="w-5 h-5 rounded-md bg-[#E0622A]/10 flex items-center justify-center">
-                    <span className="text-[#E0622A] font-bold text-[10px]">3</span>
+                    <span className="text-[#E0622A] font-bold text-[10px]">5</span>
                   </div>
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Pricing Agreement</p>
                 </div>

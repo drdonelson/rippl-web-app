@@ -15,14 +15,34 @@ const router: IRouter = Router();
 router.get("/profile", getProfileHandler);
 
 // POST /api/auth/onboard — create a new practice admin account (super_admin only)
-// Body: { practice_name, doctor_name, email, password, customer_key, location_code, od_url, practice_id? }
-// If practice_id is provided, the office is linked to that existing practice.
-// If omitted, a new practice record is auto-created with the same name as the office.
+// Body: { practice_name, doctor_name, email, password, location_code, vertical?,
+//         customer_key?, od_url?,           ← dental
+//         integration_config?,              ← automotive / salon / other
+//         white_label_name?, white_label_logo_url?, white_label_primary_color?,
+//         show_powered_by_rippl?,
+//         in_house_credit_label?, in_house_credit_value?,
+//         practice_id? }
+// If practice_id is provided the office is linked to an existing practice.
 router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
-  const { practice_name, doctor_name, email, password, customer_key, location_code, od_url, practice_id: bodyPracticeId } = req.body;
+  const {
+    practice_name, doctor_name, email, password, location_code,
+    vertical = "dental",
+    customer_key, od_url,
+    integration_config,
+    white_label_name, white_label_logo_url, white_label_primary_color,
+    show_powered_by_rippl,
+    in_house_credit_label, in_house_credit_value,
+    practice_id: bodyPracticeId,
+  } = req.body;
 
-  if (!practice_name || !email || !password || !customer_key || !location_code) {
+  const isDental = vertical === "dental";
+
+  if (!practice_name || !email || !password || !location_code) {
     res.status(400).json({ error: "Missing required fields" });
+    return;
+  }
+  if (isDental && !customer_key) {
+    res.status(400).json({ error: "customer_key is required for dental practices" });
     return;
   }
 
@@ -42,9 +62,16 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
       practiceId = existing.id;
     } else {
       const [newPractice] = await db.insert(practicesTable).values({
-        name: practice_name,
-        slug: practice_name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-        vertical: "dental",
+        name:                    practice_name,
+        slug:                    practice_name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        vertical:                String(vertical),
+        integration_config:      integration_config ?? {},
+        white_label_name:        white_label_name ?? null,
+        white_label_logo_url:    white_label_logo_url ?? null,
+        white_label_primary_color: white_label_primary_color ? String(white_label_primary_color).replace("#", "") : undefined,
+        show_powered_by_rippl:   show_powered_by_rippl !== undefined ? Boolean(show_powered_by_rippl) : true,
+        in_house_credit_label:   in_house_credit_label ?? (isDental ? "$100 Dental Account Credit" : "$100 Account Credit"),
+        in_house_credit_value:   in_house_credit_value !== undefined ? Number(in_house_credit_value) : 100,
       }).returning();
       practiceId = newPractice.id;
       createdPracticeId = practiceId;
@@ -52,9 +79,7 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
 
     // 2. Create Supabase auth user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
+      email, password, email_confirm: true,
     });
 
     if (authError || !authData.user) {
@@ -65,33 +90,28 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
 
     userId = authData.user.id;
 
-    // 3. Create office record linked to the practice
+    // 3. Create office record (customer_key nullable for non-dental)
     const [office] = await db.insert(officesTable).values({
       practice_id: practiceId,
-      name: practice_name,
-      customer_key,
+      name:         practice_name,
+      customer_key: isDental ? customer_key : null,
       location_code,
-      od_url: od_url || null,
-      active: true,
+      od_url:       isDental ? (od_url || null) : null,
+      active:       true,
       agreement_accepted_at: new Date(),
     }).returning();
     officeId = office.id;
 
-    // 4. Create user_profile with both practice_id (tenant) and office_id (null = sees all offices in practice)
+    // 4. Create user_profile
     await db.insert(userProfilesTable).values({
-      id: userId,
-      role: "practice_admin",
-      practice_id: practiceId,
-      office_id: null,
+      id: userId, role: "practice_admin",
+      practice_id: practiceId, office_id: null,
       full_name: doctor_name || null,
     });
 
-    // 5. Send welcome email with one-time setup link (non-fatal)
+    // 5. Welcome email (non-fatal)
     try {
-      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-        type: "recovery",
-        email,
-      });
+      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({ type: "recovery", email });
       if (!linkError && linkData?.properties?.action_link && SENDGRID_API_KEY) {
         sgMail.setApiKey(SENDGRID_API_KEY);
         await sgMail.send({
@@ -109,24 +129,12 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
       console.warn("[onboard] Welcome email failed (non-fatal):", emailErr);
     }
 
-    res.status(201).json({ success: true, office_id: office.id });
+    res.status(201).json({ success: true, office_id: office.id, practice_id: practiceId });
   } catch (err) {
     console.error("[onboard] Error:", err);
-    if (userId) {
-      await supabaseAdmin.auth.admin.deleteUser(userId).catch(e =>
-        console.error("[onboard] Failed to clean up orphaned auth user:", e)
-      );
-    }
-    if (officeId) {
-      await db.delete(officesTable).where(eq(officesTable.id, officeId)).catch(e =>
-        console.error("[onboard] Failed to clean up orphaned office:", e)
-      );
-    }
-    if (createdPracticeId) {
-      await db.delete(practicesTable).where(eq(practicesTable.id, createdPracticeId)).catch(e =>
-        console.error("[onboard] Failed to clean up orphaned practice:", e)
-      );
-    }
+    if (userId)           await supabaseAdmin.auth.admin.deleteUser(userId).catch(() => {});
+    if (officeId)         await db.delete(officesTable).where(eq(officesTable.id, officeId)).catch(() => {});
+    if (createdPracticeId) await db.delete(practicesTable).where(eq(practicesTable.id, createdPracticeId)).catch(() => {});
     res.status(500).json({ error: "Failed to create practice admin account" });
   }
 });

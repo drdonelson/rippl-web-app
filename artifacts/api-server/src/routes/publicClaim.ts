@@ -7,6 +7,7 @@ import {
   adminTasksTable,
   localPartnersTable,
   officesTable,
+  practicesTable,
 } from "@workspace/db/schema";
 import { eq, sql, and } from "drizzle-orm";
 import { sendAmazonRewardLink } from "../services/tango";
@@ -65,22 +66,43 @@ router.get("/by-token/:token", async (req, res) => {
   let localPartner = null;
   let officeLogo: string | null = null;
   const officeId = referral?.office_id ?? null;
-  if (officeId) {
-    const [partner, officeRow] = await Promise.all([
-      db.select().from(localPartnersTable)
-        .where(and(eq(localPartnersTable.office_id, officeId), eq(localPartnersTable.active, true)))
-        .limit(1)
-        .then(r => r[0] ?? null),
-      db.select({ logo_url: officesTable.logo_url }).from(officesTable)
-        .where(eq(officesTable.id, officeId))
-        .limit(1)
-        .then(r => r[0] ?? null),
-    ]);
-    localPartner = partner;
-    officeLogo = officeRow?.logo_url ?? null;
-  }
+  const practiceId = claim.practice_id ?? referral?.practice_id ?? null;
 
-  res.json({ claim, referrer, referral: { ...referral, office_logo_url: officeLogo }, localPartner });
+  const [officeData, practiceData] = await Promise.all([
+    officeId
+      ? Promise.all([
+          db.select().from(localPartnersTable)
+            .where(and(eq(localPartnersTable.office_id, officeId), eq(localPartnersTable.active, true)))
+            .limit(1).then(r => r[0] ?? null),
+          db.select({ logo_url: officesTable.logo_url }).from(officesTable)
+            .where(eq(officesTable.id, officeId)).limit(1).then(r => r[0] ?? null),
+        ])
+      : Promise.resolve([null, null]),
+    practiceId
+      ? db.select({
+          name:                    practicesTable.name,
+          vertical:                practicesTable.vertical,
+          white_label_name:        practicesTable.white_label_name,
+          white_label_logo_url:    practicesTable.white_label_logo_url,
+          white_label_primary_color: practicesTable.white_label_primary_color,
+          show_powered_by_rippl:   practicesTable.show_powered_by_rippl,
+          in_house_credit_label:   practicesTable.in_house_credit_label,
+          in_house_credit_value:   practicesTable.in_house_credit_value,
+        })
+        .from(practicesTable).where(eq(practicesTable.id, practiceId)).limit(1)
+        .then(r => r[0] ?? null)
+      : Promise.resolve(null),
+  ]);
+
+  [localPartner, { logo_url: officeLogo } = { logo_url: null }] = officeData as [typeof localPartner, { logo_url: string | null } | null];
+
+  res.json({
+    claim,
+    referrer,
+    referral: { ...referral, office_logo_url: officeLogo },
+    localPartner,
+    practice: practiceData,
+  });
 });
 
 // ── POST /api/claim ───────────────────────────────────────────────────────────
