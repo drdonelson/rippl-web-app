@@ -179,6 +179,10 @@ Patient counts: Brentwood 2,132 · Lewisburg 6,267 · Greenbrier 2,850
 | `/privacy` | Privacy policy |
 | `/terms` | SMS terms |
 | `/patient-journey` | 6-step patient journey demo tool (super_admin + demo only) |
+| `/join/dental` | Marketing landing page for dental practices — hero, how-it-works, pricing, lead gen form |
+| `/join/salon` | Marketing landing page for salon practices — same layout, salon-specific copy |
+| `/join` | Alias for `/join/dental` |
+| `/join-waitlist` | Simple waitlist form (legacy) |
 
 ---
 
@@ -284,4 +288,4 @@ Before making any changes in a new session:
 
 ---
 
-*Last updated: May 2026 — Rippl v1.2: multi-vertical /refer page, vertical-aware Tango templates, Patient Journey demo tool*
+*Last updated: May 2026 — Rippl v1.3: /join/dental + /join/salon marketing pages, desktop-responsive join/onboard/patient-journey, deploy switched to SSH (no PAT needed)*
