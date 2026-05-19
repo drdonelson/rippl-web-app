@@ -21,12 +21,14 @@ import waitlistRouter from "./waitlist";
 import demoRouter from "./demo";
 import backfillRouter from "./backfill";
 import webhooksRouter from "./webhooks";
+import smsOptInRouter from "./smsOptIn";
 import { requireAuth } from "../middleware/auth";
 
 const router: IRouter = Router();
 
 // Always-public routes
 router.use(healthRouter);
+router.use(smsOptInRouter);
 router.use("/webhooks", webhooksRouter);
 router.use("/launch", launchRouter);
 router.use("/auth", authRouter);

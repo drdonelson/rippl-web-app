@@ -52,16 +52,31 @@ export default function Terms() {
           </section>
 
           <section>
+            <h2 className="text-base font-semibold text-slate-900 mb-3">Message Types</h2>
+            <p>
+              Messages sent through the Rippl program may include:
+            </p>
+            <ul className="space-y-2 pl-4 mt-3">
+              {[
+                "Invitations to join the referral rewards program.",
+                "Your personal referral link and reminders to share it.",
+                "Notifications when a referred patient completes their first appointment.",
+                "Instructions to claim your earned gift card reward.",
+              ].map((item, i) => (
+                <li key={i} className="flex gap-2">
+                  <span className="text-[#E0622A] flex-shrink-0 mt-0.5">·</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
             <h2 className="text-base font-semibold text-slate-900 mb-3">Message Frequency</h2>
             <p>
-              Messages are <span className="text-slate-900 font-medium">transactional only</span> — they are sent
-              solely in response to a specific referral event, such as when a referred patient completes their first
-              appointment and your reward becomes available. You will not receive recurring promotional or marketing
-              messages.
-            </p>
-            <p className="mt-3">
-              Message frequency varies based on your referral activity. Most participants receive fewer than one
-              message per month.
+              Message frequency varies based on your referral activity. You will receive no more than{" "}
+              <span className="text-slate-900 font-medium">4 messages per month</span>. Most participants
+              receive fewer.
             </p>
           </section>
 

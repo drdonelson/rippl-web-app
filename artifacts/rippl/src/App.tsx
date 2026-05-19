@@ -37,6 +37,7 @@ const Poster5x7   = lazy(() => import("@/pages/poster-5x7"));
 const Privacy    = lazy(() => import("@/pages/privacy"));
 const Terms      = lazy(() => import("@/pages/terms"));
 const HowItWorks = lazy(() => import("@/pages/how-it-works"));
+const SmsOptIn   = lazy(() => import("@/pages/sms-opt-in"));
 const Practices      = lazy(() => import("@/pages/practices"));
 const PracticeAdmin  = lazy(() => import("@/pages/practice-admin"));
 const PatientJourney = lazy(() => import("@/pages/patient-journey"));
@@ -70,6 +71,7 @@ function Router() {
         <Route path="/privacy" component={Privacy} />
         <Route path="/terms" component={Terms} />
         <Route path="/how-it-works" component={HowItWorks} />
+        <Route path="/sms-opt-in" component={SmsOptIn} />
         <Route path="/practices"      component={Practices}     />
         <Route path="/reset-password" component={ResetPassword} />
 
