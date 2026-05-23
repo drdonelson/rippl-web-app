@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, CheckCircle2, TrendingUp, Users, DollarSign, Zap } from "lucide-react";
+import { ArrowRight, CheckCircle2, TrendingUp, Users, DollarSign, Zap, Plug } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -33,7 +33,7 @@ const HOW_IT_WORKS = [
   },
   {
     title: "Friend completes their first visit",
-    body:  "Rippl monitors your Open Dental system for the R0150 procedure code. When it posts, the referral is confirmed automatically — no phone tag, no spreadsheet, no front desk follow-up.",
+    body:  "When the referred patient finishes their first appointment, Rippl confirms the referral automatically through your practice management system — no phone tag, no spreadsheet, no front desk follow-up.",
   },
   {
     title: "Gift card delivered in minutes",
@@ -310,6 +310,35 @@ export default function JoinDental() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Not on Open Dental? ──────────────────────────────────────────────── */}
+      <section className="py-12 border-b border-slate-100">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl px-8 py-7 lg:flex lg:items-center lg:gap-10">
+            <div className="flex items-center gap-4 mb-4 lg:mb-0 shrink-0">
+              <div className="w-11 h-11 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                <Plug className="w-5 h-5 text-slate-500" />
+              </div>
+              <p className="font-bold text-slate-900 text-base">Not on Open Dental?</p>
+            </div>
+            <div className="flex-1">
+              <p className="text-slate-500 text-sm leading-relaxed">
+                We currently integrate with <strong className="text-slate-700">Open Dental</strong>. We're actively building connections to more practice management systems — Dentrix, Eaglesoft, Curve, and beyond.
+                If your practice runs on a different EMR or PMS, reach out and tell us what you're using. We'll let you know the moment your system is supported.
+              </p>
+            </div>
+            <div className="mt-5 lg:mt-0 shrink-0">
+              <a
+                href="mailto:hello@joinrippl.com?subject=PMS%20Integration%20Request&body=Hi%2C%20I'm%20interested%20in%20Rippl%20but%20my%20practice%20uses%3A%20"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold text-sm hover:border-slate-300 hover:shadow-sm transition-all whitespace-nowrap"
+              >
+                Tell us your EMR
+                <ArrowRight className="w-4 h-4" />
+              </a>
+            </div>
           </div>
         </div>
       </section>
