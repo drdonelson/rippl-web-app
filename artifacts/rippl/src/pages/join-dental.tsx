@@ -125,7 +125,7 @@ export default function JoinDental() {
               Rippl detects completed referrals in Open Dental automatically, sends a gift card reward to the referring patient, and delivers a new patient who already trusts your practice — no staff effort, no manual tracking.
             </p>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-10">
-              Integrates with Open Dental · Powered by Tango Card
+              Integrates with Open Dental
             </p>
 
             <div className="flex flex-wrap gap-4">
