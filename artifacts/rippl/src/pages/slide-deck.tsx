@@ -10,41 +10,36 @@ import {
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
-// ── Design tokens ──────────────────────────────────────────────────────────────
-// Bold Celebration palette: warm-dark bg, orange-first accent
-const BG      = "111111";   // near-black
-const CARD_BG = "1e1108";   // warm dark card
-const ORANGE  = "E0622A";   // brand primary
-const AMBER   = "F5A623";   // brand light / gradient start
-const WHITE   = "FFFFFF";
-const MUTED   = "888888";   // warm neutral muted
-const SOFT    = "cccccc";   // softer white for subtext
+// ── Slide design tokens (dark TV palette — independent of admin theme) ─────────
+const BG      = "0d1117";
+const CARD_BG = "0f1e2e";
+const TEAL    = "2dd4bf";
+const ORANGE  = "f59e0b";
+const PURPLE  = "7c3aed";
+const WHITE   = "ffffff";
+const MUTED   = "94a3b8";
+const BORDER  = "1e3a5f";
 
 const FRAUNCES = "Fraunces";
 const DM_SANS  = "DM Sans";
 const GEIST    = "Geist Mono";
 
-// ── Slide shell (no practice logo — generic template) ──────────────────────────
+// ── Slide shell ────────────────────────────────────────────────────────────────
 function addShell(s: ReturnType<PptxGenJS["addSlide"]>) {
   s.background = { color: BG };
-
-  // Orange rounded border
   s.addShape(pptx.ShapeType.roundRect, {
     x: 0.12, y: 0.12, w: 13.09, h: 7.26,
     fill: { type: "none" } as any,
-    line: { color: ORANGE, width: 2.5 },
+    line: { color: TEAL, width: 2.5 },
     rectRadius: 0.25,
   });
-
-  // Rippl dot + wordmark (bottom-right)
   s.addShape(pptx.ShapeType.ellipse, {
     x: 11.55, y: 7.05, w: 0.22, h: 0.22,
-    fill: { color: ORANGE },
+    fill: { color: TEAL },
   });
   s.addText("Powered by Rippl", {
     x: 11.8, y: 7.02, w: 1.4, h: 0.28,
-    fontSize: 8.5, color: WHITE, bold: true, valign: "middle",
-    fontFace: DM_SANS,
+    fontSize: 8.5, color: WHITE, bold: true, valign: "middle", fontFace: DM_SANS,
   });
 }
 
@@ -53,36 +48,33 @@ let pptx: PptxGenJS;
 // ── Deck generator ─────────────────────────────────────────────────────────────
 async function generateDeck(practiceName: string): Promise<void> {
   pptx = new PptxGenJS();
-  pptx.layout = "LAYOUT_WIDE"; // 13.33 × 7.5 in
+  pptx.layout = "LAYOUT_WIDE";
 
   // Slide 1 — Refer a friend. Earn rewards.
   {
     const s = pptx.addSlide();
     addShell(s);
-
     s.addText("Refer a friend.", {
       x: 0.5, y: 1.1, w: 12.33, h: 1.3,
       fontSize: 78, bold: true, color: WHITE, fontFace: FRAUNCES, align: "center",
     });
     s.addText("Earn rewards.", {
       x: 0.5, y: 2.2, w: 12.33, h: 1.3,
-      fontSize: 78, bold: true, color: ORANGE, fontFace: FRAUNCES, align: "center",
+      fontSize: 78, bold: true, color: TEAL, fontFace: FRAUNCES, align: "center",
     });
     s.addText(
       "Share your personal link — when they visit, you earn. No forms. No waiting. Automatic.",
       { x: 1.0, y: 3.45, w: 11.33, h: 0.55, fontSize: 17, color: MUTED, align: "center", fontFace: DM_SANS },
     );
-
     const TIERS = [
-      { label: "INFLUENCER", amt: "$35",   sub: "1st referral", border: ORANGE },
-      { label: "AMPLIFIER",  amt: "$50",   sub: "3 referrals",  border: ORANGE },
-      { label: "AMBASSADOR", amt: "$75",   sub: "6 referrals",  border: ORANGE },
-      { label: "LEGEND",     amt: "Best",  sub: "10 referrals", border: AMBER  },
+      { label: "INFLUENCER", amt: "$35",  sub: "1st referral", border: TEAL   },
+      { label: "AMPLIFIER",  amt: "$50",  sub: "3 referrals",  border: TEAL   },
+      { label: "AMBASSADOR", amt: "$75",  sub: "6 referrals",  border: TEAL   },
+      { label: "LEGEND",     amt: "$100", sub: "10 referrals", border: PURPLE },
     ];
     const badgeW = 2.6, badgeGap = 0.25;
     const totalW = TIERS.length * badgeW + (TIERS.length - 1) * badgeGap;
     const startX = (13.33 - totalW) / 2;
-
     TIERS.forEach((tier, i) => {
       const x = startX + i * (badgeW + badgeGap);
       const y = 4.05;
@@ -94,8 +86,7 @@ async function generateDeck(practiceName: string): Promise<void> {
       });
       s.addText(tier.label, {
         x, y: y + 0.08, w: badgeW, h: 0.22,
-        fontSize: 7.5, bold: true, color: ORANGE, align: "center", charSpacing: 1.5,
-        fontFace: DM_SANS,
+        fontSize: 7.5, bold: true, color: TEAL, align: "center", charSpacing: 1.5, fontFace: DM_SANS,
       });
       s.addText(tier.amt, {
         x, y: y + 0.27, w: badgeW, h: 0.55,
@@ -106,7 +97,6 @@ async function generateDeck(practiceName: string): Promise<void> {
         fontSize: 9.5, color: MUTED, align: "center", fontFace: DM_SANS,
       });
     });
-
     s.addText("Ask the front desk for your personal referral link today", {
       x: 0.5, y: 5.5, w: 12.33, h: 0.35,
       fontSize: 14, color: MUTED, align: "center", fontFace: DM_SANS,
@@ -117,33 +107,30 @@ async function generateDeck(practiceName: string): Promise<void> {
   {
     const s = pptx.addSlide();
     addShell(s);
-
     s.addText("How it works", {
       x: 0.5, y: 0.85, w: 12.33, h: 1.0,
       fontSize: 64, bold: true, color: WHITE, fontFace: FRAUNCES, align: "center",
     });
-
     const STEPS = [
       { num: "01", title: "Get your link",      body: "Ask the front desk for your personal referral link" },
       { num: "02", title: "Share with friends", body: "Text or email your link to anyone who needs a great dentist" },
-      { num: "03", title: "Earn a reward",      body: "When they visit, you automatically earn a reward — your choice" },
+      { num: "03", title: "Earn rewards",        body: "When they visit you automatically earn a reward — your choice" },
     ];
-    const cardW = 3.6, cardH = 5.05, gap = 0.5;
+    const cardW = 3.6, cardH = 4.2, gap = 0.5;
     const totalW = STEPS.length * cardW + (STEPS.length - 1) * gap;
     const sx = (13.33 - totalW) / 2;
-    const sy = 1.65;
-
+    const sy = 1.85;
     STEPS.forEach((step, i) => {
       const x = sx + i * (cardW + gap);
       s.addShape(pptx.ShapeType.roundRect, {
         x, y: sy, w: cardW, h: cardH,
         fill: { color: CARD_BG },
-        line: { color: ORANGE, width: 1.5 },
+        line: { color: TEAL, width: 1.5 },
         rectRadius: 0.15,
       });
       s.addText(step.num, {
         x, y: sy + 0.35, w: cardW, h: 0.65,
-        fontSize: 40, bold: true, color: ORANGE, fontFace: GEIST, align: "center",
+        fontSize: 40, bold: true, color: TEAL, fontFace: GEIST, align: "center",
       });
       s.addText(step.title, {
         x: x + 0.15, y: sy + 1.1, w: cardW - 0.3, h: 0.5,
@@ -151,25 +138,24 @@ async function generateDeck(practiceName: string): Promise<void> {
       });
       s.addText(step.body, {
         x: x + 0.2, y: sy + 1.7, w: cardW - 0.4, h: 1.2,
-        fontSize: 14, color: SOFT, align: "center", lineSpacingMultiple: 1.4, fontFace: DM_SANS,
+        fontSize: 14, color: MUTED, align: "center", lineSpacingMultiple: 1.4, fontFace: DM_SANS,
       });
       if (i < STEPS.length - 1) {
         const ax = x + cardW + 0.06;
         const ay = sy + cardH / 2 - 0.15;
         s.addShape(pptx.ShapeType.rect, {
           x: ax, y: ay + 0.12, w: gap - 0.12, h: 0.03,
-          fill: { color: ORANGE },
+          fill: { color: TEAL },
         });
         s.addText("→", {
           x: ax + gap - 0.48, y: ay - 0.03, w: 0.4, h: 0.35,
-          fontSize: 18, color: ORANGE, align: "center", valign: "middle",
+          fontSize: 18, color: TEAL, align: "center", valign: "middle",
         });
       }
     });
-
-    s.addText("Gift card · Dental credit · Local reward · Charitable donation — you choose", {
-      x: 0.5, y: 6.65, w: 12.33, h: 0.3,
-      fontSize: 12, color: AMBER, align: "center", fontFace: DM_SANS,
+    s.addText("Gift card  ·  $100 Dental credit  ·  Local partner  ·  Charity donation", {
+      x: 0.5, y: 6.5, w: 12.33, h: 0.3,
+      fontSize: 12, color: TEAL, align: "center", fontFace: DM_SANS,
     });
   }
 
@@ -177,7 +163,6 @@ async function generateDeck(practiceName: string): Promise<void> {
   {
     const s = pptx.addSlide();
     addShell(s);
-
     s.addText("Choose your reward", {
       x: 0.5, y: 0.75, w: 12.33, h: 0.95,
       fontSize: 60, bold: true, color: WHITE, fontFace: FRAUNCES, align: "center",
@@ -186,18 +171,16 @@ async function generateDeck(practiceName: string): Promise<void> {
       x: 0.5, y: 1.65, w: 12.33, h: 0.4,
       fontSize: 15, color: MUTED, align: "center", fontFace: DM_SANS,
     });
-
     const REWARDS = [
-      { badge: "MOST POPULAR",  badgeColor: ORANGE, title: "Gift Card",       body: "Amazon, Visa, Target,\nStarbucks & more",     cta: "→ Instant delivery",  ctaColor: ORANGE, border: ORANGE, cardBg: CARD_BG  },
-      { badge: "MOST VALUABLE", badgeColor: AMBER,  title: "Dental Credit",   body: "Applied to your account\nwithin 24 hours",    cta: "→ Highest value",     ctaColor: AMBER,  border: AMBER,  cardBg: "1c1000" },
-      { badge: "",              badgeColor: "",     title: "Local Reward",    body: "Redeem at local partner\nbusinesses",           cta: "→ Show PIN in store", ctaColor: SOFT,   border: "444444", cardBg: "181818" },
-      { badge: "",              badgeColor: "",     title: "Donate",          body: "Charitable donation\nin your name",             cta: "→ Give back",         ctaColor: MUTED,  border: "333333", cardBg: "141414" },
+      { badge: "MOST POPULAR",  badgeColor: TEAL,   title: "$35 Gift Card",      body: "Amazon, Visa, Target,\nStarbucks & more",  cta: "→ Instant delivery",  ctaColor: TEAL,   border: TEAL,   cardBg: CARD_BG  },
+      { badge: "MOST VALUABLE", badgeColor: ORANGE, title: "$100 Dental Credit", body: "Applied to your account\nwithin 24 hours",  cta: "→ Highest value",     ctaColor: ORANGE, border: ORANGE, cardBg: "1a0e04" },
+      { badge: "",              badgeColor: "",     title: "$35 Local Reward",   body: "Redeem at local partner\nbusinesses",       cta: "→ Show PIN in store", ctaColor: PURPLE, border: PURPLE, cardBg: "120a1e" },
+      { badge: "",              badgeColor: "",     title: "Donate $35",         body: "Charitable donation\nin your name",         cta: "→ Give back",         ctaColor: MUTED,  border: BORDER, cardBg: CARD_BG  },
     ];
-    const rcW = 2.8, rcH = 4.6, rcG = 0.28;
+    const rcW = 2.8, rcH = 3.6, rcG = 0.28;
     const totalW = REWARDS.length * rcW + (REWARDS.length - 1) * rcG;
     const rx = (13.33 - totalW) / 2;
     const ry = 2.1;
-
     REWARDS.forEach((r, i) => {
       const x = rx + i * (rcW + rcG);
       if (r.badge) {
@@ -209,8 +192,7 @@ async function generateDeck(practiceName: string): Promise<void> {
         });
         s.addText(r.badge, {
           x: x + 0.15, y: ry - 0.42, w: rcW - 0.3, h: 0.38,
-          fontSize: 8, bold: true, color: BG, align: "center", valign: "middle", charSpacing: 1,
-          fontFace: DM_SANS,
+          fontSize: 8, bold: true, color: BG, align: "center", valign: "middle", charSpacing: 1, fontFace: DM_SANS,
         });
       }
       s.addShape(pptx.ShapeType.roundRect, {
@@ -225,17 +207,16 @@ async function generateDeck(practiceName: string): Promise<void> {
       });
       s.addText(r.body, {
         x: x + 0.12, y: ry + 1.0, w: rcW - 0.24, h: 0.9,
-        fontSize: 12, color: SOFT, align: "center", lineSpacingMultiple: 1.5, fontFace: DM_SANS,
+        fontSize: 12, color: MUTED, align: "center", lineSpacingMultiple: 1.5, fontFace: DM_SANS,
       });
       s.addText(r.cta, {
         x: x + 0.12, y: ry + rcH - 0.45, w: rcW - 0.24, h: 0.35,
         fontSize: 11, bold: true, color: r.ctaColor, align: "center", fontFace: DM_SANS,
       });
     });
-
     s.addText(
-      "Ask the front desk for your personal referral link today  ·  Rewards grow with every referral",
-      { x: 0.5, y: 6.93, w: 11.0, h: 0.28, fontSize: 10.5, color: MUTED, align: "center", fontFace: DM_SANS },
+      "Ask the front desk for your personal referral link today  ·  Rewards grow with every referral — up to $100",
+      { x: 0.5, y: 6.2, w: 11.0, h: 0.28, fontSize: 10.5, color: MUTED, align: "center", fontFace: DM_SANS },
     );
   }
 
@@ -244,12 +225,10 @@ async function generateDeck(practiceName: string): Promise<void> {
 }
 
 // ── Scaled slide previews ──────────────────────────────────────────────────────
-// Inner canvas is 800×450 (60px/PPTX-inch, 0.833px/PPTX-pt), scaled to fit container.
-
-const CW = 800;   // canvas width px
-const CH = 450;   // canvas height px
-const IN = 60;    // px per PPTX inch
-const PT = 0.833; // px per PPTX point
+const CW = 800;
+const CH = 450;
+const IN = 60;
+const PT = 0.833;
 
 const F_DISPLAY = "'Fraunces', Georgia, serif";
 const F_BODY    = "'DM Sans', Arial, sans-serif";
@@ -270,13 +249,13 @@ function ScaledSlide({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div ref={outerRef} style={{ width: "100%", aspectRatio: "16/9", position: "relative", overflow: "hidden", background: "#111111" }}>
+    <div ref={outerRef} style={{ width: "100%", aspectRatio: "16/9", position: "relative", overflow: "hidden", background: "#0d1117" }}>
       <div style={{
         position: "absolute", top: 0, left: 0,
         width: CW, height: CH,
         transform: `scale(${scale})`,
         transformOrigin: "top left",
-        background: "#111111",
+        background: "#0d1117",
         fontFamily: F_BODY,
       }}>
         {children}
@@ -292,17 +271,13 @@ function SlideBorder() {
         position: "absolute",
         left: 0.12 * IN, top: 0.12 * IN,
         width: 13.09 * IN, height: 7.26 * IN,
-        border: "3px solid #E0622A",
+        border: "3px solid #2dd4bf",
         borderRadius: 0.25 * IN,
         pointerEvents: "none",
         boxSizing: "border-box",
       }} />
-      <div style={{
-        position: "absolute",
-        right: 0.28 * IN, bottom: 0.16 * IN,
-        display: "flex", alignItems: "center", gap: 6,
-      }}>
-        <div style={{ width: 13, height: 13, borderRadius: "50%", background: "#E0622A" }} />
+      <div style={{ position: "absolute", right: 0.28 * IN, bottom: 0.16 * IN, display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ width: 13, height: 13, borderRadius: "50%", background: "#2dd4bf" }} />
         <span style={{ fontSize: 8.5 * PT, color: "white", fontWeight: 700, fontFamily: F_BODY }}>Powered by Rippl</span>
       </div>
     </>
@@ -311,10 +286,10 @@ function SlideBorder() {
 
 function Slide1Preview({ name: _ }: { name: string }) {
   const TIERS = [
-    { label: "INFLUENCER", amt: "$35",  sub: "1st referral", border: "#E0622A", labelColor: "#E0622A" },
-    { label: "AMPLIFIER",  amt: "$50",  sub: "3 referrals",  border: "#E0622A", labelColor: "#E0622A" },
-    { label: "AMBASSADOR", amt: "$75",  sub: "6 referrals",  border: "#E0622A", labelColor: "#E0622A" },
-    { label: "LEGEND",     amt: "Best", sub: "10 referrals", border: "#F5A623", labelColor: "#F5A623" },
+    { label: "INFLUENCER", amt: "$35",  sub: "1st referral", border: "#2dd4bf", labelColor: "#2dd4bf" },
+    { label: "AMPLIFIER",  amt: "$50",  sub: "3 referrals",  border: "#2dd4bf", labelColor: "#2dd4bf" },
+    { label: "AMBASSADOR", amt: "$75",  sub: "6 referrals",  border: "#2dd4bf", labelColor: "#2dd4bf" },
+    { label: "LEGEND",     amt: "$100", sub: "10 referrals", border: "#7c3aed", labelColor: "#2dd4bf" },
   ];
   const bW = 2.6 * IN, bH = 1.15 * IN, bG = 0.25 * IN;
   const totalBW = TIERS.length * bW + (TIERS.length - 1) * bG;
@@ -327,10 +302,10 @@ function Slide1Preview({ name: _ }: { name: string }) {
       <div style={{ position: "absolute", left: 0.5 * IN, top: 1.1 * IN, width: 12.33 * IN, fontSize: 78 * PT, fontWeight: 700, color: "white", textAlign: "center", lineHeight: 1.05, whiteSpace: "nowrap", fontFamily: F_DISPLAY }}>
         Refer a friend.
       </div>
-      <div style={{ position: "absolute", left: 0.5 * IN, top: 2.2 * IN, width: 12.33 * IN, fontSize: 78 * PT, fontWeight: 700, color: "#E0622A", textAlign: "center", lineHeight: 1.05, whiteSpace: "nowrap", fontFamily: F_DISPLAY }}>
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 2.2 * IN, width: 12.33 * IN, fontSize: 78 * PT, fontWeight: 700, color: "#2dd4bf", textAlign: "center", lineHeight: 1.05, whiteSpace: "nowrap", fontFamily: F_DISPLAY }}>
         Earn rewards.
       </div>
-      <div style={{ position: "absolute", left: 1.0 * IN, top: 3.45 * IN, width: 11.33 * IN, fontSize: 17 * PT, color: "#888888", textAlign: "center", fontFamily: F_BODY }}>
+      <div style={{ position: "absolute", left: 1.0 * IN, top: 3.45 * IN, width: 11.33 * IN, fontSize: 17 * PT, color: "#94a3b8", textAlign: "center", fontFamily: F_BODY }}>
         Share your personal link — when they visit, you earn. No forms. No waiting. Automatic.
       </div>
       {TIERS.map((t, i) => (
@@ -338,7 +313,7 @@ function Slide1Preview({ name: _ }: { name: string }) {
           position: "absolute",
           left: bX0 + i * (bW + bG), top: bY,
           width: bW, height: bH,
-          background: "#1e1108",
+          background: "#0f1e2e",
           border: `2px solid ${t.border}`,
           borderRadius: bH / 2,
           display: "flex", flexDirection: "column",
@@ -346,10 +321,10 @@ function Slide1Preview({ name: _ }: { name: string }) {
         }}>
           <div style={{ fontSize: 7.5 * PT, fontWeight: 700, color: t.labelColor, letterSpacing: "0.12em", fontFamily: F_BODY }}>{t.label}</div>
           <div style={{ fontSize: 36 * PT, fontWeight: 700, color: "white", lineHeight: 1, fontFamily: F_DISPLAY }}>{t.amt}</div>
-          <div style={{ fontSize: 9.5 * PT, color: "#888888", fontFamily: F_BODY }}>{t.sub}</div>
+          <div style={{ fontSize: 9.5 * PT, color: "#94a3b8", fontFamily: F_BODY }}>{t.sub}</div>
         </div>
       ))}
-      <div style={{ position: "absolute", left: 0.5 * IN, top: 5.5 * IN, width: 12.33 * IN, fontSize: 14 * PT, color: "#888888", textAlign: "center", fontFamily: F_BODY }}>
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 5.5 * IN, width: 12.33 * IN, fontSize: 14 * PT, color: "#94a3b8", textAlign: "center", fontFamily: F_BODY }}>
         Ask the front desk for your personal referral link today
       </div>
     </ScaledSlide>
@@ -360,12 +335,12 @@ function Slide2Preview({ name: _ }: { name: string }) {
   const STEPS = [
     { num: "01", title: "Get your link",      body: "Ask the front desk for your personal referral link" },
     { num: "02", title: "Share with friends", body: "Text or email your link to anyone who needs a great dentist" },
-    { num: "03", title: "Earn a reward",      body: "When they visit, you automatically earn a reward — your choice" },
+    { num: "03", title: "Earn rewards",        body: "When they visit, you automatically earn a reward — your choice" },
   ];
-  const cW = 3.6 * IN, cH = 5.05 * IN, gap = 0.5 * IN;
+  const cW = 3.6 * IN, cH = 4.2 * IN, gap = 0.5 * IN;
   const totalCW = STEPS.length * cW + (STEPS.length - 1) * gap;
   const cX0 = (CW - totalCW) / 2;
-  const cY = 1.65 * IN;
+  const cY = 1.85 * IN;
 
   return (
     <ScaledSlide>
@@ -379,31 +354,30 @@ function Slide2Preview({ name: _ }: { name: string }) {
           <div key={i} style={{
             position: "absolute",
             left: x, top: cY, width: cW, height: cH,
-            background: "#1e1108",
-            border: "1.5px solid #E0622A",
+            background: "#0f1e2e",
+            border: "1.5px solid #2dd4bf",
             borderRadius: 0.15 * IN,
             display: "flex", flexDirection: "column",
-            alignItems: "center", paddingTop: 20, paddingLeft: 10, paddingRight: 10,
+            alignItems: "center", paddingTop: 18, paddingLeft: 10, paddingRight: 10,
           }}>
-            <div style={{ fontSize: 40 * PT, fontWeight: 600, color: "#E0622A", lineHeight: 1, marginBottom: 8, fontFamily: F_MONO }}>{step.num}</div>
+            <div style={{ fontSize: 40 * PT, fontWeight: 600, color: "#2dd4bf", lineHeight: 1, marginBottom: 8, fontFamily: F_MONO }}>{step.num}</div>
             <div style={{ fontSize: 20 * PT, fontWeight: 700, color: "white", textAlign: "center", marginBottom: 6, fontFamily: F_DISPLAY }}>{step.title}</div>
-            <div style={{ fontSize: 14 * PT, color: "#cccccc", textAlign: "center", lineHeight: 1.4, fontFamily: F_BODY }}>{step.body}</div>
+            <div style={{ fontSize: 14 * PT, color: "#94a3b8", textAlign: "center", lineHeight: 1.4, fontFamily: F_BODY }}>{step.body}</div>
           </div>
         );
       })}
-      {/* Arrows */}
       {[0, 1].map(i => {
         const arrowX = cX0 + (i + 1) * cW + i * gap;
         const arrowY = cY + cH / 2;
         return (
-          <div key={i} style={{ position: "absolute", left: arrowX + 4, top: arrowY - 10, display: "flex", alignItems: "center", gap: 0 }}>
-            <div style={{ width: gap - 14, height: 2, background: "#E0622A" }} />
-            <div style={{ fontSize: 16 * PT, color: "#E0622A", lineHeight: 1 }}>→</div>
+          <div key={i} style={{ position: "absolute", left: arrowX + 4, top: arrowY - 10, display: "flex", alignItems: "center" }}>
+            <div style={{ width: gap - 14, height: 2, background: "#2dd4bf" }} />
+            <div style={{ fontSize: 16 * PT, color: "#2dd4bf", lineHeight: 1 }}>→</div>
           </div>
         );
       })}
-      <div style={{ position: "absolute", left: 0.5 * IN, top: 6.65 * IN, width: 12.33 * IN, fontSize: 12 * PT, color: "#F5A623", textAlign: "center", fontFamily: F_BODY }}>
-        Gift card · Dental credit · Local reward · Charitable donation — you choose
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 6.5 * IN, width: 12.33 * IN, fontSize: 12 * PT, color: "#2dd4bf", textAlign: "center", fontFamily: F_BODY }}>
+        Gift card · $100 Dental credit · Local partner · Charity donation
       </div>
     </ScaledSlide>
   );
@@ -411,12 +385,12 @@ function Slide2Preview({ name: _ }: { name: string }) {
 
 function Slide3Preview({ name: _ }: { name: string }) {
   const REWARDS = [
-    { badge: "MOST POPULAR",  bc: "#E0622A", title: "Gift Card",     body: "Amazon, Visa, Target,\nStarbucks & more",   cta: "→ Instant delivery",  cc: "#E0622A", border: "#E0622A", cardBg: "#1e1108" },
-    { badge: "MOST VALUABLE", bc: "#F5A623", title: "Dental Credit", body: "Applied to your account\nwithin 24 hours",  cta: "→ Highest value",     cc: "#F5A623", border: "#F5A623", cardBg: "#1c1000" },
-    { badge: "",              bc: "",        title: "Local Reward",   body: "Redeem at local partner\nbusinesses",       cta: "→ Show PIN in store", cc: "#cccccc", border: "#444444", cardBg: "#181818" },
-    { badge: "",              bc: "",        title: "Donate",         body: "Charitable donation\nin your name",         cta: "→ Give back",         cc: "#888888", border: "#333333", cardBg: "#141414" },
+    { badge: "MOST POPULAR",  bc: "#2dd4bf", title: "$35 Gift Card",      body: "Amazon, Visa, Target,\nStarbucks & more",  cta: "→ Instant delivery",  cc: "#2dd4bf", border: "#2dd4bf", cardBg: "#0f1e2e" },
+    { badge: "MOST VALUABLE", bc: "#f59e0b", title: "$100 Dental Credit", body: "Applied to your account\nwithin 24 hours",  cta: "→ Highest value",     cc: "#f59e0b", border: "#f59e0b", cardBg: "#1a0e04" },
+    { badge: "",              bc: "",        title: "$35 Local Reward",    body: "Redeem at local partner\nbusinesses",       cta: "→ Show PIN in store", cc: "#7c3aed", border: "#7c3aed", cardBg: "#120a1e" },
+    { badge: "",              bc: "",        title: "Donate $35",          body: "Charitable donation\nin your name",         cta: "→ Give back",         cc: "#94a3b8", border: "#1e3a5f", cardBg: "#0f1e2e" },
   ];
-  const rW = 2.8 * IN, rH = 4.6 * IN, rG = 0.28 * IN;
+  const rW = 2.8 * IN, rH = 3.6 * IN, rG = 0.28 * IN;
   const totalRW = REWARDS.length * rW + (REWARDS.length - 1) * rG;
   const rX0 = (CW - totalRW) / 2;
   const rY = 2.1 * IN;
@@ -427,7 +401,7 @@ function Slide3Preview({ name: _ }: { name: string }) {
       <div style={{ position: "absolute", left: 0.5 * IN, top: 0.75 * IN, width: 12.33 * IN, fontSize: 60 * PT, fontWeight: 700, color: "white", textAlign: "center", lineHeight: 1.05, fontFamily: F_DISPLAY }}>
         Choose your reward
       </div>
-      <div style={{ position: "absolute", left: 0.5 * IN, top: 1.65 * IN, width: 12.33 * IN, fontSize: 15 * PT, color: "#888888", textAlign: "center", fontFamily: F_BODY }}>
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 1.65 * IN, width: 12.33 * IN, fontSize: 15 * PT, color: "#94a3b8", textAlign: "center", fontFamily: F_BODY }}>
         Your choice — automatically delivered when your friend visits
       </div>
       {REWARDS.map((r, i) => {
@@ -441,7 +415,7 @@ function Slide3Preview({ name: _ }: { name: string }) {
                 width: rW - 0.3 * IN, height: 0.38 * IN,
                 background: r.bc, borderRadius: 0.15 * IN,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 8 * PT, fontWeight: 700, color: "#111111", letterSpacing: "0.05em",
+                fontSize: 8 * PT, fontWeight: 700, color: "#0d1117", letterSpacing: "0.05em",
                 fontFamily: F_BODY,
               }}>{r.badge}</div>
             )}
@@ -452,17 +426,17 @@ function Slide3Preview({ name: _ }: { name: string }) {
               border: `1.5px solid ${r.border}`,
               borderRadius: 0.12 * IN,
               display: "flex", flexDirection: "column",
-              padding: "18px 12px 14px",
+              padding: "14px 10px 12px",
             }}>
-              <div style={{ fontSize: 17 * PT, fontWeight: 700, color: "white", textAlign: "center", marginBottom: 8, fontFamily: F_DISPLAY }}>{r.title}</div>
-              <div style={{ fontSize: 12 * PT, color: "#cccccc", textAlign: "center", flex: 1, lineHeight: 1.5, whiteSpace: "pre-line", fontFamily: F_BODY }}>{r.body}</div>
+              <div style={{ fontSize: 17 * PT, fontWeight: 700, color: "white", textAlign: "center", marginBottom: 6, fontFamily: F_DISPLAY }}>{r.title}</div>
+              <div style={{ fontSize: 12 * PT, color: "#94a3b8", textAlign: "center", flex: 1, lineHeight: 1.5, whiteSpace: "pre-line", fontFamily: F_BODY }}>{r.body}</div>
               <div style={{ fontSize: 11 * PT, fontWeight: 700, color: r.cc, textAlign: "center", fontFamily: F_BODY }}>{r.cta}</div>
             </div>
           </div>
         );
       })}
-      <div style={{ position: "absolute", left: 0.5 * IN, top: 6.93 * IN, width: 11.0 * IN, fontSize: 10.5 * PT, color: "#888888", textAlign: "center", fontFamily: F_BODY }}>
-        Ask the front desk for your personal referral link today · Rewards grow with every referral
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 6.2 * IN, width: 11.0 * IN, fontSize: 10.5 * PT, color: "#94a3b8", textAlign: "center", fontFamily: F_BODY }}>
+        Ask the front desk for your personal referral link today · Rewards grow with every referral — up to $100
       </div>
     </ScaledSlide>
   );
