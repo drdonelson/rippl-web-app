@@ -5,7 +5,7 @@ import {
   LayoutDashboard, CalendarDays, Users,
   ChevronDown, MapPin, LogOut, AlertTriangle, Menu, X,
   Store, CheckSquare, Building2, TrendingUp, ExternalLink,
-  GraduationCap, Megaphone, UserCog, BookOpen, Route,
+  GraduationCap, Megaphone, BookOpen, Route,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useOffice } from "@/contexts/office-context";
@@ -43,8 +43,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/partners",    label: "Local Partners", icon: Store,       minRole: "super_admin"    },
       { href: "/campaigns",   label: "Campaigns",      icon: Megaphone,   minRole: "practice_admin" },
       { href: "/admin-tasks", label: "Admin Tasks",    icon: CheckSquare                            },
-      { href: "/offices",     label: "Offices",        icon: Building2,   minRole: "practice_admin" },
-      { href: "/staff",       label: "Staff Accounts", icon: UserCog,     minRole: "practice_admin" },
+      { href: "/offices",     label: "Offices & Team", icon: Building2,   minRole: "practice_admin" },
     ],
   },
   {
@@ -63,7 +62,7 @@ const NAV_SECTIONS: NavSection[] = [
     demoOnly: true,
     items: [
       { href: "/campaigns", label: "Campaigns",      icon: Megaphone },
-      { href: "/staff",     label: "Staff Accounts", icon: UserCog   },
+      { href: "/offices",   label: "Offices & Team", icon: Building2 },
     ],
   },
   {

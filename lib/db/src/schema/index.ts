@@ -13,3 +13,4 @@ export * from "./partner_reward_tiers";
 export * from "./reward_claims";
 export * from "./campaigns";
 export * from "./waitlist";
+export * from "./staff_pool";

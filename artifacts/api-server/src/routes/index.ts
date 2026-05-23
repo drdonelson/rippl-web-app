@@ -22,6 +22,7 @@ import demoRouter from "./demo";
 import backfillRouter from "./backfill";
 import webhooksRouter from "./webhooks";
 import smsOptInRouter from "./smsOptIn";
+import staffPoolRouter from "./staffPool";
 import { requireAuth } from "../middleware/auth";
 
 const router: IRouter = Router();
@@ -55,5 +56,6 @@ router.use("/campaigns",   requireAuth, campaignsRouter);
 router.use("/opendental", requireAuth, openDentalRouter);
 router.use("/import", requireAuth, importJobsRouter);
 router.use("/backfill", requireAuth, backfillRouter);
+router.use("/practice", requireAuth, staffPoolRouter);
 
 export default router;

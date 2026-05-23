@@ -130,16 +130,14 @@ function AddStaffModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+// ── StaffPanel — embeddable UI, no redirect logic ──────────────────────────────
 
-export default function StaffPage() {
+export function StaffPanel() {
   const { isDemo, profile } = useAuth();
-  const [, navigate] = useLocation();
   const qc = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // All hooks must come before any early returns
   const { data: staff = [], isLoading, error } = useQuery<StaffAccount[]>({
     queryKey: ["/api/auth/staff-accounts"],
     queryFn: () => customFetch<StaffAccount[]>(`${BASE}/api/auth/staff-accounts`),
@@ -151,25 +149,20 @@ export default function StaffPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/auth/staff-accounts"] }); setDeletingId(null); },
   });
 
-  // Redirect in effect, not during render — avoids blank flash
-  React.useEffect(() => {
-    if (!profile) return;
-    if (!isDemo && profile.role === "super_admin") navigate("/onboard");
-    if (!isDemo && profile.role.startsWith("staff_")) navigate("/dashboard");
-  }, [profile, isDemo, navigate]);
+  const roleLabel = (role: string) => {
+    if (role === "practice_admin") return "Practice Admin";
+    if (role.startsWith("staff_")) return "Front Desk";
+    return role;
+  };
 
-  // Show nothing while we're about to redirect
-  if (!isDemo && profile?.role === "super_admin") return null;
-  if (!isDemo && profile?.role?.startsWith("staff_")) return null;
-
-  // ── Demo view ──────────────────────────────────────────────────────────────
+  // ── Demo view ────────────────────────────────────────────────────────────────
   if (isDemo) {
     return (
-      <div className="space-y-8">
-        <div className="flex items-start justify-between gap-4">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-display font-bold text-foreground">Staff Accounts</h1>
-            <p className="text-muted-foreground mt-1">Manage front desk and admin staff who can access the dashboard.</p>
+            <h2 className="text-xl font-bold text-foreground">Staff Accounts</h2>
+            <p className="text-muted-foreground text-sm mt-0.5">Manage who can access the practice dashboard.</p>
           </div>
           <button disabled className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-primary/30 text-primary-foreground/50 rounded-xl font-semibold text-sm cursor-not-allowed opacity-60">
             <UserPlus className="w-4 h-4" /><span className="hidden sm:inline">Add Staff</span>
@@ -205,16 +198,9 @@ export default function StaffPage() {
     );
   }
 
-  // ── Real practice_admin view ───────────────────────────────────────────────
-
-  const roleLabel = (role: string) => {
-    if (role === "practice_admin") return "Practice Admin";
-    if (role.startsWith("staff_")) return "Front Desk";
-    return role;
-  };
-
+  // ── Real practice_admin view ─────────────────────────────────────────────────
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {showAdd && (
         <AddStaffModal
           onClose={() => setShowAdd(false)}
@@ -222,10 +208,10 @@ export default function StaffPage() {
         />
       )}
 
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold text-foreground">Staff Accounts</h1>
-          <p className="text-muted-foreground mt-1">Manage who has access to your practice dashboard.</p>
+          <h2 className="text-xl font-bold text-foreground">Staff Accounts</h2>
+          <p className="text-muted-foreground text-sm mt-0.5">Manage who can access the practice dashboard.</p>
         </div>
         <button
           onClick={() => setShowAdd(true)}
@@ -236,13 +222,13 @@ export default function StaffPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-24">
+        <div className="flex items-center justify-center py-16">
           <Loader2 className="w-8 h-8 animate-spin text-primary/40" />
         </div>
       ) : error ? (
         <p className="text-destructive text-sm">Failed to load staff accounts.</p>
       ) : staff.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-4 rounded-2xl border border-dashed border-border bg-muted/10">
+        <div className="flex flex-col items-center justify-center py-16 gap-4 rounded-2xl border border-dashed border-border bg-muted/10">
           <Users className="w-10 h-10 text-muted-foreground/40" />
           <p className="text-muted-foreground text-sm">No staff accounts yet. Add your front desk team above.</p>
         </div>
@@ -300,6 +286,32 @@ export default function StaffPage() {
       <p className="text-xs text-muted-foreground">
         Staff can view Dashboard, Events, Patients, and Admin Tasks. They cannot manage campaigns, offices, or other staff accounts.
       </p>
+    </div>
+  );
+}
+
+// ── Page — wraps StaffPanel with redirect guards ───────────────────────────────
+
+export default function StaffPage() {
+  const { isDemo, profile } = useAuth();
+  const [, navigate] = useLocation();
+
+  React.useEffect(() => {
+    if (!profile) return;
+    if (!isDemo && profile.role === "super_admin") navigate("/onboard");
+    if (!isDemo && profile.role.startsWith("staff_")) navigate("/dashboard");
+  }, [profile, isDemo, navigate]);
+
+  if (!isDemo && profile?.role === "super_admin") return null;
+  if (!isDemo && profile?.role?.startsWith("staff_")) return null;
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-display font-bold text-foreground">Staff Accounts</h1>
+        <p className="text-muted-foreground mt-1">Manage who has access to your practice dashboard.</p>
+      </div>
+      <StaffPanel />
     </div>
   );
 }

@@ -7,6 +7,8 @@ import {
   adminTasksTable,
   rewardClaimsTable,
   localPartnersTable,
+  staffPoolConfigsTable,
+  staffPoolEntriesTable,
 } from "@workspace/db/schema";
 import { eq, sql, and } from "drizzle-orm";
 import { CreateRewardBody } from "@workspace/api-zod";
@@ -264,6 +266,21 @@ router.post("/", async (req, res) => {
     .update(referrersTable)
     .set({ total_rewards_issued: sql`${referrersTable.total_rewards_issued} + 1` })
     .where(eq(referrersTable.id, body.referrer_id));
+
+  // Staff pool: if the practice has an active pool, record a contribution entry
+  if (referrer.practice_id) {
+    const [poolConfig] = await db
+      .select()
+      .from(staffPoolConfigsTable)
+      .where(eq(staffPoolConfigsTable.practice_id, referrer.practice_id));
+    if (poolConfig?.enabled) {
+      await db.insert(staffPoolEntriesTable).values({
+        practice_id: referrer.practice_id,
+        reward_id:   reward.id,
+        amount:      poolConfig.amount_per_referral,
+      });
+    }
+  }
 
   if (body.reward_type === "amazon-gift-card") {
     if (referrer.email) {
