@@ -104,7 +104,7 @@ async function generateDeck(practiceName: string): Promise<void> {
         x, y, w: badgeW, h: 1.15,
         fill: { color: CARD_BG },
         line: { color: tier.border, width: 1.5 },
-        rectRadius: 0.55,
+        rectRadius: 0.57,
       });
       s.addText(tier.label, {
         x, y: y + 0.08, w: badgeW, h: 0.22,
@@ -141,10 +141,10 @@ async function generateDeck(practiceName: string): Promise<void> {
       { num: "02", title: "Share with friends", body: "Text or email your link to anyone who needs a great dentist" },
       { num: "03", title: "Earn rewards",        body: "When they visit you automatically earn up to $100" },
     ];
-    const cardW = 3.6, cardH = 4.5, gap = 0.5;
+    const cardW = 3.6, cardH = 5.05, gap = 0.5;
     const totalW = STEPS.length * cardW + (STEPS.length - 1) * gap;
     const sx = (13.33 - totalW) / 2;
-    const sy = 1.95;
+    const sy = 1.65;
 
     STEPS.forEach((step, i) => {
       const x = sx + i * (cardW + gap);
@@ -201,10 +201,10 @@ async function generateDeck(practiceName: string): Promise<void> {
     });
 
     const REWARDS = [
-      { badge: "MOST POPULAR",  badgeColor: TEAL,   title: "$35 Gift Card",      body: "Amazon, Visa, Target,\nStarbucks & more",  cta: "→ Instant delivery",  ctaColor: TEAL,   border: TEAL   },
-      { badge: "MOST VALUABLE", badgeColor: ORANGE, title: "$100 Dental Credit", body: "Applied to your account\nwithin 24 hours",  cta: "→ Highest value",     ctaColor: ORANGE, border: ORANGE },
-      { badge: "",              badgeColor: "",      title: "$35 Local Reward",   body: "Redeem at local partner\nbusinesses",       cta: "→ Show PIN in store", ctaColor: PURPLE, border: PURPLE },
-      { badge: "",              badgeColor: "",      title: "Donate $35",         body: "Charitable donation\nin your name",         cta: "→ Give back",         ctaColor: MUTED,  border: BORDER },
+      { badge: "MOST POPULAR",  badgeColor: TEAL,   title: "$35 Gift Card",      body: "Amazon, Visa, Target,\nStarbucks & more",  cta: "→ Instant delivery",  ctaColor: TEAL,   border: TEAL,   cardBg: CARD_BG  },
+      { badge: "MOST VALUABLE", badgeColor: ORANGE, title: "$100 Dental Credit", body: "Applied to your account\nwithin 24 hours",  cta: "→ Highest value",     ctaColor: ORANGE, border: ORANGE, cardBg: "1a0e04" },
+      { badge: "",              badgeColor: "",      title: "$35 Local Reward",   body: "Redeem at local partner\nbusinesses",       cta: "→ Show PIN in store", ctaColor: PURPLE, border: PURPLE, cardBg: "120a1e" },
+      { badge: "",              badgeColor: "",      title: "Donate $35",         body: "Charitable donation\nin your name",         cta: "→ Give back",         ctaColor: MUTED,  border: BORDER, cardBg: CARD_BG  },
     ];
     const rcW = 2.8, rcH = 4.6, rcG = 0.28;
     const totalW = REWARDS.length * rcW + (REWARDS.length - 1) * rcG;
@@ -227,7 +227,7 @@ async function generateDeck(practiceName: string): Promise<void> {
       }
       s.addShape(pptx.ShapeType.roundRect, {
         x, y: ry, w: rcW, h: rcH,
-        fill: { color: CARD_BG },
+        fill: { color: r.cardBg },
         line: { color: r.border, width: 1.5 },
         rectRadius: 0.12,
       });
@@ -293,7 +293,7 @@ function Slide1Preview({ name }: { name: string }) {
         </div>
         <div style={{ display: "flex", gap: 3 }}>
           {TIERS.map(t => (
-            <div key={t.label} style={{ border: `1px solid ${t.border}`, borderRadius: 8, background: "#0f1e2e", padding: "3px 5px", textAlign: "center", minWidth: 34 }}>
+            <div key={t.label} style={{ border: `1px solid ${t.border}`, borderRadius: 999, background: "#0f1e2e", padding: "3px 7px", textAlign: "center", minWidth: 36 }}>
               <div style={{ fontSize: 3, color: "#2dd4bf", fontWeight: 700, letterSpacing: "0.1em" }}>{t.label}</div>
               <div style={{ fontSize: 10, fontWeight: 900, color: "white", lineHeight: 1 }}>{t.amt}</div>
               <div style={{ fontSize: 3, color: "#94a3b8" }}>{t.sub}</div>
@@ -316,18 +316,19 @@ function Slide2Preview({ name }: { name: string }) {
   ];
   return (
     <PreviewShell practiceName={name}>
-      <div className="flex-1 flex flex-col items-center px-3 pb-3" style={{ paddingTop: 14 }}>
-        <div style={{ fontSize: 14, fontWeight: 900, color: "white", marginBottom: 5 }}>How it works</div>
-        <div style={{ display: "flex", gap: 4, width: "100%" }}>
+      <div className="flex-1 flex flex-col px-3 pb-2" style={{ paddingTop: 12 }}>
+        <div style={{ fontSize: 13, fontWeight: 900, color: "white", textAlign: "center", marginBottom: 5 }}>How it works</div>
+        {/* Cards fill remaining space */}
+        <div style={{ display: "flex", gap: 3, flex: 1 }}>
           {steps.map((s, i) => (
-            <div key={i} style={{ flex: 1, background: "#0f1e2e", border: "0.75px solid #1e3a5f", borderRadius: 3, padding: "4px 4px", textAlign: "center" }}>
-              <div style={{ fontSize: 12, fontWeight: 900, color: "#2dd4bf", lineHeight: 1 }}>{s.n}</div>
-              <div style={{ fontSize: 5, fontWeight: 700, color: "white", margin: "2px 0 1px" }}>{s.t}</div>
+            <div key={i} style={{ flex: 1, background: "#0f1e2e", border: "0.75px solid #2dd4bf", borderRadius: 3, padding: "5px 4px", textAlign: "center", display: "flex", flexDirection: "column" }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: "#2dd4bf", lineHeight: 1, marginBottom: 2 }}>{s.n}</div>
+              <div style={{ fontSize: 5, fontWeight: 700, color: "white", marginBottom: 2 }}>{s.t}</div>
               <div style={{ fontSize: 3.5, color: "#94a3b8", lineHeight: 1.4 }}>{s.b}</div>
             </div>
           ))}
         </div>
-        <div style={{ fontSize: 3.5, color: "#2dd4bf", marginTop: 4, textAlign: "center" }}>
+        <div style={{ fontSize: 3.5, color: "#2dd4bf", paddingTop: 3, textAlign: "center" }}>
           Gift card · $100 Dental credit · Local partner · Charity donation
         </div>
       </div>
@@ -337,33 +338,37 @@ function Slide2Preview({ name }: { name: string }) {
 
 function Slide3Preview({ name }: { name: string }) {
   const rewards = [
-    { badge: "MOST POPULAR",  bc: "#2dd4bf", title: "$35 Gift Card",      body: "Amazon, Visa & more",     cta: "→ Instant delivery",  cc: "#2dd4bf", border: "#2dd4bf" },
-    { badge: "MOST VALUABLE", bc: "#f59e0b", title: "$100 Dental Credit", body: "Applied in 24h",           cta: "→ Highest value",      cc: "#f59e0b", border: "#f59e0b" },
-    { badge: "",              bc: "",        title: "$35 Local Reward",    body: "Local partners",           cta: "→ Show PIN in store",  cc: "#7c3aed", border: "#7c3aed" },
-    { badge: "",              bc: "",        title: "Donate $35",          body: "Charitable donation",      cta: "→ Give back",          cc: "#94a3b8", border: "#1e3a5f" },
+    { badge: "MOST POPULAR",  bc: "#2dd4bf", title: "$35 Gift Card",      body: "Amazon, Visa, Target, Starbucks & more",  cta: "→ Instant delivery",  cc: "#2dd4bf", border: "#2dd4bf", cardBg: "#0f1e2e" },
+    { badge: "MOST VALUABLE", bc: "#f59e0b", title: "$100 Dental Credit", body: "Applied to your account within 24 hours",  cta: "→ Highest value",      cc: "#f59e0b", border: "#f59e0b", cardBg: "#1a0e04" },
+    { badge: "",              bc: "",        title: "$35 Local Reward",    body: "Redeem at local partner businesses",       cta: "→ Show PIN in store",  cc: "#7c3aed", border: "#7c3aed", cardBg: "#120a1e" },
+    { badge: "",              bc: "",        title: "Donate $35",          body: "Charitable donation in your name",         cta: "→ Give back",          cc: "#94a3b8", border: "#1e3a5f", cardBg: "#0f1e2e" },
   ];
   return (
     <PreviewShell practiceName={name}>
-      <div className="flex-1 flex flex-col items-center px-2 pb-3" style={{ paddingTop: 12 }}>
-        <div style={{ fontSize: 12, fontWeight: 900, color: "white", marginBottom: 2 }}>Choose your reward</div>
-        <div style={{ fontSize: 3.5, color: "#94a3b8", marginBottom: 5, textAlign: "center" }}>
+      <div className="flex-1 flex flex-col px-2 pb-2" style={{ paddingTop: 10 }}>
+        <div style={{ fontSize: 11, fontWeight: 900, color: "white", textAlign: "center", marginBottom: 1.5 }}>Choose your reward</div>
+        <div style={{ fontSize: 3.5, color: "#94a3b8", textAlign: "center", marginBottom: 4 }}>
           Automatically delivered when your friend visits
         </div>
-        <div style={{ display: "flex", gap: 3, width: "100%" }}>
+        <div style={{ display: "flex", gap: 3, flex: 1 }}>
           {rewards.map((r, i) => (
             <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column" }}>
               {r.badge && (
-                <div style={{ background: r.bc, borderRadius: 3, textAlign: "center", fontSize: 3, fontWeight: 700, color: "#0d1117", padding: "1.5px 0", marginBottom: 2 }}>
+                <div style={{ background: r.bc, borderRadius: 3, textAlign: "center", fontSize: 2.5, fontWeight: 700, color: "#0d1117", padding: "1.5px 0", marginBottom: 2 }}>
                   {r.badge}
                 </div>
               )}
-              <div style={{ flex: 1, background: "#0f1e2e", border: `0.75px solid ${r.border}`, borderRadius: 3, padding: "3px 3px", display: "flex", flexDirection: "column" }}>
-                <div style={{ fontSize: 5.5, fontWeight: 700, color: "white", textAlign: "center", marginBottom: 2 }}>{r.title}</div>
+              {!r.badge && <div style={{ height: 7, marginBottom: 2 }} />}
+              <div style={{ flex: 1, background: r.cardBg, border: `0.75px solid ${r.border}`, borderRadius: 3, padding: "3px 3px", display: "flex", flexDirection: "column" }}>
+                <div style={{ fontSize: 5, fontWeight: 700, color: "white", textAlign: "center", marginBottom: 2 }}>{r.title}</div>
                 <div style={{ fontSize: 3.5, color: "#94a3b8", textAlign: "center", flex: 1, lineHeight: 1.4 }}>{r.body}</div>
-                <div style={{ fontSize: 4, color: r.cc, fontWeight: 700, textAlign: "center", marginTop: 2 }}>{r.cta}</div>
+                <div style={{ fontSize: 3.5, color: r.cc, fontWeight: 700, textAlign: "center", marginTop: 2 }}>{r.cta}</div>
               </div>
             </div>
           ))}
+        </div>
+        <div style={{ fontSize: 3, color: "#94a3b8", textAlign: "center", paddingTop: 3 }}>
+          Ask the front desk for your personal referral link today · Rewards grow with every referral — up to $100
         </div>
       </div>
     </PreviewShell>
