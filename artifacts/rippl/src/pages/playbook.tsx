@@ -159,7 +159,7 @@ const SCRIPTS = [
     icon: Monitor,
     color: "bg-blue-50 text-blue-600",
     script:
-      "Hi [Name], before we get you back — did you know we have a rewards program? If you refer a friend or family member and they come in for an appointment, you'll get a $100 gift card automatically. There's no form to fill out — just tell them to mention your name when they call.",
+      "Hi [Name], before we get you back — did you know we have a rewards program? If you refer a friend or family member and they come in for an appointment, you'll get a reward automatically. There's no form to fill out — just tell them to mention your name when they call.",
     tips: [
       "Say it while pulling up their chart — feels natural, not salesy.",
       "If they already referred someone, mention you'll let them know when the reward lands.",
@@ -171,7 +171,7 @@ const SCRIPTS = [
     icon: Stethoscope,
     color: "bg-emerald-50 text-emerald-600",
     script:
-      "We actually have a referral rewards program I wanted to mention — you can get a $100 gift card any time someone you send our way comes in. A lot of our patients have done it for their spouse, coworkers, neighbors. It's pretty easy — they just mention your name when they book.",
+      "We actually have a referral rewards program I wanted to mention — you can earn a reward any time someone you send our way comes in. A lot of our patients have done it for their spouse, coworkers, neighbors. It's pretty easy — they just mention your name when they book.",
     tips: [
       "Bring it up naturally, not at the start — wait until you're in a rhythm.",
       "Mentioning a specific relationship (spouse, coworker) makes it feel real, not generic.",
@@ -194,7 +194,7 @@ const SCRIPTS = [
     icon: Gift,
     color: "bg-amber-50 text-amber-600",
     script:
-      "Before you go — do you know anyone who needs a new dentist? If they mention your name when they call, you'll get a $100 gift card after their first appointment. We'll text you when it's ready. No hoops to jump through.",
+      "Before you go — do you know anyone who needs a new dentist? If they mention your name when they call, you'll get a reward after their first appointment. We'll text you when it's ready. No hoops to jump through.",
     tips: [
       "Checkout is the highest-conversion moment — patient just had a good experience.",
       "The phrase 'no hoops to jump through' preemptively removes objections.",
@@ -206,7 +206,7 @@ const SCRIPTS = [
     icon: MessageSquare,
     color: "bg-rose-50 text-rose-600",
     script:
-      "And just so you know — whoever referred you to us will get a $100 gift card once your appointment is complete. We want to make sure they get credit. Did someone mention they were a patient here?",
+      "And just so you know — whoever referred you to us will get a reward once your appointment is complete. We want to make sure they get credit. Did someone mention they were a patient here?",
     tips: [
       "Always ask at booking — this is when the referral is freshest in the new patient's mind.",
       "Enter the referrer name in the system immediately, even if you're not sure of spelling.",
@@ -233,7 +233,7 @@ const FAQS = [
   },
   {
     q: "What if a patient refers multiple people?",
-    a: "They get a separate $100 gift card for each successful referral. There's no cap. A patient who sends three people gets $300 in rewards.",
+    a: "They get a separate reward for each successful referral. There's no cap — they earn a new reward for every person they send our way.",
   },
   {
     q: "Do we have to do anything to process the reward?",
@@ -277,7 +277,7 @@ export default function Playbook() {
           {[
             { icon: Smile, label: "Patient refers a friend", body: "They mention the referrer's name when booking or at their appointment." },
             { icon: CheckCircle2, label: "Visit is confirmed", body: "Rippl detects the completed appointment automatically through Open Dental." },
-            { icon: Gift, label: "Referrer gets $100", body: "A text goes out with a gift card link. They pick from hundreds of brands." },
+            { icon: Gift, label: "Referrer gets a reward", body: "A text goes out with a gift card link. They pick from hundreds of brands." },
           ].map(({ icon: Icon, label, body }) => (
             <div key={label} className="flex flex-col gap-2">
               <div className="w-8 h-8 rounded-xl bg-white border border-[#E0622A]/20 flex items-center justify-center">

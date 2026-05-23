@@ -2,7 +2,7 @@
  * Marketing Materials hub — waiting-room slide deck + downloadable marketing assets.
  */
 import PptxGenJS from "pptxgenjs";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import {
   Download, Monitor, Info, CheckCircle2, Loader2, ImageIcon,
@@ -11,26 +11,20 @@ import {
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
-const BG     = "0d1117";
+const BG      = "0d1117";
 const CARD_BG = "0f1e2e";
-const TEAL   = "2dd4bf";
-const ORANGE = "f59e0b";
-const PURPLE = "7c3aed";
-const WHITE  = "ffffff";
-const MUTED  = "94a3b8";
-const BORDER = "1e3a5f";
+const TEAL    = "2dd4bf";
+const ORANGE  = "f59e0b";
+const PURPLE  = "7c3aed";
+const WHITE   = "ffffff";
+const MUTED   = "94a3b8";
+const BORDER  = "1e3a5f";
 
-function splitName(name: string): [string, string] {
-  const words = name.trim().split(/\s+/);
-  if (words.length === 1) return [words[0].toUpperCase(), ""];
-  const mid = Math.ceil(words.length / 2);
-  return [words.slice(0, mid).join(" ").toUpperCase(), words.slice(mid).join(" ").toUpperCase()];
-}
-
-// ── Slide shell ────────────────────────────────────────────────────────────────
-function addShell(s: ReturnType<PptxGenJS["addSlide"]>, practiceName: string) {
+// ── Slide shell (no practice logo — generic template) ──────────────────────────
+function addShell(s: ReturnType<PptxGenJS["addSlide"]>) {
   s.background = { color: BG };
 
+  // Teal rounded border
   s.addShape(pptx.ShapeType.roundRect, {
     x: 0.12, y: 0.12, w: 13.09, h: 7.26,
     fill: { type: "none" } as any,
@@ -38,18 +32,7 @@ function addShell(s: ReturnType<PptxGenJS["addSlide"]>, practiceName: string) {
     rectRadius: 0.25,
   });
 
-  s.addShape(pptx.ShapeType.rect, {
-    x: 0.32, y: 0.28, w: 1.75, h: 0.72,
-    fill: { color: "111827" },
-    line: { color: TEAL, width: 0.75 },
-  });
-  const [line1, line2] = splitName(practiceName);
-  s.addText(line1 + (line2 ? "\n" + line2 : ""), {
-    x: 0.38, y: 0.3, w: 1.63, h: 0.68,
-    fontSize: 7.5, bold: true, color: WHITE, fontFace: "Arial",
-    valign: "middle", lineSpacingMultiple: 1.2,
-  });
-
+  // Powered by Rippl (bottom-right)
   s.addShape(pptx.ShapeType.ellipse, {
     x: 11.55, y: 7.05, w: 0.22, h: 0.22,
     fill: { color: TEAL },
@@ -65,14 +48,12 @@ let pptx: PptxGenJS;
 // ── Deck generator ─────────────────────────────────────────────────────────────
 async function generateDeck(practiceName: string): Promise<void> {
   pptx = new PptxGenJS();
-  pptx.layout = "LAYOUT_WIDE";
-
-  const name = practiceName || "Your Practice";
+  pptx.layout = "LAYOUT_WIDE"; // 13.33 × 7.5 in
 
   // Slide 1 — Refer a friend. Earn rewards.
   {
     const s = pptx.addSlide();
-    addShell(s, name);
+    addShell(s);
 
     s.addText("Refer a friend.", {
       x: 0.5, y: 1.1, w: 12.33, h: 1.3,
@@ -129,7 +110,7 @@ async function generateDeck(practiceName: string): Promise<void> {
   // Slide 2 — How it works
   {
     const s = pptx.addSlide();
-    addShell(s, name);
+    addShell(s);
 
     s.addText("How it works", {
       x: 0.5, y: 0.85, w: 12.33, h: 1.0,
@@ -151,7 +132,7 @@ async function generateDeck(practiceName: string): Promise<void> {
       s.addShape(pptx.ShapeType.roundRect, {
         x, y: sy, w: cardW, h: cardH,
         fill: { color: CARD_BG },
-        line: { color: BORDER, width: 1 },
+        line: { color: TEAL, width: 1.5 },
         rectRadius: 0.15,
       });
       s.addText(step.num, {
@@ -189,7 +170,7 @@ async function generateDeck(practiceName: string): Promise<void> {
   // Slide 3 — Choose your reward
   {
     const s = pptx.addSlide();
-    addShell(s, name);
+    addShell(s);
 
     s.addText("Choose your reward", {
       x: 0.5, y: 0.75, w: 12.33, h: 0.95,
@@ -251,157 +232,237 @@ async function generateDeck(practiceName: string): Promise<void> {
     );
   }
 
-  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const slug = (practiceName || "rippl").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   await pptx.writeFile({ fileName: `rippl-waiting-room-${slug}.pptx` });
 }
 
-// ── Slide previews ─────────────────────────────────────────────────────────────
+// ── Scaled slide previews ──────────────────────────────────────────────────────
+// Inner canvas is 800×450 (60px/PPTX-inch, 0.833px/PPTX-pt), scaled to fit container.
 
-function PreviewShell({ practiceName, children }: { practiceName: string; children: React.ReactNode }) {
-  const [l1, l2] = splitName(practiceName || "Your Practice");
+const CW = 800;   // canvas width px
+const CH = 450;   // canvas height px
+const IN = 60;    // px per PPTX inch
+const PT = 0.833; // px per PPTX point
+
+function ScaledSlide({ children }: { children: React.ReactNode }) {
+  const outerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.5);
+
+  useEffect(() => {
+    if (!outerRef.current) return;
+    const obs = new ResizeObserver(entries => {
+      setScale(entries[0].contentRect.width / CW);
+    });
+    obs.observe(outerRef.current);
+    setScale(outerRef.current.offsetWidth / CW || 0.5);
+    return () => obs.disconnect();
+  }, []);
+
   return (
-    <div className="w-full h-full relative flex flex-col" style={{ background: "#0d1117", fontFamily: "system-ui, sans-serif" }}>
-      <div className="absolute inset-[3px] rounded-[6px] pointer-events-none" style={{ border: "1.5px solid #2dd4bf" }} />
-      <div className="absolute" style={{ top: 5, left: 6, background: "#111827", border: "0.75px solid #2dd4bf", padding: "2px 4px", minWidth: 34 }}>
-        <div style={{ fontSize: 4, fontWeight: 700, color: "white", letterSpacing: "0.05em", lineHeight: 1.35 }}>
-          {l1}{l2 ? <><br />{l2}</> : null}
-        </div>
+    <div ref={outerRef} style={{ width: "100%", aspectRatio: "16/9", position: "relative", overflow: "hidden", background: "#0d1117" }}>
+      <div style={{
+        position: "absolute", top: 0, left: 0,
+        width: CW, height: CH,
+        transform: `scale(${scale})`,
+        transformOrigin: "top left",
+        background: "#0d1117",
+        fontFamily: "system-ui, -apple-system, Arial, sans-serif",
+      }}>
+        {children}
       </div>
-      <div className="absolute flex items-center gap-1" style={{ bottom: 5, right: 8 }}>
-        <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#2dd4bf" }} />
-        <span style={{ fontSize: 4, color: "white", fontWeight: 700 }}>Powered by Rippl</span>
-      </div>
-      {children}
     </div>
   );
 }
 
-function Slide1Preview({ name }: { name: string }) {
+function SlideBorder() {
+  return (
+    <>
+      <div style={{
+        position: "absolute",
+        left: 0.12 * IN, top: 0.12 * IN,
+        width: 13.09 * IN, height: 7.26 * IN,
+        border: "3px solid #2dd4bf",
+        borderRadius: 0.25 * IN,
+        pointerEvents: "none",
+        boxSizing: "border-box",
+      }} />
+      <div style={{
+        position: "absolute",
+        right: 0.28 * IN, bottom: 0.16 * IN,
+        display: "flex", alignItems: "center", gap: 6,
+      }}>
+        <div style={{ width: 13, height: 13, borderRadius: "50%", background: "#2dd4bf" }} />
+        <span style={{ fontSize: 8.5 * PT, color: "white", fontWeight: 700 }}>Powered by Rippl</span>
+      </div>
+    </>
+  );
+}
+
+function Slide1Preview({ name: _ }: { name: string }) {
   const TIERS = [
     { label: "INFLUENCER", amt: "$35",  sub: "1st referral", border: "#2dd4bf" },
     { label: "AMPLIFIER",  amt: "$50",  sub: "3 referrals",  border: "#2dd4bf" },
     { label: "AMBASSADOR", amt: "$75",  sub: "6 referrals",  border: "#2dd4bf" },
     { label: "LEGEND",     amt: "$100", sub: "10 referrals", border: "#7c3aed" },
   ];
+  const bW = 2.6 * IN, bH = 1.15 * IN, bG = 0.25 * IN;
+  const totalBW = TIERS.length * bW + (TIERS.length - 1) * bG;
+  const bX0 = (CW - totalBW) / 2;
+  const bY = 4.05 * IN;
+
   return (
-    <PreviewShell practiceName={name}>
-      <div className="flex-1 flex flex-col justify-center items-center px-4" style={{ gap: 2 }}>
-        <div style={{ fontSize: 16, fontWeight: 900, color: "white", lineHeight: 1 }}>Refer a friend.</div>
-        <div style={{ fontSize: 16, fontWeight: 900, color: "#2dd4bf", lineHeight: 1, marginBottom: 3 }}>Earn rewards.</div>
-        <div style={{ fontSize: 4, color: "#94a3b8", textAlign: "center", marginBottom: 5 }}>
-          Share your personal link — when they visit, you earn.
-        </div>
-        <div style={{ display: "flex", gap: 3 }}>
-          {TIERS.map(t => (
-            <div key={t.label} style={{ border: `1px solid ${t.border}`, borderRadius: 999, background: "#0f1e2e", padding: "3px 7px", textAlign: "center", minWidth: 36 }}>
-              <div style={{ fontSize: 3, color: "#2dd4bf", fontWeight: 700, letterSpacing: "0.1em" }}>{t.label}</div>
-              <div style={{ fontSize: 10, fontWeight: 900, color: "white", lineHeight: 1 }}>{t.amt}</div>
-              <div style={{ fontSize: 3, color: "#94a3b8" }}>{t.sub}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ fontSize: 3.5, color: "#94a3b8", marginTop: 4, textAlign: "center" }}>
-          Ask the front desk for your personal referral link today
-        </div>
+    <ScaledSlide>
+      <SlideBorder />
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 1.1 * IN, width: 12.33 * IN, fontSize: 78 * PT, fontWeight: 900, color: "white", textAlign: "center", lineHeight: 1.05, whiteSpace: "nowrap" }}>
+        Refer a friend.
       </div>
-    </PreviewShell>
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 2.2 * IN, width: 12.33 * IN, fontSize: 78 * PT, fontWeight: 900, color: "#2dd4bf", textAlign: "center", lineHeight: 1.05, whiteSpace: "nowrap" }}>
+        Earn rewards.
+      </div>
+      <div style={{ position: "absolute", left: 1.0 * IN, top: 3.45 * IN, width: 11.33 * IN, fontSize: 17 * PT, color: "#94a3b8", textAlign: "center" }}>
+        Share your personal link — when they visit, you earn. No forms. No waiting. Automatic.
+      </div>
+      {TIERS.map((t, i) => (
+        <div key={t.label} style={{
+          position: "absolute",
+          left: bX0 + i * (bW + bG), top: bY,
+          width: bW, height: bH,
+          background: "#0f1e2e",
+          border: `2px solid ${t.border}`,
+          borderRadius: bH / 2,
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: 2,
+        }}>
+          <div style={{ fontSize: 7.5 * PT, fontWeight: 700, color: "#2dd4bf", letterSpacing: "0.12em" }}>{t.label}</div>
+          <div style={{ fontSize: 36 * PT, fontWeight: 900, color: "white", lineHeight: 1 }}>{t.amt}</div>
+          <div style={{ fontSize: 9.5 * PT, color: "#94a3b8" }}>{t.sub}</div>
+        </div>
+      ))}
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 5.5 * IN, width: 12.33 * IN, fontSize: 14 * PT, color: "#94a3b8", textAlign: "center" }}>
+        Ask the front desk for your personal referral link today
+      </div>
+    </ScaledSlide>
   );
 }
 
-function Slide2Preview({ name }: { name: string }) {
-  const steps = [
-    { n: "01", t: "Get your link",      b: "Ask the front desk for your personal referral link" },
-    { n: "02", t: "Share with friends", b: "Text or email your link to anyone who needs a great dentist" },
-    { n: "03", t: "Earn rewards",       b: "When they visit you automatically earn up to $100" },
+function Slide2Preview({ name: _ }: { name: string }) {
+  const STEPS = [
+    { num: "01", title: "Get your link",      body: "Ask the front desk for your personal referral link" },
+    { num: "02", title: "Share with friends", body: "Text or email your link to anyone who needs a great dentist" },
+    { num: "03", title: "Earn rewards",        body: "When they visit you automatically earn up to $100" },
   ];
+  const cW = 3.6 * IN, cH = 5.05 * IN, gap = 0.5 * IN;
+  const totalCW = STEPS.length * cW + (STEPS.length - 1) * gap;
+  const cX0 = (CW - totalCW) / 2;
+  const cY = 1.65 * IN;
+
   return (
-    <PreviewShell practiceName={name}>
-      <div className="flex-1 flex flex-col px-3 pb-2" style={{ paddingTop: 12 }}>
-        <div style={{ fontSize: 13, fontWeight: 900, color: "white", textAlign: "center", marginBottom: 5 }}>How it works</div>
-        {/* Cards fill remaining space */}
-        <div style={{ display: "flex", gap: 3, flex: 1 }}>
-          {steps.map((s, i) => (
-            <div key={i} style={{ flex: 1, background: "#0f1e2e", border: "0.75px solid #2dd4bf", borderRadius: 3, padding: "5px 4px", textAlign: "center", display: "flex", flexDirection: "column" }}>
-              <div style={{ fontSize: 13, fontWeight: 900, color: "#2dd4bf", lineHeight: 1, marginBottom: 2 }}>{s.n}</div>
-              <div style={{ fontSize: 5, fontWeight: 700, color: "white", marginBottom: 2 }}>{s.t}</div>
-              <div style={{ fontSize: 3.5, color: "#94a3b8", lineHeight: 1.4 }}>{s.b}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ fontSize: 3.5, color: "#2dd4bf", paddingTop: 3, textAlign: "center" }}>
-          Gift card · $100 Dental credit · Local partner · Charity donation
-        </div>
+    <ScaledSlide>
+      <SlideBorder />
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 0.85 * IN, width: 12.33 * IN, fontSize: 64 * PT, fontWeight: 900, color: "white", textAlign: "center", lineHeight: 1.05 }}>
+        How it works
       </div>
-    </PreviewShell>
+      {STEPS.map((step, i) => {
+        const x = cX0 + i * (cW + gap);
+        return (
+          <div key={i} style={{
+            position: "absolute",
+            left: x, top: cY, width: cW, height: cH,
+            background: "#0f1e2e",
+            border: "1.5px solid #2dd4bf",
+            borderRadius: 0.15 * IN,
+            display: "flex", flexDirection: "column",
+            alignItems: "center", paddingTop: 20, paddingLeft: 10, paddingRight: 10,
+          }}>
+            <div style={{ fontSize: 40 * PT, fontWeight: 900, color: "#2dd4bf", lineHeight: 1, marginBottom: 8 }}>{step.num}</div>
+            <div style={{ fontSize: 20 * PT, fontWeight: 700, color: "white", textAlign: "center", marginBottom: 6 }}>{step.title}</div>
+            <div style={{ fontSize: 14 * PT, color: "#94a3b8", textAlign: "center", lineHeight: 1.4 }}>{step.body}</div>
+          </div>
+        );
+      })}
+      {/* Arrows */}
+      {[0, 1].map(i => {
+        const arrowX = cX0 + (i + 1) * cW + i * gap;
+        const arrowY = cY + cH / 2;
+        return (
+          <div key={i} style={{ position: "absolute", left: arrowX + 4, top: arrowY - 10, display: "flex", alignItems: "center", gap: 0 }}>
+            <div style={{ width: gap - 14, height: 2, background: "#2dd4bf" }} />
+            <div style={{ fontSize: 16 * PT, color: "#2dd4bf", lineHeight: 1 }}>→</div>
+          </div>
+        );
+      })}
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 6.65 * IN, width: 12.33 * IN, fontSize: 12 * PT, color: "#2dd4bf", textAlign: "center" }}>
+        Gift card · $100 Dental credit · Local partner · Charity donation
+      </div>
+    </ScaledSlide>
   );
 }
 
-function Slide3Preview({ name }: { name: string }) {
-  const rewards = [
-    { badge: "MOST POPULAR",  bc: "#2dd4bf", title: "$35 Gift Card",      body: "Amazon, Visa, Target, Starbucks & more",  cta: "→ Instant delivery",  cc: "#2dd4bf", border: "#2dd4bf", cardBg: "#0f1e2e" },
-    { badge: "MOST VALUABLE", bc: "#f59e0b", title: "$100 Dental Credit", body: "Applied to your account within 24 hours",  cta: "→ Highest value",      cc: "#f59e0b", border: "#f59e0b", cardBg: "#1a0e04" },
-    { badge: "",              bc: "",        title: "$35 Local Reward",    body: "Redeem at local partner businesses",       cta: "→ Show PIN in store",  cc: "#7c3aed", border: "#7c3aed", cardBg: "#120a1e" },
-    { badge: "",              bc: "",        title: "Donate $35",          body: "Charitable donation in your name",         cta: "→ Give back",          cc: "#94a3b8", border: "#1e3a5f", cardBg: "#0f1e2e" },
+function Slide3Preview({ name: _ }: { name: string }) {
+  const REWARDS = [
+    { badge: "MOST POPULAR",  bc: "#2dd4bf", title: "$35 Gift Card",      body: "Amazon, Visa, Target,\nStarbucks & more",  cta: "→ Instant delivery",  cc: "#2dd4bf", border: "#2dd4bf", cardBg: "#0f1e2e" },
+    { badge: "MOST VALUABLE", bc: "#f59e0b", title: "$100 Dental Credit", body: "Applied to your account\nwithin 24 hours",  cta: "→ Highest value",     cc: "#f59e0b", border: "#f59e0b", cardBg: "#1a0e04" },
+    { badge: "",              bc: "",        title: "$35 Local Reward",    body: "Redeem at local partner\nbusinesses",       cta: "→ Show PIN in store", cc: "#7c3aed", border: "#7c3aed", cardBg: "#120a1e" },
+    { badge: "",              bc: "",        title: "Donate $35",          body: "Charitable donation\nin your name",         cta: "→ Give back",         cc: "#94a3b8", border: "#1e3a5f", cardBg: "#0f1e2e" },
   ];
+  const rW = 2.8 * IN, rH = 4.6 * IN, rG = 0.28 * IN;
+  const totalRW = REWARDS.length * rW + (REWARDS.length - 1) * rG;
+  const rX0 = (CW - totalRW) / 2;
+  const rY = 2.1 * IN;
+
   return (
-    <PreviewShell practiceName={name}>
-      <div className="flex-1 flex flex-col px-2 pb-2" style={{ paddingTop: 10 }}>
-        <div style={{ fontSize: 11, fontWeight: 900, color: "white", textAlign: "center", marginBottom: 1.5 }}>Choose your reward</div>
-        <div style={{ fontSize: 3.5, color: "#94a3b8", textAlign: "center", marginBottom: 4 }}>
-          Automatically delivered when your friend visits
-        </div>
-        <div style={{ display: "flex", gap: 3, flex: 1 }}>
-          {rewards.map((r, i) => (
-            <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-              {r.badge && (
-                <div style={{ background: r.bc, borderRadius: 3, textAlign: "center", fontSize: 2.5, fontWeight: 700, color: "#0d1117", padding: "1.5px 0", marginBottom: 2 }}>
-                  {r.badge}
-                </div>
-              )}
-              {!r.badge && <div style={{ height: 7, marginBottom: 2 }} />}
-              <div style={{ flex: 1, background: r.cardBg, border: `0.75px solid ${r.border}`, borderRadius: 3, padding: "3px 3px", display: "flex", flexDirection: "column" }}>
-                <div style={{ fontSize: 5, fontWeight: 700, color: "white", textAlign: "center", marginBottom: 2 }}>{r.title}</div>
-                <div style={{ fontSize: 3.5, color: "#94a3b8", textAlign: "center", flex: 1, lineHeight: 1.4 }}>{r.body}</div>
-                <div style={{ fontSize: 3.5, color: r.cc, fontWeight: 700, textAlign: "center", marginTop: 2 }}>{r.cta}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={{ fontSize: 3, color: "#94a3b8", textAlign: "center", paddingTop: 3 }}>
-          Ask the front desk for your personal referral link today · Rewards grow with every referral — up to $100
-        </div>
+    <ScaledSlide>
+      <SlideBorder />
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 0.75 * IN, width: 12.33 * IN, fontSize: 60 * PT, fontWeight: 900, color: "white", textAlign: "center", lineHeight: 1.05 }}>
+        Choose your reward
       </div>
-    </PreviewShell>
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 1.65 * IN, width: 12.33 * IN, fontSize: 15 * PT, color: "#94a3b8", textAlign: "center" }}>
+        Your choice — automatically delivered when your friend visits
+      </div>
+      {REWARDS.map((r, i) => {
+        const x = rX0 + i * (rW + rG);
+        return (
+          <div key={i}>
+            {r.badge && (
+              <div style={{
+                position: "absolute",
+                left: x + 0.15 * IN, top: rY - 0.42 * IN,
+                width: rW - 0.3 * IN, height: 0.38 * IN,
+                background: r.bc, borderRadius: 0.15 * IN,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 8 * PT, fontWeight: 700, color: "#0d1117", letterSpacing: "0.05em",
+              }}>{r.badge}</div>
+            )}
+            <div style={{
+              position: "absolute",
+              left: x, top: rY, width: rW, height: rH,
+              background: r.cardBg,
+              border: `1.5px solid ${r.border}`,
+              borderRadius: 0.12 * IN,
+              display: "flex", flexDirection: "column",
+              padding: "18px 12px 14px",
+            }}>
+              <div style={{ fontSize: 17 * PT, fontWeight: 700, color: "white", textAlign: "center", marginBottom: 8 }}>{r.title}</div>
+              <div style={{ fontSize: 12 * PT, color: "#94a3b8", textAlign: "center", flex: 1, lineHeight: 1.5, whiteSpace: "pre-line" }}>{r.body}</div>
+              <div style={{ fontSize: 11 * PT, fontWeight: 700, color: r.cc, textAlign: "center" }}>{r.cta}</div>
+            </div>
+          </div>
+        );
+      })}
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 6.93 * IN, width: 11.0 * IN, fontSize: 10.5 * PT, color: "#94a3b8", textAlign: "center" }}>
+        Ask the front desk for your personal referral link today · Rewards grow with every referral — up to $100
+      </div>
+    </ScaledSlide>
   );
 }
 
 // ── Static marketing assets ────────────────────────────────────────────────────
 
 const MARKETING_ASSETS = [
-  {
-    label:    "Referral Card — Back",
-    file:     "ripplcardback.png",
-    download: "rippl-referral-card-back.png",
-    aspect:   "4/3",
-  },
-  {
-    label:    "Referral Card — Front",
-    file:     "ripplcardfront.png",
-    download: "rippl-referral-card-front.png",
-    aspect:   "4/3",
-  },
-  {
-    label:    "Flyer — 5 in",
-    file:     "rippl-flyer-5in.png",
-    download: "rippl-flyer-5in.png",
-    aspect:   "4/3",
-  },
-  {
-    label:    "Flyer — 8.5 in",
-    file:     "rippl-flyer-8.5in.png",
-    download: "rippl-flyer-8.5in.png",
-    aspect:   "4/3",
-  },
+  { label: "Referral Card — Back",  file: "ripplcardback.png",    download: "rippl-referral-card-back.png"  },
+  { label: "Referral Card — Front", file: "ripplcardfront.png",   download: "rippl-referral-card-front.png" },
+  { label: "Flyer — 5 in",         file: "rippl-flyer-5in.png",   download: "rippl-flyer-5in.png"           },
+  { label: "Flyer — 8.5 in",       file: "rippl-flyer-8.5in.png", download: "rippl-flyer-8.5in.png"         },
 ];
 
 // ── Main page ──────────────────────────────────────────────────────────────────
@@ -432,7 +493,7 @@ export default function SlideDeck() {
     setDone(false);
     setError(null);
     try {
-      await generateDeck(practiceName || "Your Practice");
+      await generateDeck(practiceName || "rippl");
       setDone(true);
       setTimeout(() => setDone(false), 5000);
     } catch (e) {
@@ -455,9 +516,7 @@ export default function SlideDeck() {
           </div>
           <span className="text-xs font-bold text-[#E0622A] uppercase tracking-widest">Marketing</span>
         </div>
-        <h1 className="text-2xl font-display font-bold text-slate-900 mb-2">
-          Marketing Materials
-        </h1>
+        <h1 className="text-2xl font-display font-bold text-slate-900 mb-2">Marketing Materials</h1>
         <p className="text-slate-500 leading-relaxed">
           Download ready-made assets for your practice — slide deck for Google Slides and printable referral materials.
         </p>
@@ -473,7 +532,7 @@ export default function SlideDeck() {
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Practice Name (shown on slides)
+              Practice Name (used in filename)
             </label>
             <input
               type="text"
@@ -501,7 +560,7 @@ export default function SlideDeck() {
           <button
             type="button"
             onClick={handleGenerate}
-            disabled={loading || !practiceName.trim()}
+            disabled={loading}
             className="w-full flex items-center justify-center gap-2 bg-[#1a2e5a] hover:bg-[#162547] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-all text-sm"
           >
             {loading ? (
@@ -519,14 +578,14 @@ export default function SlideDeck() {
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Preview</p>
           <div className="space-y-4">
             {[
-              { label: "Slide 1 — Refer a friend. Earn rewards.", El: () => <Slide1Preview name={practiceName} /> },
-              { label: "Slide 2 — How it works",                 El: () => <Slide2Preview name={practiceName} /> },
-              { label: "Slide 3 — Choose your reward",           El: () => <Slide3Preview name={practiceName} /> },
+              { label: "Slide 1 — Refer a friend. Earn rewards.", El: Slide1Preview },
+              { label: "Slide 2 — How it works",                 El: Slide2Preview },
+              { label: "Slide 3 — Choose your reward",           El: Slide3Preview },
             ].map(({ label, El }) => (
               <div key={label} className="space-y-1.5">
                 <p className="text-xs font-semibold text-slate-600">{label}</p>
-                <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm" style={{ aspectRatio: "16/9" }}>
-                  <El />
+                <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                  <El name={practiceName} />
                 </div>
               </div>
             ))}
@@ -572,12 +631,7 @@ export default function SlideDeck() {
             <div key={asset.file} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide text-center">{asset.label}</p>
               <div className="rounded-xl overflow-hidden border border-slate-100 bg-slate-50">
-                <img
-                  src={`/marketing/${asset.file}`}
-                  alt={asset.label}
-                  className="w-full h-auto object-contain"
-                  loading="lazy"
-                />
+                <img src={`/marketing/${asset.file}`} alt={asset.label} className="w-full h-auto object-contain" loading="lazy" />
               </div>
               <a
                 href={`/marketing/${asset.file}`}
@@ -594,7 +648,7 @@ export default function SlideDeck() {
         <div className="flex items-start gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
           <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
           <p className="text-xs text-slate-500 leading-relaxed">
-            The QR code links to <span className="font-mono text-slate-700">joinrippl.com/find</span> — patients enter their mobile number to get their personal referral link instantly. Works for all offices.
+            The QR code links to <span className="font-mono text-slate-700">joinrippl.com/find</span> — patients enter their mobile number to get their personal referral link instantly.
           </p>
         </div>
       </div>
@@ -617,7 +671,7 @@ export default function SlideDeck() {
         >
           <div>
             <p className="text-sm font-bold text-slate-800 group-hover:text-[#E0622A] transition-colors">8.5×11 in Waiting Room Flyer</p>
-            <p className="text-xs text-slate-500 mt-0.5">Full-page · dark navy + orange · Fraunces font</p>
+            <p className="text-xs text-slate-500 mt-0.5">Open → Cmd+P → Save as PDF → print on letter paper</p>
           </div>
           <Download className="w-4 h-4 text-slate-400 group-hover:text-[#E0622A] transition-colors shrink-0" />
         </a>
@@ -625,7 +679,7 @@ export default function SlideDeck() {
         <div className="flex items-start gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
           <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
           <p className="text-xs text-slate-500 leading-relaxed">
-            In the print dialog: set paper to Letter, make sure "Background graphics" is enabled, then Save as PDF. For physical prints, use FedEx, Staples, or a local print shop.
+            In the print dialog: set paper to Letter, enable "Background graphics," then Save as PDF or send to a print shop.
           </p>
         </div>
       </div>
