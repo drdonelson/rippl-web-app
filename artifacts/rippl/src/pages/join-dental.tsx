@@ -420,7 +420,6 @@ export default function JoinDental() {
                   "Full implementation playbook",
                   "Staff training materials + scripts",
                   "Digital assets for your website",
-                  "Staff incentive pool dashboard",
                   "Monthly referral performance report",
                 ].map(f => (
                   <div key={f} className="flex items-center gap-3">
@@ -451,11 +450,14 @@ export default function JoinDental() {
               <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center">
                 <Users className="w-5 h-5 text-[#E0622A]" />
               </div>
-              <p className="text-white font-bold text-base">Staff Incentive Pool</p>
+              <div>
+                <p className="text-white font-bold text-base">Staff Incentive Pool</p>
+                <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mt-0.5">Available on either plan</p>
+              </div>
             </div>
             <div className="flex-1">
               <p className="text-slate-400 text-sm leading-relaxed">
-                Add-on available on the Growth plan. Set a per-referral contribution (e.g. $10) that accumulates in a tracked pool — visible in your dashboard. Your office distributes it to hygienists and front desk however you choose. Rippl tracks and reports it monthly. You decide the reward.
+                Set a per-referral contribution (e.g. $10) that accumulates in a tracked pool — visible in your dashboard on any plan. Your office distributes it to hygienists and front desk however you choose. Rippl tracks and reports it monthly. You decide the reward.
               </p>
             </div>
             <div className="mt-5 lg:mt-0 shrink-0">
