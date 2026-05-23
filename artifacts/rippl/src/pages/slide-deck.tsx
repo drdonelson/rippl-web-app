@@ -1,13 +1,11 @@
 /**
- * Marketing Materials hub — waiting-room slide deck, referral card PNGs, poster links.
+ * Marketing Materials hub — waiting-room slide deck + downloadable marketing assets.
  */
 import PptxGenJS from "pptxgenjs";
-import QRCode from "qrcode";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import {
-  Download, Monitor, Info, CheckCircle2, Loader2,
-  CreditCard, FileImage, ExternalLink,
+  Download, Monitor, Info, CheckCircle2, Loader2, ImageIcon,
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
@@ -27,218 +25,6 @@ function splitName(name: string): [string, string] {
   if (words.length === 1) return [words[0].toUpperCase(), ""];
   const mid = Math.ceil(words.length / 2);
   return [words.slice(0, mid).join(" ").toUpperCase(), words.slice(mid).join(" ").toUpperCase()];
-}
-
-// ── Canvas card generation ─────────────────────────────────────────────────────
-
-function roundRectPath(
-  ctx: CanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number, r: number,
-) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + r, r);
-  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
-  ctx.arcTo(x, y + h, x, y + h - r, r);
-  ctx.arcTo(x, y, x + r, y, r);
-  ctx.closePath();
-}
-
-function drawCardShell(
-  ctx: CanvasRenderingContext2D,
-  W: number, H: number,
-  practiceName: string,
-) {
-  ctx.fillStyle = "#0d1117";
-  ctx.fillRect(0, 0, W, H);
-
-  roundRectPath(ctx, 10, 10, W - 20, H - 20, 24);
-  ctx.strokeStyle = "#2dd4bf";
-  ctx.lineWidth = 5;
-  ctx.stroke();
-
-  // Logo box
-  ctx.fillStyle = "#111827";
-  ctx.fillRect(24, 24, 190, 70);
-  ctx.strokeStyle = "#2dd4bf";
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(24, 24, 190, 70);
-
-  const [l1, l2] = splitName(practiceName);
-  ctx.fillStyle = "#ffffff";
-  ctx.textAlign = "left";
-  ctx.font = "bold 15px Arial, sans-serif";
-  ctx.fillText(l1, 34, 52);
-  if (l2) ctx.fillText(l2, 34, 72);
-
-  // Rippl badge bottom-right
-  ctx.fillStyle = "#2dd4bf";
-  ctx.beginPath();
-  ctx.arc(W - 122, H - 20, 6, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 12px Arial, sans-serif";
-  ctx.textAlign = "left";
-  ctx.fillText("Powered by Rippl", W - 113, H - 15);
-}
-
-function drawCardFront(
-  ctx: CanvasRenderingContext2D,
-  W: number, H: number,
-  practiceName: string,
-) {
-  drawCardShell(ctx, W, H, practiceName);
-
-  ctx.textAlign = "center";
-  ctx.font = "bold 70px Arial, sans-serif";
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText("Refer a friend.", W / 2, 230);
-  ctx.fillStyle = "#2dd4bf";
-  ctx.fillText("Earn rewards.", W / 2, 314);
-
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = "17px Arial, sans-serif";
-  ctx.fillText("Share your link — earn automatically when friends visit.", W / 2, 366);
-
-  const tiers = [
-    { label: "INFLUENCER", amt: "$35",  sub: "1st referral", bc: "#2dd4bf" },
-    { label: "AMPLIFIER",  amt: "$50",  sub: "3 referrals",  bc: "#2dd4bf" },
-    { label: "AMBASSADOR", amt: "$75",  sub: "6 referrals",  bc: "#2dd4bf" },
-    { label: "LEGEND",     amt: "$100", sub: "10 referrals", bc: "#7c3aed" },
-  ];
-  const bW = 210, bH = 98, gap = 18;
-  const totalBW = tiers.length * bW + (tiers.length - 1) * gap;
-  const sx = (W - totalBW) / 2;
-  const by = 400;
-
-  tiers.forEach((tier, i) => {
-    const x = sx + i * (bW + gap);
-    roundRectPath(ctx, x, by, bW, bH, 14);
-    ctx.fillStyle = "#0f1e2e";
-    ctx.fill();
-    ctx.strokeStyle = tier.bc;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    ctx.fillStyle = "#2dd4bf";
-    ctx.font = "bold 11px Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(tier.label, x + bW / 2, by + 22);
-
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 40px Arial, sans-serif";
-    ctx.fillText(tier.amt, x + bW / 2, by + 65);
-
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "13px Arial, sans-serif";
-    ctx.fillText(tier.sub, x + bW / 2, by + 87);
-  });
-
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = "14px Arial, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText("Ask the front desk for your personal referral link today", W / 2, H - 26);
-}
-
-async function drawCardBack(
-  ctx: CanvasRenderingContext2D,
-  W: number, H: number,
-  practiceName: string,
-) {
-  drawCardShell(ctx, W, H, practiceName);
-
-  // Divider
-  ctx.strokeStyle = "#1e3a5f";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(W / 2, 80);
-  ctx.lineTo(W / 2, H - 40);
-  ctx.stroke();
-
-  // Left — steps
-  ctx.textAlign = "left";
-  ctx.fillStyle = "#2dd4bf";
-  ctx.font = "bold 21px Arial, sans-serif";
-  ctx.fillText("How to get your link", 36, 136);
-
-  const steps = [
-    "Scan the QR code →",
-    "Enter your mobile number",
-    "Get your personal referral link",
-    "Earn when they become a patient",
-  ];
-  steps.forEach((step, i) => {
-    const cy = 196 + i * 84;
-    ctx.fillStyle = "#2dd4bf";
-    ctx.beginPath();
-    ctx.arc(58, cy, 19, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "#0d1117";
-    ctx.font = "bold 15px Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(String(i + 1), 58, cy + 6);
-
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "15px Arial, sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillText(step, 88, cy + 6);
-  });
-
-  ctx.fillStyle = "#2dd4bf";
-  ctx.font = "bold 13px 'Courier New', monospace";
-  ctx.textAlign = "left";
-  ctx.fillText("joinrippl.com/find", 36, H - 34);
-
-  // Right — QR code
-  const qrDataUrl = await QRCode.toDataURL("https://joinrippl.com/find", {
-    width: 270,
-    margin: 1,
-    color: { dark: "#000000ff", light: "#ffffffff" },
-  });
-
-  const qrSize = 270;
-  const qrX = W / 2 + (W / 2 - qrSize) / 2;
-  const qrY = (H - qrSize) / 2 - 24;
-
-  ctx.fillStyle = "#ffffff";
-  roundRectPath(ctx, qrX - 12, qrY - 12, qrSize + 24, qrSize + 24, 12);
-  ctx.fill();
-
-  const qrImg = new Image();
-  await new Promise<void>(resolve => {
-    qrImg.onload = () => resolve();
-    qrImg.src = qrDataUrl;
-  });
-  ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
-
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = "14px Arial, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText("Scan to get your referral link", W * 3 / 4, qrY + qrSize + 26);
-}
-
-async function downloadCardPng(side: "front" | "back", practiceName: string): Promise<void> {
-  const W = 1000, H = 700;
-  const canvas = document.createElement("canvas");
-  canvas.width = W;
-  canvas.height = H;
-  const ctx = canvas.getContext("2d")!;
-
-  if (side === "front") {
-    drawCardFront(ctx, W, H, practiceName);
-  } else {
-    await drawCardBack(ctx, W, H, practiceName);
-  }
-
-  const pngUrl = canvas.toDataURL("image/png");
-  const a = document.createElement("a");
-  a.href = pngUrl;
-  const slug = practiceName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  a.download = `rippl-referral-card-${side}-${slug}.png`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
 }
 
 // ── Slide shell ────────────────────────────────────────────────────────────────
@@ -351,9 +137,9 @@ async function generateDeck(practiceName: string): Promise<void> {
     });
 
     const STEPS = [
-      { num: "01", title: "Get your link",       body: "Ask the front desk for your personal referral link" },
-      { num: "02", title: "Share with friends",  body: "Text or email your link to anyone who needs a great dentist" },
-      { num: "03", title: "Earn rewards",         body: "When they visit you automatically earn up to $100" },
+      { num: "01", title: "Get your link",      body: "Ask the front desk for your personal referral link" },
+      { num: "02", title: "Share with friends", body: "Text or email your link to anyone who needs a great dentist" },
+      { num: "03", title: "Earn rewards",        body: "When they visit you automatically earn up to $100" },
     ];
     const cardW = 3.6, cardH = 4.5, gap = 0.5;
     const totalW = STEPS.length * cardW + (STEPS.length - 1) * gap;
@@ -380,7 +166,6 @@ async function generateDeck(practiceName: string): Promise<void> {
         x: x + 0.2, y: sy + 1.7, w: cardW - 0.4, h: 1.2,
         fontSize: 14, color: MUTED, align: "center", lineSpacingMultiple: 1.4,
       });
-
       if (i < STEPS.length - 1) {
         const ax = x + cardW + 0.06;
         const ay = sy + cardH / 2 - 0.15;
@@ -470,7 +255,7 @@ async function generateDeck(practiceName: string): Promise<void> {
   await pptx.writeFile({ fileName: `rippl-waiting-room-${slug}.pptx` });
 }
 
-// ── Slide preview components ──────────────────────────────────────────────────
+// ── Slide previews ─────────────────────────────────────────────────────────────
 
 function PreviewShell({ practiceName, children }: { practiceName: string; children: React.ReactNode }) {
   const [l1, l2] = splitName(practiceName || "Your Practice");
@@ -552,17 +337,17 @@ function Slide2Preview({ name }: { name: string }) {
 
 function Slide3Preview({ name }: { name: string }) {
   const rewards = [
-    { badge: "MOST POPULAR",  bc: "#2dd4bf", title: "$35 Gift Card",      body: "Amazon, Visa & more",    cta: "→ Instant delivery",   cc: "#2dd4bf", border: "#2dd4bf" },
-    { badge: "MOST VALUABLE", bc: "#f59e0b", title: "$100 Dental Credit", body: "Applied in 24h",          cta: "→ Highest value",       cc: "#f59e0b", border: "#f59e0b" },
-    { badge: "",              bc: "",        title: "$35 Local Reward",    body: "Local partner businesses", cta: "→ Show PIN in store",   cc: "#7c3aed", border: "#7c3aed" },
-    { badge: "",              bc: "",        title: "Donate $35",          body: "Charitable donation",      cta: "→ Give back",           cc: "#94a3b8", border: "#1e3a5f" },
+    { badge: "MOST POPULAR",  bc: "#2dd4bf", title: "$35 Gift Card",      body: "Amazon, Visa & more",     cta: "→ Instant delivery",  cc: "#2dd4bf", border: "#2dd4bf" },
+    { badge: "MOST VALUABLE", bc: "#f59e0b", title: "$100 Dental Credit", body: "Applied in 24h",           cta: "→ Highest value",      cc: "#f59e0b", border: "#f59e0b" },
+    { badge: "",              bc: "",        title: "$35 Local Reward",    body: "Local partners",           cta: "→ Show PIN in store",  cc: "#7c3aed", border: "#7c3aed" },
+    { badge: "",              bc: "",        title: "Donate $35",          body: "Charitable donation",      cta: "→ Give back",          cc: "#94a3b8", border: "#1e3a5f" },
   ];
   return (
     <PreviewShell practiceName={name}>
       <div className="flex-1 flex flex-col items-center px-2 pb-3" style={{ paddingTop: 12 }}>
         <div style={{ fontSize: 12, fontWeight: 900, color: "white", marginBottom: 2 }}>Choose your reward</div>
         <div style={{ fontSize: 3.5, color: "#94a3b8", marginBottom: 5, textAlign: "center" }}>
-          Your choice — automatically delivered when your friend visits
+          Automatically delivered when your friend visits
         </div>
         <div style={{ display: "flex", gap: 3, width: "100%" }}>
           {rewards.map((r, i) => (
@@ -585,75 +370,34 @@ function Slide3Preview({ name }: { name: string }) {
   );
 }
 
-// ── Card preview components ───────────────────────────────────────────────────
+// ── Static marketing assets ────────────────────────────────────────────────────
 
-function CardShell({ practiceName, children }: { practiceName: string; children: React.ReactNode }) {
-  const [l1, l2] = splitName(practiceName || "Your Practice");
-  return (
-    <div style={{ background: "#0d1117", width: "100%", height: "100%", position: "relative", fontFamily: "system-ui, sans-serif", display: "flex" }}>
-      <div style={{ position: "absolute", inset: 3, borderRadius: 6, border: "1.5px solid #2dd4bf", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", top: 5, left: 5, background: "#111827", border: "0.75px solid #2dd4bf", padding: "2px 5px" }}>
-        <div style={{ fontSize: 4, fontWeight: 700, color: "white", lineHeight: 1.3 }}>{l1}{l2 && <><br />{l2}</>}</div>
-      </div>
-      <div style={{ position: "absolute", bottom: 4, right: 5, display: "flex", gap: 2, alignItems: "center" }}>
-        <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#2dd4bf" }} />
-        <span style={{ fontSize: 3, color: "white", fontWeight: 700 }}>Powered by Rippl</span>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function CardFrontPreview({ name }: { name: string }) {
-  const tiers = [
-    { label: "INFLUENCER", amt: "$35",  border: "#2dd4bf" },
-    { label: "AMPLIFIER",  amt: "$50",  border: "#2dd4bf" },
-    { label: "AMBASSADOR", amt: "$75",  border: "#2dd4bf" },
-    { label: "LEGEND",     amt: "$100", border: "#7c3aed" },
-  ];
-  return (
-    <CardShell practiceName={name}>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, padding: "0 8px" }}>
-        <div style={{ fontSize: 13, fontWeight: 900, color: "white", lineHeight: 1 }}>Refer a friend.</div>
-        <div style={{ fontSize: 13, fontWeight: 900, color: "#2dd4bf", lineHeight: 1, marginBottom: 4 }}>Earn rewards.</div>
-        <div style={{ display: "flex", gap: 2 }}>
-          {tiers.map(t => (
-            <div key={t.label} style={{ border: `0.75px solid ${t.border}`, borderRadius: 5, background: "#0f1e2e", padding: "2px 4px", textAlign: "center", minWidth: 28 }}>
-              <div style={{ fontSize: 2.5, fontWeight: 700, color: "#2dd4bf", letterSpacing: "0.05em" }}>{t.label}</div>
-              <div style={{ fontSize: 9, fontWeight: 900, color: "white", lineHeight: 1 }}>{t.amt}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ fontSize: 3, color: "#94a3b8", marginTop: 4, textAlign: "center" }}>Ask the front desk for your personal referral link today</div>
-      </div>
-    </CardShell>
-  );
-}
-
-function CardBackPreview({ name }: { name: string }) {
-  const steps = ["Scan the QR code →", "Enter your mobile number", "Get your personal link", "Earn when they visit"];
-  return (
-    <CardShell practiceName={name}>
-      <div style={{ flex: 1, paddingLeft: 8, paddingTop: 20, display: "flex", flexDirection: "column", gap: 5 }}>
-        <div style={{ fontSize: 5, fontWeight: 700, color: "#2dd4bf" }}>How to get your link</div>
-        {steps.map((s, i) => (
-          <div key={i} style={{ display: "flex", gap: 3, alignItems: "center" }}>
-            <div style={{ width: 9, height: 9, borderRadius: "50%", background: "#2dd4bf", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 5, fontWeight: 900, color: "#0d1117", flexShrink: 0 }}>{i + 1}</div>
-            <div style={{ fontSize: 3.5, color: "white", lineHeight: 1.3 }}>{s}</div>
-          </div>
-        ))}
-        <div style={{ fontSize: 4, color: "#2dd4bf", fontFamily: "monospace", marginTop: 2 }}>joinrippl.com/find</div>
-      </div>
-      <div style={{ width: 1, background: "#1e3a5f", margin: "15px 0" }} />
-      <div style={{ width: "42%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3 }}>
-        <div style={{ background: "white", width: 46, height: 46, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 3 }}>
-          <div style={{ fontSize: 4, color: "#94a3b8", textAlign: "center", lineHeight: 1.4 }}>QR<br />code</div>
-        </div>
-        <div style={{ fontSize: 3.5, color: "#94a3b8", textAlign: "center" }}>Scan to get<br />your link</div>
-      </div>
-    </CardShell>
-  );
-}
+const MARKETING_ASSETS = [
+  {
+    label:    "Referral Card — Back",
+    file:     "ripplcardback.png",
+    download: "rippl-referral-card-back.png",
+    aspect:   "4/3",
+  },
+  {
+    label:    "Referral Card — Front",
+    file:     "ripplcardfront.png",
+    download: "rippl-referral-card-front.png",
+    aspect:   "4/3",
+  },
+  {
+    label:    "Flyer — 5 in",
+    file:     "rippl-flyer-5in.png",
+    download: "rippl-flyer-5in.png",
+    aspect:   "4/3",
+  },
+  {
+    label:    "Flyer — 8.5 in",
+    file:     "rippl-flyer-8.5in.png",
+    download: "rippl-flyer-8.5in.png",
+    aspect:   "4/3",
+  },
+];
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 
@@ -663,7 +407,6 @@ export default function SlideDeck() {
   const [loading, setLoading]           = useState(false);
   const [done, setDone]                 = useState(false);
   const [error, setError]               = useState<string | null>(null);
-  const [cardLoading, setCardLoading]   = useState({ front: false, back: false });
 
   useEffect(() => {
     if (!profile) return;
@@ -696,19 +439,8 @@ export default function SlideDeck() {
     }
   }
 
-  async function handleCardDownload(side: "front" | "back") {
-    setCardLoading(prev => ({ ...prev, [side]: true }));
-    try {
-      await downloadCardPng(side, practiceName || "Your Practice");
-    } catch (e) {
-      console.error("Card download error:", e);
-    } finally {
-      setCardLoading(prev => ({ ...prev, [side]: false }));
-    }
-  }
-
   return (
-    <div className="max-w-2xl mx-auto space-y-8 pb-12">
+    <div className="max-w-2xl mx-auto space-y-10 pb-12">
 
       {/* Header */}
       <div>
@@ -722,38 +454,36 @@ export default function SlideDeck() {
           Marketing Materials
         </h1>
         <p className="text-slate-500 leading-relaxed">
-          Download ready-made materials for your practice — slide deck, referral cards, and posters.
-          All branded with your practice name.
+          Download ready-made assets for your practice — slide deck for Google Slides and printable referral materials.
         </p>
       </div>
 
-      {/* Practice name — shared across all materials */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-          Practice Name (used on all materials)
-        </label>
-        <input
-          type="text"
-          value={practiceName}
-          onChange={e => setPracticeName(e.target.value)}
-          placeholder="Hallmark Dental"
-          className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#E0622A]/25 focus:border-[#E0622A] transition-all"
-        />
-      </div>
-
-      {/* ── Section 1: Waiting Room Slides ── */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
+      {/* ── Section 1: Waiting Room Slide Deck ── */}
+      <div className="space-y-5">
+        <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
           <Monitor className="w-4 h-4 text-slate-400" />
-          <h2 className="text-base font-bold text-slate-800">Waiting Room Slide Deck</h2>
-        </div>
+          Waiting Room Slide Deck
+        </h2>
 
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              Practice Name (shown on slides)
+            </label>
+            <input
+              type="text"
+              value={practiceName}
+              onChange={e => setPracticeName(e.target.value)}
+              placeholder="Hallmark Dental"
+              className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#E0622A]/25 focus:border-[#E0622A] transition-all"
+            />
+          </div>
+
           <div className="flex items-start gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
             <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
             <p className="text-xs text-slate-500 leading-relaxed">
-              3-slide PowerPoint matching your Google Slides design — dark charcoal, teal accents, tier rewards.
-              Download → upload to Google Drive → opens as Google Slides automatically.
+              3 slides: hero (tier rewards), how it works, choose your reward.
+              Download → upload to Google Drive → "Open with Google Slides."
             </p>
           </div>
 
@@ -779,7 +509,7 @@ export default function SlideDeck() {
           </button>
         </div>
 
-        {/* Slide previews */}
+        {/* Live previews */}
         <div className="space-y-3">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Preview</p>
           <div className="space-y-4">
@@ -822,39 +552,36 @@ export default function SlideDeck() {
         </div>
       </div>
 
-      {/* ── Section 2: Referral Cards ── */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <CreditCard className="w-4 h-4 text-slate-400" />
-          <h2 className="text-base font-bold text-slate-800">Referral Cards</h2>
-        </div>
+      {/* ── Section 2: Referral Materials ── */}
+      <div className="space-y-5">
+        <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+          <ImageIcon className="w-4 h-4 text-slate-400" />
+          Referral Cards &amp; Flyers
+        </h2>
         <p className="text-sm text-slate-500">
-          Business-card size (5×3.5 in). Download as PNG — print at any local print shop on card stock.
+          Download print-ready PNGs. Send to a local print shop or use Moo.com / Vistaprint.
         </p>
 
         <div className="grid grid-cols-2 gap-4">
-          {(["front", "back"] as const).map(side => (
-            <div key={side} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide text-center">
-                {side === "front" ? "Front" : "Back"}
-              </p>
-              <div className="rounded-xl overflow-hidden border border-slate-200" style={{ aspectRatio: "10/7" }}>
-                {side === "front"
-                  ? <CardFrontPreview name={practiceName} />
-                  : <CardBackPreview  name={practiceName} />
-                }
+          {MARKETING_ASSETS.map(asset => (
+            <div key={asset.file} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide text-center">{asset.label}</p>
+              <div className="rounded-xl overflow-hidden border border-slate-100 bg-slate-50">
+                <img
+                  src={`/marketing/${asset.file}`}
+                  alt={asset.label}
+                  className="w-full h-auto object-contain"
+                  loading="lazy"
+                />
               </div>
-              <button
-                type="button"
-                onClick={() => handleCardDownload(side)}
-                disabled={cardLoading[side] || !practiceName.trim()}
-                className="w-full flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-xl transition-all text-xs"
+              <a
+                href={`/marketing/${asset.file}`}
+                download={asset.download}
+                className="flex w-full items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2.5 rounded-xl transition-all text-xs"
               >
-                {cardLoading[side]
-                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
-                  : <><Download className="w-3.5 h-3.5" /> Download {side} PNG</>
-                }
-              </button>
+                <Download className="w-3.5 h-3.5" />
+                Download PNG
+              </a>
             </div>
           ))}
         </div>
@@ -862,49 +589,7 @@ export default function SlideDeck() {
         <div className="flex items-start gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
           <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
           <p className="text-xs text-slate-500 leading-relaxed">
-            PNG downloads at 1000×700px (print-ready). For physical cards, send both PNGs to a print shop
-            and request 5×3.5in two-sided card stock. Moo.com or Vistaprint work great.
-          </p>
-        </div>
-      </div>
-
-      {/* ── Section 3: Waiting Room Posters ── */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <FileImage className="w-4 h-4 text-slate-400" />
-          <h2 className="text-base font-bold text-slate-800">Waiting Room Posters</h2>
-        </div>
-        <p className="text-sm text-slate-500">
-          Print-ready poster pages. Open in a new tab → Cmd+P → Save as PDF → send to print shop.
-        </p>
-
-        <div className="grid grid-cols-2 gap-4">
-          {[
-            { label: "8.5×11 in Poster", href: "/poster-print", sub: "Full-page, ideal for a wall frame" },
-            { label: "5×7 in Poster",    href: "/poster-5x7",   sub: "Half-size, great for countertops" },
-          ].map(({ label, href, sub }) => (
-            <a
-              key={href}
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:border-slate-300 hover:shadow-md transition-all group"
-            >
-              <div className="flex items-start justify-between mb-2">
-                <p className="text-sm font-bold text-slate-800 group-hover:text-[#E0622A] transition-colors">{label}</p>
-                <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-              </div>
-              <p className="text-xs text-slate-500">{sub}</p>
-              <p className="text-xs text-[#2dd4bf] font-semibold mt-3">Open print page →</p>
-            </a>
-          ))}
-        </div>
-
-        <div className="flex items-start gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-          <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-          <p className="text-xs text-slate-500 leading-relaxed">
-            In the print dialog: make sure "Background graphics" is checked, then "Save as PDF."
-            For physical prints, use a local print shop or FedEx/Staples.
+            The QR code on the referral card links to <span className="font-mono text-slate-700">joinrippl.com/find</span> — patients enter their mobile number to get their personal referral link instantly. Works for all offices.
           </p>
         </div>
       </div>

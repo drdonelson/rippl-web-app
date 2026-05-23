@@ -14,7 +14,7 @@ export default function Poster5x7() {
         <div style={{
           width: "5in",
           height: "7in",
-          background: "#0d1117",
+          background: "#1a2e5a",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",

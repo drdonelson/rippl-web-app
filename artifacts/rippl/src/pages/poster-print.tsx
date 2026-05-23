@@ -20,7 +20,7 @@ export default function PosterPrint() {
       <div style={{
         width: "8.5in",
         height: "11in",
-        background: "#0d1117",
+        background: "#1a2e5a",
         display: "flex",
         flexDirection: "column",
         position: "relative",
