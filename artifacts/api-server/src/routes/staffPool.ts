@@ -7,7 +7,8 @@ import { requireAuth, requirePracticeAdmin } from "../middleware/auth";
 const router = Router();
 
 // GET /api/practice/pool — config + running balance + last 30 entries
-router.get("/pool", requireAuth, requirePracticeAdmin, async (req, res) => {
+// Readable by any authenticated user scoped to a practice (staff, practice_admin)
+router.get("/pool", requireAuth, async (req, res) => {
   const practice_id = req.authUser!.practice_id;
   if (!practice_id) {
     res.status(403).json({ error: "No practice associated with this account" });

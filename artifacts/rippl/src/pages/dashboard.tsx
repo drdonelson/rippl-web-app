@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Users, UserPlus, Gift, Trophy, ArrowRight, Activity, CheckCircle2, ClipboardList, X, Building2, UserCog, ExternalLink } from "lucide-react";
+import { Users, UserPlus, Gift, Trophy, ArrowRight, Activity, CheckCircle2, ClipboardList, X, Building2, UserCog, ExternalLink, Wallet } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
 import { useOffice } from "@/contexts/office-context";
@@ -66,6 +66,15 @@ function useAdminTasks(enabled: boolean) {
   });
 }
 
+function usePoolBalance(enabled: boolean) {
+  return useQuery<{ config: { enabled: boolean; amount_per_referral: number }; balance: number }>({
+    queryKey: ["/api/practice/pool"],
+    queryFn: () => customFetch(`${BASE}/api/practice/pool`),
+    enabled,
+    staleTime: 60_000,
+  });
+}
+
 function useCompleteTask() {
   const qc = useQueryClient();
   return useMutation({
@@ -86,6 +95,7 @@ export default function Dashboard() {
 
   const { data: fetchedStats, isLoading, error } = useDashboard(selectedOfficeId, queryEnabled);
   const { data: adminTasks = [] } = useAdminTasks(queryEnabled);
+  const { data: poolData } = usePoolBalance(queryEnabled && !!profile?.practice_id);
   const completeTask = useCompleteTask();
 
   const [welcomeDismissed, setWelcomeDismissed] = useState(() => {
@@ -162,7 +172,7 @@ export default function Dashboard() {
               <Building2 className="w-4 h-4 text-primary shrink-0" />
               Upload your practice logo
             </Link>
-            <Link href="/staff" className="flex items-center gap-2.5 px-4 py-3 bg-card/60 hover:bg-card border border-border rounded-xl text-sm font-medium text-foreground transition-colors">
+            <Link href="/offices" className="flex items-center gap-2.5 px-4 py-3 bg-card/60 hover:bg-card border border-border rounded-xl text-sm font-medium text-foreground transition-colors">
               <UserCog className="w-4 h-4 text-primary shrink-0" />
               Invite front desk staff
             </Link>
@@ -193,6 +203,36 @@ export default function Dashboard() {
           </Link>
         ))}
       </div>
+
+      {/* Staff Incentive Pool balance — shown when pool is enabled */}
+      {!isDemo && poolData?.config?.enabled && (
+        <div className="flex items-center gap-5 bg-card/50 border border-border rounded-2xl px-6 py-5">
+          <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+            <Wallet className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-muted-foreground">Team Referral Pool</p>
+            <p className="text-xs text-muted-foreground/70 mt-0.5">
+              ${poolData.config.amount_per_referral} is added to this pool every time a referral completes.
+              Your practice owner distributes it to the team.
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-3xl font-black text-primary" style={{ fontFamily: "Georgia, serif" }}>
+              ${poolData.balance}
+            </p>
+            <p className="text-xs text-muted-foreground">current balance</p>
+          </div>
+          {isPracticeAdmin && (
+            <Link
+              href="/offices"
+              className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+            >
+              Manage <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          )}
+        </div>
+      )}
 
       {/* Pending Admin Tasks — hidden in demo mode */}
       {!isDemo && adminTasks.length > 0 && (
