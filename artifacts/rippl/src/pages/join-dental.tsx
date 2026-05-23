@@ -452,16 +452,16 @@ export default function JoinDental() {
               </div>
               <div>
                 <p className="text-white font-bold text-base">Staff Incentive Pool</p>
-                <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mt-0.5">Available on either plan</p>
+                <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mt-0.5">Included on all plans</p>
               </div>
             </div>
             <div className="flex-1">
               <p className="text-slate-400 text-sm leading-relaxed">
-                Set a per-referral contribution (e.g. $10) that accumulates in a tracked pool — visible in your dashboard on any plan. Your office distributes it to hygienists and front desk however you choose. Rippl tracks and reports it monthly. You decide the reward.
+                Practices that keep their staff in the loop get more referrals. Set a per-referral contribution amount — say $10 — and Rippl automatically tracks it in a pool visible in your dashboard. Your team sees the program working. You decide how and when to distribute it. No extra charge from us — that money goes straight to your people.
               </p>
             </div>
             <div className="mt-5 lg:mt-0 shrink-0">
-              <span className="inline-block px-4 py-2 bg-white/10 text-white text-sm font-bold rounded-xl">+$10/referral</span>
+              <span className="inline-block px-4 py-2 bg-white/10 text-white text-xs font-semibold rounded-xl text-center leading-snug">No Rippl<br />fee to enable</span>
             </div>
           </div>
 
