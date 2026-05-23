@@ -820,9 +820,10 @@ export default function Onboard() {
                     className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#E0622A] focus:ring-[#E0622A]/30 shrink-0"
                   />
                   <span className="text-sm text-slate-700 leading-relaxed">
-                    This practice agrees to Rippl's referral pricing —
-                    {" "}<span className="font-semibold text-slate-900">$20 per completed referral, no monthly fee.</span>
-                    {" "}The first charge occurs when the first referral is detected.
+                    This practice agrees to Rippl's pricing. Choose your plan after setup:
+                    {" "}<span className="font-semibold text-slate-900">Growth — $249/month + $12 per completed referral.</span>
+                    {" "}<span className="font-semibold text-slate-900">Pay-As-You-Go — $0/month + $35 per completed referral.</span>
+                    {" "}Billing begins when the first referral is detected.
                   </span>
                 </label>
               </div>
