@@ -1,168 +1,144 @@
 /**
  * Waiting-room slide deck generator.
  * Produces a .pptx (16:9) that auto-converts to Google Slides on Drive upload.
- * Each office gets its own QR code URL: joinrippl.com/find?office=brentwood etc.
+ * QR code is generated locally (no CORS) via the qrcode library.
+ * URL: joinrippl.com/find — works for all offices universally.
  */
-import { useState } from "react";
+import PptxGenJS from "pptxgenjs";
+import QRCode from "qrcode";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/auth-context";
 import {
-  Download, Monitor, QrCode, ChevronRight, Info, CheckCircle2, Loader2,
+  Download, Monitor, Info, CheckCircle2, Loader2, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
-interface Office {
-  code:    string;
-  label:   string;
-  findUrl: string;
-}
+// ── Constants ─────────────────────────────────────────────────────────────────
 
-const OFFICES: Office[] = [
-  { code: "brentwood",  label: "Brentwood",  findUrl: "joinrippl.com/find?office=brentwood"  },
-  { code: "greenbrier", label: "Greenbrier", findUrl: "joinrippl.com/find?office=greenbrier" },
-  { code: "lewisburg",  label: "Lewisburg",  findUrl: "joinrippl.com/find?office=lewisburg"  },
-];
+const FIND_URL  = "https://joinrippl.com/find";
+const FIND_DISP = "joinrippl.com/find";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+const NAVY   = "1a2e5a";
+const ORANGE = "E0622A";
+const WHITE  = "FFFFFF";
+const GOLD   = "c9a84c";
+const LIGHT  = "BBCAE0";
+const PANEL  = "22396e";
 
-async function fetchQrBase64(url: string): Promise<string> {
-  const apiUrl =
-    `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(url)}&margin=12&format=png&color=1a2e5a&bgcolor=ffffff`;
-  const res  = await fetch(apiUrl);
-  const blob = await res.blob();
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload  = () => resolve((reader.result as string).split(",")[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
+// ── QR generation (local, no CORS) ───────────────────────────────────────────
+
+async function makeQrDataUrl(url: string): Promise<string> {
+  return QRCode.toDataURL(url, {
+    width: 400,
+    margin: 2,
+    color: { dark: "#1a2e5a", light: "#ffffff" },
+    errorCorrectionLevel: "M",
   });
 }
 
-async function generateDeck(office: Office, rewardAmount: number): Promise<void> {
-  const { default: PptxGenJS } = await import("pptxgenjs");
+// ── Slide helpers ─────────────────────────────────────────────────────────────
 
-  const qrBase64 = await fetchQrBase64(`https://${office.findUrl}`);
+function addTopBar(slide: ReturnType<typeof new PptxGenJS>["addSlide"]) {
+  slide.addShape("rect" as any, {
+    x: 0, y: 0, w: 13.33, h: 0.07,
+    fill: { color: ORANGE },
+  });
+}
+
+function addBadge(slide: ReturnType<typeof new PptxGenJS>["addSlide"], x = 8.8, y = 0.28) {
+  slide.addShape("roundRect" as any, {
+    x, y, w: 3.8, h: 0.45,
+    fill: { color: "FFFFFF", transparency: 90 },
+    line: { color: "FFFFFF", transparency: 70, width: 1 },
+    rectRadius: 0.15,
+  });
+  slide.addShape("ellipse" as any, {
+    x: x + 0.22, y: y + 0.15, w: 0.15, h: 0.15,
+    fill: { color: ORANGE },
+  });
+  slide.addText("REFERRAL REWARDS", {
+    x: x + 0.5, y: y + 0.04, w: 3.1, h: 0.38,
+    fontSize: 8, bold: true, color: WHITE, charSpacing: 1.5, valign: "middle",
+  });
+}
+
+function addPracticeTag(
+  slide: ReturnType<typeof new PptxGenJS>["addSlide"],
+  practiceName: string,
+  x = 0.5, y = 0.25,
+) {
+  const upper = practiceName.toUpperCase();
+  slide.addText(upper, {
+    x, y, w: 5, h: 0.44,
+    fontSize: 9, bold: true, color: GOLD, charSpacing: 2,
+  });
+}
+
+function addFooter(slide: ReturnType<typeof new PptxGenJS>["addSlide"]) {
+  slide.addText("Ask the front desk if you need help.", {
+    x: 0.5, y: 6.9, w: 7, h: 0.35,
+    fontSize: 9, color: LIGHT, italic: true,
+  });
+  slide.addText("POWERED BY RIPPL", {
+    x: 10, y: 6.9, w: 3, h: 0.35,
+    fontSize: 8, bold: true, color: LIGHT, align: "right", charSpacing: 1.5,
+  });
+}
+
+// ── Deck generator ────────────────────────────────────────────────────────────
+
+async function generateDeck(practiceName: string, rewardAmount: number): Promise<void> {
+  const qrDataUrl = await makeQrDataUrl(FIND_URL);
 
   const pptx = new PptxGenJS();
-  pptx.layout = "LAYOUT_WIDE"; // 13.33 × 7.5 inches, 16:9
+  pptx.layout = "LAYOUT_WIDE"; // 13.33 × 7.5 in, 16:9
 
-  const NAVY   = "1a2e5a";
-  const ORANGE = "E0622A";
-  const WHITE  = "FFFFFF";
-  const GOLD   = "c9a84c";
-  const LIGHT  = "BBCAE0"; // muted blue-white for body text
-  const PANEL  = "22396e"; // slightly lighter navy for panels
-
-  // ── Shared helpers ─────────────────────────────────────────────────────────
-
-  function addBadge(slide: ReturnType<typeof pptx.addSlide>, x = 8.8, y = 0.28) {
-    slide.addShape(pptx.ShapeType.roundRect, {
-      x, y, w: 3.8, h: 0.45,
-      fill:    { color: "FFFFFF", transparency: 90 },
-      line:    { color: "FFFFFF", transparency: 70, width: 1 },
-      rectRadius: 0.15,
-    });
-    slide.addShape(pptx.ShapeType.ellipse, {
-      x: x + 0.22, y: y + 0.15, w: 0.15, h: 0.15,
-      fill: { color: ORANGE },
-    });
-    slide.addText("REFERRAL REWARDS", {
-      x: x + 0.5, y: y + 0.04, w: 3.1, h: 0.38,
-      fontSize: 8, bold: true, color: WHITE,
-      charSpacing: 1.5, valign: "middle",
-    });
-  }
-
-  function addPracticeTag(slide: ReturnType<typeof pptx.addSlide>, x = 0.5, y = 0.25) {
-    slide.addText("HALLMARK", { x, y, w: 2.5, h: 0.22, fontSize: 9, bold: true, color: GOLD, charSpacing: 2 });
-    slide.addText(`DENTAL  ·  ${office.label.toUpperCase()}`, {
-      x, y: y + 0.22, w: 3.5, h: 0.22, fontSize: 9, bold: true, color: GOLD, charSpacing: 2,
-    });
-  }
-
-  function addFooter(slide: ReturnType<typeof pptx.addSlide>) {
-    slide.addText("Ask the front desk if you need help.", {
-      x: 0.5, y: 6.9, w: 7, h: 0.35,
-      fontSize: 9, color: LIGHT, italic: true,
-    });
-    slide.addText("POWERED BY RIPPL", {
-      x: 10, y: 6.9, w: 3, h: 0.35,
-      fontSize: 8, bold: true, color: LIGHT, align: "right", charSpacing: 1.5,
-    });
-  }
-
-  // ── SLIDE 1 — Hero "Share a Smile" ────────────────────────────────────────
-
+  // ── Slide 1 — Hero ──────────────────────────────────────────────────────────
   const s1 = pptx.addSlide();
   s1.background = { color: NAVY };
-
-  addPracticeTag(s1);
+  addTopBar(s1);
+  addPracticeTag(s1, practiceName);
   addBadge(s1);
 
-  // Top accent line
-  s1.addShape(pptx.ShapeType.rect, {
-    x: 0, y: 0, w: 13.33, h: 0.07,
-    fill: { color: ORANGE },
-  });
-
-  // Hero headline
   s1.addText("Share a", {
-    x: 0.6, y: 1.1, w: 8, h: 1.3,
-    fontSize: 88, bold: true, color: WHITE, fontFace: "Arial Black",
+    x: 0.6, y: 1.1, w: 8, h: 1.4,
+    fontSize: 90, bold: true, color: WHITE, fontFace: "Arial Black",
   });
   s1.addText("Smile.", {
-    x: 0.6, y: 2.2, w: 8, h: 1.6,
-    fontSize: 104, bold: true, italic: true, color: ORANGE, fontFace: "Georgia",
+    x: 0.6, y: 2.3, w: 8, h: 1.6,
+    fontSize: 108, bold: true, italic: true, color: ORANGE, fontFace: "Georgia",
   });
-
-  // Body
   s1.addText(
-    "Love your smile? Help a friend get one too — and earn a ",
-    { x: 0.6, y: 3.85, w: 9, h: 0.45, fontSize: 18, color: LIGHT }
+    `Love your smile? Help a friend get one too — and earn a gift card reward when they become a patient.`,
+    {
+      x: 0.6, y: 3.95, w: 10, h: 0.7,
+      fontSize: 19, color: LIGHT,
+    }
   );
-  s1.addText("gift card reward", {
-    x: 0.6, y: 4.25, w: 3.6, h: 0.45,
-    fontSize: 18, bold: true, color: ORANGE,
-  });
-  s1.addText(" when they become a patient.", {
-    x: 4.1, y: 4.25, w: 5.5, h: 0.45,
-    fontSize: 18, color: LIGHT,
-  });
-
-  // Divider
-  s1.addShape(pptx.ShapeType.rect, {
-    x: 0.6, y: 5.0, w: 9, h: 0.02,
+  s1.addShape("rect" as any, {
+    x: 0.6, y: 4.85, w: 9, h: 0.02,
     fill: { color: "FFFFFF", transparency: 80 },
   });
-
-  // URL teaser
-  s1.addText(`Scan any QR code in this office — or visit  ${office.findUrl}`, {
-    x: 0.6, y: 5.2, w: 10, h: 0.45,
-    fontSize: 13, color: LIGHT, italic: true,
+  s1.addText(`Scan any QR code in the office — or visit  ${FIND_DISP}`, {
+    x: 0.6, y: 5.1, w: 10, h: 0.45,
+    fontSize: 14, color: LIGHT, italic: true,
   });
-
   addFooter(s1);
 
-  // ── SLIDE 2 — How It Works + QR Code ─────────────────────────────────────
-
+  // ── Slide 2 — How It Works + QR ─────────────────────────────────────────────
   const s2 = pptx.addSlide();
   s2.background = { color: NAVY };
-
-  addPracticeTag(s2);
+  addTopBar(s2);
+  addPracticeTag(s2, practiceName);
   addBadge(s2);
 
-  s2.addShape(pptx.ShapeType.rect, {
-    x: 0, y: 0, w: 13.33, h: 0.07,
-    fill: { color: ORANGE },
-  });
-
-  // Section label
   s2.addText("HOW IT WORKS", {
     x: 0.6, y: 1.1, w: 6, h: 0.3,
     fontSize: 10, bold: true, color: LIGHT, charSpacing: 2.5,
   });
 
-  // Steps
   const STEPS = [
     "Scan the QR code",
     "Enter your mobile number",
@@ -171,59 +147,41 @@ async function generateDeck(office: Office, rewardAmount: number): Promise<void>
   ];
   STEPS.forEach((text, i) => {
     const y = 1.55 + i * 1.05;
-    // Numbered circle
-    s2.addShape(pptx.ShapeType.ellipse, {
-      x: 0.6, y, w: 0.5, h: 0.5,
-      fill: { color: ORANGE },
-    });
+    s2.addShape("ellipse" as any, { x: 0.6, y, w: 0.5, h: 0.5, fill: { color: ORANGE } });
     s2.addText(String(i + 1), {
       x: 0.6, y, w: 0.5, h: 0.5,
       fontSize: 16, bold: true, color: WHITE, align: "center", valign: "middle",
     });
     s2.addText(text, {
       x: 1.3, y: y + 0.04, w: 5.5, h: 0.45,
-      fontSize: 20, color: WHITE, bold: i === 3 ? false : false,
+      fontSize: 20, color: WHITE,
     });
   });
 
-  // QR Code box
-  s2.addShape(pptx.ShapeType.roundRect, {
+  s2.addShape("roundRect" as any, {
     x: 7.8, y: 1.1, w: 5, h: 5,
     fill: { color: WHITE },
     line: { color: "E8ECF4", width: 1 },
     rectRadius: 0.2,
   });
-  s2.addImage({
-    data: `image/png;base64,${qrBase64}`,
-    x: 8.15, y: 1.45, w: 4.3, h: 4.3,
-  });
-
-  // QR label
+  s2.addImage({ data: qrDataUrl, x: 8.15, y: 1.45, w: 4.3, h: 4.3 });
   s2.addText("Scan to get your link", {
     x: 7.8, y: 6.2, w: 5, h: 0.35,
     fontSize: 13, bold: true, color: WHITE, align: "center",
   });
-  s2.addText(office.findUrl, {
+  s2.addText(FIND_DISP, {
     x: 7.8, y: 6.55, w: 5, h: 0.3,
     fontSize: 11, color: LIGHT, align: "center",
   });
-
   addFooter(s2);
 
-  // ── SLIDE 3 — Reward ──────────────────────────────────────────────────────
-
+  // ── Slide 3 — Reward ────────────────────────────────────────────────────────
   const s3 = pptx.addSlide();
   s3.background = { color: NAVY };
-
-  addPracticeTag(s3);
+  addTopBar(s3);
+  addPracticeTag(s3, practiceName);
   addBadge(s3);
 
-  s3.addShape(pptx.ShapeType.rect, {
-    x: 0, y: 0, w: 13.33, h: 0.07,
-    fill: { color: ORANGE },
-  });
-
-  // Headline
   s3.addText("Refer a friend,", {
     x: 0.6, y: 1.1, w: 9, h: 1.1,
     fontSize: 72, bold: true, color: WHITE, fontFace: "Arial Black",
@@ -233,73 +191,50 @@ async function generateDeck(office: Office, rewardAmount: number): Promise<void>
     fontSize: 72, bold: true, color: ORANGE, fontFace: "Arial Black",
   });
 
-  // Reward panel
-  s3.addShape(pptx.ShapeType.roundRect, {
+  s3.addShape("roundRect" as any, {
     x: 0.6, y: 3.4, w: 12.1, h: 2.4,
     fill: { color: PANEL },
     line: { color: "FFFFFF", transparency: 85, width: 1 },
     rectRadius: 0.2,
   });
-
   s3.addText("YOUR REWARD", {
     x: 0.9, y: 3.6, w: 4, h: 0.3,
     fontSize: 10, bold: true, color: LIGHT, charSpacing: 2.5,
   });
-
   s3.addText(`$${rewardAmount}`, {
-    x: 0.9, y: 3.95, w: 4, h: 1.1,
-    fontSize: 96, bold: true, color: ORANGE, fontFace: "Arial Black",
+    x: 0.9, y: 3.9, w: 4.5, h: 1.1,
+    fontSize: 100, bold: true, color: ORANGE, fontFace: "Arial Black",
   });
-
   s3.addText("gift card — per referral", {
-    x: 0.9, y: 5.05, w: 5.5, h: 0.4,
-    fontSize: 16, color: WHITE,
+    x: 0.9, y: 4.95, w: 5.5, h: 0.45,
+    fontSize: 17, color: WHITE,
   });
-
-  s3.addShape(pptx.ShapeType.rect, {
-    x: 7.1, y: 3.55, w: 0.02, h: 2.1,
+  s3.addShape("rect" as any, {
+    x: 7.0, y: 3.55, w: 0.02, h: 2.1,
     fill: { color: "FFFFFF", transparency: 80 },
   });
-
-  s3.addText("Choose from hundreds of brands —", {
-    x: 7.4, y: 3.7, w: 5, h: 0.4,
-    fontSize: 15, color: LIGHT,
-  });
-  s3.addText("Amazon · Visa · Restaurants · Spa", {
-    x: 7.4, y: 4.1, w: 5, h: 0.4,
-    fontSize: 15, color: WHITE,
-  });
-  s3.addText("Your gift card link arrives by text\nthe day your referral is confirmed.", {
-    x: 7.4, y: 4.55, w: 5.2, h: 0.8,
-    fontSize: 13, color: LIGHT, lineSpacingMultiple: 1.3,
-  });
-
+  s3.addText(
+    "Choose from hundreds of brands —\nAmazon · Visa · Restaurants · Spa\n\nYour gift card link arrives by text the day your referral is confirmed.",
+    {
+      x: 7.4, y: 3.65, w: 5.1, h: 2.0,
+      fontSize: 15, color: LIGHT, lineSpacingMultiple: 1.4,
+    }
+  );
   addFooter(s3);
 
-  // ── SLIDE 4 — CTA / Orange ────────────────────────────────────────────────
-
+  // ── Slide 4 — CTA (orange) ──────────────────────────────────────────────────
   const s4 = pptx.addSlide();
   s4.background = { color: ORANGE };
 
-  // Left: headline + steps
   s4.addText("Refer a friend,\nearn a reward.", {
     x: 0.6, y: 0.7, w: 6.5, h: 2.8,
     fontSize: 56, bold: true, color: WHITE, fontFace: "Arial Black",
     lineSpacingMultiple: 1.1,
   });
 
-  const CTA_STEPS = [
-    "Scan the QR code",
-    "Enter your mobile number",
-    "Get your personal link to share",
-    "Earn a gift card when they become a patient",
-  ];
-  CTA_STEPS.forEach((text, i) => {
+  STEPS.forEach((text, i) => {
     const y = 3.65 + i * 0.72;
-    s4.addShape(pptx.ShapeType.ellipse, {
-      x: 0.6, y, w: 0.46, h: 0.46,
-      fill: { color: WHITE },
-    });
+    s4.addShape("ellipse" as any, { x: 0.6, y, w: 0.46, h: 0.46, fill: { color: WHITE } });
     s4.addText(String(i + 1), {
       x: 0.6, y, w: 0.46, h: 0.46,
       fontSize: 14, bold: true, color: ORANGE, align: "center", valign: "middle",
@@ -310,59 +245,200 @@ async function generateDeck(office: Office, rewardAmount: number): Promise<void>
     });
   });
 
-  // URL bottom-left
-  s4.addText(office.findUrl, {
+  s4.addText(FIND_DISP, {
     x: 0.6, y: 6.7, w: 5, h: 0.4,
     fontSize: 13, bold: true, color: WHITE,
   });
 
-  // Right: QR code on white card
-  s4.addShape(pptx.ShapeType.roundRect, {
+  s4.addShape("roundRect" as any, {
     x: 7.7, y: 0.8, w: 5.1, h: 5.6,
     fill: { color: WHITE },
     line: { color: WHITE, width: 0 },
     rectRadius: 0.25,
   });
-  s4.addImage({
-    data: `image/png;base64,${qrBase64}`,
-    x: 8.05, y: 1.1, w: 4.4, h: 4.4,
-  });
-
-  // Scan label
+  s4.addImage({ data: qrDataUrl, x: 8.05, y: 1.1, w: 4.4, h: 4.4 });
   s4.addText("Scan to find your referral link", {
     x: 7.5, y: 6.5, w: 5.5, h: 0.4,
     fontSize: 12, bold: true, color: WHITE, align: "center",
   });
 
-  // ── Save ──────────────────────────────────────────────────────────────────
-
-  await pptx.writeFile({ fileName: `rippl-waiting-room-${office.code}.pptx` });
+  // ── Download ────────────────────────────────────────────────────────────────
+  const slug = practiceName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  await pptx.writeFile({ fileName: `rippl-waiting-room-${slug}.pptx` });
 }
 
-// ── UI ────────────────────────────────────────────────────────────────────────
+// ── Mini slide previews ───────────────────────────────────────────────────────
+
+function SlidePreview({
+  slide, practiceName, rewardAmount,
+}: {
+  slide: 1 | 2 | 3 | 4;
+  practiceName: string;
+  rewardAmount: number;
+}) {
+  const upper = practiceName.toUpperCase();
+
+  const Header = () => (
+    <div className="flex items-start justify-between shrink-0" style={{ padding: "10px 14px 0" }}>
+      <p style={{ fontSize: 5, fontWeight: 700, letterSpacing: "0.15em", color: "#c9a84c", lineHeight: 1.3 }}>
+        {upper}
+      </p>
+      <div style={{
+        display: "flex", alignItems: "center", gap: 3,
+        background: "rgba(255,255,255,0.1)", borderRadius: 99, padding: "2px 6px",
+      }}>
+        <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#E0622A" }} />
+        <span style={{ fontSize: 4, fontWeight: 700, color: "white", letterSpacing: "0.1em" }}>REFERRAL REWARDS</span>
+      </div>
+    </div>
+  );
+
+  const baseStyle: React.CSSProperties = {
+    width: "100%", height: "100%", display: "flex", flexDirection: "column",
+    fontFamily: "system-ui, -apple-system, sans-serif", overflow: "hidden",
+  };
+
+  if (slide === 1) return (
+    <div style={{ ...baseStyle, background: "#1a2e5a" }}>
+      <div style={{ height: 3, background: "#E0622A", flexShrink: 0 }} />
+      <Header />
+      <div style={{ padding: "4px 14px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div style={{ fontSize: 20, fontWeight: 900, color: "white", lineHeight: 1, fontStyle: "normal" }}>Share a</div>
+        <div style={{ fontSize: 24, fontWeight: 900, color: "#E0622A", lineHeight: 1, fontStyle: "italic", marginBottom: 4 }}>Smile.</div>
+        <div style={{ fontSize: 5.5, color: "#BBCAE0", lineHeight: 1.5 }}>
+          Love your smile? Help a friend get one too — and earn a <span style={{ color: "#E0622A", fontWeight: 700 }}>gift card reward</span> when they become a patient.
+        </div>
+      </div>
+      <div style={{ padding: "0 14px 6px", fontSize: 4, color: "#BBCAE0", fontStyle: "italic" }}>
+        Visit {FIND_DISP}
+      </div>
+    </div>
+  );
+
+  if (slide === 2) return (
+    <div style={{ ...baseStyle, background: "#1a2e5a" }}>
+      <div style={{ height: 3, background: "#E0622A", flexShrink: 0 }} />
+      <Header />
+      <div style={{ display: "flex", flex: 1, padding: "6px 14px 8px", gap: 8 }}>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: 4, fontWeight: 700, color: "#BBCAE0", letterSpacing: "0.2em", marginBottom: 5 }}>HOW IT WORKS</p>
+          {["Scan the QR code", "Enter your mobile number", "Get your personal sharing link", "Earn a gift card"].map((t, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 4, marginBottom: 4 }}>
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#E0622A", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ fontSize: 5, fontWeight: 900, color: "white" }}>{i + 1}</span>
+              </div>
+              <span style={{ fontSize: 5.5, color: "white", lineHeight: 1.3, paddingTop: 1 }}>{t}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ width: 52, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+          <div style={{ width: 52, height: 52, background: "white", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ fontSize: 24, lineHeight: 1 }}>▦</div>
+          </div>
+          <p style={{ fontSize: 4, color: "white", fontWeight: 700, textAlign: "center" }}>Scan to get your link</p>
+          <p style={{ fontSize: 3.5, color: "#BBCAE0", textAlign: "center" }}>{FIND_DISP}</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (slide === 3) return (
+    <div style={{ ...baseStyle, background: "#1a2e5a" }}>
+      <div style={{ height: 3, background: "#E0622A", flexShrink: 0 }} />
+      <Header />
+      <div style={{ padding: "4px 14px", flex: 1 }}>
+        <div style={{ fontSize: 16, fontWeight: 900, color: "white", lineHeight: 1.1 }}>Refer a friend,</div>
+        <div style={{ fontSize: 16, fontWeight: 900, color: "#E0622A", lineHeight: 1.1, marginBottom: 5 }}>earn a reward.</div>
+        <div style={{ background: "#22396e", borderRadius: 5, padding: "5px 8px", display: "flex", alignItems: "center", gap: 8 }}>
+          <div>
+            <p style={{ fontSize: 3.5, color: "#BBCAE0", letterSpacing: "0.2em", fontWeight: 700 }}>YOUR REWARD</p>
+            <p style={{ fontSize: 22, fontWeight: 900, color: "#E0622A", lineHeight: 1 }}>${rewardAmount}</p>
+            <p style={{ fontSize: 5, color: "white" }}>gift card per referral</p>
+          </div>
+          <div style={{ borderLeft: "1px solid rgba(255,255,255,0.2)", paddingLeft: 8 }}>
+            <p style={{ fontSize: 4.5, color: "#BBCAE0", lineHeight: 1.6 }}>Amazon · Visa<br />Restaurants · Spa<br /><span style={{ fontSize: 4 }}>Choose from hundreds of brands</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // slide 4 — orange
+  return (
+    <div style={{ ...baseStyle, background: "#E0622A" }}>
+      <div style={{ display: "flex", flex: 1, padding: "8px 14px" }}>
+        <div style={{ flex: 1, paddingRight: 8 }}>
+          <div style={{ fontSize: 14, fontWeight: 900, color: "white", lineHeight: 1.15, marginBottom: 8 }}>
+            Refer a friend,<br />earn a reward.
+          </div>
+          {["Scan the QR code", "Enter your mobile number", "Get your personal link", "Earn a gift card"].map((t, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 4, marginBottom: 4 }}>
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: "white", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ fontSize: 5, fontWeight: 900, color: "#E0622A" }}>{i + 1}</span>
+              </div>
+              <span style={{ fontSize: 5.5, color: "white", lineHeight: 1.3, paddingTop: 1 }}>{t}</span>
+            </div>
+          ))}
+          <p style={{ fontSize: 4.5, color: "white", fontWeight: 700, marginTop: 6 }}>{FIND_DISP}</p>
+        </div>
+        <div style={{ width: 56, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ width: 54, height: 54, background: "white", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ fontSize: 26, lineHeight: 1 }}>▦</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 export default function SlideDeck() {
-  const [selectedOffice, setSelectedOffice] = useState<Office>(OFFICES[0]);
-  const [rewardAmount, setRewardAmount]     = useState(100);
-  const [loading, setLoading]               = useState(false);
-  const [done, setDone]                     = useState(false);
-  const [error, setError]                   = useState<string | null>(null);
+  const { profile } = useAuth();
+  const [practiceName, setPracticeName] = useState("Hallmark Dental");
+  const [rewardAmount, setRewardAmount] = useState(100);
+  const [loading, setLoading]           = useState(false);
+  const [done, setDone]                 = useState(false);
+  const [error, setError]               = useState<string | null>(null);
+
+  // Load practice name from API if available
+  useEffect(() => {
+    if (!profile?.practice_id) return;
+    fetch(`${BASE}/api/offices`)
+      .then(r => r.json())
+      .then((offices: { name: string }[]) => {
+        if (offices?.[0]?.name) {
+          // "Hallmark Dental – Brentwood" → "Hallmark Dental"
+          const dash = offices[0].name.lastIndexOf("–");
+          const base = dash !== -1 ? offices[0].name.slice(0, dash).trim() : offices[0].name;
+          setPracticeName(base || "Hallmark Dental");
+        }
+      })
+      .catch(() => {});
+  }, [profile?.practice_id]);
 
   async function handleGenerate() {
     setLoading(true);
     setDone(false);
     setError(null);
     try {
-      await generateDeck(selectedOffice, rewardAmount);
+      await generateDeck(practiceName, rewardAmount);
       setDone(true);
-      setTimeout(() => setDone(false), 4000);
+      setTimeout(() => setDone(false), 5000);
     } catch (e) {
-      setError("Failed to generate. Check your connection and try again.");
-      console.error(e);
+      console.error("Slide deck generation failed:", e);
+      setError("Failed to generate. Please try again.");
     } finally {
       setLoading(false);
     }
   }
+
+  const SLIDE_LABELS = [
+    { n: 1 as const, title: "Slide 1 — Hero",         desc: '"Share a Smile" — brand intro'    },
+    { n: 2 as const, title: "Slide 2 — How It Works", desc: "4 steps + QR code"                },
+    { n: 3 as const, title: "Slide 3 — Reward",       desc: `$${rewardAmount} gift card`        },
+    { n: 4 as const, title: "Slide 4 — CTA",          desc: "Orange bg, big QR, call to action" },
+  ];
 
   return (
     <div className="max-w-2xl mx-auto space-y-8 pb-12">
@@ -379,48 +455,32 @@ export default function SlideDeck() {
           Waiting Room Slide Deck
         </h1>
         <p className="text-slate-500 leading-relaxed">
-          Generate a branded 4-slide PowerPoint for your waiting room TV.
-          Upload it to Google Drive → it opens as Google Slides automatically.
-          Each location gets a unique QR code pointing to their own referral lookup page.
+          Generate a branded 4-slide PowerPoint for your waiting room TV. Download it,
+          upload to Google Drive, and it opens as Google Slides automatically.
         </p>
       </div>
 
       {/* Generator card */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
 
-        {/* Office selector */}
-        <div className="space-y-2">
+        {/* Practice name override */}
+        <div className="space-y-1.5">
           <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">
-            Which office?
+            Practice Name (on slides)
           </label>
-          <div className="grid grid-cols-3 gap-2">
-            {OFFICES.map(o => (
-              <button
-                key={o.code}
-                type="button"
-                onClick={() => setSelectedOffice(o)}
-                className={cn(
-                  "py-3 px-2 rounded-xl border text-sm font-semibold text-center transition-all",
-                  selectedOffice.code === o.code
-                    ? "bg-[#1a2e5a] border-[#1a2e5a] text-white"
-                    : "border-slate-200 text-slate-600 hover:border-slate-300 bg-white",
-                )}
-              >
-                {o.label}
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-slate-400 flex items-center gap-1">
-            <QrCode className="w-3 h-3 shrink-0" />
-            QR code will link to:{" "}
-            <code className="font-mono text-[#E0622A]">{selectedOffice.findUrl}</code>
-          </p>
+          <input
+            type="text"
+            value={practiceName}
+            onChange={e => setPracticeName(e.target.value)}
+            placeholder="Hallmark Dental"
+            className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#E0622A]/25 focus:border-[#E0622A] transition-all"
+          />
         </div>
 
         {/* Reward amount */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">
-            Reward Amount (shown on slides)
+            Reward Amount
           </label>
           <div className="flex items-center gap-2">
             <span className="text-slate-400 text-sm font-medium">$</span>
@@ -428,62 +488,90 @@ export default function SlideDeck() {
               type="number"
               value={rewardAmount}
               onChange={e => setRewardAmount(Math.max(1, parseInt(e.target.value) || 100))}
-              min={1}
-              max={9999}
+              min={1} max={9999}
               className="w-28 border border-slate-200 rounded-lg px-3 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#E0622A]/25 focus:border-[#E0622A]"
             />
             <span className="text-slate-400 text-sm">per referral</span>
           </div>
         </div>
 
-        {/* Generate button */}
+        {/* URL note */}
+        <div className="flex items-start gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+          <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-slate-500 leading-relaxed">
+            All QR codes link to{" "}
+            <code className="font-mono text-[#1a2e5a] font-semibold">{FIND_DISP}</code>.
+            Patients enter their mobile number to retrieve their personal referral link — this URL works for every office.
+          </p>
+        </div>
+
+        {/* Error */}
         {error && (
           <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">{error}</p>
         )}
+
+        {/* Generate */}
         <button
           type="button"
           onClick={handleGenerate}
-          disabled={loading}
+          disabled={loading || !practiceName.trim()}
           className="w-full flex items-center justify-center gap-2 bg-[#1a2e5a] hover:bg-[#162547] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-all text-sm"
         >
           {loading ? (
-            <><Loader2 className="w-4 h-4 animate-spin" /> Generating QR code &amp; slides…</>
+            <><Loader2 className="w-4 h-4 animate-spin" /> Generating slides…</>
           ) : done ? (
             <><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Downloaded — check your Downloads folder</>
           ) : (
-            <><Download className="w-4 h-4" /> Download Slide Deck — {selectedOffice.label}</>
+            <><Download className="w-4 h-4" /> Download Slide Deck (.pptx)</>
           )}
         </button>
       </div>
 
-      {/* Google Slides upload instructions */}
+      {/* Slide previews */}
+      <div className="space-y-3">
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Slide Preview</p>
+        <div className="grid grid-cols-2 gap-4">
+          {SLIDE_LABELS.map(({ n, title, desc }) => (
+            <div key={n} className="space-y-2">
+              <div
+                className="rounded-xl overflow-hidden border border-slate-200 shadow-sm"
+                style={{ aspectRatio: "16/9" }}
+              >
+                <SlidePreview slide={n} practiceName={practiceName || "Your Practice"} rewardAmount={rewardAmount} />
+              </div>
+              <div className="px-1">
+                <p className="text-xs font-semibold text-slate-700">{title}</p>
+                <p className="text-[11px] text-slate-400">{desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Google Slides instructions */}
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
         <div className="px-5 py-3.5 border-b border-slate-100 bg-slate-50">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-            How to get it into Google Slides
+            How to set up in Google Slides
           </p>
         </div>
         <div className="divide-y divide-slate-100">
           {[
             {
-              n: "1",
-              title: "Download the .pptx file",
-              body: 'Click "Download Slide Deck" above. A file named rippl-waiting-room-[office].pptx will appear in your Downloads folder.',
+              n: "1", title: "Download the .pptx file",
+              body: 'Click "Download Slide Deck" above. The file saves to your Downloads folder.',
             },
             {
-              n: "2",
-              title: "Upload to Google Drive",
-              body: 'Open drive.google.com → click "+ New" → "File upload" → select the .pptx file.',
+              n: "2", title: "Upload to Google Drive",
+              body: 'Open drive.google.com → "+ New" → "File upload" → select the .pptx file.',
             },
             {
-              n: "3",
-              title: "Open as Google Slides",
-              body: 'Right-click the uploaded file → "Open with" → "Google Slides". It converts automatically — no extra steps.',
+              n: "3", title: "Open as Google Slides",
+              body: 'Right-click the uploaded file → "Open with" → "Google Slides". It converts automatically.',
             },
             {
-              n: "4",
-              title: "Set up on your waiting room TV",
-              body: 'In Google Slides: Slideshow → Present on another screen. Or use Chromecast: click the Chromecast icon and select your TV. Set it to auto-advance every 10–15 seconds.',
+              n: "4", title: "Display on your waiting room TV",
+              body: 'In Google Slides: Slideshow → "Present on another screen." Or cast via Chromecast. Set slides to auto-advance every 10–15 seconds.',
             },
           ].map(({ n, title, body }) => (
             <div key={n} className="flex gap-4 px-5 py-4">
@@ -491,7 +579,7 @@ export default function SlideDeck() {
                 {n}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-800 mb-1">{title}</p>
+                <p className="text-sm font-semibold text-slate-800 mb-0.5">{title}</p>
                 <p className="text-sm text-slate-500 leading-relaxed">{body}</p>
               </div>
             </div>
@@ -499,67 +587,23 @@ export default function SlideDeck() {
         </div>
       </div>
 
-      {/* WR link explainer */}
-      <div className="bg-[#1a2e5a]/5 border border-[#1a2e5a]/15 rounded-2xl p-5 space-y-3">
+      {/* QR URL reference */}
+      <div className="bg-[#1a2e5a]/5 border border-[#1a2e5a]/15 rounded-2xl p-5 space-y-2">
         <div className="flex items-start gap-3">
           <Info className="w-4 h-4 text-[#1a2e5a] shrink-0 mt-0.5" />
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-slate-800">
-              About the office-specific QR code URL
-            </p>
+          <div className="space-y-1.5">
+            <p className="text-sm font-semibold text-slate-800">Replacing the QR code</p>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Each office's slide deck contains a QR code that links to their own version of the
-              referral lookup page. When a patient scans it, the page shows "Hallmark Dental · [Location]"
-              so they know they're in the right place.
+              If you ever need to swap the QR code in a slide (e.g., to add a campaign tracking param),
+              generate one at any free QR code site and point it to:
             </p>
-            <div className="space-y-1.5 pt-1">
-              {OFFICES.map(o => (
-                <div key={o.code} className="flex items-center gap-2">
-                  <ChevronRight className="w-3.5 h-3.5 text-[#E0622A] shrink-0" />
-                  <span className="text-xs text-slate-500 w-20 shrink-0">{o.label}:</span>
-                  <code className="text-xs font-mono text-[#1a2e5a] bg-white border border-slate-200 px-2 py-0.5 rounded-md">
-                    {o.findUrl}
-                  </code>
-                </div>
-              ))}
+            <div className="flex items-center gap-2">
+              <ChevronRight className="w-3.5 h-3.5 text-[#E0622A] shrink-0" />
+              <code className="text-sm font-mono text-[#1a2e5a] bg-white border border-slate-200 px-3 py-1 rounded-md">
+                {FIND_URL}
+              </code>
             </div>
-            <p className="text-xs text-slate-400 leading-relaxed pt-1">
-              If you ever need to replace the QR code image in a slide, use any free QR generator
-              and set the destination URL to the office-specific link above.
-            </p>
           </div>
-        </div>
-      </div>
-
-      {/* Slide preview */}
-      <div className="space-y-3">
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Slide Preview</p>
-        <div className="grid grid-cols-2 gap-4">
-          {[
-            { title: "Slide 1 — Hero",      desc: '"Share a Smile" — brand intro' },
-            { title: "Slide 2 — How It Works", desc: "Steps + QR code" },
-            { title: "Slide 3 — Reward",    desc: `$${rewardAmount} gift card breakdown` },
-            { title: "Slide 4 — CTA",       desc: "Orange background, big QR code" },
-          ].map(({ title, desc }) => (
-            <div
-              key={title}
-              className="bg-[#1a2e5a] rounded-xl p-4 aspect-video flex flex-col justify-between"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-[8px] font-bold text-[#c9a84c] tracking-widest uppercase">HALLMARK DENTAL · {selectedOffice.label.toUpperCase()}</p>
-                </div>
-                <div className="flex items-center gap-1 bg-white/10 rounded-full px-2 py-0.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#E0622A]" />
-                  <span className="text-[7px] text-white font-semibold tracking-wide">REFERRAL REWARDS</span>
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-bold text-white">{title}</p>
-                <p className="text-[10px] text-white/50 mt-0.5">{desc}</p>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
 
