@@ -54,6 +54,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/onboard",         label: "Onboard",         icon: GraduationCap },
       { href: "/analytics",       label: "Analytics",       icon: TrendingUp    },
       { href: "/patient-journey", label: "Patient Journey", icon: Route         },
+      { href: "/slide-deck",      label: "Waiting Room",    icon: MonitorPlay   },
     ],
   },
   {
