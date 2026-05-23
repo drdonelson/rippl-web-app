@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rippl Logo — Export</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #f5f5f5;
+      padding: 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 60px;
+      font-family: sans-serif;
+    }
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #999;
+      margin-bottom: 20px;
+    }
+    .logo-box {
+      display: inline-flex;
+      align-items: center;
+      padding: 40px 60px;
+      border-radius: 16px;
+    }
+    .logo-box.light { background: #ffffff; border: 1px solid #e5e5e5; }
+    .logo-box.dark  { background: #0a0a0a; }
+    .logo-box.orange { background: #E0622A; }
+
+    .wordmark {
+      font-family: 'Fraunces', serif;
+      font-weight: 900;
+      font-size: 96px;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .rip-light  { color: #1a1a1a; }
+    .rip-dark   { color: rgba(255,255,255,0.65); }
+    .rip-orange { color: rgba(255,255,255,0.75); }
+    .pl         { color: #E0622A; }
+    .pl-white   { color: #ffffff; }
+
+    /* Small version */
+    .wordmark-sm { font-size: 48px; }
+    .wordmark-lg { font-size: 144px; }
+  </style>
+</head>
+<body>
+
+  <!-- On white/light background -->
+  <div>
+    <p class="section-label">On white (for print / light materials)</p>
+    <div class="logo-box light">
+      <span class="wordmark">
+        <span class="rip-light">rip</span><span class="pl">pl</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- On dark background -->
+  <div>
+    <p class="section-label">On dark background</p>
+    <div class="logo-box dark">
+      <span class="wordmark">
+        <span class="rip-dark">rip</span><span class="pl">pl</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- On orange background (reversed) -->
+  <div>
+    <p class="section-label">On orange background (all white)</p>
+    <div class="logo-box orange">
+      <span class="wordmark">
+        <span class="rip-orange">rip</span><span class="pl-white">pl</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Extra large for high-res screenshot -->
+  <div>
+    <p class="section-label">Large — screenshot this for high-res export</p>
+    <div class="logo-box light">
+      <span class="wordmark wordmark-lg">
+        <span class="rip-light">rip</span><span class="pl">pl</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Small size -->
+  <div>
+    <p class="section-label">Small / icon size</p>
+    <div class="logo-box light">
+      <span class="wordmark wordmark-sm">
+        <span class="rip-light">rip</span><span class="pl">pl</span>
+      </span>
+    </div>
+  </div>
+
+</body>
+</html>

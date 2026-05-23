@@ -552,7 +552,7 @@ export default function SlideDeck() {
         </div>
       </div>
 
-      {/* ── Section 2: Referral Materials ── */}
+      {/* ── Section 2: Referral Cards ── */}
       <div className="space-y-5">
         <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
           <ImageIcon className="w-4 h-4 text-slate-400" />
@@ -589,7 +589,38 @@ export default function SlideDeck() {
         <div className="flex items-start gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
           <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
           <p className="text-xs text-slate-500 leading-relaxed">
-            The QR code on the referral card links to <span className="font-mono text-slate-700">joinrippl.com/find</span> — patients enter their mobile number to get their personal referral link instantly. Works for all offices.
+            The QR code links to <span className="font-mono text-slate-700">joinrippl.com/find</span> — patients enter their mobile number to get their personal referral link instantly. Works for all offices.
+          </p>
+        </div>
+      </div>
+
+      {/* ── Section 3: Printable Posters ── */}
+      <div className="space-y-5">
+        <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+          <ImageIcon className="w-4 h-4 text-slate-400" />
+          Waiting Room Posters
+        </h2>
+        <p className="text-sm text-slate-500">
+          Open the poster in a new tab, then Cmd+P → "Background graphics" on → Save as PDF or print directly.
+        </p>
+
+        <a
+          href="/print/flyer-8.5in.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl px-5 py-4 shadow-sm hover:border-slate-300 hover:shadow-md transition-all group"
+        >
+          <div>
+            <p className="text-sm font-bold text-slate-800 group-hover:text-[#E0622A] transition-colors">8.5×11 in Waiting Room Flyer</p>
+            <p className="text-xs text-slate-500 mt-0.5">Full-page · dark navy + orange · Fraunces font</p>
+          </div>
+          <Download className="w-4 h-4 text-slate-400 group-hover:text-[#E0622A] transition-colors shrink-0" />
+        </a>
+
+        <div className="flex items-start gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+          <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-slate-500 leading-relaxed">
+            In the print dialog: set paper to Letter, make sure "Background graphics" is enabled, then Save as PDF. For physical prints, use FedEx, Staples, or a local print shop.
           </p>
         </div>
       </div>
