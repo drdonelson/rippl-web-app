@@ -27,7 +27,7 @@ export default function SmsOptIn() {
     const digits = phone.replace(/\D/g, "");
     if (!name.trim()) { setError("Please enter your name."); return; }
     if (digits.length !== 10) { setError("Please enter a valid 10-digit U.S. phone number."); return; }
-    if (!consented) { setError("You must check the consent box to enroll."); return; }
+    if (!consented) { setError("Please check the consent box to sign up for text notifications."); return; }
 
     setLoading(true);
     try {
@@ -51,11 +51,11 @@ export default function SmsOptIn() {
           <div className="w-16 h-16 rounded-full bg-green-50 border border-green-200 flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-3">You're enrolled!</h1>
+          <h1 className="text-2xl font-bold text-slate-900 mb-3">You're signed up for texts!</h1>
           <p className="text-slate-500 text-[15px] leading-relaxed mb-6">
-            You'll receive an SMS confirmation shortly. You can reply{" "}
+            You'll receive an SMS shortly with your referral link. You can reply{" "}
             <span className="font-mono text-orange-700 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded text-sm">STOP</span>{" "}
-            at any time to unsubscribe.
+            at any time to unsubscribe — your reward eligibility is unaffected.
           </p>
           <a
             href="https://www.hallmarkdds.com"
@@ -78,7 +78,7 @@ export default function SmsOptIn() {
       <main className="relative z-10 max-w-lg mx-auto px-6 py-16">
 
         {/* Brand */}
-        <div className="flex items-center gap-3 mb-12">
+        <div className="flex items-center gap-3 mb-10">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-400 to-[#C9551E] flex items-center justify-center shadow-lg shadow-[#E0622A]/20">
             <Droplets className="w-5 h-5 text-white" />
           </div>
@@ -90,15 +90,23 @@ export default function SmsOptIn() {
           </div>
         </div>
 
+        {/* Optional notice — prominent, top of page */}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-8 flex items-start gap-3">
+          <span className="text-blue-500 text-lg leading-none mt-0.5">ℹ</span>
+          <p className="text-blue-800 text-sm leading-relaxed">
+            <span className="font-semibold">SMS notifications are completely optional.</span> As a Hallmark Dental patient you are already eligible to earn referral rewards. This form is only to add text message notifications — you can earn and claim rewards without signing up for texts.
+          </p>
+        </div>
+
         {/* Header */}
         <div className="flex items-start gap-4 mb-8">
           <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0 mt-0.5">
             <MessageSquare className="w-5 h-5 text-[#E0622A]" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Join the Rippl Rewards Program</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Add Text Notifications (Optional)</h1>
             <p className="text-slate-500 text-[15px] mt-1 leading-relaxed">
-              Refer friends and family to Hallmark Dental and earn gift card rewards — up to $100 per referral. Enroll below to receive updates by text.
+              Sign up to receive your personal referral link and reward notifications by text. Refer friends and family and earn gift cards — up to $100 per referral.
             </p>
           </div>
         </div>
@@ -108,7 +116,7 @@ export default function SmsOptIn() {
           {[
             { n: "1", text: "You share your personal referral link with someone you know." },
             { n: "2", text: "They book and complete a new patient appointment at Hallmark Dental." },
-            { n: "3", text: "You receive a text notification and a gift card reward — $35 to $100." },
+            { n: "3", text: "You earn a gift card reward — $35 to $100 — redeemable by email or text." },
           ].map(({ n, text }) => (
             <div key={n} className="flex items-start gap-3">
               <span className="w-6 h-6 rounded-full bg-[#E0622A] text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -151,7 +159,7 @@ export default function SmsOptIn() {
             />
           </div>
 
-          {/* TCPA Consent checkbox — required disclosure */}
+          {/* TCPA Consent checkbox */}
           <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
@@ -161,12 +169,13 @@ export default function SmsOptIn() {
                 className="mt-0.5 flex-shrink-0 w-4 h-4 rounded border-slate-300 text-[#E0622A] focus:ring-[#E0622A]/40 cursor-pointer"
               />
               <span className="text-slate-600 text-sm leading-relaxed">
-                I agree to receive recurring SMS messages from{" "}
+                I voluntarily agree to receive recurring SMS messages from{" "}
                 <span className="font-medium text-slate-900">Hallmark Dental</span> (powered by Rippl),
-                including referral program invitations, personal referral link reminders, and reward
-                notifications. Message frequency varies — up to 4 messages per month.{" "}
+                including my referral link, referral reminders, and reward notifications. Message
+                frequency varies — up to 4 messages per month.{" "}
                 <span className="font-medium text-slate-900">Message and data rates may apply.</span>{" "}
-                Consent is not a condition of receiving dental services. Reply{" "}
+                <span className="font-medium text-slate-900">Consent is not required to receive dental services or to earn referral rewards.</span>{" "}
+                Reply{" "}
                 <span className="font-mono text-orange-700 bg-orange-50 border border-orange-200 px-1 py-0.5 rounded text-xs">STOP</span>{" "}
                 to opt out,{" "}
                 <span className="font-mono text-orange-700 bg-orange-50 border border-orange-200 px-1 py-0.5 rounded text-xs">HELP</span>{" "}
@@ -205,14 +214,11 @@ export default function SmsOptIn() {
             disabled={loading}
             className="w-full py-3.5 rounded-lg bg-[#E0622A] text-white font-semibold text-[15px] hover:bg-[#C9551E] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? "Enrolling…" : "Enroll in Rippl Rewards"}
+            {loading ? "Signing up…" : "Sign Up for Text Notifications"}
           </button>
 
           <p className="text-center text-xs text-slate-400">
-            Already enrolled? Your referral link was sent to your phone.{" "}
-            <a href="/find" className="text-[#E0622A] hover:underline">
-              Look it up here.
-            </a>
+            Don't want texts? Contact the office — staff can share your referral link in person or by email.
           </p>
         </form>
 
