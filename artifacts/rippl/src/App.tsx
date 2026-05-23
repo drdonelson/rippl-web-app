@@ -29,6 +29,7 @@ const Find        = lazy(() => import("@/pages/find"));
 const BlinqBg     = lazy(() => import("@/pages/blinq-bg"));
 const Waitlist    = lazy(() => import("@/pages/waitlist"));
 const Join        = lazy(() => import("@/pages/join"));
+const JoinDental  = lazy(() => import("@/pages/join-dental"));
 const IconExport  = lazy(() => import("@/pages/icon-export"));
 const CardPrint   = lazy(() => import("@/pages/card-print"));
 const CardBack    = lazy(() => import("@/pages/card-back"));
@@ -82,9 +83,9 @@ function Router() {
         <Route path="/help" component={Help} />
         <Route path="/find" component={Find} />
         <Route path="/blinq-bg" component={BlinqBg} />
-        <Route path="/join/dental">{() => <Join vertical="dental" />}</Route>
+        <Route path="/join/dental" component={JoinDental} />
         <Route path="/join/salon">{() => <Join vertical="salon" />}</Route>
-        <Route path="/join">{() => <Join vertical="dental" />}</Route>
+        <Route path="/join" component={JoinDental} />
         <Route path="/join-waitlist" component={Waitlist} />
         <Route path="/icon" component={IconExport} />
         <Route path="/card-print" component={CardPrint} />
