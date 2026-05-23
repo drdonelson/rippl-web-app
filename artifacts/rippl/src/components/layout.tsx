@@ -54,7 +54,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/onboard",         label: "Onboard",         icon: GraduationCap },
       { href: "/analytics",       label: "Analytics",       icon: TrendingUp    },
       { href: "/patient-journey", label: "Patient Journey", icon: Route         },
-      { href: "/slide-deck",      label: "Waiting Room",    icon: MonitorPlay   },
+      { href: "/slide-deck",      label: "Marketing",       icon: MonitorPlay   },
     ],
   },
   {
@@ -87,7 +87,7 @@ const NAV_SECTIONS: NavSection[] = [
     demoVisible: true,
     items: [
       { href: "/playbook",   label: "Staff Playbook",  icon: BookOpen                              },
-      { href: "/slide-deck", label: "Waiting Room",    icon: MonitorPlay, minRole: "practice_admin" },
+      { href: "/slide-deck", label: "Marketing",        icon: MonitorPlay, minRole: "practice_admin" },
       { href: "/help",       label: "Help",            icon: GraduationCap                         },
     ],
   },
