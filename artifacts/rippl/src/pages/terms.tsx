@@ -45,9 +45,11 @@ export default function Terms() {
               ready to claim.
             </p>
             <p className="mt-3">
-              By providing your mobile phone number to your dental practice in connection with the referral program,
-              you consent to receive transactional SMS messages from Rippl or your dental practice regarding your
-              referral reward status.
+              SMS participation is entirely voluntary. Patients who wish to receive text notifications may
+              opt in by visiting{" "}
+              <a href="/sms-opt-in" className="text-[#E0622A] hover:underline">joinrippl.com/sms-opt-in</a>{" "}
+              and providing explicit consent. Opting in to SMS is not required to receive dental services
+              or to earn referral rewards.
             </p>
           </section>
 
