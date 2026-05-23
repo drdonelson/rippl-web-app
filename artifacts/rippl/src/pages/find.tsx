@@ -1,8 +1,15 @@
 import { useState } from "react";
+import { useSearch } from "wouter";
 import { Droplets, Search, Share2, Copy, CheckCircle2, AlertCircle } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 const REFERRAL_BASE = "https://joinrippl.com";
+
+const OFFICE_NAMES: Record<string, string> = {
+  brentwood:  "Brentwood",
+  greenbrier: "Greenbrier",
+  lewisburg:  "Lewisburg",
+};
 
 type Result = {
   firstName: string;
@@ -18,6 +25,12 @@ function formatPhone(raw: string): string {
 }
 
 export default function FindPage() {
+  const search = useSearch();
+  const params = new URLSearchParams(search);
+  const officeCode = params.get("office")?.toLowerCase() ?? "";
+  const officeName = OFFICE_NAMES[officeCode] ?? "";
+  const practiceLabel = officeName ? `Hallmark Dental · ${officeName}` : "Hallmark Dental";
+
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
@@ -80,7 +93,7 @@ export default function FindPage() {
         </div>
         <div>
           <p className="text-sm font-semibold text-slate-900">Rippl</p>
-          <p className="text-xs text-slate-400">Referral rewards · Hallmark Dental</p>
+          <p className="text-xs text-slate-400">Referral rewards · {practiceLabel}</p>
         </div>
       </div>
 
@@ -89,7 +102,7 @@ export default function FindPage() {
           <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/60 p-8">
             <h1 className="text-2xl font-bold text-slate-900 mb-1">Find your referral link</h1>
             <p className="text-slate-500 text-sm mb-8">
-              Enter the mobile number on file with Hallmark Dental to get your personal sharing link instantly.
+              Enter the mobile number on file with {practiceLabel} to get your personal sharing link instantly.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -129,7 +142,7 @@ export default function FindPage() {
             </form>
 
             <p className="text-xs text-slate-400 text-center mt-6">
-              Your number must be on file with Hallmark Dental. See the front desk if you need help.
+              Your number must be on file with {practiceLabel}. See the front desk if you need help.
             </p>
           </div>
         ) : (

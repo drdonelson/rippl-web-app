@@ -44,6 +44,7 @@ const PracticeAdmin  = lazy(() => import("@/pages/practice-admin"));
 const PatientJourney = lazy(() => import("@/pages/patient-journey"));
 const ResetPassword  = lazy(() => import("@/pages/reset-password"));
 const Playbook       = lazy(() => import("@/pages/playbook"));
+const SlideDeck      = lazy(() => import("@/pages/slide-deck"));
 const NotFound       = lazy(() => import("@/pages/not-found"));
 
 const queryClient = new QueryClient({
@@ -112,6 +113,7 @@ function Router() {
                   <Route path="/practice-admin"   component={PracticeAdmin}  />
                   <Route path="/patient-journey" component={PatientJourney} />
                   <Route path="/playbook"       component={Playbook}       />
+                  <Route path="/slide-deck"     component={SlideDeck}      />
                   <Route component={NotFound} />
                 </Switch>
               </Suspense>

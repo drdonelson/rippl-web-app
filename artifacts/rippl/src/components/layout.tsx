@@ -5,7 +5,7 @@ import {
   LayoutDashboard, CalendarDays, Users,
   ChevronDown, MapPin, LogOut, AlertTriangle, Menu, X,
   Store, CheckSquare, Building2, TrendingUp, ExternalLink,
-  GraduationCap, Megaphone, BookOpen, Route,
+  GraduationCap, Megaphone, BookOpen, Route, MonitorPlay,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useOffice } from "@/contexts/office-context";
@@ -85,8 +85,9 @@ const NAV_SECTIONS: NavSection[] = [
     label: "Resources",
     demoVisible: true,
     items: [
-      { href: "/playbook", label: "Staff Playbook", icon: BookOpen },
-      { href: "/help",     label: "Help",           icon: GraduationCap },
+      { href: "/playbook",   label: "Staff Playbook",  icon: BookOpen                              },
+      { href: "/slide-deck", label: "Waiting Room",    icon: MonitorPlay, minRole: "practice_admin" },
+      { href: "/help",       label: "Help",            icon: GraduationCap                         },
     ],
   },
 ];
