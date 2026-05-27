@@ -28,8 +28,8 @@ services:
       - key: OPEN_DENTAL_KEY
         sync: false
 
-      # ── Resend (outbound email)
-      - key: RESEND_API_KEY
+      # ── Brevo (outbound email)
+      - key: BREVO_API_KEY
         sync: false
 
       # ── Database (Render PostgreSQL or external)

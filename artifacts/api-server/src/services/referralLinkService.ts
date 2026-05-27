@@ -9,7 +9,7 @@
 
 import twilio from "twilio";
 import { SMS_ENABLED } from "../lib/smsEnabled";
-import { Resend } from "resend";
+import { sendEmail } from "../lib/email";
 import { db } from "@workspace/db";
 import { referrersTable, referralLinkDeliveriesTable } from "@workspace/db/schema";
 import { eq, desc } from "drizzle-orm";
@@ -60,10 +60,6 @@ function getTwilioClient() {
   return twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 }
 
-function getResendClient() {
-  if (!process.env.RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
-  return new Resend(process.env.RESEND_API_KEY);
-}
 
 function buildReferralUrl(code: string): string {
   return `${APP_URL}/refer?ref=${encodeURIComponent(code)}`;
@@ -319,16 +315,14 @@ export async function sendReferralLinkToPatient(
       }).returning();
 
       try {
-        const resend = getResendClient();
-        const { error: emailError } = await resend.emails.send({
-          to: email,
-          from: `Hallmark Dental via Rippl <${FROM_EMAIL}>`,
+        await sendEmail({
+          to:      email,
+          from:    { email: FROM_EMAIL, name: "Hallmark Dental via Rippl" },
           subject: "Your personal referral link is ready 🔗",
-          html: buildEmailHtml(referrer.name, referralUrl),
+          html:    buildEmailHtml(referrer.name, referralUrl),
         });
-        if (emailError) throw new Error(emailError.message);
         await db.update(referralLinkDeliveriesTable)
-          .set({ status: "sent", provider_message_id: "resend", sent_at: new Date() })
+          .set({ status: "sent", provider_message_id: "brevo", sent_at: new Date() })
           .where(eq(referralLinkDeliveriesTable.id, logRow.id));
         result.email = { status: "sent" };
         logger.info({ to: email }, "Referral link email sent");

@@ -23,7 +23,7 @@ app.use(helmet({
         "wss://*.supabase.co",
         "https://api.opendental.com",
         "https://api.tangocard.com",
-        "https://api.resend.com",
+        "https://api.brevo.com",
       ],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],

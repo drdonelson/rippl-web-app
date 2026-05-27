@@ -7,7 +7,7 @@ import {
 import { eq, and, gt, sql, desc } from "drizzle-orm";
 import twilio from "twilio";
 import { SMS_ENABLED } from "../lib/smsEnabled";
-import { Resend } from "resend";
+import { sendEmail } from "../lib/email";
 
 const router: IRouter = Router();
 
@@ -269,8 +269,8 @@ router.post("/send", async (req, res) => {
     res.status(500).json({ error: "Twilio not configured (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER)" });
     return;
   }
-  if (channel === "email" && !process.env.RESEND_API_KEY) {
-    res.status(500).json({ error: "RESEND_API_KEY not configured" });
+  if (channel === "email" && !process.env.BREVO_API_KEY) {
+    res.status(500).json({ error: "BREVO_API_KEY not configured" });
     return;
   }
 
@@ -307,7 +307,6 @@ router.post("/send", async (req, res) => {
       const twilioClient = channel === "sms"
         ? twilio(TWILIO_ACCOUNT_SID!, TWILIO_AUTH_TOKEN!)
         : null;
-      const resendClient = channel === "email" ? new Resend(process.env.RESEND_API_KEY!) : null;
 
       let sentCount  = 0;
       let failCount  = 0;
@@ -341,14 +340,13 @@ router.post("/send", async (req, res) => {
           } else {
             if (!referrer.email) { failCount++; continue; }
             const { text: emailText, html: emailHtml } = buildEmailPayload(message);
-            const { error: emailError } = await resendClient!.emails.send({
+            await sendEmail({
               to:      referrer.email,
-              from:    `Rippl by Hallmark Dental <${FROM_EMAIL}>`,
+              from:    { email: FROM_EMAIL, name: "Rippl by Hallmark Dental" },
               subject: name.trim(),
               text:    emailText,
               html:    emailHtml,
             });
-            if (emailError) throw new Error(emailError.message);
           }
           sentCount++;
         } catch (sendErr) {
@@ -406,8 +404,8 @@ router.post("/test-send", async (req, res) => {
 
   const recipientEmail = (test_email?.trim() || FROM_EMAIL).toLowerCase();
 
-  if (!process.env.RESEND_API_KEY) {
-    res.status(500).json({ error: "RESEND_API_KEY not configured" });
+  if (!process.env.BREVO_API_KEY) {
+    res.status(500).json({ error: "BREVO_API_KEY not configured" });
     return;
   }
 
@@ -442,15 +440,13 @@ router.post("/test-send", async (req, res) => {
       ? testBannerHtml + emailBodyHtml
       : `<div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto">${testBannerHtml}<div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 6px 6px">${emailBodyHtml}</div></div>`;
 
-    const resend = new Resend(process.env.RESEND_API_KEY!);
-    const { error: emailError } = await resend.emails.send({
+    await sendEmail({
       to:      recipientEmail,
-      from:    `Rippl by Hallmark Dental <${FROM_EMAIL}>`,
+      from:    { email: FROM_EMAIL, name: "Rippl by Hallmark Dental" },
       subject: `[TEST] Campaign Preview — ${referrerData.name.split(" ")[0]}'s data`,
       text:    emailText,
       html:    testHtml,
     });
-    if (emailError) throw new Error(emailError.message);
 
     req.log.info(
       { recipientEmail, patientName: referrerData.name, filter },

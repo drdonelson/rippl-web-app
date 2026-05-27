@@ -1,6 +1,6 @@
 import twilio from "twilio";
 import { SMS_ENABLED } from "../lib/smsEnabled";
-import { Resend } from "resend";
+import { sendEmail } from "../lib/email";
 import { logger } from "../lib/logger";
 import { getPracticeConfig, resolveTwilioPhone, resolveFromEmail } from "../lib/practiceConfig";
 import type { Practice } from "@workspace/db/schema";
@@ -55,10 +55,6 @@ function getTwilioClient() {
   return twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 }
 
-function getResendClient() {
-  if (!process.env.RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
-  return new Resend(process.env.RESEND_API_KEY);
-}
 
 export async function sendRewardNotification(
   referrerName: string,
@@ -107,20 +103,18 @@ export async function sendRewardNotification(
   // Send email via Resend — HTML only
   if (referrerEmail) {
     try {
-      const resend = getResendClient();
-      const { error: emailError } = await resend.emails.send({
-        to: referrerEmail,
-        from: `${officeName} via Rippl <${fromEmail.email}>`,
+      await sendEmail({
+        to:      referrerEmail,
+        from:    { email: fromEmail.email, name: `${officeName} via Rippl` },
         subject: copy.email_subject,
-        html: buildEmailHtml(referrerName, newPatientName, claimUrl, officeName, rewardValue, copy.referral_trigger),
+        html:    buildEmailHtml(referrerName, newPatientName, claimUrl, officeName, rewardValue, copy.referral_trigger),
       });
-      if (emailError) throw new Error(emailError.message);
       results.email = "sent";
-      logger.info({ to: referrerEmail }, "Email sent via Resend");
+      logger.info({ to: referrerEmail }, "Email sent via Brevo");
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       results.errors.push(`Email: ${message}`);
-      logger.error({ err, to: referrerEmail }, "Failed to send Resend email");
+      logger.error({ err, to: referrerEmail }, "Failed to send Brevo email");
     }
   } else {
     logger.info({ referrerName }, "No email on file — skipping email notification");

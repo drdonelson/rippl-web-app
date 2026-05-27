@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { Resend } from "resend";
+import { sendEmail } from "../lib/email";
 import { logger } from "../lib/logger";
 
 const router = Router();
@@ -16,8 +16,8 @@ router.post("/", async (req, res) => {
 
   logger.info({ name, email, practice, emr, locations }, "Demo request received");
 
-  if (!process.env.RESEND_API_KEY) {
-    logger.warn("Resend not configured — demo request not emailed");
+  if (!process.env.BREVO_API_KEY) {
+    logger.warn("Brevo not configured — demo request not emailed");
     return res.json({ ok: true, warn: "email_not_sent" });
   }
 
@@ -40,15 +40,13 @@ router.post("/", async (req, res) => {
   `;
 
   try {
-    const resend = new Resend(process.env.RESEND_API_KEY!);
-    const { error: emailError } = await resend.emails.send({
+    await sendEmail({
       to:      NOTIFY_EMAIL,
-      from:    FROM_EMAIL,
+      from:    { email: FROM_EMAIL, name: "Rippl Demo Requests" },
       replyTo: email,
       subject: `Demo Request: ${practice} (${name})`,
       html,
     });
-    if (emailError) throw new Error(emailError.message);
     logger.info({ to: NOTIFY_EMAIL, practice }, "Demo request email sent");
     return res.json({ ok: true });
   } catch (err) {

@@ -1,13 +1,9 @@
-import { Resend } from "resend";
+import { sendEmail } from "../lib/email";
 import { logger } from "../lib/logger";
 
 const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "hello@joinrippl.com";
 const REFERRAL_BASE_URL = (process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://www.joinrippl.com").replace(/\/$/, "");
 
-function getResendClient() {
-  if (!process.env.RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
-  return new Resend(process.env.RESEND_API_KEY);
-}
 
 export interface LaunchEmailParams {
   firstName: string;
@@ -21,14 +17,12 @@ export async function sendLaunchEmail(params: LaunchEmailParams): Promise<{ succ
   const referralUrl = `${REFERRAL_BASE_URL}/refer?ref=${referralCode}`;
 
   try {
-    const resend = getResendClient();
-    const { error: emailError } = await resend.emails.send({
-      to: email,
-      from: `Hallmark Dental <${FROM_EMAIL}>`,
+    await sendEmail({
+      to:      email,
+      from:    { email: FROM_EMAIL, name: "Hallmark Dental" },
       subject: `A thank you waiting for you, ${firstName} 🦷`,
-      html: buildLaunchEmailHtml(firstName, fullName, referralUrl, referralCode),
+      html:    buildLaunchEmailHtml(firstName, fullName, referralUrl, referralCode),
     });
-    if (emailError) throw new Error(emailError.message);
     logger.info({ to: email, referralCode }, "Launch email sent");
     return { success: true };
   } catch (err) {
