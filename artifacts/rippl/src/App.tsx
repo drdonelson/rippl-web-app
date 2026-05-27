@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 import Layout from "@/components/layout";
 import Login from "@/pages/login";
+import Home from "@/pages/home";
 import ProtectedRoute from "@/components/protected-route";
 import { OfficeProvider } from "@/contexts/office-context";
 import { AuthProvider } from "@/contexts/auth-context";
@@ -67,7 +68,8 @@ function Router() {
     <Suspense fallback={<PageLoader />}>
       <Switch>
         {/* Public routes — no sidebar */}
-        <Route path="/" component={Login} />
+        <Route path="/" component={Home} />
+        <Route path="/login" component={Login} />
         <Route path="/demo" component={Demo} />
         <Route path="/claim" component={Claim} />
         <Route path="/refer" component={Refer} />

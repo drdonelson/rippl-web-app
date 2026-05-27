@@ -63,7 +63,7 @@ export default function ResetPassword() {
               <h2 className="text-lg font-semibold text-slate-900">Password updated</h2>
               <p className="text-slate-500 text-sm">You can now log in with your new password.</p>
               <a
-                href="/"
+                href="/login"
                 className="inline-block mt-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl text-sm transition-colors"
               >
                 Go to login
@@ -77,7 +77,7 @@ export default function ResetPassword() {
             <div className="text-center space-y-3">
               <p className="text-slate-900 font-semibold">Link expired</p>
               <p className="text-slate-500 text-sm">{error}</p>
-              <a href="/" className="inline-block text-primary text-sm underline hover:text-primary/80">Back to login</a>
+              <a href="/login" className="inline-block text-primary text-sm underline hover:text-primary/80">Back to login</a>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">

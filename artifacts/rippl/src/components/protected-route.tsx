@@ -13,7 +13,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   useEffect(() => {
     if (!isLoading && !session) {
-      navigate("/");
+      navigate("/login");
     }
   }, [session, isLoading, navigate]);
 

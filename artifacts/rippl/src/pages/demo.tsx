@@ -48,7 +48,7 @@ export default function Demo() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-slate-600 text-sm mb-10 transition-colors w-fit mx-auto">
+        <Link href="/login" className="flex items-center gap-2 text-slate-400 hover:text-slate-600 text-sm mb-10 transition-colors w-fit mx-auto">
           <ArrowLeft className="w-4 h-4" />
           Back to sign in
         </Link>
