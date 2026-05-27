@@ -1,11 +1,10 @@
 import { Router } from "express";
-import sgMail from "@sendgrid/mail";
+import { Resend } from "resend";
 import { logger } from "../lib/logger";
 
 const router = Router();
 
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "hello@joinrippl.com";
+const FROM_EMAIL   = process.env.SENDGRID_FROM_EMAIL || "hello@joinrippl.com";
 const NOTIFY_EMAIL = "hello@joinrippl.com";
 
 router.post("/", async (req, res) => {
@@ -17,12 +16,10 @@ router.post("/", async (req, res) => {
 
   logger.info({ name, email, practice, emr, locations }, "Demo request received");
 
-  if (!SENDGRID_API_KEY) {
-    logger.warn("SendGrid not configured — demo request not emailed");
+  if (!process.env.RESEND_API_KEY) {
+    logger.warn("Resend not configured — demo request not emailed");
     return res.json({ ok: true, warn: "email_not_sent" });
   }
-
-  sgMail.setApiKey(SENDGRID_API_KEY);
 
   const html = `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
@@ -43,13 +40,15 @@ router.post("/", async (req, res) => {
   `;
 
   try {
-    await sgMail.send({
-      to: NOTIFY_EMAIL,
-      from: SENDGRID_FROM_EMAIL,
+    const resend = new Resend(process.env.RESEND_API_KEY!);
+    const { error: emailError } = await resend.emails.send({
+      to:      NOTIFY_EMAIL,
+      from:    FROM_EMAIL,
       replyTo: email,
       subject: `Demo Request: ${practice} (${name})`,
       html,
     });
+    if (emailError) throw new Error(emailError.message);
     logger.info({ to: NOTIFY_EMAIL, practice }, "Demo request email sent");
     return res.json({ ok: true });
   } catch (err) {

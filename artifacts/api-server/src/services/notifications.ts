@@ -1,16 +1,14 @@
 import twilio from "twilio";
 import { SMS_ENABLED } from "../lib/smsEnabled";
-import sgMail from "@sendgrid/mail";
+import { Resend } from "resend";
 import { logger } from "../lib/logger";
-import { getPracticeConfig, resolveTwilioPhone, resolveSendGridFrom } from "../lib/practiceConfig";
+import { getPracticeConfig, resolveTwilioPhone, resolveFromEmail } from "../lib/practiceConfig";
 import type { Practice } from "@workspace/db/schema";
 
 const APP_URL = (process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://www.joinrippl.com").replace(/\/$/, "");
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
 const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "hello@joinrippl.com";
 
 // ── Vertical-aware notification copy ─────────────────────────────────────────
 
@@ -57,12 +55,9 @@ function getTwilioClient() {
   return twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 }
 
-function getSendGridClient() {
-  if (!SENDGRID_API_KEY) {
-    throw new Error("SendGrid not configured (SENDGRID_API_KEY)");
-  }
-  sgMail.setApiKey(SENDGRID_API_KEY);
-  return sgMail;
+function getResendClient() {
+  if (!process.env.RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
+  return new Resend(process.env.RESEND_API_KEY);
 }
 
 export async function sendRewardNotification(
@@ -77,7 +72,7 @@ export async function sendRewardNotification(
 ) {
   const practice = await getPracticeConfig(practiceId ?? null);
   const fromPhone = resolveTwilioPhone(practice);
-  const fromEmail = resolveSendGridFrom(practice);
+  const fromEmail = resolveFromEmail(practice);
   const copy = getNotificationCopy(practice);
 
   const claimUrl = `${APP_URL}/claim?token=${claimToken}`;
@@ -109,29 +104,26 @@ export async function sendRewardNotification(
     }
   }
 
-  // Send email via SendGrid — HTML only, click tracking disabled
+  // Send email via Resend — HTML only
   if (referrerEmail) {
     try {
-      const sg = getSendGridClient();
-      await sg.send({
+      const resend = getResendClient();
+      const { error: emailError } = await resend.emails.send({
         to: referrerEmail,
-        from: { email: fromEmail.email, name: `${officeName} via Rippl` },
+        from: `${officeName} via Rippl <${fromEmail.email}>`,
         subject: copy.email_subject,
         html: buildEmailHtml(referrerName, newPatientName, claimUrl, officeName, rewardValue, copy.referral_trigger),
-        // No text fallback — HTML only
-        trackingSettings: {
-          clickTracking: { enable: false, enableText: false },
-        },
       });
+      if (emailError) throw new Error(emailError.message);
       results.email = "sent";
-      logger.info({ to: referrerEmail }, "Email sent via SendGrid");
+      logger.info({ to: referrerEmail }, "Email sent via Resend");
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       results.errors.push(`Email: ${message}`);
-      logger.error({ err, to: referrerEmail }, "Failed to send SendGrid email");
+      logger.error({ err, to: referrerEmail }, "Failed to send Resend email");
     }
   } else {
-    logger.info({ referrerName }, "No email on file — skipping SendGrid notification");
+    logger.info({ referrerName }, "No email on file — skipping email notification");
   }
 
   return results;

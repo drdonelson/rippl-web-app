@@ -7,7 +7,7 @@ import {
 import { eq, and, gt, sql, desc } from "drizzle-orm";
 import twilio from "twilio";
 import { SMS_ENABLED } from "../lib/smsEnabled";
-import sgMail from "@sendgrid/mail";
+import { Resend } from "resend";
 
 const router: IRouter = Router();
 
@@ -15,8 +15,7 @@ const APP_URL = (process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://w
 const TWILIO_ACCOUNT_SID  = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH_TOKEN   = process.env.TWILIO_AUTH_TOKEN;
 const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
-const SENDGRID_API_KEY    = process.env.SENDGRID_API_KEY;
-const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "hello@joinrippl.com";
+const FROM_EMAIL          = process.env.SENDGRID_FROM_EMAIL || "hello@joinrippl.com";
 
 // ── HTML template detection & helpers ─────────────────────────────────────────
 
@@ -270,8 +269,8 @@ router.post("/send", async (req, res) => {
     res.status(500).json({ error: "Twilio not configured (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER)" });
     return;
   }
-  if (channel === "email" && !SENDGRID_API_KEY) {
-    res.status(500).json({ error: "SendGrid not configured (SENDGRID_API_KEY)" });
+  if (channel === "email" && !process.env.RESEND_API_KEY) {
+    res.status(500).json({ error: "RESEND_API_KEY not configured" });
     return;
   }
 
@@ -308,7 +307,7 @@ router.post("/send", async (req, res) => {
       const twilioClient = channel === "sms"
         ? twilio(TWILIO_ACCOUNT_SID!, TWILIO_AUTH_TOKEN!)
         : null;
-      if (channel === "email") sgMail.setApiKey(SENDGRID_API_KEY!);
+      const resendClient = channel === "email" ? new Resend(process.env.RESEND_API_KEY!) : null;
 
       let sentCount  = 0;
       let failCount  = 0;
@@ -342,14 +341,14 @@ router.post("/send", async (req, res) => {
           } else {
             if (!referrer.email) { failCount++; continue; }
             const { text: emailText, html: emailHtml } = buildEmailPayload(message);
-            await sgMail.send({
-              to:   referrer.email,
-              from: { email: SENDGRID_FROM_EMAIL, name: "Rippl by Hallmark Dental" },
+            const { error: emailError } = await resendClient!.emails.send({
+              to:      referrer.email,
+              from:    `Rippl by Hallmark Dental <${FROM_EMAIL}>`,
               subject: name.trim(),
               text:    emailText,
               html:    emailHtml,
-              trackingSettings: { clickTracking: { enable: false, enableText: false } },
             });
+            if (emailError) throw new Error(emailError.message);
           }
           sentCount++;
         } catch (sendErr) {
@@ -405,10 +404,10 @@ router.post("/test-send", async (req, res) => {
     return;
   }
 
-  const recipientEmail = (test_email?.trim() || SENDGRID_FROM_EMAIL).toLowerCase();
+  const recipientEmail = (test_email?.trim() || FROM_EMAIL).toLowerCase();
 
-  if (!SENDGRID_API_KEY) {
-    res.status(500).json({ error: "SendGrid not configured (SENDGRID_API_KEY)" });
+  if (!process.env.RESEND_API_KEY) {
+    res.status(500).json({ error: "RESEND_API_KEY not configured" });
     return;
   }
 
@@ -443,15 +442,15 @@ router.post("/test-send", async (req, res) => {
       ? testBannerHtml + emailBodyHtml
       : `<div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto">${testBannerHtml}<div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 6px 6px">${emailBodyHtml}</div></div>`;
 
-    sgMail.setApiKey(SENDGRID_API_KEY);
-    await sgMail.send({
-      to:   recipientEmail,
-      from: { email: SENDGRID_FROM_EMAIL, name: "Rippl by Hallmark Dental" },
+    const resend = new Resend(process.env.RESEND_API_KEY!);
+    const { error: emailError } = await resend.emails.send({
+      to:      recipientEmail,
+      from:    `Rippl by Hallmark Dental <${FROM_EMAIL}>`,
       subject: `[TEST] Campaign Preview — ${referrerData.name.split(" ")[0]}'s data`,
       text:    emailText,
       html:    testHtml,
-      trackingSettings: { clickTracking: { enable: false, enableText: false } },
     });
+    if (emailError) throw new Error(emailError.message);
 
     req.log.info(
       { recipientEmail, patientName: referrerData.name, filter },

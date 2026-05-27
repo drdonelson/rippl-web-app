@@ -28,8 +28,8 @@ services:
       - key: OPEN_DENTAL_KEY
         sync: false
 
-      # ── SendGrid (outbound email)
-      - key: SENDGRID_API_KEY
+      # ── Resend (outbound email)
+      - key: RESEND_API_KEY
         sync: false
 
       # ── Database (Render PostgreSQL or external)

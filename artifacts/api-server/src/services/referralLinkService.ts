@@ -9,7 +9,7 @@
 
 import twilio from "twilio";
 import { SMS_ENABLED } from "../lib/smsEnabled";
-import sgMail from "@sendgrid/mail";
+import { Resend } from "resend";
 import { db } from "@workspace/db";
 import { referrersTable, referralLinkDeliveriesTable } from "@workspace/db/schema";
 import { eq, desc } from "drizzle-orm";
@@ -21,8 +21,7 @@ const APP_URL               = (process.env.PUBLIC_APP_URL || process.env.APP_URL
 const TWILIO_ACCOUNT_SID    = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH_TOKEN     = process.env.TWILIO_AUTH_TOKEN;
 const TWILIO_PHONE_NUMBER   = process.env.TWILIO_PHONE_NUMBER;
-const SENDGRID_API_KEY      = process.env.SENDGRID_API_KEY;
-const SENDGRID_FROM_EMAIL   = process.env.SENDGRID_FROM_EMAIL || "hello@joinrippl.com";
+const FROM_EMAIL            = process.env.SENDGRID_FROM_EMAIL || "hello@joinrippl.com";
 
 // Auto-send cooldown — do not auto-send to the same patient more often than this.
 // Manual sends are always allowed regardless of cooldown.
@@ -61,10 +60,9 @@ function getTwilioClient() {
   return twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 }
 
-function getSgClient() {
-  if (!SENDGRID_API_KEY) throw new Error("SendGrid not configured");
-  sgMail.setApiKey(SENDGRID_API_KEY);
-  return sgMail;
+function getResendClient() {
+  if (!process.env.RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
+  return new Resend(process.env.RESEND_API_KEY);
 }
 
 function buildReferralUrl(code: string): string {
@@ -321,18 +319,16 @@ export async function sendReferralLinkToPatient(
       }).returning();
 
       try {
-        const sg = getSgClient();
-        await sg.send({
+        const resend = getResendClient();
+        const { error: emailError } = await resend.emails.send({
           to: email,
-          from: { email: SENDGRID_FROM_EMAIL, name: "Hallmark Dental via Rippl" },
+          from: `Hallmark Dental via Rippl <${FROM_EMAIL}>`,
           subject: "Your personal referral link is ready 🔗",
           html: buildEmailHtml(referrer.name, referralUrl),
-          trackingSettings: {
-            clickTracking: { enable: false, enableText: false },
-          },
         });
+        if (emailError) throw new Error(emailError.message);
         await db.update(referralLinkDeliveriesTable)
-          .set({ status: "sent", provider_message_id: "sg", sent_at: new Date() })
+          .set({ status: "sent", provider_message_id: "resend", sent_at: new Date() })
           .where(eq(referralLinkDeliveriesTable.id, logRow.id));
         result.email = { status: "sent" };
         logger.info({ to: email }, "Referral link email sent");

@@ -2,12 +2,11 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { userProfilesTable, officesTable, practicesTable } from "@workspace/db/schema";
 import { eq, like } from "drizzle-orm";
-import sgMail from "@sendgrid/mail";
+import { Resend } from "resend";
 import { supabaseAdmin } from "../lib/supabase";
 import { getProfileHandler, requireAuth, requireSuperAdmin, requirePracticeAdmin } from "../middleware/auth";
 
-const SENDGRID_API_KEY    = process.env.SENDGRID_API_KEY;
-const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "hello@joinrippl.com";
+const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "hello@joinrippl.com";
 
 const router: IRouter = Router();
 
@@ -112,11 +111,11 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
     // 5. Welcome email (non-fatal)
     try {
       const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({ type: "recovery", email });
-      if (!linkError && linkData?.properties?.action_link && SENDGRID_API_KEY) {
-        sgMail.setApiKey(SENDGRID_API_KEY);
-        await sgMail.send({
+      if (!linkError && linkData?.properties?.action_link && process.env.RESEND_API_KEY) {
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
           to: email,
-          from: { email: SENDGRID_FROM_EMAIL, name: "Rippl" },
+          from: `Rippl <${FROM_EMAIL}>`,
           subject: "Welcome to Rippl — set up your account",
           html: `<p>Hi${doctor_name ? ` ${doctor_name}` : ""},</p>
 <p>Your Rippl practice account has been created. Click the link below to set your password and get started:</p>

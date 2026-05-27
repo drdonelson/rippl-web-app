@@ -31,8 +31,8 @@ export function resolveTwilioPhone(practice: Practice | null): string {
   return practice?.twilio_phone_number ?? process.env.TWILIO_PHONE_NUMBER ?? "";
 }
 
-/** Resolve the SendGrid from-email for a practice, falling back to the global env var. */
-export function resolveSendGridFrom(practice: Practice | null): { email: string; name: string } {
+/** Resolve the from-email for a practice, falling back to the global env var. */
+export function resolveFromEmail(practice: Practice | null): { email: string; name: string } {
   return {
     email: practice?.sendgrid_from_email ?? process.env.SENDGRID_FROM_EMAIL ?? "hello@joinrippl.com",
     name:  practice?.sendgrid_from_name  ?? practice?.name ?? "Rippl",
