@@ -4,7 +4,7 @@ import {
   referrersTable,
   campaignsTable,
 } from "@workspace/db/schema";
-import { eq, and, gt, sql, desc } from "drizzle-orm";
+import { eq, sql, desc } from "drizzle-orm";
 import twilio from "twilio";
 import { SMS_ENABLED } from "../lib/smsEnabled";
 import { sendEmail } from "../lib/email";
@@ -137,13 +137,15 @@ async function getFilteredReferrers(filter: AudienceFilter): Promise<ReferrerRow
     return rows as ReferrerRow[];
   }
 
-  // Simple Drizzle conditions
-  let condition;
-  if (filter === "not_contacted")       condition = eq(referrersTable.onboarding_sms_sent, false);
-  else if (filter === "active_referrers") condition = gt(referrersTable.total_referrals, 0);
-  else if (filter.startsWith("tier_")) {
+  // Build raw SQL condition using the table alias `r` to avoid Drizzle/alias conflicts
+  let extraWhere = sql``;
+  if (filter === "not_contacted") {
+    extraWhere = sql`AND r.onboarding_sms_sent = false`;
+  } else if (filter === "active_referrers") {
+    extraWhere = sql`AND r.total_referrals > 0`;
+  } else if (filter.startsWith("tier_")) {
     const tier = filter.replace("tier_", "");
-    condition = eq(referrersTable.tier, tier);
+    extraWhere = sql`AND r.tier = ${tier}`;
   }
 
   const { rows } = await db.execute(sql`
@@ -155,7 +157,7 @@ async function getFilteredReferrers(filter: AudienceFilter): Promise<ReferrerRow
     FROM referrers r
     LEFT JOIN offices o ON o.id = r.office_id
     WHERE r.sms_opt_out = false
-    ${condition ? sql`AND ${condition}` : sql``}
+    ${extraWhere}
     ORDER BY r.name
   `);
   return rows as ReferrerRow[];
