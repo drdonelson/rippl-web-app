@@ -9,6 +9,7 @@ export interface Office {
   name: string;
   location_code: string;
   active: boolean;
+  practice_id?: string | null;
 }
 
 interface OfficeContextValue {
@@ -62,12 +63,15 @@ export function OfficeProvider({ children }: { children: React.ReactNode }) {
     if (isDemo && !profile?.practice_id) return [DEMO_OFFICE];
     if (authLoading || !profile) return allOffices;
     if (profile.role === "super_admin") return allOffices;
+    if (profile.role === "demo" && profile.practice_id) {
+      return allOffices.filter(o => o.practice_id === profile.practice_id);
+    }
     if (profile.role.startsWith("staff_")) {
       // Staff see only their assigned location
       const locationCode = profile.role.replace("staff_", "");
       return allOffices.filter(o => o.location_code === locationCode);
     }
-    // practice_admin sees all offices (no further filtering — server already scopes by practice)
+    // practice_admin sees all offices (server already scopes by practice)
     return allOffices;
   }, [allOffices, profile, authLoading, isDemo]);
 

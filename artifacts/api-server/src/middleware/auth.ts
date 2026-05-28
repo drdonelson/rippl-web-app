@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { supabaseAdmin } from "../lib/supabase";
 import { db } from "@workspace/db";
-import { userProfilesTable } from "@workspace/db/schema";
+import { userProfilesTable, practicesTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import type { UserProfile } from "@workspace/db/schema";
 
@@ -152,7 +152,15 @@ export async function getProfileHandler(req: Request, res: Response) {
       .limit(1);
 
     if (existing) {
-      res.json(existing);
+      let vertical: string | null = null;
+      if (existing.practice_id) {
+        const [practice] = await db.select({ vertical: practicesTable.vertical })
+          .from(practicesTable)
+          .where(eq(practicesTable.id, existing.practice_id))
+          .limit(1);
+        vertical = practice?.vertical ?? null;
+      }
+      res.json({ ...existing, vertical });
       return;
     }
 
@@ -176,7 +184,15 @@ export async function getProfileHandler(req: Request, res: Response) {
       return;
     }
 
-    res.json(profile);
+    let vertical: string | null = null;
+    if (profile.practice_id) {
+      const [practice] = await db.select({ vertical: practicesTable.vertical })
+        .from(practicesTable)
+        .where(eq(practicesTable.id, profile.practice_id))
+        .limit(1);
+      vertical = practice?.vertical ?? null;
+    }
+    res.json({ ...profile, vertical });
   } catch (err) {
     console.error("[auth/profile] Error:", err);
     res.status(500).json({ error: "Failed to load profile. Please try again." });

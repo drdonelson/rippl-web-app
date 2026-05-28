@@ -131,11 +131,13 @@ function getSections(role: UserRole | undefined, isDemo = false): NavSection[] {
 
 function OfficePicker({ compact = false }: { compact?: boolean }) {
   const { offices, selectedOfficeId, setSelectedOfficeId, isLoading } = useOffice();
-  const { isDemo } = useAuth();
+  const { isDemo, profile } = useAuth();
 
   if (isLoading) return null;
-
   if (isDemo) return null;
+  // Demo-role users (branded demos) and single-office practices don't need a switcher
+  if (profile?.role === "demo") return null;
+  if (offices.length <= 1) return null;
 
   const allOption = { id: "all", name: "All Locations", location_code: "all", active: true };
   const options   = [allOption, ...offices];
@@ -183,7 +185,15 @@ function SidebarContent({
   onNavClick?: () => void;
 }) {
   const { user, profile, logout, isDemo } = useAuth();
-  const sections = getSections(profile?.role, isDemo);
+  const isAuto = profile?.vertical === "automotive";
+  const sections = getSections(profile?.role, isDemo).map(s => ({
+    ...s,
+    items: s.items.map(item =>
+      item.href === "/patients" && isAuto
+        ? { ...item, label: "Customers" }
+        : item
+    ),
+  }));
 
   const handleLogout = () => {
     onNavClick?.();

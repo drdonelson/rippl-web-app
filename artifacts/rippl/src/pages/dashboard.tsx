@@ -26,6 +26,7 @@ interface DashboardStats {
   exams_completed: number;
   rewards_issued: number;
   active_referrers: number;
+  vertical?: string | null;
   top_referrers: { id: string; name: string; total_referrals: number; total_rewards_issued: number }[];
   recent_events: {
     id: string;
@@ -132,11 +133,12 @@ export default function Dashboard() {
 
   if (!stats) return null;
 
+  const isAuto = stats?.vertical === "automotive";
   const statCards = [
-    { label: "Total Referrals",  value: stats.total_referrals,  icon: Users,    color: "text-blue-400",   bg: "bg-blue-400/10",   border: "border-blue-400/20",   href: "/events" },
-    { label: "Exams Completed",  value: stats.exams_completed,  icon: Activity, color: "text-green-400",  bg: "bg-green-400/10",  border: "border-green-400/20",  href: "/events?tab=exam-completed" },
-    { label: "Rewards Issued",   value: stats.rewards_issued,   icon: Gift,     color: "text-primary",    bg: "bg-primary/10",    border: "border-primary/20",    href: "/events?tab=reward-sent" },
-    { label: "Active Referrers", value: stats.active_referrers, icon: UserPlus, color: "text-purple-400", bg: "bg-purple-400/10", border: "border-purple-400/20", href: "/patients" },
+    { label: "Total Referrals",                         value: stats.total_referrals,  icon: Users,    color: "text-blue-400",   bg: "bg-blue-400/10",   border: "border-blue-400/20",   href: "/events" },
+    { label: isAuto ? "Vehicles Sold" : "Exams Completed",  value: stats.exams_completed,  icon: Activity, color: "text-green-400",  bg: "bg-green-400/10",  border: "border-green-400/20",  href: isAuto ? "/events" : "/events?tab=exam-completed" },
+    { label: "Rewards Issued",                          value: stats.rewards_issued,   icon: Gift,     color: "text-primary",    bg: "bg-primary/10",    border: "border-primary/20",    href: "/events?tab=reward-sent" },
+    { label: isAuto ? "Active Customers" : "Active Referrers", value: stats.active_referrers, icon: UserPlus, color: "text-purple-400", bg: "bg-purple-400/10", border: "border-purple-400/20", href: "/patients" },
   ];
 
   const isPracticeAdmin = profile?.role === "practice_admin";

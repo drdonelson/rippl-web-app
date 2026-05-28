@@ -19,6 +19,7 @@ export interface UserProfile {
   role: UserRole;
   practice_id: string | null;
   full_name: string | null;
+  vertical: string | null;
 }
 
 interface AuthContextValue {

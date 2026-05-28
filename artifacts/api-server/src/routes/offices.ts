@@ -15,6 +15,7 @@ const safeColumns = {
   logo_url:      officesTable.logo_url,
   active:        officesTable.active,
   last_poll_at:  officesTable.last_poll_at,
+  practice_id:   officesTable.practice_id,
 };
 
 // GET /api/offices — return all offices (active and inactive), without credentials

@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { referralEventsTable, referrersTable, rewardsTable } from "@workspace/db/schema";
-import { eq, sql, and } from "drizzle-orm";
+import { referralEventsTable, referrersTable, rewardsTable, practicesTable } from "@workspace/db/schema";
+import { eq, sql, and, inArray } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -22,9 +22,23 @@ router.get("/", async (req, res) => {
     const baseFilter = officeFilter ?? practiceFilter;
     const bothFilters = officeFilter && practiceFilter ? and(officeFilter, practiceFilter) : baseFilter;
 
+    // Look up vertical so automotive practices get deal-closed count instead of exam count
+    let practiceVertical: string | null = null;
+    if (practiceId) {
+      const [practice] = await db.select({ vertical: practicesTable.vertical })
+        .from(practicesTable)
+        .where(eq(practicesTable.id, practiceId))
+        .limit(1);
+      practiceVertical = practice?.vertical ?? null;
+    }
+
+    const completedStatuses = practiceVertical === "automotive"
+      ? ["Completed", "Rewarded"]
+      : ["Exam Completed"];
+
     const examCondition = bothFilters
-      ? and(eq(referralEventsTable.status, "Exam Completed"), bothFilters)
-      : eq(referralEventsTable.status, "Exam Completed");
+      ? and(inArray(referralEventsTable.status, completedStatuses), bothFilters)
+      : inArray(referralEventsTable.status, completedStatuses);
 
     const [
       [{ count: totalReferrals }],
@@ -110,6 +124,7 @@ router.get("/", async (req, res) => {
       active_referrers: activeReferrers,
       top_referrers: topReferrers,
       recent_events: recentEvents,
+      vertical: practiceVertical,
     });
   } catch (err) {
     req.log.error({ err, officeId }, "[dashboard] DB query failed");
