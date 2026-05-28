@@ -38,8 +38,9 @@ export function OfficeProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    // Demo users always use the hardcoded demo office — skip API call
-    if (!authLoading && isDemo) {
+    // Demo users without a real practice_id use the hardcoded demo office.
+    // Demo users with a real practice_id (branded demo accounts) use the real API.
+    if (!authLoading && isDemo && !profile?.practice_id) {
       setAllOffices([DEMO_OFFICE]);
       setSelectedOfficeIdState(DEMO_OFFICE.id);
       localStorage.setItem(STORAGE_KEY, DEMO_OFFICE.id);
@@ -58,7 +59,7 @@ export function OfficeProvider({ children }: { children: React.ReactNode }) {
 
   // Filter offices based on the logged-in user's role
   const offices: Office[] = React.useMemo(() => {
-    if (isDemo) return [DEMO_OFFICE];
+    if (isDemo && !profile?.practice_id) return [DEMO_OFFICE];
     if (authLoading || !profile) return allOffices;
     if (profile.role === "super_admin") return allOffices;
     if (profile.role.startsWith("staff_")) {
@@ -80,8 +81,8 @@ export function OfficeProvider({ children }: { children: React.ReactNode }) {
   }, [offices]);
 
   const setSelectedOfficeId = useCallback((id: string) => {
-    // Demo users cannot switch offices
-    if (isDemo) return;
+    // Old demo (no practice_id) cannot switch offices
+    if (isDemo && !profile?.practice_id) return;
     setSelectedOfficeIdState(id);
     localStorage.setItem(STORAGE_KEY, id);
   }, [isDemo]);

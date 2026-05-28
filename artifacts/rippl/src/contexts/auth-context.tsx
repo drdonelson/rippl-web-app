@@ -30,6 +30,8 @@ interface AuthContextValue {
   isStaff: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
   loginAsDemo: () => Promise<{ error: string | null }>;
+  loginAsDentalDemo: () => Promise<{ error: string | null }>;
+  loginAsAutoDemo: () => Promise<{ error: string | null }>;
   logout: () => void;
 }
 
@@ -42,6 +44,8 @@ const AuthContext = createContext<AuthContextValue>({
   isStaff: false,
   login: async () => ({ error: null }),
   loginAsDemo: async () => ({ error: null }),
+  loginAsDentalDemo: async () => ({ error: null }),
+  loginAsAutoDemo: async () => ({ error: null }),
   logout: () => {},
 });
 
@@ -126,12 +130,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: null };
   }, []);
 
+  const loginAsDentalDemo = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: "front.desk@brentwoodfamilydental.com",
+      password: "Brentwood2026!",
+    });
+    if (error) return { error: error.message };
+    return { error: null };
+  }, []);
+
+  const loginAsAutoDemo = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: "manager@summitautogroup.com",
+      password: "Summit2026!",
+    });
+    if (error) return { error: error.message };
+    return { error: null };
+  }, []);
+
   const logout = useCallback(() => {
     setProfile(null);
     void supabase.auth.signOut();
   }, []);
 
-  const isDemo = profile?.role === "demo";
+  // Branded demo accounts (role=demo + real practice_id) use real API data like practice_admin.
+  // Only the old generic demo (no practice_id) gets the hardcoded demo experience.
+  const isDemo = profile?.role === "demo" && !profile?.practice_id;
   const isStaff = (profile?.role ?? "").startsWith("staff_");
 
   return (
@@ -144,6 +168,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isStaff,
       login,
       loginAsDemo,
+      loginAsDentalDemo,
+      loginAsAutoDemo,
       logout,
     }}>
       {children}
