@@ -177,13 +177,16 @@ function SidebarContent({
   subtitleText: string;
   onNavClick?: () => void;
 }) {
-  const { user, profile, logout, isDemo } = useAuth();
-  const isAuto = profile?.vertical === "automotive";
+  const { user, profile, logout, isDemo, demoVertical, setDemoVertical } = useAuth();
+  const effectiveVertical = isDemo ? demoVertical : (profile?.vertical ?? "dental");
+  const isAuto = effectiveVertical === "automotive";
+  const isSalon = effectiveVertical === "salon";
+  const patientNavLabel = isAuto ? "Customers" : isSalon ? "Clients" : "Patients";
   const sections = getSections(profile?.role, isDemo).map(s => ({
     ...s,
     items: s.items.map(item =>
-      item.href === "/patients" && isAuto
-        ? { ...item, label: "Customers" }
+      item.href === "/patients"
+        ? { ...item, label: patientNavLabel }
         : item
     ),
   }));
@@ -201,9 +204,27 @@ function SidebarContent({
           <h1 className="text-2xl font-display font-bold leading-none">
             <span className="text-foreground">rip</span><span className="text-primary">pl</span>
           </h1>
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-1">
-            {subtitleText}
-          </p>
+          {isDemo ? (
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Demo ·</span>
+              <div className="relative flex items-center">
+                <select
+                  value={demoVertical}
+                  onChange={e => setDemoVertical(e.target.value as typeof demoVertical)}
+                  className="text-xs text-primary font-semibold uppercase tracking-wider bg-transparent border-none outline-none cursor-pointer appearance-none pr-3"
+                >
+                  <option value="dental">Dental</option>
+                  <option value="automotive">Automotive</option>
+                  <option value="salon">Salon</option>
+                </select>
+                <ChevronDown className="w-3 h-3 text-primary pointer-events-none absolute right-0" />
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-1">
+              {subtitleText}
+            </p>
+          )}
         </div>
       </div>
 

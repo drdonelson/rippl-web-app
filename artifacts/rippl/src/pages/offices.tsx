@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { customFetch } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
-import { DEMO_OFFICES } from "@/lib/demo-data";
+import { DEMO_OFFICES, DEMO_OFFICES_AUTO, DEMO_OFFICES_SALON } from "@/lib/demo-data";
 import { cn } from "@/lib/utils";
 import { StaffPanel } from "./staff";
 
@@ -350,13 +350,15 @@ function PoolConfigCard({ practiceId }: { practiceId: string | null }) {
 type Tab = "locations" | "team";
 
 export default function OfficesPage() {
-  const { profile, isDemo } = useAuth();
+  const { profile, isDemo, demoVertical } = useAuth();
   const [tab, setTab] = useState<Tab>("locations");
 
+  const demoOffices = demoVertical === "automotive" ? DEMO_OFFICES_AUTO : demoVertical === "salon" ? DEMO_OFFICES_SALON : DEMO_OFFICES;
+
   const { data: offices = [], isLoading, error } = useQuery<Office[]>({
-    queryKey: ["/api/offices/managed"],
+    queryKey: ["/api/offices/managed", demoVertical],
     queryFn: isDemo
-      ? () => Promise.resolve(DEMO_OFFICES as Office[])
+      ? () => Promise.resolve(demoOffices as Office[])
       : () => customFetch<Office[]>(`${BASE}/api/offices/managed`),
   });
 

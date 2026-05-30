@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { useGetReferrers, useCreateReferrer, useGetReferrerQr, getGetReferrerQrQueryKey, customFetch, ApiError } from "@workspace/api-client-react";
-import { DEMO_REFERRERS, DEMO_EXTRA_REFERRERS } from "@/lib/demo-data";
-const ALL_DEMO_REFERRERS = [...DEMO_REFERRERS, ...DEMO_EXTRA_REFERRERS];
+import { DEMO_REFERRERS, DEMO_EXTRA_REFERRERS, DEMO_REFERRERS_AUTO, DEMO_REFERRERS_SALON } from "@/lib/demo-data";
 import {
   Plus, QrCode, Search, Copy, Check, Download, RefreshCw,
   AlertTriangle, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Star, MapPin, Lock,
@@ -272,11 +271,17 @@ function SmsStatusCell({
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function Patients() {
-  const { isDemo, isLoading: authIsLoading, isStaff, profile } = useAuth();
+  const { isDemo, isLoading: authIsLoading, isStaff, profile, demoVertical } = useAuth();
   const queryEnabled = !authIsLoading && !isDemo;
 
+  const demoPatientsReferrers = useMemo(() => {
+    if (demoVertical === "automotive") return DEMO_REFERRERS_AUTO;
+    if (demoVertical === "salon") return DEMO_REFERRERS_SALON;
+    return [...DEMO_REFERRERS, ...DEMO_EXTRA_REFERRERS];
+  }, [demoVertical]);
+
   const { data: fetchedReferrers, isLoading: referrersLoading, isError: referrersError, error: referrersErrorObj } = useGetReferrers({ query: { enabled: queryEnabled } });
-  const referrers = isDemo ? ALL_DEMO_REFERRERS :fetchedReferrers;
+  const referrers = isDemo ? demoPatientsReferrers : fetchedReferrers;
   const isLoading = isDemo ? false : referrersLoading;
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
@@ -413,11 +418,11 @@ export default function Patients() {
   const effectiveQrUrl = useMemo(() => {
     if (isDemo) {
       if (!qrModalReferrerId) return null;
-      const dr = DEMO_REFERRERS.find(r => r.id === qrModalReferrerId);
-      return dr ? buildReferralUrl(dr.referral_code, BASE) : null;
+      const dr = demoPatientsReferrers.find(r => r.id === qrModalReferrerId);
+      return dr ? buildReferralUrl((dr as any).referral_code, BASE) : null;
     }
     return qrData?.referral_url ?? null;
-  }, [isDemo, qrModalReferrerId, qrData?.referral_url]);
+  }, [isDemo, qrModalReferrerId, qrData?.referral_url, demoPatientsReferrers]);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -432,9 +437,9 @@ export default function Patients() {
   // ── Send link modal ────────────────────────────────────────────────────────
   const sendLinkReferrer = useMemo(() => {
     if (!sendLinkModalReferrerId) return null;
-    const list = (isDemo ? ALL_DEMO_REFERRERS :(fetchedReferrers ?? [])) as Array<Record<string, unknown>>;
+    const list = (isDemo ? demoPatientsReferrers : (fetchedReferrers ?? [])) as Array<Record<string, unknown>>;
     return list.find(r => r.id === sendLinkModalReferrerId) ?? null;
-  }, [sendLinkModalReferrerId, isDemo, fetchedReferrers]);
+  }, [sendLinkModalReferrerId, isDemo, fetchedReferrers, demoPatientsReferrers]);
 
   const sendLinkUrl = useMemo(() => {
     if (!sendLinkReferrer) return null;

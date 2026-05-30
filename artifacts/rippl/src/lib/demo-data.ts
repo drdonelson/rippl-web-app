@@ -584,3 +584,143 @@ export const DEMO_LEADS = [
     created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
   },
 ];
+
+// ── AUTOMOTIVE VERTICAL DEMO DATA ─────────────────────────────────────────────
+
+const da = (daysAgo: number) => new Date(Date.now() - daysAgo * 86_400_000).toISOString();
+
+export const DEMO_REFERRERS_AUTO = [
+  { id:"auto-r01", name:"Carlos Mendez",    patient_id:"CARL-2001", email:"carlos.mendez@gmail.com",    phone:"(615) 555-1001", referral_code:"CARL2001", referral_url:"#", office_id:"demo", tier:"rippl_legend", reward_value:100, total_referrals:11, total_rewards_issued:9,  created_at:da(180), last_link_sent_at:da(14) },
+  { id:"auto-r02", name:"Brenda Holloway",  patient_id:"BREN-2002", email:"brenda.holloway@outlook.com", phone:"(615) 555-1002", referral_code:"BREN2002", referral_url:"#", office_id:"demo", tier:"super_rippler", reward_value:75,  total_referrals:8,  total_rewards_issued:7,  created_at:da(160), last_link_sent_at:da(10) },
+  { id:"auto-r03", name:"Derek Simmons",    patient_id:"DERE-2003", email:"derek.simmons@yahoo.com",    phone:"(615) 555-1003", referral_code:"DERE2003", referral_url:"#", office_id:"demo", tier:"super_rippler", reward_value:75,  total_referrals:7,  total_rewards_issued:6,  created_at:da(155), last_link_sent_at:da(8)  },
+  { id:"auto-r04", name:"Tanya Pierce",     patient_id:"TANY-2004", email:"tanya.pierce@gmail.com",     phone:"(629) 555-1004", referral_code:"TANY2004", referral_url:"#", office_id:"demo", tier:"rippler",      reward_value:50,  total_referrals:6,  total_rewards_issued:5,  created_at:da(150), last_link_sent_at:da(7)  },
+  { id:"auto-r05", name:"Marcus James",     patient_id:"MARC-2005", email:"marcus.james@hotmail.com",   phone:"(629) 555-1005", referral_code:"MARC2005", referral_url:"#", office_id:"demo", tier:"rippler",      reward_value:50,  total_referrals:5,  total_rewards_issued:5,  created_at:da(145), last_link_sent_at:da(5)  },
+  { id:"auto-r06", name:"Angela Torres",    patient_id:"ANGE-2006", email:"angela.torres@gmail.com",    phone:"(615) 555-1006", referral_code:"ANGE2006", referral_url:"#", office_id:"demo", tier:"rippler",      reward_value:50,  total_referrals:4,  total_rewards_issued:4,  created_at:da(140), last_link_sent_at:da(20) },
+  { id:"auto-r07", name:"Kevin Grant",      patient_id:"KEVI-2007", email:null,                          phone:"(615) 555-1007", referral_code:"KEVI2007", referral_url:"#", office_id:"demo", tier:"rippler",      reward_value:50,  total_referrals:3,  total_rewards_issued:3,  created_at:da(135), last_link_sent_at:da(18) },
+  { id:"auto-r08", name:"Sandra Brooks",    patient_id:"SAND-2008", email:"sandra.brooks@gmail.com",    phone:"(629) 555-1008", referral_code:"SAND2008", referral_url:"#", office_id:"demo", tier:"starter",      reward_value:35,  total_referrals:2,  total_rewards_issued:2,  created_at:da(130), last_link_sent_at:da(15) },
+  { id:"auto-r09", name:"Tyler Nguyen",     patient_id:"TYLE-2009", email:"tyler.nguyen@outlook.com",   phone:"(629) 555-1009", referral_code:"TYLE2009", referral_url:"#", office_id:"demo", tier:"starter",      reward_value:35,  total_referrals:2,  total_rewards_issued:1,  created_at:da(125), last_link_sent_at:da(12) },
+  { id:"auto-r10", name:"Lisa Morales",     patient_id:"LISA-2010", email:"lisa.morales@yahoo.com",     phone:"(615) 555-1010", referral_code:"LISA2010", referral_url:"#", office_id:"demo", tier:"starter",      reward_value:35,  total_referrals:2,  total_rewards_issued:2,  created_at:da(120), last_link_sent_at:da(9)  },
+  { id:"auto-r11", name:"James Okafor",     patient_id:"JAME-2011", email:null,                          phone:"(615) 555-1011", referral_code:"JAME2011", referral_url:"#", office_id:"demo", tier:"starter",      reward_value:35,  total_referrals:1,  total_rewards_issued:1,  created_at:da(115), last_link_sent_at:da(22) },
+  { id:"auto-r12", name:"Patricia Owens",   patient_id:"PATR-2012", email:"patricia.owens@gmail.com",   phone:"(629) 555-1012", referral_code:"PATR2012", referral_url:"#", office_id:"demo", tier:"starter",      reward_value:35,  total_referrals:1,  total_rewards_issued:0,  created_at:da(110), last_link_sent_at:da(19) },
+  { id:"auto-r13", name:"Robert Cheng",     patient_id:"ROBE-2013", email:"robert.cheng@gmail.com",     phone:"(615) 555-1013", referral_code:"ROBE2013", referral_url:"#", office_id:"demo", tier:"starter",      reward_value:35,  total_referrals:1,  total_rewards_issued:1,  created_at:da(105), last_link_sent_at:da(16) },
+  { id:"auto-r14", name:"Monica Walsh",     patient_id:"MONI-2014", email:null,                          phone:"(629) 555-1014", referral_code:"MONI2014", referral_url:"#", office_id:"demo", total_referrals:0, total_rewards_issued:0, created_at:da(100), last_link_sent_at:null },
+  { id:"auto-r15", name:"David Kim",        patient_id:"DAVI-2015", email:"david.kim@yahoo.com",        phone:"(615) 555-1015", referral_code:"DAVI2015", referral_url:"#", office_id:"demo", total_referrals:0, total_rewards_issued:0, created_at:da(95),  last_link_sent_at:null },
+  { id:"auto-r16", name:"Jennifer Ross",    patient_id:"JENN-2016", email:"jennifer.ross@gmail.com",    phone:"(629) 555-1016", referral_code:"JENN2016", referral_url:"#", office_id:"demo", total_referrals:0, total_rewards_issued:0, created_at:da(90),  last_link_sent_at:null },
+  { id:"auto-r17", name:"Brian Foster",     patient_id:"BRIA-2017", email:null,                          phone:"(615) 555-1017", referral_code:"BRIA2017", referral_url:"#", office_id:"demo", total_referrals:0, total_rewards_issued:0, created_at:da(85),  last_link_sent_at:null },
+  { id:"auto-r18", name:"Karen Powell",     patient_id:"KARE-2018", email:"karen.powell@outlook.com",   phone:"(629) 555-1018", referral_code:"KARE2018", referral_url:"#", office_id:"demo", total_referrals:0, total_rewards_issued:0, created_at:da(80),  last_link_sent_at:null },
+  { id:"auto-r19", name:"Steve Lambert",    patient_id:"STEV-2019", email:"steve.lambert@gmail.com",    phone:"(615) 555-1019", referral_code:"STEV2019", referral_url:"#", office_id:"demo", total_referrals:0, total_rewards_issued:0, created_at:da(75),  last_link_sent_at:null },
+  { id:"auto-r20", name:"Nancy Reyes",      patient_id:"NANC-2020", email:null,                          phone:"(629) 555-1020", referral_code:"NANC2020", referral_url:"#", office_id:"demo", total_referrals:0, total_rewards_issued:0, created_at:da(70),  last_link_sent_at:null },
+];
+
+export const DEMO_EVENTS_AUTO = [
+  { id:"auto-e1", new_patient_name:"Ryan Carter",     new_patient_phone:"(615) 555-2001", referrer_id:"auto-r01", referrer_name:"Carlos Mendez",   team_source:"front",     office:"Summit Auto Group", status:"Exam Completed", reward_type:null,               household_duplicate:false, created_at:da(2)  },
+  { id:"auto-e2", new_patient_name:"Jessica Hayes",   new_patient_phone:"(615) 555-2002", referrer_id:"auto-r02", referrer_name:"Brenda Holloway",  team_source:"back",      office:"Summit Auto Group", status:"Reward Sent",    reward_type:"amazon-gift-card",  household_duplicate:false, created_at:da(4)  },
+  { id:"auto-e3", new_patient_name:"Marcus Thompson", new_patient_phone:"(629) 555-2003", referrer_id:"auto-r03", referrer_name:"Derek Simmons",    team_source:"assistant", office:"Summit Auto Group", status:"Reward Sent",    reward_type:"amazon-gift-card",  reward_value:75,           household_duplicate:false, created_at:da(5)  },
+  { id:"auto-e4", new_patient_name:"Priya Patel",     new_patient_phone:"(615) 555-2004", referrer_id:"auto-r04", referrer_name:"Tanya Pierce",     team_source:"front",     office:"Summit Auto Group", status:"Booked",         reward_type:null,               household_duplicate:false, created_at:da(7)  },
+  { id:"auto-e5", new_patient_name:"Kevin Grant Jr.", new_patient_phone:"(629) 555-2005", referrer_id:"auto-r05", referrer_name:"Marcus James",     team_source:"back",      office:"Summit Auto Group", status:"Reward Sent",    reward_type:"in-house-credit",   household_duplicate:false, created_at:da(8)  },
+  { id:"auto-e6", new_patient_name:"Dana Hoffman",    new_patient_phone:"(615) 555-2006", referrer_id:"auto-r01", referrer_name:"Carlos Mendez",   team_source:"front",     office:"Summit Auto Group", status:"Reward Sent",    reward_type:"amazon-gift-card",  reward_value:75,           household_duplicate:false, created_at:da(14) },
+  { id:"auto-e7", new_patient_name:"Victor Lowe",     new_patient_phone:"(629) 555-2007", referrer_id:"auto-r02", referrer_name:"Brenda Holloway",  team_source:"assistant", office:"Summit Auto Group", status:"Lead",           reward_type:null,               household_duplicate:false, created_at:da(15) },
+  { id:"auto-e8", new_patient_name:"Alicia Stone",    new_patient_phone:"(615) 555-2008", referrer_id:"auto-r03", referrer_name:"Derek Simmons",    team_source:"back",      office:"Summit Auto Group", status:"Reward Sent",    reward_type:"charity-donation",  household_duplicate:false, created_at:da(21) },
+];
+
+export const DEMO_STATS_AUTO = {
+  vertical: "automotive",
+  total_referrals: 145,
+  exams_completed: 103,
+  rewards_issued: 89,
+  active_referrers: 60,
+  top_referrers: [
+    { id: "auto-r01", name: "Carlos Mendez",   total_referrals: 11, total_rewards_issued: 9 },
+    { id: "auto-r02", name: "Brenda Holloway", total_referrals: 8,  total_rewards_issued: 7 },
+    { id: "auto-r03", name: "Derek Simmons",   total_referrals: 7,  total_rewards_issued: 6 },
+    { id: "auto-r04", name: "Tanya Pierce",    total_referrals: 6,  total_rewards_issued: 5 },
+    { id: "auto-r05", name: "Marcus James",    total_referrals: 5,  total_rewards_issued: 5 },
+  ],
+  recent_events: [
+    { id:"auto-e1", new_patient_name:"Ryan Carter",     new_patient_phone:"(615) 555-2001", referrer_id:"auto-r01", referrer_name:"Carlos Mendez",   team_source:"front",     office:"Summit Auto Group", office_id:"demo", status:"Exam Completed", reward_type:null,              created_at:da(2)  },
+    { id:"auto-e2", new_patient_name:"Jessica Hayes",   new_patient_phone:"(615) 555-2002", referrer_id:"auto-r02", referrer_name:"Brenda Holloway",  team_source:"back",      office:"Summit Auto Group", office_id:"demo", status:"Reward Sent",    reward_type:"amazon-gift-card", created_at:da(4)  },
+    { id:"auto-e3", new_patient_name:"Marcus Thompson", new_patient_phone:"(629) 555-2003", referrer_id:"auto-r03", referrer_name:"Derek Simmons",    team_source:"assistant", office:"Summit Auto Group", office_id:"demo", status:"Reward Sent",    reward_type:"amazon-gift-card", reward_value:75,  created_at:da(5)  },
+    { id:"auto-e4", new_patient_name:"Priya Patel",     new_patient_phone:"(615) 555-2004", referrer_id:"auto-r04", referrer_name:"Tanya Pierce",     team_source:"front",     office:"Summit Auto Group", office_id:"demo", status:"Booked",         reward_type:null,              created_at:da(7)  },
+    { id:"auto-e5", new_patient_name:"Kevin Grant Jr.", new_patient_phone:"(629) 555-2005", referrer_id:"auto-r05", referrer_name:"Marcus James",     team_source:"back",      office:"Summit Auto Group", office_id:"demo", status:"Reward Sent",    reward_type:"in-house-credit",  created_at:da(8)  },
+  ],
+};
+
+export const DEMO_OFFICES_AUTO = [
+  {
+    id: "demo-office-auto",
+    name: "Summit Auto Group – Main",
+    location_code: "main",
+    logo_url: null,
+    active: true,
+    last_poll_at: new Date(Date.now() - 4 * 60 * 1000).toISOString(),
+  },
+];
+
+// ── SALON VERTICAL DEMO DATA ──────────────────────────────────────────────────
+
+export const DEMO_REFERRERS_SALON = [
+  { id:"salon-r01", name:"Sophia Brooks",    patient_id:"SOPH-3001", email:"sophia.brooks@gmail.com",    phone:"(615) 555-3001", referral_code:"SOPH3001", referral_url:"#", office_id:"demo", tier:"rippl_legend", reward_value:100, total_referrals:13, total_rewards_issued:11, created_at:da(180), last_link_sent_at:da(14) },
+  { id:"salon-r02", name:"Rachel Green",     patient_id:"RACH-3002", email:"rachel.green@outlook.com",   phone:"(615) 555-3002", referral_code:"RACH3002", referral_url:"#", office_id:"demo", tier:"super_rippler", reward_value:75,  total_referrals:8,  total_rewards_issued:7,  created_at:da(165), last_link_sent_at:da(11) },
+  { id:"salon-r03", name:"Mia Patel",        patient_id:"MIAP-3003", email:"mia.patel@yahoo.com",        phone:"(629) 555-3003", referral_code:"MIAP3003", referral_url:"#", office_id:"demo", tier:"super_rippler", reward_value:75,  total_referrals:7,  total_rewards_issued:6,  created_at:da(160), last_link_sent_at:da(9)  },
+  { id:"salon-r04", name:"Kayla Robinson",   patient_id:"KAYL-3004", email:"kayla.robinson@gmail.com",   phone:"(615) 555-3004", referral_code:"KAYL3004", referral_url:"#", office_id:"demo", tier:"rippler",      reward_value:50,  total_referrals:5,  total_rewards_issued:4,  created_at:da(155), last_link_sent_at:da(7)  },
+  { id:"salon-r05", name:"Amber Davis",      patient_id:"AMBE-3005", email:null,                          phone:"(629) 555-3005", referral_code:"AMBE3005", referral_url:"#", office_id:"demo", tier:"rippler",      reward_value:50,  total_referrals:4,  total_rewards_issued:4,  created_at:da(150), last_link_sent_at:da(6)  },
+  { id:"salon-r06", name:"Nicole Carter",    patient_id:"NICO-3006", email:"nicole.carter@gmail.com",    phone:"(615) 555-3006", referral_code:"NICO3006", referral_url:"#", office_id:"demo", tier:"rippler",      reward_value:50,  total_referrals:3,  total_rewards_issued:3,  created_at:da(145), last_link_sent_at:da(20) },
+  { id:"salon-r07", name:"Jasmine Hall",     patient_id:"JASM-3007", email:"jasmine.hall@hotmail.com",   phone:"(629) 555-3007", referral_code:"JASM3007", referral_url:"#", office_id:"demo", tier:"rippler",      reward_value:50,  total_referrals:3,  total_rewards_issued:2,  created_at:da(140), last_link_sent_at:da(17) },
+  { id:"salon-r08", name:"Tiffany Moore",    patient_id:"TIFF-3008", email:"tiffany.moore@gmail.com",    phone:"(615) 555-3008", referral_code:"TIFF3008", referral_url:"#", office_id:"demo", tier:"starter",      reward_value:35,  total_referrals:2,  total_rewards_issued:2,  created_at:da(135), last_link_sent_at:da(15) },
+  { id:"salon-r09", name:"Lauren White",     patient_id:"LAUR-3009", email:null,                          phone:"(629) 555-3009", referral_code:"LAUR3009", referral_url:"#", office_id:"demo", tier:"starter",      reward_value:35,  total_referrals:2,  total_rewards_issued:1,  created_at:da(130), last_link_sent_at:da(12) },
+  { id:"salon-r10", name:"Danielle Rivera",  patient_id:"DANI-3010", email:"danielle.rivera@yahoo.com",  phone:"(615) 555-3010", referral_code:"DANI3010", referral_url:"#", office_id:"demo", tier:"starter",      reward_value:35,  total_referrals:2,  total_rewards_issued:2,  created_at:da(125), last_link_sent_at:da(10) },
+  { id:"salon-r11", name:"Brittany Young",   patient_id:"BRIT-3011", email:"brittany.young@gmail.com",   phone:"(629) 555-3011", referral_code:"BRIT3011", referral_url:"#", office_id:"demo", tier:"starter",      reward_value:35,  total_referrals:1,  total_rewards_issued:1,  created_at:da(120), last_link_sent_at:da(22) },
+  { id:"salon-r12", name:"Destiny Thomas",   patient_id:"DEST-3012", email:null,                          phone:"(615) 555-3012", referral_code:"DEST3012", referral_url:"#", office_id:"demo", tier:"starter",      reward_value:35,  total_referrals:1,  total_rewards_issued:0,  created_at:da(115), last_link_sent_at:da(19) },
+  { id:"salon-r13", name:"Samantha Cruz",    patient_id:"SAMA-3013", email:"samantha.cruz@gmail.com",    phone:"(629) 555-3013", referral_code:"SAMA3013", referral_url:"#", office_id:"demo", tier:"starter",      reward_value:35,  total_referrals:1,  total_rewards_issued:1,  created_at:da(110), last_link_sent_at:da(16) },
+  { id:"salon-r14", name:"Victoria Bell",    patient_id:"VICT-3014", email:"victoria.bell@outlook.com",  phone:"(615) 555-3014", referral_code:"VICT3014", referral_url:"#", office_id:"demo", total_referrals:0, total_rewards_issued:0, created_at:da(105), last_link_sent_at:null },
+  { id:"salon-r15", name:"Alexis Foster",    patient_id:"ALEX-3015", email:null,                          phone:"(629) 555-3015", referral_code:"ALEX3015", referral_url:"#", office_id:"demo", total_referrals:0, total_rewards_issued:0, created_at:da(100), last_link_sent_at:null },
+  { id:"salon-r16", name:"Courtney Adams",   patient_id:"COUR-3016", email:"courtney.adams@gmail.com",   phone:"(615) 555-3016", referral_code:"COUR3016", referral_url:"#", office_id:"demo", total_referrals:0, total_rewards_issued:0, created_at:da(95),  last_link_sent_at:null },
+  { id:"salon-r17", name:"Monique Diaz",     patient_id:"MONI-3017", email:null,                          phone:"(629) 555-3017", referral_code:"MONI3017", referral_url:"#", office_id:"demo", total_referrals:0, total_rewards_issued:0, created_at:da(90),  last_link_sent_at:null },
+  { id:"salon-r18", name:"Erica Nguyen",     patient_id:"ERIC-3018", email:"erica.nguyen@yahoo.com",     phone:"(615) 555-3018", referral_code:"ERIC3018", referral_url:"#", office_id:"demo", total_referrals:0, total_rewards_issued:0, created_at:da(85),  last_link_sent_at:null },
+  { id:"salon-r19", name:"Naomi Phillips",   patient_id:"NAOM-3019", email:"naomi.phillips@gmail.com",   phone:"(629) 555-3019", referral_code:"NAOM3019", referral_url:"#", office_id:"demo", total_referrals:0, total_rewards_issued:0, created_at:da(80),  last_link_sent_at:null },
+  { id:"salon-r20", name:"Jada Stewart",     patient_id:"JADA-3020", email:null,                          phone:"(615) 555-3020", referral_code:"JADA3020", referral_url:"#", office_id:"demo", total_referrals:0, total_rewards_issued:0, created_at:da(75),  last_link_sent_at:null },
+];
+
+export const DEMO_EVENTS_SALON = [
+  { id:"salon-e1", new_patient_name:"Emma Collins",    new_patient_phone:"(615) 555-4001", referrer_id:"salon-r01", referrer_name:"Sophia Brooks",   team_source:"front",     office:"Luxe Hair Studio", status:"Exam Completed", reward_type:null,              household_duplicate:false, created_at:da(2)  },
+  { id:"salon-e2", new_patient_name:"Maya Johnson",    new_patient_phone:"(615) 555-4002", referrer_id:"salon-r02", referrer_name:"Rachel Green",    team_source:"back",      office:"Luxe Hair Studio", status:"Reward Sent",    reward_type:"amazon-gift-card", household_duplicate:false, created_at:da(4)  },
+  { id:"salon-e3", new_patient_name:"Olivia Scott",    new_patient_phone:"(629) 555-4003", referrer_id:"salon-r03", referrer_name:"Mia Patel",       team_source:"assistant", office:"Luxe Hair Studio", status:"Reward Sent",    reward_type:"amazon-gift-card", reward_value:75,  household_duplicate:false, created_at:da(5)  },
+  { id:"salon-e4", new_patient_name:"Chloe Martin",    new_patient_phone:"(615) 555-4004", referrer_id:"salon-r04", referrer_name:"Kayla Robinson",  team_source:"front",     office:"Luxe Hair Studio", status:"Booked",         reward_type:null,              household_duplicate:false, created_at:da(7)  },
+  { id:"salon-e5", new_patient_name:"Zoe Harris",      new_patient_phone:"(629) 555-4005", referrer_id:"salon-r05", referrer_name:"Amber Davis",     team_source:"back",      office:"Luxe Hair Studio", status:"Reward Sent",    reward_type:"in-house-credit",  household_duplicate:false, created_at:da(8)  },
+  { id:"salon-e6", new_patient_name:"Lily Anderson",   new_patient_phone:"(615) 555-4006", referrer_id:"salon-r01", referrer_name:"Sophia Brooks",   team_source:"front",     office:"Luxe Hair Studio", status:"Reward Sent",    reward_type:"amazon-gift-card", reward_value:75,  household_duplicate:false, created_at:da(14) },
+  { id:"salon-e7", new_patient_name:"Grace Wilson",    new_patient_phone:"(629) 555-4007", referrer_id:"salon-r02", referrer_name:"Rachel Green",    team_source:"assistant", office:"Luxe Hair Studio", status:"Lead",           reward_type:null,              household_duplicate:false, created_at:da(15) },
+  { id:"salon-e8", new_patient_name:"Aria Thompson",   new_patient_phone:"(615) 555-4008", referrer_id:"salon-r03", referrer_name:"Mia Patel",       team_source:"back",      office:"Luxe Hair Studio", status:"Reward Sent",    reward_type:"charity-donation", household_duplicate:false, created_at:da(21) },
+];
+
+export const DEMO_STATS_SALON = {
+  vertical: "salon",
+  total_referrals: 112,
+  exams_completed: 84,
+  rewards_issued: 71,
+  active_referrers: 48,
+  top_referrers: [
+    { id: "salon-r01", name: "Sophia Brooks",  total_referrals: 13, total_rewards_issued: 11 },
+    { id: "salon-r02", name: "Rachel Green",   total_referrals: 8,  total_rewards_issued: 7  },
+    { id: "salon-r03", name: "Mia Patel",      total_referrals: 7,  total_rewards_issued: 6  },
+    { id: "salon-r04", name: "Kayla Robinson", total_referrals: 5,  total_rewards_issued: 4  },
+    { id: "salon-r05", name: "Amber Davis",    total_referrals: 4,  total_rewards_issued: 4  },
+  ],
+  recent_events: [
+    { id:"salon-e1", new_patient_name:"Emma Collins",    new_patient_phone:"(615) 555-4001", referrer_id:"salon-r01", referrer_name:"Sophia Brooks",   team_source:"front",     office:"Luxe Hair Studio", office_id:"demo", status:"Exam Completed", reward_type:null,              created_at:da(2)  },
+    { id:"salon-e2", new_patient_name:"Maya Johnson",    new_patient_phone:"(615) 555-4002", referrer_id:"salon-r02", referrer_name:"Rachel Green",    team_source:"back",      office:"Luxe Hair Studio", office_id:"demo", status:"Reward Sent",    reward_type:"amazon-gift-card", created_at:da(4)  },
+    { id:"salon-e3", new_patient_name:"Olivia Scott",    new_patient_phone:"(629) 555-4003", referrer_id:"salon-r03", referrer_name:"Mia Patel",       team_source:"assistant", office:"Luxe Hair Studio", office_id:"demo", status:"Reward Sent",    reward_type:"amazon-gift-card", reward_value:75,  created_at:da(5)  },
+    { id:"salon-e4", new_patient_name:"Chloe Martin",    new_patient_phone:"(615) 555-4004", referrer_id:"salon-r04", referrer_name:"Kayla Robinson",  team_source:"front",     office:"Luxe Hair Studio", office_id:"demo", status:"Booked",         reward_type:null,              created_at:da(7)  },
+    { id:"salon-e5", new_patient_name:"Zoe Harris",      new_patient_phone:"(629) 555-4005", referrer_id:"salon-r05", referrer_name:"Amber Davis",     team_source:"back",      office:"Luxe Hair Studio", office_id:"demo", status:"Reward Sent",    reward_type:"in-house-credit",  created_at:da(8)  },
+  ],
+};
+
+export const DEMO_OFFICES_SALON = [
+  {
+    id: "demo-office-salon",
+    name: "Luxe Hair Studio – Main",
+    location_code: "main",
+    logo_url: null,
+    active: true,
+    last_poll_at: new Date(Date.now() - 4 * 60 * 1000).toISOString(),
+  },
+];

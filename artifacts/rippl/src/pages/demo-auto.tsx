@@ -4,25 +4,27 @@ import { Droplets, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 
 export default function DemoAuto() {
-  const { loginAsAutoDemo, session, profile, isLoading } = useAuth();
+  const { loginAsDemo, setDemoVertical, session, profile, isLoading } = useAuth();
   const [, navigate] = useLocation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoading && session && profile?.role === "demo") {
+      setDemoVertical("automotive");
       navigate("/dashboard");
     }
-  }, [session, profile, isLoading, navigate]);
+  }, [session, profile, isLoading, navigate, setDemoVertical]);
 
   const handleAccess = async () => {
     setError(null);
     setLoading(true);
-    const { error: err } = await loginAsAutoDemo();
+    const { error: err } = await loginAsDemo();
     setLoading(false);
     if (err) {
       setError("Unable to access dashboard. Please try again.");
     } else {
+      setDemoVertical("automotive");
       navigate("/dashboard");
     }
   };
@@ -61,15 +63,15 @@ export default function DemoAuto() {
           <div className="border-t border-slate-100 pt-4 space-y-2 text-left text-sm text-slate-500">
             <div className="flex items-center gap-2.5">
               <span className="w-5 h-5 rounded-full bg-orange-100 text-[#E0622A] flex items-center justify-center text-xs font-bold shrink-0">✓</span>
-              <span>6 active referrers with unique links</span>
+              <span>20 active customers with unique referral links</span>
             </div>
             <div className="flex items-center gap-2.5">
               <span className="w-5 h-5 rounded-full bg-orange-100 text-[#E0622A] flex items-center justify-center text-xs font-bold shrink-0">✓</span>
-              <span>11 referral events across all stages</span>
+              <span>8 referral events across all stages</span>
             </div>
             <div className="flex items-center gap-2.5">
               <span className="w-5 h-5 rounded-full bg-orange-100 text-[#E0622A] flex items-center justify-center text-xs font-bold shrink-0">✓</span>
-              <span>4 Amazon gift card rewards fulfilled</span>
+              <span>Automated gift card rewards on vehicle purchase</span>
             </div>
           </div>
 

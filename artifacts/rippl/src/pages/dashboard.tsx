@@ -6,7 +6,7 @@ import { Link } from "wouter";
 import { useOffice } from "@/contexts/office-context";
 import { useAuth } from "@/contexts/auth-context";
 import { customFetch } from "@workspace/api-client-react";
-import { DEMO_STATS } from "@/lib/demo-data";
+import { DEMO_STATS, DEMO_STATS_AUTO, DEMO_STATS_SALON } from "@/lib/demo-data";
 
 interface AdminTask {
   id: string;
@@ -86,7 +86,7 @@ function useCompleteTask() {
 }
 
 export default function Dashboard() {
-  const { isDemo, isLoading: authIsLoading, profile } = useAuth();
+  const { isDemo, isLoading: authIsLoading, profile, demoVertical } = useAuth();
   const { selectedOfficeId } = useOffice();
 
   // Gate queries on auth being fully loaded AND user not being demo.
@@ -103,7 +103,8 @@ export default function Dashboard() {
     try { return localStorage.getItem(`rippl_welcome_dismissed_${profile?.id}`) === "1"; } catch { return false; }
   });
 
-  const stats: DashboardStats | undefined = isDemo ? DEMO_STATS : fetchedStats;
+  const demoStats = demoVertical === "automotive" ? DEMO_STATS_AUTO : demoVertical === "salon" ? DEMO_STATS_SALON : DEMO_STATS;
+  const stats: DashboardStats | undefined = isDemo ? (demoStats as DashboardStats) : fetchedStats;
   const loading = !isDemo && (authIsLoading || isLoading);
 
   if (loading) {

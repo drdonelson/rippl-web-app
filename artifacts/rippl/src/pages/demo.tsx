@@ -7,7 +7,7 @@ import { Link } from "wouter";
 const DEMO_DURATION_MS = 30 * 60 * 1000; // 30 minutes
 
 export default function Demo() {
-  const { loginAsDemo, session, profile, isLoading } = useAuth();
+  const { loginAsDemo, setDemoVertical, session, profile, isLoading } = useAuth();
   const [, navigate] = useLocation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +27,7 @@ export default function Demo() {
     setError(null);
     setLoading(true);
     localStorage.setItem("rippl_demo_start", Date.now().toString());
+    setDemoVertical("dental");
     const { error: err } = await loginAsDemo();
     setLoading(false);
     if (err) {
@@ -67,15 +68,15 @@ export default function Demo() {
           <div className="space-y-3 text-sm text-slate-500">
             <div className="flex items-start gap-2.5">
               <span className="w-5 h-5 rounded-full bg-orange-100 text-[#E0622A] flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">✓</span>
-              <span>5 Nashville patients with referral QR codes</span>
+              <span>Switch between Dental, Automotive, and Salon verticals</span>
             </div>
             <div className="flex items-start gap-2.5">
               <span className="w-5 h-5 rounded-full bg-orange-100 text-[#E0622A] flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">✓</span>
-              <span>12 referral events across all status stages</span>
+              <span>Real referral events, rewards, and patient data per vertical</span>
             </div>
             <div className="flex items-start gap-2.5">
               <span className="w-5 h-5 rounded-full bg-orange-100 text-[#E0622A] flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">✓</span>
-              <span>2 rewards sent — Amazon gift card &amp; in-house credit</span>
+              <span>Full dashboard, analytics, campaigns &amp; staff playbook</span>
             </div>
             <div className="flex items-start gap-2.5">
               <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">!</span>

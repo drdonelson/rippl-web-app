@@ -7,6 +7,7 @@ const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
 export type StaffRole = "staff_brentwood" | "staff_lewisburg" | "staff_greenbrier";
 export type UserRole = "super_admin" | "practice_admin" | "demo" | StaffRole;
+export type DemoVertical = "dental" | "automotive" | "salon";
 
 export function staffOfficeLabel(role: UserRole): string | null {
   if (!role.startsWith("staff_")) return null;
@@ -29,10 +30,10 @@ interface AuthContextValue {
   isLoading: boolean;
   isDemo: boolean;
   isStaff: boolean;
+  demoVertical: DemoVertical;
+  setDemoVertical: (v: DemoVertical) => void;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
   loginAsDemo: () => Promise<{ error: string | null }>;
-  loginAsDentalDemo: () => Promise<{ error: string | null }>;
-  loginAsAutoDemo: () => Promise<{ error: string | null }>;
   logout: () => void;
 }
 
@@ -43,10 +44,10 @@ const AuthContext = createContext<AuthContextValue>({
   isLoading: true,
   isDemo: false,
   isStaff: false,
+  demoVertical: "dental",
+  setDemoVertical: () => {},
   login: async () => ({ error: null }),
   loginAsDemo: async () => ({ error: null }),
-  loginAsDentalDemo: async () => ({ error: null }),
-  loginAsAutoDemo: async () => ({ error: null }),
   logout: () => {},
 });
 
@@ -76,6 +77,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [demoVertical, setDemoVerticalState] = useState<DemoVertical>(() => {
+    try { return (localStorage.getItem("rippl_demo_vertical") as DemoVertical) || "dental"; } catch { return "dental"; }
+  });
+
+  const setDemoVertical = useCallback((v: DemoVertical) => {
+    try { localStorage.setItem("rippl_demo_vertical", v); } catch {}
+    setDemoVerticalState(v);
+  }, []);
 
   const loadProfile = useCallback(async (sess: Session | null) => {
     if (!sess?.user) {
@@ -131,24 +140,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: null };
   }, []);
 
-  const loginAsDentalDemo = useCallback(async () => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email: "front.desk@brentwoodfamilydental.com",
-      password: "Brentwood2026!",
-    });
-    if (error) return { error: error.message };
-    return { error: null };
-  }, []);
-
-  const loginAsAutoDemo = useCallback(async () => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email: "manager@summitautogroup.com",
-      password: "Summit2026!",
-    });
-    if (error) return { error: error.message };
-    return { error: null };
-  }, []);
-
   const logout = useCallback(() => {
     setProfile(null);
     void supabase.auth.signOut();
@@ -167,10 +158,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isLoading,
       isDemo,
       isStaff,
+      demoVertical,
+      setDemoVertical,
       login,
       loginAsDemo,
-      loginAsDentalDemo,
-      loginAsAutoDemo,
       logout,
     }}>
       {children}

@@ -11,7 +11,7 @@ import { z } from "zod";
 import { useSearch } from "wouter";
 import { useOffice } from "@/contexts/office-context";
 import { useAuth } from "@/contexts/auth-context";
-import { DEMO_EVENTS, DEMO_REFERRERS } from "@/lib/demo-data";
+import { DEMO_EVENTS, DEMO_REFERRERS, DEMO_EVENTS_AUTO, DEMO_REFERRERS_AUTO, DEMO_EVENTS_SALON, DEMO_REFERRERS_SALON } from "@/lib/demo-data";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -129,7 +129,7 @@ export default function Events() {
   const initialTab = (params.get("tab") as TabId | null) ?? "all";
   const initialReferrer = params.get("referrer") ?? "";
 
-  const { isDemo, isLoading: authIsLoading, profile } = useAuth();
+  const { isDemo, isLoading: authIsLoading, profile, demoVertical } = useAuth();
   const { selectedOfficeId, offices } = useOffice();
 
   // Gate queries until auth is fully resolved — prevents API calls from firing
@@ -139,8 +139,10 @@ export default function Events() {
   const { data: fetchedEvents, isLoading } = useReferralEvents(selectedOfficeId, queryEnabled);
   const { data: fetchedReferrers } = useGetReferrers({ query: { enabled: queryEnabled } });
 
-  const events = isDemo ? (DEMO_EVENTS as ReferralEvent[]) : fetchedEvents;
-  const referrers = isDemo ? DEMO_REFERRERS : fetchedReferrers;
+  const demoEventsSet = demoVertical === "automotive" ? DEMO_EVENTS_AUTO : demoVertical === "salon" ? DEMO_EVENTS_SALON : DEMO_EVENTS;
+  const demoReferrersSet = demoVertical === "automotive" ? DEMO_REFERRERS_AUTO : demoVertical === "salon" ? DEMO_REFERRERS_SALON : DEMO_REFERRERS;
+  const events = isDemo ? (demoEventsSet as ReferralEvent[]) : fetchedEvents;
+  const referrers = isDemo ? demoReferrersSet : fetchedReferrers;
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState(initialReferrer);
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
