@@ -527,6 +527,48 @@ export const DEMO_ADMIN_TASKS = [
   },
 ];
 
+// ── DEMO_ADMIN_TASKS_AUTO ─────────────────────────────────────────────────────
+// Automotive demo tasks — no in-house credit (dental-specific).
+
+export const DEMO_ADMIN_TASKS_AUTO = [
+  {
+    id: "auto-task-1",
+    task_type: "gift-card",
+    amount: 35,
+    notes: "Customer requested Amazon gift card via claim link",
+    status: "pending",
+    referral_event_id: "auto-e7",
+    created_at: d(2),
+    referrer_name: "Tanya Pierce",
+    referrer_email: "tanya.pierce@gmail.com",
+    new_patient_name: "Victor Lowe",
+  },
+  {
+    id: "auto-task-2",
+    task_type: "charity_donation",
+    amount: 35,
+    notes: "Customer requested $35 donation to St. Jude Children's Research Hospital",
+    status: "pending",
+    referral_event_id: "auto-e3",
+    created_at: d(5),
+    referrer_name: "Derek Simmons",
+    referrer_email: "derek.simmons@yahoo.com",
+    new_patient_name: "Marcus Thompson",
+  },
+  {
+    id: "auto-task-3",
+    task_type: "unmatched-referral",
+    amount: null,
+    notes: "New customer said they were referred by 'a friend who bought here' — no name given",
+    status: "pending",
+    referral_event_id: "auto-e-unmatched",
+    created_at: d(1),
+    referrer_name: null,
+    referrer_email: null,
+    new_patient_name: "Greg Landis",
+  },
+];
+
 // ── DEMO_OFFICES ──────────────────────────────────────────────────────────────
 
 export const DEMO_OFFICES = [

@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import {
   BookOpen, ChevronDown, ChevronUp, CheckCircle2, MessageSquare,
   Users, Gift, HelpCircle, ClipboardList, Star, Stethoscope,
-  Monitor, Smile, ArrowRight, Copy, Check, MousePointerClick,
+  Monitor, Smile, ArrowRight, Copy, Check, MousePointerClick, Car,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/auth-context";
 
 // ── Reusable copy button ───────────────────────────────────────────────────────
 
@@ -257,7 +258,319 @@ const FAQS = [
   },
 ];
 
+const SCRIPTS_AUTO = [
+  {
+    role: "Sales Floor — While Showing a Vehicle",
+    icon: Car,
+    color: "bg-blue-50 text-blue-600",
+    script:
+      "Hey, before I forget — we have a referral program. If any of your friends or family are in the market for a car, send them our way. Once their deal closes, you'll get a reward automatically — no forms, no hoops. We'll text you when it's ready.",
+    tips: [
+      "Bring it up naturally during a test drive or while reviewing features — not during paperwork.",
+      "Mentioning 'once their deal closes' sets a concrete expectation.",
+      "If they've bought before, remind them the program has no cap — every referral earns.",
+    ],
+  },
+  {
+    role: "Finance Office — Post-Purchase",
+    icon: Gift,
+    color: "bg-amber-50 text-amber-600",
+    script:
+      "Congratulations on your new vehicle! One more thing before you go — do you have any friends or family who are car shopping? Our referral program pays you a reward when someone you refer buys from us. We'll text you the moment it happens.",
+    tips: [
+      "Post-purchase is the highest-conversion moment — customers are excited and trusting.",
+      "The word 'pays' is more motivating than 'rewards' for automotive customers.",
+      "Have the referral program QR code ready to hand over with the paperwork.",
+    ],
+  },
+  {
+    role: "Sales Manager — Customer Follow-Up Call",
+    icon: MessageSquare,
+    color: "bg-emerald-50 text-emerald-600",
+    script:
+      "Hi [Name], just checking in to make sure you're loving the new [vehicle]. One quick thing — if you know anyone looking for a car, we have a referral program. You'd earn a reward once they purchase. No sign-up required — just tell them to mention your name.",
+    tips: [
+      "Works well 1–2 weeks after delivery when the buyer is still excited.",
+      "Personalize by mentioning the specific vehicle they bought.",
+      "Keep it brief — this is a check-in call, not a sales call.",
+    ],
+  },
+  {
+    role: "Phone — Incoming Inquiry",
+    icon: Monitor,
+    color: "bg-violet-50 text-violet-600",
+    script:
+      "And just so you know — whoever referred you to us will earn a reward when your deal closes. We make sure they get credit. Did someone mention they bought here?",
+    tips: [
+      "Ask at the very start of the inquiry — referral is freshest in their mind.",
+      "Note the referrer's name immediately, even with rough spelling — we can match it.",
+    ],
+  },
+];
+
+const FAQS_AUTO = [
+  {
+    q: "How does Rippl know who referred who?",
+    a: "When a new customer visits and mentions a referrer's name, we log it. Once their vehicle purchase closes, our system confirms the deal and automatically triggers the reward — no spreadsheet needed.",
+  },
+  {
+    q: "What if the customer doesn't remember who referred them?",
+    a: "That's okay — the referral can still be logged manually. Ask when they arrive if they recall a name. Your sales team can also enter it after the fact in the Referral Events log.",
+  },
+  {
+    q: "When does the referrer get paid?",
+    a: "After the referred customer's vehicle purchase is confirmed as a closed deal. The referrer gets a text notification and can redeem their gift card immediately.",
+  },
+  {
+    q: "What gift cards are available?",
+    a: "Referrers can choose from hundreds of brands — Amazon, Visa, restaurants, entertainment, and more — through our rewards platform. They pick what they want after the reward is confirmed.",
+  },
+  {
+    q: "What if a customer refers multiple people?",
+    a: "They earn a separate reward for each successful purchase. There's no cap — every person they send our way earns them a new reward.",
+  },
+  {
+    q: "Do we have to do anything to process the reward?",
+    a: "No. Once the referral is logged and the deal closes, Rippl handles everything automatically — the reward notification, the gift card, and the text message.",
+  },
+  {
+    q: "What does 'Lead' mean in the Referral Events list?",
+    a: "A Lead is someone who submitted their info through the referral link but hasn't visited the dealership yet. They're a warm prospect. Once they've scheduled a visit, click the status badge to advance them to Booked.",
+  },
+  {
+    q: "Why hasn't the status changed to Deal Closed yet?",
+    a: "The system syncs with your CRM regularly. If you just closed a deal, it may take a short time to update. You can also manually advance the status by clicking the badge in Referral Events.",
+  },
+];
+
+function PlaybookAuto() {
+  return (
+    <div className="max-w-3xl mx-auto space-y-10 pb-12">
+      {/* Header */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-8 h-8 rounded-xl bg-[#E0622A]/10 flex items-center justify-center">
+            <BookOpen className="w-4 h-4 text-[#E0622A]" />
+          </div>
+          <span className="text-xs font-bold text-[#E0622A] uppercase tracking-widest">Staff Playbook</span>
+        </div>
+        <h1 className="text-2xl font-display font-bold text-slate-900 mb-2">
+          Referral Program — Team Guide
+        </h1>
+        <p className="text-slate-500 leading-relaxed max-w-xl">
+          Everything your sales team and finance office need to run the referral program confidently.
+          Scripts, process steps, and answers to the questions customers actually ask.
+        </p>
+      </div>
+
+      {/* Program snapshot */}
+      <section className="bg-gradient-to-br from-[#E0622A]/8 to-[#E0622A]/3 border border-[#E0622A]/20 rounded-2xl p-6 space-y-4">
+        <p className="text-xs font-bold text-[#E0622A] uppercase tracking-widest">How It Works — The Short Version</p>
+        <div className="grid sm:grid-cols-3 gap-4">
+          {[
+            { icon: Smile, label: "Customer refers a friend", body: "They mention the referrer's name when they visit or their deal is logged." },
+            { icon: CheckCircle2, label: "Deal is confirmed", body: "Rippl detects the closed deal automatically through your CRM integration." },
+            { icon: Gift, label: "Referrer gets a reward", body: "A text goes out with a gift card link. They pick from hundreds of brands." },
+          ].map(({ icon: Icon, label, body }) => (
+            <div key={label} className="flex flex-col gap-2">
+              <div className="w-8 h-8 rounded-xl bg-white border border-[#E0622A]/20 flex items-center justify-center">
+                <Icon className="w-4 h-4 text-[#E0622A]" />
+              </div>
+              <p className="text-sm font-semibold text-slate-800">{label}</p>
+              <p className="text-xs text-slate-500 leading-relaxed">{body}</p>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 pt-2 border-t border-[#E0622A]/15">
+          <ArrowRight className="w-3.5 h-3.5 text-[#E0622A]" />
+          <p className="text-xs text-slate-600">
+            Your job: <span className="font-semibold text-slate-800">mention the program and log the referrer's name.</span> Rippl handles everything else.
+          </p>
+        </div>
+      </section>
+
+      {/* Scripts */}
+      <section className="space-y-4">
+        <div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Scripts</p>
+          <h2 className="text-lg font-bold text-slate-900">What to Say — by Role</h2>
+          <p className="text-sm text-slate-500 mt-1">Click any card to expand the script. Use these word-for-word or adapt to your style.</p>
+        </div>
+        <div className="space-y-3">
+          {SCRIPTS_AUTO.map(s => (
+            <ScriptCard key={s.role} {...s} />
+          ))}
+        </div>
+      </section>
+
+      {/* Process steps */}
+      <section className="space-y-4">
+        <div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Process</p>
+          <h2 className="text-lg font-bold text-slate-900">Logging a Referral — Step by Step</h2>
+          <p className="text-sm text-slate-500 mt-1">What to do when a new customer says someone referred them.</p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <Step n={1} title="Ask when a new customer arrives or calls"
+            body='When a new customer visits or calls, ask: "Did someone send you our way?" Even if the referral was word-of-mouth, the customer usually knows the name.' />
+          <Step n={2} title="Write down the referrer's name"
+            body="Get the full name if possible. We match it against existing customers. A first name and rough description is enough to work from if they're not sure." />
+          <Step n={3} title="Log it in the referral system"
+            body="Go to Dashboard → Referral Events and click 'Add Manual Referral'. Enter the new customer's name and the referrer's name. This ensures the reward triggers correctly when the deal closes." />
+          <Step n={4} title="Tell the referrer it's coming"
+            body="If the referrer is on the lot or reachable, let them know their reward will arrive by text once the new customer's deal is confirmed. This closes the loop and drives more referrals." />
+          <div className="flex gap-4 last:pb-0">
+            <div className="flex flex-col items-center shrink-0">
+              <div className="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-800 mb-1">Done — Rippl takes it from here</p>
+              <p className="text-sm text-slate-500 leading-relaxed">Once the deal closes, the reward goes out automatically. No follow-up needed.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Status pipeline */}
+      <section className="space-y-4">
+        <div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Dashboard</p>
+          <h2 className="text-lg font-bold text-slate-900">Reading the Referral Status Pipeline</h2>
+          <p className="text-sm text-slate-500 mt-1">Every referral moves through four stages. Here's what each one means and what you need to do.</p>
+        </div>
+
+        <div className="grid grid-cols-4 gap-1 items-center">
+          {[
+            { label: "Lead",        color: "bg-slate-500/15 text-slate-500 border-slate-400/30" },
+            { label: "Booked",      color: "bg-blue-500/15 text-blue-500 border-blue-400/30" },
+            { label: "Deal Closed", color: "bg-green-500/15 text-green-600 border-green-400/30" },
+            { label: "Reward Sent", color: "bg-[#E0622A]/15 text-[#E0622A] border-[#E0622A]/30" },
+          ].map((s, i, arr) => (
+            <div key={s.label} className="flex items-center gap-1">
+              <div className={`flex-1 text-center px-2 py-1.5 rounded-full text-xs font-bold border ${s.color}`}>
+                {s.label}
+              </div>
+              {i < arr.length - 1 && <ArrowRight className="w-3 h-3 text-slate-300 shrink-0" />}
+            </div>
+          ))}
+        </div>
+
+        <div className="space-y-3">
+          {[
+            {
+              badge: "Lead",
+              badgeColor: "bg-slate-500/10 text-slate-500 border-slate-400/30",
+              heading: "New customer submitted interest — hasn't visited yet",
+              body: "This appears when a customer fills out the referral form. They've expressed interest but don't have an appointment yet. This is your signal to follow up by phone to schedule a visit.",
+              action: null,
+            },
+            {
+              badge: "Booked",
+              badgeColor: "bg-blue-500/10 text-blue-500 border-blue-400/30",
+              heading: "Visit is scheduled — customer hasn't been seen yet",
+              body: "Once you've reached out and scheduled a test drive or showroom visit, click the status badge in Referral Events to advance it from Lead → Booked. This keeps your pipeline accurate.",
+              action: "Click the status badge to advance from Lead → Booked",
+            },
+            {
+              badge: "Deal Closed",
+              badgeColor: "bg-green-500/10 text-green-600 border-green-400/30",
+              heading: "Vehicle purchased — reward notification sent",
+              body: "This triggers automatically when your CRM records the closed deal. The referrer immediately receives a text and email with their reward claim link. If the system hasn't updated yet, you can manually advance the status to send the notification early.",
+              action: "Usually automatic — click the badge only if the CRM hasn't synced yet",
+            },
+            {
+              badge: "Reward Sent",
+              badgeColor: "bg-[#E0622A]/10 text-[#E0622A] border-[#E0622A]/30",
+              heading: "Referrer redeemed their reward — done",
+              body: "The referrer clicked their claim link, chose a gift card, and the reward was delivered. No action needed. The event is complete.",
+              action: null,
+            },
+          ].map(item => (
+            <div key={item.badge} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-2">
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${item.badgeColor}`}>
+                  {item.badge}
+                </span>
+                <p className="text-sm font-semibold text-slate-800">{item.heading}</p>
+              </div>
+              <p className="text-sm text-slate-500 leading-relaxed">{item.body}</p>
+              {item.action && (
+                <div className="flex items-start gap-2 pt-1 border-t border-slate-100 mt-2">
+                  <MousePointerClick className="w-3.5 h-3.5 text-[#E0622A] shrink-0 mt-0.5" />
+                  <p className="text-xs font-semibold text-slate-700">{item.action}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+          <HelpCircle className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-slate-500 leading-relaxed">
+            <span className="font-semibold text-slate-700">Tip:</span> The status badge in the Referral Events table is clickable. Each click advances the referral one step forward. It stops at <span className="font-semibold">Deal Closed</span> — the final step to <span className="font-semibold">Reward Sent</span> only happens when the customer redeems their reward.
+          </p>
+        </div>
+      </section>
+
+      {/* FAQs */}
+      <section className="space-y-4">
+        <div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">FAQ</p>
+          <h2 className="text-lg font-bold text-slate-900">Questions Customers Ask</h2>
+          <p className="text-sm text-slate-500 mt-1">Have these answers ready so you never get caught off guard.</p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-2xl px-5 shadow-sm">
+          {FAQS_AUTO.map(faq => (
+            <Faq key={faq.q} {...faq} />
+          ))}
+        </div>
+      </section>
+
+      {/* Onboarding checklist */}
+      <section className="space-y-4">
+        <div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Checklist</p>
+          <h2 className="text-lg font-bold text-slate-900">New Team Member Onboarding</h2>
+          <p className="text-sm text-slate-500 mt-1">Run through this with any new sales hire. Check each item as you go.</p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-2xl px-5 shadow-sm">
+          <ChecklistItem label="Read the 'How It Works' section above" sub="Understand what triggers a reward and what doesn't" />
+          <ChecklistItem label="Practice the sales floor script out loud" sub="Say it 3× until it sounds natural, not salesy" />
+          <ChecklistItem label="Know how to log a referral manually" sub="Dashboard → Referral Events → Add Manual Referral" />
+          <ChecklistItem label="Understand the four referral statuses" sub="Lead → Booked → Deal Closed → Reward Sent — see the Dashboard section above" />
+          <ChecklistItem label="Know what gift cards are available" sub="Hundreds of brands — customer picks from a link sent by text" />
+          <ChecklistItem label="Know who to ask if something looks wrong" sub="Check the Referral Events log first; escalate to your manager" />
+          <ChecklistItem label="Watch for the first referral event" sub="Seeing one process end-to-end makes the system click into place" />
+        </div>
+      </section>
+
+      {/* Team pool callout */}
+      <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+            <ClipboardList className="w-4 h-4 text-amber-600" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-800">Team Referral Pool</p>
+            <p className="text-xs text-slate-400">Optional — configured by your dealership admin</p>
+          </div>
+        </div>
+        <p className="text-sm text-slate-600 leading-relaxed">
+          Your dealership may have a staff referral pool enabled. When it is, a portion of each referral reward goes into a shared pool for the team — distributed at your dealership's discretion (team lunch, bonus, etc.). Check with your manager to see if it's active.
+        </p>
+        <p className="text-sm text-slate-500">
+          The current pool balance is visible on your dashboard when you're logged in.
+        </p>
+      </section>
+    </div>
+  );
+}
+
 export default function Playbook() {
+  const { isDemo, demoVertical } = useAuth();
+  if (isDemo && demoVertical === "automotive") return <PlaybookAuto />;
   return (
     <div className="max-w-3xl mx-auto space-y-10 pb-12">
 

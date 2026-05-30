@@ -1,4 +1,5 @@
 import { BookOpen, CheckCircle2, AlertTriangle, PlayCircle } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 
 const LOOM_VIDEO_1 = "https://www.loom.com/embed/d054cba4b20f4a5187c96cf05a4eb47a";
 const LOOM_VIDEO_2 = "https://www.loom.com/embed/84aad24c5ea34363acc8735b344ed046";
@@ -77,7 +78,160 @@ const STEPS = [
   },
 ];
 
+const STEPS_AUTO = [
+  {
+    number: "01",
+    title: "New customer mentions a referral during visit",
+    who: "Sales",
+    items: [
+      'Ask the customer: "Did someone refer you to us?" — get the full name of the referring customer.',
+      "Look up the referrer in Rippl or your CRM to confirm they are an active customer.",
+      "Note the referrer's name in the deal record.",
+    ],
+    warning: null,
+  },
+  {
+    number: "02",
+    title: "Record the referral in the deal survey",
+    who: "Sales / Finance",
+    items: [
+      "When completing the post-purchase survey in DriveCentric, locate the 'How did you hear about us?' question.",
+      "Enter the referring customer's full name as the answer.",
+      "Rippl uses exact name matching to identify the referrer — spelling must match the referrer's name on file.",
+    ],
+    warning: "This step is critical. If the referral is not recorded in the survey, Rippl cannot identify who referred the customer and no reward will fire.",
+  },
+  {
+    number: "03",
+    title: "Close the deal in DriveCentric",
+    who: "Finance / Manager",
+    items: [
+      "Complete the vehicle sale and mark the deal as closed in DriveCentric.",
+      "Ensure the deal record is fully finalized — Rippl only detects closed deals.",
+      "That's it — nothing else is required from the team.",
+    ],
+    warning: null,
+  },
+  {
+    number: "04",
+    title: "Rippl detects the closed deal automatically",
+    who: "Rippl (automated)",
+    items: [
+      "Rippl polls DriveCentric daily for newly closed deals.",
+      "Rippl reads the survey response to identify the referring customer by name.",
+      "An SMS and email are sent to the referring customer with their reward claim link.",
+      "The event appears on the Referral Events page in your Rippl dashboard.",
+    ],
+    warning: null,
+  },
+  {
+    number: "05",
+    title: "Monitor in the Rippl dashboard",
+    who: "Sales / Manager",
+    items: [
+      "Go to Referral Events to see all detected deal closings and their status.",
+      '"Deal Closed" = reward email sent, customer has not yet claimed.',
+      '"Reward Sent" = customer chose and received their reward.',
+      "Check Admin Tasks for any items that need manual attention.",
+    ],
+    warning: null,
+  },
+];
+
+function HelpAuto() {
+  return (
+    <div className="space-y-8 max-w-3xl mx-auto">
+      <div>
+        <h1 className="text-3xl font-display font-bold text-foreground">Help</h1>
+        <p className="text-muted-foreground mt-1">
+          How to correctly record referrals in DriveCentric so Rippl rewards fire automatically.
+        </p>
+      </div>
+
+      {/* Critical callout */}
+      <div className="flex items-start gap-3 px-4 py-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+        <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+        <div>
+          <p className="text-sm font-semibold text-foreground">One step that must happen for a reward to fire</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            The referring customer's full name must be entered in the post-purchase survey's "How did you hear about us?" field (Step 2 below) before the deal is closed. Missing this means no reward goes out.
+          </p>
+        </div>
+      </div>
+
+      {/* Steps */}
+      <div className="space-y-4">
+        {STEPS_AUTO.map((step) => (
+          <div key={step.number} className="rounded-2xl border border-border bg-card/30 p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                <span className="text-primary font-black text-sm">{step.number}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-3">
+                  <h3 className="font-semibold text-foreground">{step.title}</h3>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                    {step.who}
+                  </span>
+                </div>
+                <ul className="space-y-2">
+                  {step.items.map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <CheckCircle2 className="w-4 h-4 text-primary/50 shrink-0 mt-0.5" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                {step.warning && (
+                  <div className="mt-3 flex items-start gap-2 px-3 py-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-700 dark:text-amber-400">{step.warning}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Quick reference card */}
+      <div className="rounded-2xl border border-border bg-card/30 p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <BookOpen className="w-5 h-5 text-primary/60" />
+          <p className="font-semibold text-foreground">Quick Reference — post at the sales desk</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          {[
+            { label: "Integration", value: "DriveCentric CRM" },
+            { label: "Trigger", value: "Closed deal with referral survey answer" },
+            { label: "Where to record it", value: '"How did you hear about us?" survey field' },
+            { label: "Rippl detection time", value: "Within 24 hours of deal close" },
+            { label: "What fires automatically", value: "SMS + email to the referring customer" },
+            { label: "Nothing else required", value: "Team does not send rewards manually" },
+          ].map(({ label, value }) => (
+            <div key={label} className="flex flex-col gap-0.5 px-3 py-2.5 rounded-xl bg-muted/30 border border-border">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+              <span className="text-foreground font-medium">{value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        Questions? Contact Rippl support at{" "}
+        <a href="mailto:hello@joinrippl.com" className="text-primary hover:underline">hello@joinrippl.com</a>
+      </p>
+    </div>
+  );
+}
+
 export default function HelpPage() {
+  const { isDemo, demoVertical } = useAuth();
+  if (isDemo && demoVertical === "automotive") return <HelpAuto />;
+  return <HelpPageDental />;
+}
+
+function HelpPageDental() {
   return (
     <div className="space-y-8 max-w-3xl mx-auto">
       <div>

@@ -642,18 +642,18 @@ export default function Patients() {
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">Patients</h1>
+          <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">{isDemo && demoVertical === "automotive" ? "Customers" : isDemo && demoVertical === "salon" ? "Clients" : "Patients"}</h1>
           <p className="text-muted-foreground mt-1.5">Manage referrers and track today's outreach.</p>
         </div>
         <button onClick={openAddModal}
           className="self-start sm:self-auto px-4 sm:px-5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-semibold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all flex items-center gap-1.5 text-sm">
-          <Plus className="w-4 h-4" /> Add Patient
+          <Plus className="w-4 h-4" /> {isDemo && demoVertical === "automotive" ? "Add Customer" : isDemo && demoVertical === "salon" ? "Add Client" : "Add Patient"}
         </button>
       </div>
 
       {/* ── Tab bar ──────────────────────────────────────────────────────── */}
       <div className="flex items-center border-b border-border gap-0">
-        {([ ["today", "Today's Activity"], ["patients", "Active Patients"] ] as [ActiveTab, string][]).map(([key, label]) => (
+        {([ ["today", "Today's Activity"], ["patients", isDemo && demoVertical === "automotive" ? "Active Customers" : isDemo && demoVertical === "salon" ? "Active Clients" : "Active Patients"] ] as [ActiveTab, string][]).map(([key, label]) => (
           <button key={key} onClick={() => setActiveTab(key)}
             className={cn(
               "px-5 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-all whitespace-nowrap",
@@ -947,7 +947,7 @@ export default function Patients() {
           ) : filteredReferrers.length === 0 ? (
             <div className="bg-card border border-border rounded-2xl p-16 text-center">
               <QrCode className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-              <h3 className="text-xl font-display font-semibold text-foreground mb-2">No patients found</h3>
+              <h3 className="text-xl font-display font-semibold text-foreground mb-2">{isDemo && demoVertical === "automotive" ? "No customers found" : isDemo && demoVertical === "salon" ? "No clients found" : "No patients found"}</h3>
               <p className="text-muted-foreground mb-6">No referrers match the current filters.</p>
               <button onClick={() => { setPatientFilter("all"); setTierFilter("all"); setSearchTerm(""); }}
                 className="px-6 py-3 bg-secondary hover:bg-muted text-foreground rounded-xl font-semibold transition-all inline-flex items-center gap-2">

@@ -181,6 +181,21 @@ export default function Events() {
   const [resentEventId, setResentEventId] = useState<string | null>(null);
   const [demoStatuses, setDemoStatuses] = useState<Record<string, string>>({});
 
+  const isAutoDemo = isDemo && demoVertical === "automotive";
+  const isSalonDemo = isDemo && demoVertical === "salon";
+
+  const statusDisplayLabel = (s: string) =>
+    isAutoDemo && s === "Exam Completed" ? "Deal Closed" : s;
+
+  const teamSourceDisplay = (source: string): string => {
+    if (isAutoDemo) return ({ front: "Sales", back: "Finance", assistant: "Manager" }[source] ?? source);
+    return source;
+  };
+
+  const effectiveRewardOptions = (isAutoDemo || isSalonDemo)
+    ? REWARD_OPTIONS.filter(r => r.id !== "in-house-credit")
+    : REWARD_OPTIONS;
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -279,7 +294,7 @@ export default function Events() {
     { id: "all",            label: "All" },
     { id: "lead",           label: "Leads" },
     { id: "booked",         label: "Booked" },
-    { id: "exam-completed", label: "Exam Completed" },
+    { id: "exam-completed", label: statusDisplayLabel("Exam Completed") },
     { id: "reward-sent",    label: "Reward Sent" },
     { id: "flagged",        label: "Flagged" },
   ];
@@ -305,7 +320,7 @@ export default function Events() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">Referral Events</h1>
-          <p className="text-muted-foreground mt-2">Track the pipeline of your new patients.</p>
+          <p className="text-muted-foreground mt-2">{isAutoDemo ? "Track the pipeline of your new customers." : "Track the pipeline of your new patients."}</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -313,7 +328,7 @@ export default function Events() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search patients..."
+              placeholder={isAutoDemo ? "Search customers..." : "Search patients..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full sm:w-64 transition-all"
@@ -379,7 +394,7 @@ export default function Events() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-muted/30 text-muted-foreground text-xs uppercase tracking-wider">
-                {thBtn("new_patient_name", "New Patient")}
+                {thBtn("new_patient_name", isAutoDemo ? "New Customer" : "New Patient")}
                 {thBtn("referrer_name", "Referrer")}
                 <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-muted-foreground">Source</th>
                 {thBtn("date", "Date")}
@@ -435,7 +450,7 @@ export default function Events() {
                       <p className="font-medium text-foreground">{event.referrer_name || 'Unknown'}</p>
                     </td>
                     <td className="px-6 py-5">
-                      <span className="capitalize text-sm text-muted-foreground">{event.team_source}</span>
+                      <span className="capitalize text-sm text-muted-foreground">{teamSourceDisplay(event.team_source)}</span>
                     </td>
                     <td className="px-6 py-5 text-sm text-muted-foreground">
                       {format(new Date(event.created_at), 'MMM d, yyyy')}
@@ -450,7 +465,7 @@ export default function Events() {
                           effectiveStatus !== "Reward Sent" && !event.household_duplicate && "hover:brightness-125 cursor-pointer"
                         )}
                       >
-                        {effectiveStatus}
+                        {statusDisplayLabel(effectiveStatus)}
                         {effectiveStatus !== "Reward Sent" && !event.household_duplicate && (
                           <ChevronDown className="w-3 h-3 opacity-50" />
                         )}
@@ -538,14 +553,14 @@ export default function Events() {
         isOpen={isLogModalOpen}
         onClose={() => { setIsLogModalOpen(false); logReset(); }}
         title="Log Referral"
-        description="Manually record a new patient referral into the pipeline."
+        description={isAutoDemo ? "Manually record a new customer referral into the pipeline." : "Manually record a new patient referral into the pipeline."}
       >
         <form
           onSubmit={logHandleSubmit((data) => logReferral.mutate(data))}
           className="space-y-4"
         >
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">New Patient Name</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">{isAutoDemo ? "New Customer Name" : "New Patient Name"}</label>
             <input
               {...logRegister("new_patient_name")}
               placeholder="e.g. Jane Smith"
@@ -586,9 +601,9 @@ export default function Events() {
                 className="w-full px-4 py-2.5 bg-background border border-border rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-foreground appearance-none"
               >
                 <option value="">Select…</option>
-                <option value="front">Front</option>
-                <option value="back">Back</option>
-                <option value="assistant">Assistant</option>
+                <option value="front">{isAutoDemo ? "Sales" : "Front"}</option>
+                <option value="back">{isAutoDemo ? "Finance" : "Back"}</option>
+                <option value="assistant">{isAutoDemo ? "Manager" : "Assistant"}</option>
               </select>
               {logErrors.team_source && <p className="text-destructive text-xs mt-1">{logErrors.team_source.message}</p>}
             </div>
@@ -639,7 +654,7 @@ export default function Events() {
         description="The claim email was already sent automatically. Only use this if the referrer never responded and you want to process their reward directly."
       >
         <div className="space-y-4">
-          {REWARD_OPTIONS.map((option) => (
+          {effectiveRewardOptions.map((option) => (
             <button
               key={option.id}
               disabled={createReward.isPending}
