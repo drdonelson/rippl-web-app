@@ -177,6 +177,7 @@ export default function Events() {
   const overrideHousehold = useOverrideHousehold();
   const resendNotification = useResendNotification();
   const [resentEventId, setResentEventId] = useState<string | null>(null);
+  const [demoStatuses, setDemoStatuses] = useState<Record<string, string>>({});
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -253,7 +254,12 @@ export default function Events() {
     const sequence = ["Lead", "Booked", "Exam Completed"];
     const currentIndex = sequence.indexOf(currentStatus);
     if (currentIndex >= 0 && currentIndex < sequence.length - 1) {
-      updateStatus.mutate({ id: eventId, data: { status: sequence[currentIndex + 1] as any } });
+      const nextStatus = sequence[currentIndex + 1];
+      if (isDemo) {
+        setDemoStatuses(prev => ({ ...prev, [eventId]: nextStatus }));
+      } else {
+        updateStatus.mutate({ id: eventId, data: { status: nextStatus as any } });
+      }
     }
   };
 
@@ -400,7 +406,9 @@ export default function Events() {
                   </td>
                 </tr>
               ) : (
-                sortedEvents.map((event) => (
+                sortedEvents.map((event) => {
+                  const effectiveStatus = demoStatuses[event.id] ?? event.status;
+                  return (
                   <tr
                     key={event.id}
                     className={cn(
@@ -432,16 +440,16 @@ export default function Events() {
                     </td>
                     <td className="px-6 py-5">
                       <button
-                        onClick={() => !event.household_duplicate && handleStatusCycle(event.id, event.status)}
-                        disabled={event.status === "Reward Sent" || updateStatus.isPending || !!event.household_duplicate}
+                        onClick={() => !event.household_duplicate && handleStatusCycle(event.id, effectiveStatus)}
+                        disabled={effectiveStatus === "Reward Sent" || updateStatus.isPending || !!event.household_duplicate}
                         className={cn(
                           "px-3 py-1.5 rounded-full text-xs font-bold border flex items-center gap-1.5 transition-all",
-                          STATUS_COLORS[event.status] || "bg-muted text-muted-foreground",
-                          event.status !== "Reward Sent" && !event.household_duplicate && "hover:brightness-125 cursor-pointer"
+                          STATUS_COLORS[effectiveStatus] || "bg-muted text-muted-foreground",
+                          effectiveStatus !== "Reward Sent" && !event.household_duplicate && "hover:brightness-125 cursor-pointer"
                         )}
                       >
-                        {event.status}
-                        {event.status !== "Reward Sent" && !event.household_duplicate && (
+                        {effectiveStatus}
+                        {effectiveStatus !== "Reward Sent" && !event.household_duplicate && (
                           <ChevronDown className="w-3 h-3 opacity-50" />
                         )}
                       </button>
@@ -456,7 +464,7 @@ export default function Events() {
                           <ShieldCheck className="w-4 h-4" />
                           Override &amp; Reward
                         </button>
-                      ) : event.status === "Exam Completed" ? (
+                      ) : effectiveStatus === "Exam Completed" ? (
                         <div className="flex flex-col items-end gap-1.5 ml-auto">
                           {resentEventId === event.id ? (
                             <div className="flex items-center gap-1.5 text-green-400 text-xs font-medium">
@@ -472,6 +480,11 @@ export default function Events() {
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => {
+                                if (isDemo) {
+                                  setResentEventId(event.id);
+                                  setTimeout(() => setResentEventId(null), 4000);
+                                  return;
+                                }
                                 resendNotification.mutate(event.id, {
                                   onSuccess: () => {
                                     setResentEventId(event.id);
@@ -497,7 +510,7 @@ export default function Events() {
                             </button>
                           </div>
                         </div>
-                      ) : event.status === "Reward Sent" ? (
+                      ) : effectiveStatus === "Reward Sent" ? (
                         <div className="flex items-center justify-end gap-2 text-primary font-medium text-sm">
                           <CheckCircle2 className="w-4 h-4" />
                           {event.reward_value ? `$${event.reward_value} ` : ""}
@@ -510,7 +523,8 @@ export default function Events() {
                       )}
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
