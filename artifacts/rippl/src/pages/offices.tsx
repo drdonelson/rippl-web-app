@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { customFetch } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
+import { DEMO_OFFICES } from "@/lib/demo-data";
 import { cn } from "@/lib/utils";
 import { StaffPanel } from "./staff";
 
@@ -349,15 +350,17 @@ function PoolConfigCard({ practiceId }: { practiceId: string | null }) {
 type Tab = "locations" | "team";
 
 export default function OfficesPage() {
-  const { profile } = useAuth();
+  const { profile, isDemo } = useAuth();
   const [tab, setTab] = useState<Tab>("locations");
 
   const { data: offices = [], isLoading, error } = useQuery<Office[]>({
     queryKey: ["/api/offices/managed"],
-    queryFn: () => customFetch<Office[]>(`${BASE}/api/offices/managed`),
+    queryFn: isDemo
+      ? () => Promise.resolve(DEMO_OFFICES as Office[])
+      : () => customFetch<Office[]>(`${BASE}/api/offices/managed`),
   });
 
-  const isPracticeAdmin = profile?.role === "practice_admin";
+  const isPracticeAdmin = isDemo || profile?.role === "practice_admin";
   const isSuperAdmin    = profile?.role === "super_admin";
 
   const tabClass = (t: Tab) => cn(

@@ -23,7 +23,6 @@ const Analytics  = lazy(() => import("@/pages/analytics"));
 const Claim      = lazy(() => import("@/pages/claim"));
 const Refer      = lazy(() => import("@/pages/refer"));
 const Demo        = lazy(() => import("@/pages/demo"));
-const DemoDental  = lazy(() => import("@/pages/demo-dental"));
 const DemoAuto    = lazy(() => import("@/pages/demo-auto"));
 const Onboard    = lazy(() => import("@/pages/onboard"));
 const Staff      = lazy(() => import("@/pages/staff"));
@@ -72,7 +71,6 @@ function Router() {
         {/* Public routes — no sidebar */}
         <Route path="/" component={Home} />
         <Route path="/login" component={Login} />
-        <Route path="/demo/dental" component={DemoDental} />
         <Route path="/demo/auto"   component={DemoAuto} />
         <Route path="/demo" component={Demo} />
         <Route path="/claim" component={Claim} />

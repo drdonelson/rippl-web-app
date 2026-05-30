@@ -87,7 +87,7 @@ const NAV_SECTIONS: NavSection[] = [
     demoVisible: true,
     items: [
       { href: "/playbook",   label: "Staff Playbook",  icon: BookOpen                              },
-      { href: "/slide-deck", label: "Marketing",        icon: MonitorPlay, minRole: "practice_admin" },
+      { href: "/slide-deck", label: "Marketing",        icon: MonitorPlay },
       { href: "/help",       label: "Help",            icon: GraduationCap                         },
     ],
   },

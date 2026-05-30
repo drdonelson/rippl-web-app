@@ -7,6 +7,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { customFetch } from "@workspace/api-client-react";
+import { DEMO_ADMIN_TASKS } from "@/lib/demo-data";
 
 interface BackfillReport {
   scanned: number;
@@ -209,12 +210,12 @@ export default function AdminTasksPage() {
   const qc = useQueryClient();
   const [completing, setCompleting] = useState<string | null>(null);
   const [backfillResult, setBackfillResult] = useState<BackfillReport | null>(null);
-  const { session, isLoading: authLoading } = useAuth();
+  const { session, isLoading: authLoading, isDemo } = useAuth();
 
   const { data: tasks, isLoading, isError } = useQuery<AdminTask[]>({
     queryKey: ["admin-tasks"],
-    queryFn: fetchTasks,
-    enabled: !authLoading && !!session,
+    queryFn: isDemo ? () => Promise.resolve(DEMO_ADMIN_TASKS as AdminTask[]) : fetchTasks,
+    enabled: isDemo || (!authLoading && !!session),
   });
 
   const mutation = useMutation({

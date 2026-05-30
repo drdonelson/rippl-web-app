@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { useGetReferrers, useCreateReferrer, useGetReferrerQr, getGetReferrerQrQueryKey, customFetch, ApiError } from "@workspace/api-client-react";
-import { DEMO_REFERRERS } from "@/lib/demo-data";
+import { DEMO_REFERRERS, DEMO_EXTRA_REFERRERS } from "@/lib/demo-data";
+const ALL_DEMO_REFERRERS = [...DEMO_REFERRERS, ...DEMO_EXTRA_REFERRERS];
 import {
   Plus, QrCode, Search, Copy, Check, Download, RefreshCw,
   AlertTriangle, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Star, MapPin, Lock,
@@ -275,7 +276,7 @@ export default function Patients() {
   const queryEnabled = !authIsLoading && !isDemo;
 
   const { data: fetchedReferrers, isLoading: referrersLoading, isError: referrersError, error: referrersErrorObj } = useGetReferrers({ query: { enabled: queryEnabled } });
-  const referrers = isDemo ? DEMO_REFERRERS : fetchedReferrers;
+  const referrers = isDemo ? ALL_DEMO_REFERRERS :fetchedReferrers;
   const isLoading = isDemo ? false : referrersLoading;
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
@@ -431,7 +432,7 @@ export default function Patients() {
   // ── Send link modal ────────────────────────────────────────────────────────
   const sendLinkReferrer = useMemo(() => {
     if (!sendLinkModalReferrerId) return null;
-    const list = (isDemo ? DEMO_REFERRERS : (fetchedReferrers ?? [])) as Array<Record<string, unknown>>;
+    const list = (isDemo ? ALL_DEMO_REFERRERS :(fetchedReferrers ?? [])) as Array<Record<string, unknown>>;
     return list.find(r => r.id === sendLinkModalReferrerId) ?? null;
   }, [sendLinkModalReferrerId, isDemo, fetchedReferrers]);
 
