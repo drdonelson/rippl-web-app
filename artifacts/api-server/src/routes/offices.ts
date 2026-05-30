@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { officesTable } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { officesTable, practicesTable } from "@workspace/db/schema";
+import { eq, sql } from "drizzle-orm";
 import { supabaseAdmin } from "../lib/supabase";
 import { requireAuth, requirePracticeAdmin, requireSuperAdmin } from "../middleware/auth";
 
@@ -16,13 +16,16 @@ const safeColumns = {
   active:        officesTable.active,
   last_poll_at:  officesTable.last_poll_at,
   practice_id:   officesTable.practice_id,
+  // Derived from practices JOIN — lets the frontend hide demo practice offices
+  is_demo:       sql<boolean>`(${practicesTable.status} = 'demo')`.as("is_demo"),
 };
 
-// GET /api/offices — return all offices (active and inactive), without credentials
+// GET /api/offices — return all offices, joining practices so is_demo is available
 router.get("/", async (_req, res) => {
   const offices = await db
     .select(safeColumns)
     .from(officesTable)
+    .leftJoin(practicesTable, eq(officesTable.practice_id, practicesTable.id))
     .orderBy(officesTable.name);
   res.json(offices);
 });

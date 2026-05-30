@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { referralEventsTable, referrersTable, rewardsTable, practicesTable } from "@workspace/db/schema";
-import { eq, sql, and, inArray } from "drizzle-orm";
+import { eq, sql, and, inArray, notInArray, or, isNull } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -16,11 +16,27 @@ router.get("/", async (req, res) => {
   const practiceId = user.role !== "super_admin" ? user.practice_id : null;
 
   try {
+    // For super_admin viewing all data, exclude demo practices so they don't pollute real stats
+    let demoExclusionFilter: ReturnType<typeof notInArray> | undefined;
+    if (user.role === "super_admin" && !practiceId) {
+      const demoPractices = await db.select({ id: practicesTable.id })
+        .from(practicesTable)
+        .where(eq(practicesTable.status, "demo"));
+      if (demoPractices.length > 0) {
+        // Include NULL practice_ids (legacy events) but exclude known demo practice IDs
+        demoExclusionFilter = or(
+          isNull(referralEventsTable.practice_id),
+          notInArray(referralEventsTable.practice_id, demoPractices.map(p => p.id))
+        ) as ReturnType<typeof notInArray>;
+      }
+    }
+
     const officeFilter   = officeId   ? eq(referralEventsTable.office_id,   officeId)   : undefined;
     const practiceFilter = practiceId ? eq(referralEventsTable.practice_id, practiceId) : undefined;
 
-    const baseFilter = officeFilter ?? practiceFilter;
-    const bothFilters = officeFilter && practiceFilter ? and(officeFilter, practiceFilter) : baseFilter;
+    const bothFilters = [officeFilter, practiceFilter, demoExclusionFilter]
+      .filter(Boolean)
+      .reduce((acc, f) => acc ? and(acc, f!) : f);
 
     // Look up vertical so automotive practices get deal-closed count instead of exam count
     let practiceVertical: string | null = null;

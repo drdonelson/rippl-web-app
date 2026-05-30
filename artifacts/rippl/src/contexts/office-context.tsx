@@ -10,6 +10,7 @@ export interface Office {
   location_code: string;
   active: boolean;
   practice_id?: string | null;
+  is_demo?: boolean;
 }
 
 interface OfficeContextValue {
@@ -62,7 +63,7 @@ export function OfficeProvider({ children }: { children: React.ReactNode }) {
   const offices: Office[] = React.useMemo(() => {
     if (isDemo && !profile?.practice_id) return [DEMO_OFFICE];
     if (authLoading || !profile) return allOffices;
-    if (profile.role === "super_admin") return allOffices;
+    if (profile.role === "super_admin") return allOffices.filter(o => !o.is_demo);
     if (profile.role === "demo" && profile.practice_id) {
       return allOffices.filter(o => o.practice_id === profile.practice_id);
     }
