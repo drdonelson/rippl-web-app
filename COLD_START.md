@@ -160,7 +160,7 @@ Rippl is a **multi-vertical patient/customer referral rewards platform**. It:
 **Live URL:** https://www.joinrippl.com  
 **GitHub:** https://github.com/drdonelson/rippl-web-app  
 **Hosting:** Render.com (auto-deploys from GitHub on every push)  
-**Current version:** v1.3 (May 2026)
+**Current version:** v1.4 (May 2026)
 
 ### The Business Model
 
@@ -180,7 +180,7 @@ Rippl is a **multi-vertical patient/customer referral rewards platform**. It:
 | Backend | Node.js/Express (`@workspace/api-server`) |
 | Database | Supabase PostgreSQL (RLS on ALL tables) |
 | SMS | Twilio +16158824095 |
-| Email | SendGrid (hello@joinrippl.com) |
+| Email | Brevo (hello@joinrippl.com) — `lib/email.ts` `sendEmail()` helper, `BREVO_API_KEY` |
 | Gift cards | Tango Card (Account A78876593) |
 | Dental EMR | Open Dental API via eConnector |
 | Hosting | Render.com |
@@ -234,12 +234,22 @@ rippl-web-app/
 
 | Role | Access |
 |------|--------|
-| `super_admin` | Everything |
+| `super_admin` | Everything; demo practices excluded from dashboard + office picker |
 | `practice_admin` | All offices in their practice |
-| `demo` | Read-only with fake data |
+| `demo` (no `practice_id`) | Old generic demo — DEMO_STATS fake data, amber banner, `isDemo=true` |
+| `demo` (with `practice_id`) | Branded demo — real seeded data, no banner, `isDemo=false` |
 | `staff_brentwood` | Brentwood only |
 | `staff_lewisburg` | Lewisburg only |
 | `staff_greenbrier` | Greenbrier only |
+
+**`isDemo` definition (v1.4+):** `profile?.role === "demo" && !profile?.practice_id`
+
+**Branded demo accounts:**
+
+| URL | Practice | Email | Password |
+|-----|----------|-------|----------|
+| `/demo/dental` | Brentwood Family Dental | front.desk@brentwoodfamilydental.com | Brentwood2026! |
+| `/demo/auto` | Summit Auto Group | manager@summitautogroup.com | Summit2026! |
 
 **Known scaling issue:** Every new location mints a new hardcoded role. Fix (T1 in deferred work) is to migrate to `role='staff' + practice_id`. Not urgent until 10+ practices.
 
@@ -319,6 +329,24 @@ The Tango dashboard had three separate Rippl-branded email templates (dental, sa
 - **Multi-vertical `/refer` page** — `GET /api/referral/:code` now returns full `practice` object `{ id, display_name, vertical, logo_url, primary_color }`; `refer.tsx` uses `VERTICAL_CONTENT` map — dental: OFFICE_CONFIG booking cards + InsuranceCards; salon/automotive: single CTA → form; demo codes return `DEMO_PRACTICE` (Hallmark Dental dental)
 - **Real Tango email mockup** in Patient Journey Step 6 — replaced fake Amazon-branded placeholder with real Tango template design: orange Rippl header, body copy, card placeholder, "To Redeem" section, Tango footer
 
+### v1.4 (May 2026) — Branded Demos + Brevo + Vertical Dashboard + Demo Isolation
+
+**Why these were built:**
+
+David had a CarCentric zoom call on June 3rd and a Dental Collective pitch in the pipeline. The generic `demo@rippl` account looked too sparse for a serious sales demo. Email provider switched from SendGrid to Brevo to avoid a $20/mo second-domain cost. Super admin was seeing demo data mixed into real Hallmark stats.
+
+**What shipped:**
+
+- **Brevo email** — `BREVO_API_KEY` replaces `SENDGRID_API_KEY`; shared `sendEmail()` helper at `artifacts/api-server/src/lib/email.ts`; `SENDGRID_API_KEY` can be removed from Render
+- **Campaigns SQL alias bug fix** — Drizzle ORM generates `"referrers"."column"` syntax; conflicts with `FROM referrers r` alias; fixed with raw `sql\`AND r.column = ${val}\``
+- **Two-tier demo system** — `isDemo` redefined as `role === "demo" && !practice_id`; branded demos (practice_id set) use real API data with no warning banner
+- **`/demo/dental`** — Brentwood Family Dental; 12 events, 6 referrers, 5 rewards; auto-login + redirect to `/dashboard`
+- **`/demo/auto`** — Summit Auto Group; 11 events, 6 referrers, 4 rewards; shows "Vehicles Sold", "Active Customers"; no patient language
+- **Vertical-aware dashboard** — `vertical` flows from profile API → dashboard API → stat card labels; automotive gets "Vehicles Sold" + "Active Customers"
+- **Demo practice isolation** — `practices.status = 'demo'` is the filter key; dashboard API excludes demo practices for super_admin; office picker hides `is_demo` offices; branded demo users only see their own office
+
+---
+
 ### v1.3 (May 2026) — Marketing Pages + Desktop + SSH Deploy
 
 **Why these were built:**
@@ -370,11 +398,13 @@ Pages were mobile-first but wasted desktop space. Rippl needed marketing pages f
 
 ---
 
-### SendGrid Email
+### Brevo Email (replaced SendGrid in v1.4)
 
 - **From:** hello@joinrippl.com
-- **Domain:** em4993.joinrippl.com (verified)
+- **API:** `https://api.brevo.com/v3/smtp/email` — auth via `api-key: {BREVO_API_KEY}` header
+- **Helper:** `artifacts/api-server/src/lib/email.ts` → `sendEmail({ from, to, subject, html })`
 - **Claim URL format:** `https://www.joinrippl.com/claim?token=${claimToken}` — always a UUID, never the referral code
+- **Note:** `SENDGRID_API_KEY` and `SENDGRID_FROM_EMAIL` env vars can be removed from Render
 
 ---
 
@@ -519,8 +549,8 @@ VITE_SUPABASE_ANON_KEY              OPEN_DENTAL_URL
 OPEN_DENTAL_DEVELOPER_KEY           OPEN_DENTAL_CUSTOMER_KEY
 OPEN_DENTAL_CUSTOMER_KEY_GREENBRIER OPEN_DENTAL_CUSTOMER_KEY_LEWISBURG
 TWILIO_ACCOUNT_SID                  TWILIO_AUTH_TOKEN
-TWILIO_PHONE_NUMBER                 SENDGRID_API_KEY
-SENDGRID_FROM_EMAIL                 TANGO_PLATFORM_NAME
+TWILIO_PHONE_NUMBER                 BREVO_API_KEY
+TANGO_PLATFORM_NAME
 TANGO_PLATFORM_KEY                  TANGO_ACCOUNT_ID
 TANGO_CUSTOMER_ID                   TANGO_EMAIL_TEMPLATE_ID
 APP_URL                             DATABASE_URL
@@ -553,7 +583,9 @@ Backend check: no referral payouts without non-null `agreement_accepted_at`. Adm
 | URL | Purpose | Auth |
 |-----|---------|------|
 | `/` | Login | Public |
-| `/demo` | Demo access (role: demo) | Public |
+| `/demo` | Generic demo access (role: demo, no practice) | Public |
+| `/demo/dental` | Brentwood Family Dental branded portal (auto-login + redirect) | Public |
+| `/demo/auto` | Summit Auto Group branded portal (auto-login + redirect) | Public |
 | `/how-it-works` | For referrers (existing patients) | Public |
 | `/refer?ref=XXXX` | Prospective patient landing — vertical-aware | Public |
 | `/claim?token=UUID` | Reward claim (gradient, confetti, count-up) | Public |
@@ -597,5 +629,5 @@ The work is the argument. The output is the proof. The standard is non-negotiabl
 
 ---
 
-*Last updated: May 2026 — Rippl v1.3*  
+*Last updated: May 2026 — Rippl v1.4*  
 *Read CLAUDE.md next. Read DESIGN.md before any UI work.*

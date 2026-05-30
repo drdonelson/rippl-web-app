@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, CheckCircle2, TrendingUp, Users, DollarSign, Zap, Plug } from "lucide-react";
+import { ArrowRight, CheckCircle2, TrendingUp, Users, Zap, Plug } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -532,12 +532,6 @@ export default function JoinDental() {
                 ))}
               </div>
 
-              <div className="mt-10 flex items-start gap-3 bg-slate-50 rounded-xl p-4 border border-slate-100">
-                <DollarSign className="w-5 h-5 text-[#E0622A] shrink-0 mt-0.5" />
-                <p className="text-slate-600 text-sm leading-relaxed">
-                  <strong className="text-slate-900">No credit card required for the demo.</strong> We'll set up a 30-day pilot with your practice — you'll see real referrals tracked before you commit to anything.
-                </p>
-              </div>
             </div>
 
             {/* Right — form */}
