@@ -85,8 +85,6 @@ function Router() {
         {/* Onboarding — no sidebar, auth-protected inside component */}
         <Route path="/onboard" component={Onboard} />
 
-        {/* Public training page — move inside ProtectedRoute to make private again */}
-        <Route path="/help" component={Help} />
         <Route path="/find" component={Find} />
         <Route path="/blinq-bg" component={BlinqBg} />
         <Route path="/join/dental" component={JoinDental} />
@@ -118,6 +116,7 @@ function Router() {
                   <Route path="/patient-journey" component={PatientJourney} />
                   <Route path="/playbook"       component={Playbook}       />
                   <Route path="/slide-deck"     component={SlideDeck}      />
+                  <Route path="/help"           component={Help}           />
                   <Route component={NotFound} />
                 </Switch>
               </Suspense>
