@@ -27,8 +27,8 @@ Rippl is a dental patient referral rewards platform. It detects completed referr
 | Frontend | React/Vite (monorepo workspace @workspace/rippl) |
 | Backend | Node.js/Express (@workspace/api-server) |
 | Database | Supabase PostgreSQL |
-| SMS | Twilio (+16158824095) |
-| Email | SendGrid (hello@joinrippl.com) |
+| SMS | Twilio (toll-free number — in transition, see Twilio section) |
+| Email | Brevo (hello@joinrippl.com) |
 | Gift cards | Tango Card |
 | EMR | Open Dental API via eConnector |
 | Hosting | Render.com |
@@ -52,8 +52,9 @@ rippl-web-app/
 │           ├── services/
 │           │   ├── tango.ts
 │           │   ├── twilio.ts
-│           │   ├── sendgrid.ts
 │           │   └── openDental.ts
+│           ├── lib/
+│           │   └── email.ts    ← Brevo email sender (replaced sendgrid.ts)
 │           └── poller/         ← Open Dental sync
 ├── deploy.sh           ← push to GitHub + trigger Render deploy
 └── CLAUDE.md           ← this file
@@ -128,18 +129,25 @@ RLS is enabled on ALL tables. Always use service role key in backend.
 
 ## Twilio SMS
 
-- **Phone number:** +16158824095
-- **A2P 10DLC:** Campaign registration in progress — use Low Volume Standard brand BU6555c65665431bd7cef0337f70e0e0f2
-- **SMS_ENABLED flag:** Check env var before sending — set false during A2P review
+**Current status:** In transition — setting up a new Twilio account the right way.
+
+- **Old number:** +16158824095 (local 10DLC — do not use, A2P campaign was rejected)
+- **New account plan:** Register Rippl as ISV/Platform (not Hallmark Dental) — one Twilio account for Rippl, subaccounts per practice
+- **Phone strategy:** Toll-free number per practice (simpler verification than 10DLC, no TCR)
+- **New number:** TBD — update `TWILIO_PHONE_NUMBER` env var on Render when assigned
+- **SMS_ENABLED flag:** Keep `false` until new number is verified and approved
 - **Opt-out:** Check `sms_opt_out` field at fire time, not just at schedule time
 - **Onboarding delay:** 2 hours post-appointment
+- **Future multi-office:** `offices` table will need `twilio_phone_number` column when office #2 onboards
 
 ---
 
-## SendGrid Email
+## Brevo Email
 
-- **From:** hello@joinrippl.com
-- **Domain:** em4993.joinrippl.com (verified)
+- **Provider:** Brevo (replaced SendGrid — `artifacts/api-server/src/lib/email.ts`)
+- **From:** hello@joinrippl.com (verified sender in Brevo)
+- **From name:** "Hallmark Dental" (set in Brevo sender config)
+- **Env var:** `BREVO_API_KEY` (replaces `SENDGRID_API_KEY`)
 - **Reward notification:** Dark navy branded template
 - **Claim URL format:** `https://www.joinrippl.com/claim?token=${claimToken}` (UUID, not referral code)
 
@@ -183,6 +191,7 @@ Patient counts: Brentwood 2,132 · Lewisburg 6,267 · Greenbrier 2,850
 | `/join/salon` | Marketing landing page for salon practices — same layout, salon-specific copy |
 | `/join` | Alias for `/join/dental` |
 | `/join-waitlist` | Simple waitlist form (legacy) |
+| `/sms-opt-in` | Standalone voluntary SMS opt-in (TCPA compliant — explicitly not required for rewards) |
 
 ---
 
@@ -264,15 +273,18 @@ Tango email templates by vertical (`resolveTangoTemplate` in `practiceConfig.ts`
 - `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR` — add `app.set('trust proxy', 1)` before rate limiter if not already done
 - Admin tasks table has BOTH `completed` boolean AND `status` text — handle both
 - New patient names show as 'Unknown Patient' if not yet in referrers table — poller now checks OD API as fallback
-- SMS_ENABLED=false during A2P review — don't enable until Twilio approves campaign
+- **SMS_ENABLED=false** — keep false until new Twilio toll-free number is verified
 - Tango amount must be in dollars not cents
+- `staff_pool_configs` and `staff_pool_entries` — RLS enabled May 2026, no public policies (backend uses service role)
 
 ---
 
 ## Environment Variables (Render)
 
 All required vars:
-`SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, OPEN_DENTAL_URL, OPEN_DENTAL_DEVELOPER_KEY, OPEN_DENTAL_CUSTOMER_KEY, OPEN_DENTAL_CUSTOMER_KEY_GREENBRIER, OPEN_DENTAL_CUSTOMER_KEY_LEWISBURG, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, SENDGRID_API_KEY, SENDGRID_FROM_EMAIL, TANGO_PLATFORM_NAME, TANGO_PLATFORM_KEY, TANGO_ACCOUNT_ID, TANGO_CUSTOMER_ID, TANGO_EMAIL_TEMPLATE_ID, APP_URL, DATABASE_URL, NODE_ENV, NODE_VERSION, SMS_ENABLED`
+`SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, OPEN_DENTAL_URL, OPEN_DENTAL_DEVELOPER_KEY, OPEN_DENTAL_CUSTOMER_KEY, OPEN_DENTAL_CUSTOMER_KEY_GREENBRIER, OPEN_DENTAL_CUSTOMER_KEY_LEWISBURG, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, BREVO_API_KEY, TANGO_PLATFORM_NAME, TANGO_PLATFORM_KEY, TANGO_ACCOUNT_ID, TANGO_CUSTOMER_ID, TANGO_EMAIL_TEMPLATE_ID, APP_URL, DATABASE_URL, NODE_ENV, NODE_VERSION, SMS_ENABLED`
+
+Note: `SENDGRID_API_KEY` and `SENDGRID_FROM_EMAIL` replaced by `BREVO_API_KEY`. The from email (`hello@joinrippl.com`) is now hardcoded in `campaigns.ts` with a fallback to `SENDGRID_FROM_EMAIL` for backwards compat.
 
 ---
 
@@ -288,4 +300,4 @@ Before making any changes in a new session:
 
 ---
 
-*Last updated: May 2026 — Rippl v1.3: /join/dental + /join/salon marketing pages, desktop-responsive join/onboard/patient-journey, deploy switched to SSH (no PAT needed)*
+*Last updated: May 2026 — Rippl v1.4: Email migrated to Brevo, SMS opt-in page updated for TCPA compliance, Twilio being rebuilt as ISV/Platform with toll-free numbers per practice*
