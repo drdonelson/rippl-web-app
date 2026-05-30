@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import {
   BookOpen, ChevronDown, ChevronUp, CheckCircle2, MessageSquare,
   Users, Gift, HelpCircle, ClipboardList, Star, Stethoscope,
-  Monitor, Smile, ArrowRight, Copy, Check,
+  Monitor, Smile, ArrowRight, Copy, Check, MousePointerClick,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -247,6 +247,14 @@ const FAQS = [
     q: "Is there a referral card we can give patients?",
     a: "Yes — your practice admin can print referral cards from the Dashboard. Keep a stack at the front desk and give one to any patient who seems interested.",
   },
+  {
+    q: "What does 'Lead' mean in the Referral Events list?",
+    a: "A Lead is someone who submitted their info through the referral link but hasn't booked an appointment yet. They're a warm prospect — worth a follow-up call. Once booked, click the status badge to advance them to Booked.",
+  },
+  {
+    q: "Why hasn't the status changed to Exam Completed yet?",
+    a: "The system polls Open Dental every 5 minutes. If you just finished the appointment, give it up to 5–10 minutes. If it still hasn't updated, you can manually advance the status by clicking the badge in Referral Events.",
+  },
 ];
 
 export default function Playbook() {
@@ -340,6 +348,89 @@ export default function Playbook() {
         </div>
       </section>
 
+      {/* Status pipeline */}
+      <section className="space-y-4">
+        <div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Dashboard</p>
+          <h2 className="text-lg font-bold text-slate-900">Reading the Referral Status Pipeline</h2>
+          <p className="text-sm text-slate-500 mt-1">Every referral moves through four stages. Here's what each one means and what you need to do.</p>
+        </div>
+
+        {/* Visual pipeline */}
+        <div className="grid grid-cols-4 gap-1 items-center">
+          {[
+            { label: "Lead",           color: "bg-slate-500/15 text-slate-500 border-slate-400/30" },
+            { label: "Booked",         color: "bg-blue-500/15 text-blue-500 border-blue-400/30" },
+            { label: "Exam Completed", color: "bg-green-500/15 text-green-600 border-green-400/30" },
+            { label: "Reward Sent",    color: "bg-[#E0622A]/15 text-[#E0622A] border-[#E0622A]/30" },
+          ].map((s, i, arr) => (
+            <div key={s.label} className="flex items-center gap-1">
+              <div className={`flex-1 text-center px-2 py-1.5 rounded-full text-xs font-bold border ${s.color}`}>
+                {s.label}
+              </div>
+              {i < arr.length - 1 && <ArrowRight className="w-3 h-3 text-slate-300 shrink-0" />}
+            </div>
+          ))}
+        </div>
+
+        {/* Per-status cards */}
+        <div className="space-y-3">
+          {[
+            {
+              badge: "Lead",
+              badgeColor: "bg-slate-500/10 text-slate-500 border-slate-400/30",
+              heading: "New patient submitted interest — hasn't booked yet",
+              body: "This appears automatically when a patient fills out the referral form at joinrippl.com/refer. They've expressed interest but don't have an appointment yet. This is your signal to follow up by phone if you'd like to get them booked.",
+              action: null,
+            },
+            {
+              badge: "Booked",
+              badgeColor: "bg-blue-500/10 text-blue-500 border-blue-400/30",
+              heading: "Appointment is scheduled — patient hasn't been seen yet",
+              body: "Once you've called and booked the lead, click the status badge in Referral Events to advance it from Lead → Booked. This keeps the pipeline accurate so you know exactly where every referral stands.",
+              action: "Click the status badge to advance from Lead → Booked",
+            },
+            {
+              badge: "Exam Completed",
+              badgeColor: "bg-green-500/10 text-green-600 border-green-400/30",
+              heading: "Patient was seen — reward notification sent",
+              body: "This triggers automatically when Open Dental records the completed appointment (usually within 5 minutes). The referrer immediately receives a text and email with their reward claim link. If the system hasn't updated yet, you can manually advance from Booked → Exam Completed to send the notification early.",
+              action: "Usually automatic — click the badge only if Open Dental hasn't synced yet",
+            },
+            {
+              badge: "Reward Sent",
+              badgeColor: "bg-[#E0622A]/10 text-[#E0622A] border-[#E0622A]/30",
+              heading: "Referrer redeemed their reward — done",
+              body: "The referrer clicked their claim link, chose a gift card (or in-house credit / donation), and the reward was delivered. No action needed. The event is complete.",
+              action: null,
+            },
+          ].map(item => (
+            <div key={item.badge} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-2">
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${item.badgeColor}`}>
+                  {item.badge}
+                </span>
+                <p className="text-sm font-semibold text-slate-800">{item.heading}</p>
+              </div>
+              <p className="text-sm text-slate-500 leading-relaxed">{item.body}</p>
+              {item.action && (
+                <div className="flex items-start gap-2 pt-1 border-t border-slate-100 mt-2">
+                  <MousePointerClick className="w-3.5 h-3.5 text-[#E0622A] shrink-0 mt-0.5" />
+                  <p className="text-xs font-semibold text-slate-700">{item.action}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+          <HelpCircle className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-slate-500 leading-relaxed">
+            <span className="font-semibold text-slate-700">Tip:</span> The status badge in the Referral Events table is clickable. Each click advances the referral one step forward. It stops at <span className="font-semibold">Exam Completed</span> — the final step to <span className="font-semibold">Reward Sent</span> only happens when the patient redeems their reward.
+          </p>
+        </div>
+      </section>
+
       {/* FAQs */}
       <section className="space-y-4">
         <div>
@@ -373,6 +464,10 @@ export default function Playbook() {
           <ChecklistItem
             label="Know how to log a referral manually"
             sub="Dashboard → Referral Events → Add Manual Referral"
+          />
+          <ChecklistItem
+            label="Understand the four referral statuses"
+            sub="Lead → Booked → Exam Completed → Reward Sent — see the Dashboard section above"
           />
           <ChecklistItem
             label="Know where the referral cards are"
