@@ -75,20 +75,13 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: "Demo",
-    demoVisible: true,
-    demoOnly: true,
-    items: [
-      { href: "/patient-journey", label: "Patient Journey", icon: Route },
-    ],
-  },
-  {
     label: "Resources",
     demoVisible: true,
     items: [
-      { href: "/playbook",   label: "Staff Playbook",  icon: BookOpen                              },
-      { href: "/slide-deck", label: "Marketing",        icon: MonitorPlay },
-      { href: "/help",       label: "Help",            icon: GraduationCap                         },
+      { href: "/playbook",        label: "Staff Playbook",  icon: BookOpen    },
+      { href: "/slide-deck",      label: "Marketing",       icon: MonitorPlay },
+      { href: "/patient-journey", label: "Patient Journey", icon: Route       },
+      { href: "/help",            label: "Help",            icon: GraduationCap },
     ],
   },
 ];

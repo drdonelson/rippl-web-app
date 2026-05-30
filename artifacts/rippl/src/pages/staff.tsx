@@ -11,9 +11,9 @@ import { cn } from "@/lib/utils";
 // ── Demo fake data ─────────────────────────────────────────────────────────────
 
 const DEMO_STAFF = [
-  { id: "s1", full_name: "Sarah Johnson",  email: "frontdesk@brentwood.demo",  office_name: "Brentwood",  role_label: "Front Desk" },
-  { id: "s2", full_name: "Mike Williams",  email: "frontdesk@lewisburg.demo",  office_name: "Lewisburg",  role_label: "Front Desk" },
-  { id: "s3", full_name: "Lisa Chen",      email: "frontdesk@greenbrier.demo", office_name: "Greenbrier", role_label: "Front Desk" },
+  { id: "s1", full_name: "Sarah Johnson",  email: "sarah.johnson@smilecaredental.com",  office_name: "Kirkwood",   role_label: "Front Desk" },
+  { id: "s2", full_name: "Mike Williams",  email: "mike.williams@smilecaredental.com",  office_name: "Kirkwood",   role_label: "Front Desk" },
+  { id: "s3", full_name: "Lisa Chen",      email: "lisa.chen@smilecaredental.com",      office_name: "Wedgewood",  role_label: "Front Desk" },
 ];
 
 // ── Types ──────────────────────────────────────────────────────────────────────
