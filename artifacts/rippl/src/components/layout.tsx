@@ -184,11 +184,11 @@ function SidebarContent({
   const patientNavLabel = isAuto ? "Customers" : isSalon ? "Clients" : "Patients";
   const sections = getSections(profile?.role, isDemo).map(s => ({
     ...s,
-    items: s.items.map(item =>
-      item.href === "/patients"
-        ? { ...item, label: patientNavLabel }
-        : item
-    ),
+    items: s.items.map(item => {
+      if (item.href === "/patients") return { ...item, label: patientNavLabel };
+      if (item.href === "/patient-journey" && isAuto) return { ...item, label: "Customer Journey" };
+      return item;
+    }),
   }));
 
   const handleLogout = () => {

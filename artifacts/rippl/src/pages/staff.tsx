@@ -11,9 +11,15 @@ import { cn } from "@/lib/utils";
 // ── Demo fake data ─────────────────────────────────────────────────────────────
 
 const DEMO_STAFF = [
-  { id: "s1", full_name: "Sarah Johnson",  email: "sarah.johnson@smilecaredental.com",  office_name: "Kirkwood",   role_label: "Front Desk" },
-  { id: "s2", full_name: "Mike Williams",  email: "mike.williams@smilecaredental.com",  office_name: "Kirkwood",   role_label: "Front Desk" },
-  { id: "s3", full_name: "Lisa Chen",      email: "lisa.chen@smilecaredental.com",      office_name: "Wedgewood",  role_label: "Front Desk" },
+  { id: "s1", full_name: "Sarah Johnson",  email: "sarah.johnson@hallmarkdds.com",   office_name: "Brentwood",  role_label: "Front Desk" },
+  { id: "s2", full_name: "Mike Williams",  email: "mike.williams@hallmarkdds.com",   office_name: "Brentwood",  role_label: "Front Desk" },
+  { id: "s3", full_name: "Lisa Chen",      email: "lisa.chen@hallmarkdds.com",       office_name: "Lewisburg",  role_label: "Front Desk" },
+];
+
+const DEMO_STAFF_AUTO = [
+  { id: "a1", full_name: "Carlos Mendez",   email: "carlos.mendez@summitautogroup.com",   office_name: "Summit Auto Group – Main", role_label: "Sales"   },
+  { id: "a2", full_name: "Brenda Holloway", email: "brenda.holloway@summitautogroup.com", office_name: "Summit Auto Group – Main", role_label: "Finance" },
+  { id: "a3", full_name: "Derek Simmons",   email: "derek.simmons@summitautogroup.com",   office_name: "Summit Auto Group – Main", role_label: "Manager" },
 ];
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -133,7 +139,7 @@ function AddStaffModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
 // ── StaffPanel — embeddable UI, no redirect logic ──────────────────────────────
 
 export function StaffPanel() {
-  const { isDemo, profile } = useAuth();
+  const { isDemo, profile, demoVertical } = useAuth();
   const qc = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -157,6 +163,9 @@ export function StaffPanel() {
 
   // ── Demo view ────────────────────────────────────────────────────────────────
   if (isDemo) {
+    const isAuto = demoVertical === "automotive";
+    const demoStaffData = isAuto ? DEMO_STAFF_AUTO : DEMO_STAFF;
+    const addLabel = isAuto ? "Add Team Member" : "Add Staff";
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between gap-4">
@@ -165,7 +174,7 @@ export function StaffPanel() {
             <p className="text-muted-foreground text-sm mt-0.5">Manage who can access the practice dashboard.</p>
           </div>
           <button disabled className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-primary/30 text-primary-foreground/50 rounded-xl font-semibold text-sm cursor-not-allowed opacity-60">
-            <UserPlus className="w-4 h-4" /><span className="hidden sm:inline">Add Staff</span>
+            <UserPlus className="w-4 h-4" /><span className="hidden sm:inline">{addLabel}</span>
           </button>
         </div>
         <div className="rounded-2xl border border-border bg-card/30 overflow-hidden">
@@ -173,7 +182,7 @@ export function StaffPanel() {
             <span>Name</span><span>Email</span><span>Office</span><span>Role</span>
           </div>
           <div className="divide-y divide-border">
-            {DEMO_STAFF.map(acct => (
+            {demoStaffData.map(acct => (
               <div key={acct.id} className="grid md:grid-cols-[2fr_2fr_1.5fr_1.5fr] gap-4 px-6 py-4 text-sm items-center">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-bold shrink-0">
