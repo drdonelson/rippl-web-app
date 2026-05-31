@@ -1,7 +1,6 @@
-import { useState } from "react";
 import { CheckCircle2, ArrowRight, Zap, DollarSign, Clock } from "lucide-react";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "";
+const CALENDLY_URL = "https://calendly.com/david-joinrippl";
 
 // ── Vertical content ──────────────────────────────────────────────────────────
 
@@ -94,30 +93,6 @@ const DEFAULT = CONTENT.dental;
 
 export default function Join({ vertical = "dental" }: { vertical?: string }) {
   const c = CONTENT[vertical] ?? DEFAULT;
-
-  const [form, setForm]           = useState({ name: "", practice: "", email: "", phone: "" });
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState<string | null>(null);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`${API_BASE}/api/public/waitlist`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ ...form, practice: `[${vertical}] ${form.practice}` }),
-      });
-      if (!res.ok) throw new Error("Something went wrong");
-      setSubmitted(true);
-    } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -299,94 +274,18 @@ export default function Join({ vertical = "dental" }: { vertical?: string }) {
               </div>
             </div>
 
-            {/* Right — form */}
+            {/* Right — Calendly */}
             <div>
-              {!submitted ? (
-                <div className="bg-slate-50 border border-slate-200 rounded-3xl p-8 lg:p-10">
-                  <h3 className="text-xl font-black text-slate-900 mb-1">Book your demo</h3>
-                  <p className="text-slate-500 text-sm mb-7">We'll reach out within one business day.</p>
-
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1.5">Your name</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder={c.namePlaceholder}
-                          value={form.name}
-                          onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                          className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#E0622A]/30 focus:border-[#E0622A] transition-colors"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1.5">{c.businessLabel}</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder={c.businessPlaceholder}
-                          value={form.practice}
-                          onChange={e => setForm(f => ({ ...f, practice: e.target.value }))}
-                          className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#E0622A]/30 focus:border-[#E0622A] transition-colors"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">Email</label>
-                      <input
-                        type="email"
-                        required
-                        placeholder="jane@example.com"
-                        value={form.email}
-                        onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#E0622A]/30 focus:border-[#E0622A] transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">Mobile number</label>
-                      <input
-                        type="tel"
-                        required
-                        placeholder="(615) 555-0100"
-                        value={form.phone}
-                        onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#E0622A]/30 focus:border-[#E0622A] transition-colors"
-                      />
-                    </div>
-
-                    {error && <p className="text-red-500 text-sm">{error}</p>}
-
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-black text-white text-sm bg-[#E0622A] hover:bg-[#C9551E] disabled:opacity-50 transition-colors shadow-lg shadow-[#E0622A]/20 mt-2"
-                    >
-                      {loading ? (
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <>
-                          {c.ctaLabel}
-                          <ArrowRight className="w-4 h-4" />
-                        </>
-                      )}
-                    </button>
-                  </form>
-                </div>
-              ) : (
-                <div className="bg-slate-50 border border-slate-200 rounded-3xl p-10 text-center">
-                  <div className="w-16 h-16 rounded-full bg-orange-50 border border-orange-200 flex items-center justify-center mx-auto mb-5">
-                    <CheckCircle2 className="w-8 h-8 text-[#E0622A]" />
-                  </div>
-                  <h2 className="text-2xl font-black text-slate-900 mb-2">You're on the list.</h2>
-                  <p className="text-slate-500 text-sm mb-1">{c.successNote}</p>
-                  <p className="text-xs text-slate-400 mt-4">
-                    Questions?{" "}
-                    <a href="mailto:hello@joinrippl.com" className="text-[#E0622A] hover:underline">
-                      hello@joinrippl.com
-                    </a>
-                  </p>
-                </div>
-              )}
+              <div className="rounded-3xl overflow-hidden border border-slate-200 shadow-sm">
+                <iframe
+                  src={CALENDLY_URL}
+                  width="100%"
+                  height="700"
+                  frameBorder={0}
+                  title="Book a Demo with Rippl"
+                  style={{ display: "block" }}
+                />
+              </div>
             </div>
           </div>
         </div>
