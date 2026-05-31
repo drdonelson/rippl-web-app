@@ -21,23 +21,60 @@ const DEMO_TRENDS = [
 ];
 
 const DEMO_TOP_REFERRERS = [
-  { name: "Sarah M.",   referrals: 12, tier: "Ambassador",  reward: "$75 credit" },
+  { name: "Sarah M.",   referrals: 12, tier: "Ambassador",  reward: "Gift card" },
   { name: "James K.",   referrals: 9,  tier: "Amplifier",   reward: "Gift card" },
-  { name: "Priya D.",   referrals: 8,  tier: "Amplifier",   reward: "Gift card" },
-  { name: "Tom R.",     referrals: 6,  tier: "Influencer",  reward: "Dental credit" },
+  { name: "Priya D.",   referrals: 8,  tier: "Amplifier",   reward: "Dental credit" },
+  { name: "Tom R.",     referrals: 6,  tier: "Influencer",  reward: "Local partner" },
   { name: "Ashley W.",  referrals: 5,  tier: "Influencer",  reward: "Gift card" },
 ];
 
 const DEMO_REWARDS = [
-  { type: "Gift Card",      count: 38, pct: 43, color: "bg-[#E0622A]"    },
+  { type: "Gift Card",      count: 38, pct: 43, color: "bg-[#E0622A]"   },
   { type: "Dental Credit",  count: 29, pct: 33, color: "bg-violet-500"  },
   { type: "Local Partner",  count: 14, pct: 16, color: "bg-amber-500"   },
   { type: "Charity",        count: 8,  pct: 9,  color: "bg-pink-500"    },
 ];
 
+// ── Automotive demo data ──────────────────────────────────────────────────────
+
+const DEMO_STATS_AUTO = [
+  { label: "Total Referrals",   value: "145",  sub: "+22 this month",    icon: TrendingUp, color: "text-[#E0622A]",   bg: "bg-primary/10",    border: "border-[#E0622A]/20"  },
+  { label: "Active Customers",  value: "60",   sub: "Summit Auto Group",  icon: Users,      color: "text-violet-400", bg: "bg-violet-500/10", border: "border-violet-500/20" },
+  { label: "Rewards Issued",    value: "89",   sub: "$3,115 total value", icon: Gift,       color: "text-amber-400",  bg: "bg-amber-500/10",  border: "border-amber-500/20"  },
+  { label: "Conversion Rate",   value: "71%",  sub: "referral → deal",   icon: Percent,    color: "text-green-400",  bg: "bg-green-500/10",  border: "border-green-500/20"  },
+];
+
+const DEMO_TRENDS_AUTO = [
+  { month: "Nov 2025", referrals: 16, rewards: 11, revenue: "$385" },
+  { month: "Dec 2025", referrals: 21, rewards: 15, revenue: "$525" },
+  { month: "Jan 2026", referrals: 25, rewards: 18, revenue: "$630" },
+  { month: "Feb 2026", referrals: 30, rewards: 22, revenue: "$770" },
+  { month: "Mar 2026", referrals: 34, rewards: 24, revenue: "$840" },
+  { month: "Apr 2026", referrals: 19, rewards: 13, revenue: "$455" },
+];
+
+const DEMO_TOP_REFERRERS_AUTO = [
+  { name: "Carlos M.",  referrals: 14, tier: "Legend",      reward: "Gift card" },
+  { name: "Derek S.",   referrals: 10, tier: "Ambassador",  reward: "Gift card" },
+  { name: "Brenda H.",  referrals: 8,  tier: "Amplifier",   reward: "Charity"   },
+  { name: "Tanya P.",   referrals: 6,  tier: "Amplifier",   reward: "Gift card" },
+  { name: "Marcus T.",  referrals: 4,  tier: "Influencer",  reward: "Gift card" },
+];
+
+const DEMO_REWARDS_AUTO = [
+  { type: "Gift Card", count: 53, pct: 60, color: "bg-[#E0622A]" },
+  { type: "Charity",   count: 36, pct: 40, color: "bg-pink-500"  },
+];
+
 // ── Demo analytics view ───────────────────────────────────────────────────────
 
-function DemoAnalytics() {
+function DemoAnalytics({ isAuto }: { isAuto: boolean }) {
+  const stats       = isAuto ? DEMO_STATS_AUTO       : DEMO_STATS;
+  const trends      = isAuto ? DEMO_TRENDS_AUTO      : DEMO_TRENDS;
+  const topRefs     = isAuto ? DEMO_TOP_REFERRERS_AUTO : DEMO_TOP_REFERRERS;
+  const rewards     = isAuto ? DEMO_REWARDS_AUTO     : DEMO_REWARDS;
+  const refLabel    = isAuto ? "Top Customers"       : "Top Referrers";
+
   return (
     <div className="space-y-8">
       <div className="flex items-start justify-between flex-wrap gap-3">
@@ -53,7 +90,7 @@ function DemoAnalytics() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {DEMO_STATS.map(s => (
+        {stats.map(s => (
           <div key={s.label} className={`rounded-2xl border ${s.border} ${s.bg} p-4 flex flex-col gap-2`}>
             <div className={`w-9 h-9 rounded-xl ${s.bg} border ${s.border} flex items-center justify-center`}>
               <s.icon className={`w-4 h-4 ${s.color}`} />
@@ -79,7 +116,7 @@ function DemoAnalytics() {
             <span>Rewards Issued</span>
             <span>Est. Revenue</span>
           </div>
-          {DEMO_TRENDS.map(row => (
+          {trends.map(row => (
             <div key={row.month} className="grid md:grid-cols-4 gap-2 px-6 py-3 text-sm hover:bg-muted/20 transition-colors">
               <span className="font-medium text-foreground">{row.month}</span>
               <span className="text-muted-foreground">{row.referrals}</span>
@@ -94,10 +131,10 @@ function DemoAnalytics() {
         {/* Top referrers */}
         <div className="rounded-2xl border border-border bg-card/30 overflow-hidden">
           <div className="px-6 py-4 border-b border-border">
-            <h2 className="text-sm font-semibold text-foreground">Top Referrers</h2>
+            <h2 className="text-sm font-semibold text-foreground">{refLabel}</h2>
           </div>
           <div className="divide-y divide-border">
-            {DEMO_TOP_REFERRERS.map((r, i) => (
+            {topRefs.map((r, i) => (
               <div key={r.name} className="flex items-center gap-4 px-6 py-3 hover:bg-muted/20 transition-colors">
                 <span className="text-xs font-bold text-muted-foreground w-5 text-center">{i + 1}</span>
                 <div className="flex-1 min-w-0">
@@ -119,7 +156,7 @@ function DemoAnalytics() {
             <h2 className="text-sm font-semibold text-foreground">Reward Type Breakdown</h2>
           </div>
           <div className="divide-y divide-border">
-            {DEMO_REWARDS.map(r => (
+            {rewards.map(r => (
               <div key={r.type} className="px-6 py-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-foreground">{r.type}</span>
@@ -140,9 +177,9 @@ function DemoAnalytics() {
 // ── Main export ───────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
-  const { isDemo } = useAuth();
+  const { isDemo, demoVertical } = useAuth();
 
-  if (isDemo) return <DemoAnalytics />;
+  if (isDemo) return <DemoAnalytics isAuto={demoVertical === "automotive"} />;
 
   return (
     <div className="space-y-8">
