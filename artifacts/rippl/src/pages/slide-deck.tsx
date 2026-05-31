@@ -19,6 +19,11 @@ const WHITE   = "FFFFFF";
 const MUTED   = "888888";
 const SOFT    = "cccccc";
 
+// Bespoke / luxury tokens
+const GOLD       = "C9A84C";
+const GOLD_SOFT  = "8B6B1A";
+const CARD_LUX   = "1a140a";
+
 const FRAUNCES = "Fraunces";
 const DM_SANS  = "DM Sans";
 const GEIST    = "Geist Mono";
@@ -42,12 +47,36 @@ function addShell(s: ReturnType<PptxGenJS["addSlide"]>) {
   });
 }
 
+function addBespokeShell(s: ReturnType<PptxGenJS["addSlide"]>) {
+  s.background = { color: BG };
+  s.addShape(pptx.ShapeType.roundRect, {
+    x: 0.12, y: 0.12, w: 13.09, h: 7.26,
+    fill: { type: "none" } as any,
+    line: { color: GOLD, width: 2.5 },
+    rectRadius: 0.25,
+  });
+  s.addShape(pptx.ShapeType.ellipse, {
+    x: 11.55, y: 7.05, w: 0.22, h: 0.22,
+    fill: { color: GOLD },
+  });
+  s.addText("Powered by Rippl", {
+    x: 11.8, y: 7.02, w: 1.4, h: 0.28,
+    fontSize: 8.5, color: WHITE, bold: true, valign: "middle", fontFace: DM_SANS,
+  });
+}
+
 let pptx: PptxGenJS;
 
 // ── Vertical-specific slide content ───────────────────────────────────────────
 
 const SLIDE_CONTENT = {
   dental: {
+    tiers: [
+      { label: "INFLUENCER", amt: "$35",  sub: "1st referral", border: ORANGE },
+      { label: "AMPLIFIER",  amt: "$50",  sub: "3 referrals",  border: ORANGE },
+      { label: "AMBASSADOR", amt: "$75",  sub: "6 referrals",  border: ORANGE },
+      { label: "LEGEND",     amt: "$100", sub: "10 referrals", border: AMBER  },
+    ],
     s1Cta:   "Ask the front desk for your personal referral link today",
     s2Steps: [
       { num: "01", title: "Get your link",      body: "Ask the front desk for your personal referral link" },
@@ -67,6 +96,12 @@ const SLIDE_CONTENT = {
     tvStep:   "Display on your waiting room TV",
   },
   automotive: {
+    tiers: [
+      { label: "INFLUENCER", amt: "$100", sub: "1st referral", border: ORANGE },
+      { label: "AMPLIFIER",  amt: "$150", sub: "3 referrals",  border: ORANGE },
+      { label: "AMBASSADOR", amt: "$200", sub: "6 referrals",  border: ORANGE },
+      { label: "LEGEND",     amt: "$250", sub: "10 referrals", border: AMBER  },
+    ],
     s1Cta:   "Ask our sales team for your personal referral link today",
     s2Steps: [
       { num: "01", title: "Get your link",      body: "Ask our sales team for your personal referral link" },
@@ -89,6 +124,193 @@ type RewardCard = {
   badge: string; badgeColor: string; title: string; body: string;
   cta: string; ctaColor: string; border: string; cardBg: string;
 };
+
+// ── Bespoke (ultra-luxury) deck content ────────────────────────────────────────
+
+const BESPOKE = {
+  tiers: [
+    { label: "CONNOISSEUR", sub: "1st referral" },
+    { label: "PATRON",      sub: "3 referrals"  },
+    { label: "MAISON",      sub: "6 referrals"  },
+    { label: "CURATOR",     sub: "10 referrals" },
+  ],
+  s1Tag:     "Be rewarded.",
+  s1Body:    "Share the experience — when they join our family of clients, your reward is personally arranged.",
+  s1Cta:     "Speak with your advisor for your personal referral link",
+  s2Steps: [
+    { num: "01", title: "Your link",           body: "Your sales advisor will provide your personal referral link" },
+    { num: "02", title: "Make the introduction", body: "Share with friends who share your passion for exceptional automobiles" },
+    { num: "03", title: "Your reward",          body: "When they become a client, a curated reward is arranged for you" },
+  ],
+  s2Footer:   "Fine dining · Private events · Bespoke experiences — curated for you",
+  s3Title:    "Your reward, curated",
+  s3Subtitle: "Each experience is personally arranged — no forms, no waiting",
+  s3Rewards: [
+    { badge: "MOST REQUESTED", title: "Fine Dining",      body: "An evening for two at a\nrestaurant of your choosing",   cta: "→ Reserved for you"           },
+    { badge: "",               title: "Track Experience", body: "A private driving session\nat a premier circuit",         cta: "→ Arranged personally"        },
+    { badge: "",               title: "Maison Weekend",   body: "Hotel, dinner, and an\nexperience — curated for you",    cta: "→ Co-designed with your advisor" },
+    { badge: "",               title: "Charitable Gift",  body: "A donation in your name\nto your chosen cause",          cta: "→ Your legacy"                },
+  ],
+  s3Footer:   "Speak with your advisor · Every reward is personally arranged",
+};
+
+async function generateBespokeDeck(practiceName: string): Promise<void> {
+  pptx = new PptxGenJS();
+  pptx.layout = "LAYOUT_WIDE";
+
+  // Slide 1 — Refer a friend. Be rewarded.
+  {
+    const s = pptx.addSlide();
+    addBespokeShell(s);
+    s.addText("Refer a friend.", {
+      x: 0.5, y: 1.1, w: 12.33, h: 1.3,
+      fontSize: 78, bold: true, color: WHITE, fontFace: FRAUNCES, align: "center",
+    });
+    s.addText(BESPOKE.s1Tag, {
+      x: 0.5, y: 2.2, w: 12.33, h: 1.3,
+      fontSize: 78, bold: true, color: GOLD, fontFace: FRAUNCES, align: "center",
+    });
+    s.addText(BESPOKE.s1Body, {
+      x: 1.0, y: 3.45, w: 11.33, h: 0.55,
+      fontSize: 16, color: MUTED, align: "center", fontFace: DM_SANS,
+    });
+    const badgeW = 2.6, badgeGap = 0.25;
+    const totalW = BESPOKE.tiers.length * badgeW + (BESPOKE.tiers.length - 1) * badgeGap;
+    const startX = (13.33 - totalW) / 2;
+    BESPOKE.tiers.forEach((tier, i) => {
+      const x = startX + i * (badgeW + badgeGap);
+      const y = 4.05;
+      s.addShape(pptx.ShapeType.roundRect, {
+        x, y, w: badgeW, h: 1.15,
+        fill: { color: CARD_LUX },
+        line: { color: GOLD, width: 1.5 },
+        rectRadius: 0.57,
+      });
+      s.addText(tier.label, {
+        x, y: y + 0.28, w: badgeW, h: 0.32,
+        fontSize: 13, bold: true, color: GOLD, align: "center", charSpacing: 1.5, fontFace: DM_SANS,
+      });
+      s.addText(tier.sub, {
+        x, y: y + 0.66, w: badgeW, h: 0.28,
+        fontSize: 10, color: MUTED, align: "center", fontFace: DM_SANS,
+      });
+    });
+    s.addText(BESPOKE.s1Cta, {
+      x: 0.5, y: 5.5, w: 12.33, h: 0.35,
+      fontSize: 14, color: MUTED, align: "center", fontFace: DM_SANS,
+    });
+  }
+
+  // Slide 2 — How it works
+  {
+    const s = pptx.addSlide();
+    addBespokeShell(s);
+    s.addText("How it works", {
+      x: 0.5, y: 0.85, w: 12.33, h: 1.0,
+      fontSize: 64, bold: true, color: WHITE, fontFace: FRAUNCES, align: "center",
+    });
+    const cardW = 3.6, cardH = 4.0, gap = 0.5;
+    const totalW = BESPOKE.s2Steps.length * cardW + (BESPOKE.s2Steps.length - 1) * gap;
+    const sx = (13.33 - totalW) / 2;
+    const sy = 1.85;
+    BESPOKE.s2Steps.forEach((step, i) => {
+      const x = sx + i * (cardW + gap);
+      s.addShape(pptx.ShapeType.roundRect, {
+        x, y: sy, w: cardW, h: cardH,
+        fill: { color: CARD_LUX },
+        line: { color: GOLD, width: 1.5 },
+        rectRadius: 0.15,
+      });
+      s.addText(step.num, {
+        x, y: sy + 0.35, w: cardW, h: 0.65,
+        fontSize: 40, bold: true, color: GOLD, fontFace: GEIST, align: "center",
+      });
+      s.addText(step.title, {
+        x: x + 0.15, y: sy + 1.1, w: cardW - 0.3, h: 0.5,
+        fontSize: 20, bold: true, color: WHITE, align: "center", fontFace: FRAUNCES,
+      });
+      s.addText(step.body, {
+        x: x + 0.2, y: sy + 1.7, w: cardW - 0.4, h: 1.2,
+        fontSize: 14, color: SOFT, align: "center", lineSpacingMultiple: 1.4, fontFace: DM_SANS,
+      });
+      if (i < BESPOKE.s2Steps.length - 1) {
+        const ax = x + cardW + 0.06;
+        const ay = sy + cardH / 2 - 0.15;
+        s.addShape(pptx.ShapeType.rect, {
+          x: ax, y: ay + 0.12, w: gap - 0.12, h: 0.03,
+          fill: { color: GOLD_SOFT },
+        });
+        s.addText("→", {
+          x: ax + gap - 0.48, y: ay - 0.03, w: 0.4, h: 0.35,
+          fontSize: 18, color: GOLD, align: "center", valign: "middle",
+        });
+      }
+    });
+    s.addText(BESPOKE.s2Footer, {
+      x: 0.5, y: 6.5, w: 12.33, h: 0.3,
+      fontSize: 12, color: GOLD, align: "center", fontFace: DM_SANS,
+    });
+  }
+
+  // Slide 3 — Your reward, curated
+  {
+    const s = pptx.addSlide();
+    addBespokeShell(s);
+    s.addText(BESPOKE.s3Title, {
+      x: 0.5, y: 0.75, w: 12.33, h: 0.95,
+      fontSize: 60, bold: true, color: GOLD, fontFace: FRAUNCES, align: "center",
+    });
+    s.addText(BESPOKE.s3Subtitle, {
+      x: 0.5, y: 1.65, w: 12.33, h: 0.4,
+      fontSize: 15, color: MUTED, align: "center", fontFace: DM_SANS,
+    });
+    const rcW = 2.8, rcH = 3.8, rcG = 0.28;
+    const totalW = BESPOKE.s3Rewards.length * rcW + (BESPOKE.s3Rewards.length - 1) * rcG;
+    const rx = (13.33 - totalW) / 2;
+    const ry = 2.7;
+    BESPOKE.s3Rewards.forEach((r, i) => {
+      const x = rx + i * (rcW + rcG);
+      const isFirst = i === 0;
+      if (r.badge) {
+        s.addShape(pptx.ShapeType.roundRect, {
+          x: x + 0.15, y: ry - 0.42, w: rcW - 0.3, h: 0.38,
+          fill: { color: GOLD },
+          line: { color: GOLD, width: 0 },
+          rectRadius: 0.15,
+        });
+        s.addText(r.badge, {
+          x: x + 0.15, y: ry - 0.42, w: rcW - 0.3, h: 0.38,
+          fontSize: 8, bold: true, color: BG, align: "center", valign: "middle", charSpacing: 1, fontFace: DM_SANS,
+        });
+      }
+      s.addShape(pptx.ShapeType.roundRect, {
+        x, y: ry, w: rcW, h: rcH,
+        fill: { color: isFirst ? CARD_LUX : "181818" },
+        line: { color: isFirst ? GOLD : "444444", width: 1.5 },
+        rectRadius: 0.12,
+      });
+      s.addText(r.title, {
+        x: x + 0.12, y: ry + 0.3, w: rcW - 0.24, h: 0.6,
+        fontSize: 17, bold: true, color: WHITE, align: "center", fontFace: FRAUNCES,
+      });
+      s.addText(r.body, {
+        x: x + 0.12, y: ry + 1.0, w: rcW - 0.24, h: 0.9,
+        fontSize: 12, color: SOFT, align: "center", lineSpacingMultiple: 1.5, fontFace: DM_SANS,
+      });
+      s.addText(r.cta, {
+        x: x + 0.12, y: ry + rcH - 0.45, w: rcW - 0.24, h: 0.35,
+        fontSize: 11, bold: true, color: isFirst ? GOLD : MUTED, align: "center", fontFace: DM_SANS,
+      });
+    });
+    s.addText(BESPOKE.s3Footer, {
+      x: 0.5, y: 6.93, w: 11.0, h: 0.28,
+      fontSize: 10.5, color: MUTED, align: "center", fontFace: DM_SANS,
+    });
+  }
+
+  const slug = (practiceName || "rippl").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  await pptx.writeFile({ fileName: `rippl-bespoke-${slug}.pptx` });
+}
 
 // ── Deck generator ─────────────────────────────────────────────────────────────
 async function generateDeck(practiceName: string, isAuto: boolean): Promise<void> {
@@ -114,12 +336,7 @@ async function generateDeck(practiceName: string, isAuto: boolean): Promise<void
         : "Share your personal link — when they visit, you earn. No forms. No waiting. Automatic.",
       { x: 1.0, y: 3.45, w: 11.33, h: 0.55, fontSize: 17, color: MUTED, align: "center", fontFace: DM_SANS },
     );
-    const TIERS = [
-      { label: "INFLUENCER", amt: "$35",  sub: "1st referral", border: ORANGE },
-      { label: "AMPLIFIER",  amt: "$50",  sub: "3 referrals",  border: ORANGE },
-      { label: "AMBASSADOR", amt: "$75",  sub: "6 referrals",  border: ORANGE },
-      { label: "LEGEND",     amt: "$100", sub: "10 referrals", border: AMBER  },
-    ];
+    const TIERS = content.tiers;
     const badgeW = 2.6, badgeGap = 0.25;
     const totalW = TIERS.length * badgeW + (TIERS.length - 1) * badgeGap;
     const startX = (13.33 - totalW) / 2;
@@ -323,13 +540,171 @@ function SlideBorder() {
   );
 }
 
+function SlideBorderGold() {
+  return (
+    <>
+      <div style={{
+        position: "absolute",
+        left: 0.12 * IN, top: 0.12 * IN,
+        width: 13.09 * IN, height: 7.26 * IN,
+        border: "3px solid #C9A84C",
+        borderRadius: 0.25 * IN,
+        pointerEvents: "none",
+        boxSizing: "border-box",
+      }} />
+      <div style={{ position: "absolute", right: 0.28 * IN, bottom: 0.16 * IN, display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ width: 13, height: 13, borderRadius: "50%", background: "#C9A84C" }} />
+        <span style={{ fontSize: 8.5 * PT, color: "white", fontWeight: 700, fontFamily: F_BODY }}>Powered by Rippl</span>
+      </div>
+    </>
+  );
+}
+
+function BespokeSlide1Preview({ name: _ }: { name: string }) {
+  const bW = 2.6 * IN, bH = 1.15 * IN, bG = 0.25 * IN;
+  const totalBW = BESPOKE.tiers.length * bW + (BESPOKE.tiers.length - 1) * bG;
+  const bX0 = (CW - totalBW) / 2;
+  const bY = 4.05 * IN;
+  return (
+    <ScaledSlide>
+      <SlideBorderGold />
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 1.1 * IN, width: 12.33 * IN, fontSize: 78 * PT, fontWeight: 700, color: "white", textAlign: "center", lineHeight: 1.05, whiteSpace: "nowrap", fontFamily: F_DISPLAY }}>
+        Refer a friend.
+      </div>
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 2.2 * IN, width: 12.33 * IN, fontSize: 78 * PT, fontWeight: 700, color: "#C9A84C", textAlign: "center", lineHeight: 1.05, whiteSpace: "nowrap", fontFamily: F_DISPLAY }}>
+        Be rewarded.
+      </div>
+      <div style={{ position: "absolute", left: 1.0 * IN, top: 3.45 * IN, width: 11.33 * IN, fontSize: 16 * PT, color: "#888888", textAlign: "center", fontFamily: F_BODY }}>
+        {BESPOKE.s1Body}
+      </div>
+      {BESPOKE.tiers.map((t, i) => (
+        <div key={t.label} style={{
+          position: "absolute",
+          left: bX0 + i * (bW + bG), top: bY,
+          width: bW, height: bH,
+          background: "#1a140a",
+          border: "2px solid #C9A84C",
+          borderRadius: bH / 2,
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: 4,
+        }}>
+          <div style={{ fontSize: 11 * PT, fontWeight: 700, color: "#C9A84C", letterSpacing: "0.12em", fontFamily: F_BODY }}>{t.label}</div>
+          <div style={{ fontSize: 9.5 * PT, color: "#888888", fontFamily: F_BODY }}>{t.sub}</div>
+        </div>
+      ))}
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 5.5 * IN, width: 12.33 * IN, fontSize: 14 * PT, color: "#888888", textAlign: "center", fontFamily: F_BODY }}>
+        {BESPOKE.s1Cta}
+      </div>
+    </ScaledSlide>
+  );
+}
+
+function BespokeSlide2Preview({ name: _ }: { name: string }) {
+  const cW = 3.6 * IN, cH = 4.0 * IN, gap = 0.5 * IN;
+  const totalCW = BESPOKE.s2Steps.length * cW + (BESPOKE.s2Steps.length - 1) * gap;
+  const cX0 = (CW - totalCW) / 2;
+  const cY = 1.85 * IN;
+  return (
+    <ScaledSlide>
+      <SlideBorderGold />
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 0.85 * IN, width: 12.33 * IN, fontSize: 64 * PT, fontWeight: 700, color: "white", textAlign: "center", lineHeight: 1.05, fontFamily: F_DISPLAY }}>
+        How it works
+      </div>
+      {BESPOKE.s2Steps.map((step, i) => {
+        const x = cX0 + i * (cW + gap);
+        return (
+          <div key={i} style={{
+            position: "absolute",
+            left: x, top: cY, width: cW, height: cH,
+            background: "#1a140a",
+            border: "1.5px solid #C9A84C",
+            borderRadius: 0.15 * IN,
+            display: "flex", flexDirection: "column",
+            alignItems: "center", paddingTop: 18, paddingLeft: 10, paddingRight: 10,
+          }}>
+            <div style={{ fontSize: 40 * PT, fontWeight: 600, color: "#C9A84C", lineHeight: 1, marginBottom: 8, fontFamily: F_MONO }}>{step.num}</div>
+            <div style={{ fontSize: 20 * PT, fontWeight: 700, color: "white", textAlign: "center", marginBottom: 6, fontFamily: F_DISPLAY }}>{step.title}</div>
+            <div style={{ fontSize: 14 * PT, color: "#cccccc", textAlign: "center", lineHeight: 1.4, fontFamily: F_BODY }}>{step.body}</div>
+          </div>
+        );
+      })}
+      {[0, 1].map(i => {
+        const arrowX = cX0 + (i + 1) * cW + i * gap;
+        const arrowY = cY + cH / 2;
+        return (
+          <div key={i} style={{ position: "absolute", left: arrowX + 4, top: arrowY - 10, display: "flex", alignItems: "center" }}>
+            <div style={{ width: gap - 14, height: 2, background: "#8B6B1A" }} />
+            <div style={{ fontSize: 16 * PT, color: "#C9A84C", lineHeight: 1 }}>→</div>
+          </div>
+        );
+      })}
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 6.5 * IN, width: 12.33 * IN, fontSize: 12 * PT, color: "#C9A84C", textAlign: "center", fontFamily: F_BODY }}>
+        {BESPOKE.s2Footer}
+      </div>
+    </ScaledSlide>
+  );
+}
+
+function BespokeSlide3Preview({ name: _ }: { name: string }) {
+  const rW = 2.8 * IN, rH = 3.8 * IN, rG = 0.28 * IN;
+  const totalRW = BESPOKE.s3Rewards.length * rW + (BESPOKE.s3Rewards.length - 1) * rG;
+  const rX0 = (CW - totalRW) / 2;
+  const rY = 2.7 * IN;
+  return (
+    <ScaledSlide>
+      <SlideBorderGold />
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 0.75 * IN, width: 12.33 * IN, fontSize: 60 * PT, fontWeight: 700, color: "#C9A84C", textAlign: "center", lineHeight: 1.05, fontFamily: F_DISPLAY }}>
+        {BESPOKE.s3Title}
+      </div>
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 1.65 * IN, width: 12.33 * IN, fontSize: 15 * PT, color: "#888888", textAlign: "center", fontFamily: F_BODY }}>
+        {BESPOKE.s3Subtitle}
+      </div>
+      {BESPOKE.s3Rewards.map((r, i) => {
+        const x = rX0 + i * (rW + rG);
+        const isFirst = i === 0;
+        return (
+          <div key={i}>
+            {r.badge && (
+              <div style={{
+                position: "absolute",
+                left: x + 0.15 * IN, top: rY - 0.42 * IN,
+                width: rW - 0.3 * IN, height: 0.38 * IN,
+                background: "#C9A84C", borderRadius: 0.15 * IN,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 8 * PT, fontWeight: 700, color: "#111111", letterSpacing: "0.05em",
+                fontFamily: F_BODY,
+              }}>{r.badge}</div>
+            )}
+            <div style={{
+              position: "absolute",
+              left: x, top: rY, width: rW, height: rH,
+              background: isFirst ? "#1a140a" : "#181818",
+              border: `1.5px solid ${isFirst ? "#C9A84C" : "#444444"}`,
+              borderRadius: 0.12 * IN,
+              display: "flex", flexDirection: "column",
+              padding: "14px 10px 12px",
+            }}>
+              <div style={{ fontSize: 17 * PT, fontWeight: 700, color: "white", textAlign: "center", marginBottom: 6, fontFamily: F_DISPLAY }}>{r.title}</div>
+              <div style={{ fontSize: 12 * PT, color: "#cccccc", textAlign: "center", flex: 1, lineHeight: 1.5, whiteSpace: "pre-line", fontFamily: F_BODY }}>{r.body}</div>
+              <div style={{ fontSize: 11 * PT, fontWeight: 700, color: isFirst ? "#C9A84C" : "#888888", textAlign: "center", fontFamily: F_BODY }}>{r.cta}</div>
+            </div>
+          </div>
+        );
+      })}
+      <div style={{ position: "absolute", left: 0.5 * IN, top: 6.93 * IN, width: 11.0 * IN, fontSize: 10.5 * PT, color: "#888888", textAlign: "center", fontFamily: F_BODY }}>
+        {BESPOKE.s3Footer}
+      </div>
+    </ScaledSlide>
+  );
+}
+
 function Slide1Preview({ name: _, isAuto = false }: { name: string; isAuto?: boolean }) {
-  const TIERS = [
-    { label: "INFLUENCER", amt: "$35",  sub: "1st referral", border: "#E0622A", labelColor: "#E0622A" },
-    { label: "AMPLIFIER",  amt: "$50",  sub: "3 referrals",  border: "#E0622A", labelColor: "#E0622A" },
-    { label: "AMBASSADOR", amt: "$75",  sub: "6 referrals",  border: "#E0622A", labelColor: "#E0622A" },
-    { label: "LEGEND",     amt: "$100", sub: "10 referrals", border: "#F5A623", labelColor: "#E0622A" },
-  ];
+  const src = isAuto ? SLIDE_CONTENT.automotive : SLIDE_CONTENT.dental;
+  const TIERS = src.tiers.map(t => ({
+    ...t,
+    border: `#${t.border}`,
+    labelColor: "#E0622A",
+  }));
   const bW = 2.6 * IN, bH = 1.15 * IN, bG = 0.25 * IN;
   const totalBW = TIERS.length * bW + (TIERS.length - 1) * bG;
   const bX0 = (CW - totalBW) / 2;
@@ -493,6 +868,103 @@ const MARKETING_ASSETS = [
   { label: "Flyer — 8.5 in",       file: "rippl-flyer-8.5in.png", download: "rippl-flyer-8.5in.png"         },
 ];
 
+// ── Bespoke deck section (rendered inside SlideDeck when isAuto) ───────────────
+
+function BespokeDeckSection() {
+  const [name, setName]     = useState("Carlock Motorcars");
+  const [loading, setLoading] = useState(false);
+  const [done, setDone]     = useState(false);
+  const [error, setError]   = useState<string | null>(null);
+
+  async function handleGenerate() {
+    setLoading(true); setDone(false); setError(null);
+    try {
+      await generateBespokeDeck(name || "rippl");
+      setDone(true);
+      setTimeout(() => setDone(false), 5000);
+    } catch (e) {
+      setError(`Generation failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally { setLoading(false); }
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center gap-3">
+        <Monitor className="w-4 h-4 text-slate-400" />
+        <h2 className="text-base font-bold text-slate-800">Bespoke Experience Slide Deck</h2>
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-full border"
+          style={{ background: "#1a140a", borderColor: "#C9A84C", color: "#C9A84C" }}>
+          Ultra-Luxury
+        </span>
+      </div>
+      <p className="text-sm text-slate-500">
+        For Rolls-Royce, Bentley, and Aston Martin clientele. No dollar amounts — pure experience framing with a gold design language.
+      </p>
+
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
+        <div className="space-y-1.5">
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">
+            Dealership Name (used in filename)
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Carlock Motorcars"
+            className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A84C]/25 focus:border-[#C9A84C] transition-all"
+          />
+        </div>
+
+        <div className="flex items-start gap-2 rounded-xl px-4 py-3" style={{ background: "#1a140a", border: "1px solid #C9A84C33" }}>
+          <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: "#C9A84C" }} />
+          <p className="text-xs leading-relaxed" style={{ color: "#C9A84C99" }}>
+            3 slides: tier names only (no dollar amounts), how it works, curated experience rewards.
+            Gold design language — no orange. Separate file from the standard deck.
+          </p>
+        </div>
+
+        {error && (
+          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3 font-mono break-all">{error}</div>
+        )}
+
+        <button
+          type="button"
+          onClick={handleGenerate}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed font-semibold py-3.5 rounded-xl transition-all text-sm"
+          style={{ background: "#C9A84C", color: "#111111" }}
+        >
+          {loading ? (
+            <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
+          ) : done ? (
+            <><CheckCircle2 className="w-4 h-4" /> Downloaded — check Downloads folder</>
+          ) : (
+            <><Download className="w-4 h-4" /> Download Bespoke Deck (.pptx)</>
+          )}
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Preview</p>
+        <div className="space-y-4">
+          {[
+            { label: "Slide 1 — Refer a friend. Be rewarded.", El: BespokeSlide1Preview },
+            { label: "Slide 2 — How it works",                 El: BespokeSlide2Preview },
+            { label: "Slide 3 — Your reward, curated",         El: BespokeSlide3Preview },
+          ].map(({ label, El }) => (
+            <div key={label} className="space-y-1.5">
+              <p className="text-xs font-semibold text-slate-600">{label}</p>
+              <div className="rounded-xl overflow-hidden border shadow-sm" style={{ borderColor: "#C9A84C44" }}>
+                <El name={name} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function SlideDeck() {
@@ -654,6 +1126,9 @@ export default function SlideDeck() {
           </div>
         </div>
       </div>
+
+      {/* ── Bespoke Deck (ultra-luxury, auto demo only) ── */}
+      {isAuto && <BespokeDeckSection />}
 
       {/* ── Section 2: Referral Cards ── */}
       <div className="space-y-5">
