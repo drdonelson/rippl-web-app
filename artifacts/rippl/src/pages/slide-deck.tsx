@@ -44,8 +44,55 @@ function addShell(s: ReturnType<PptxGenJS["addSlide"]>) {
 
 let pptx: PptxGenJS;
 
+// ── Vertical-specific slide content ───────────────────────────────────────────
+
+const SLIDE_CONTENT = {
+  dental: {
+    s1Cta:   "Ask the front desk for your personal referral link today",
+    s2Steps: [
+      { num: "01", title: "Get your link",      body: "Ask the front desk for your personal referral link" },
+      { num: "02", title: "Share with friends", body: "Text or email your link to anyone who needs a great dentist" },
+      { num: "03", title: "Earn rewards",        body: "When they visit, you automatically earn a reward — your choice" },
+    ],
+    s2Footer: "Gift card · Dental credit · Local reward · Charitable donation — you choose",
+    s3Subtitle: "Your choice — automatically delivered when your friend visits",
+    s3Rewards: [
+      { badge: "MOST POPULAR",  badgeColor: ORANGE, title: "Gift Card",     body: "Amazon, Visa, Target,\nStarbucks & more",  cta: "→ Instant delivery",  ctaColor: ORANGE, border: ORANGE,   cardBg: CARD_BG  },
+      { badge: "MOST VALUABLE", badgeColor: AMBER,  title: "Dental Credit", body: "Applied to your account\nwithin 24 hours", cta: "→ Highest value",     ctaColor: AMBER,  border: AMBER,    cardBg: "1c1000" },
+      { badge: "",              badgeColor: "",     title: "Local Reward",  body: "Redeem at local partner\nbusinesses",       cta: "→ Show PIN in store", ctaColor: SOFT,   border: "444444", cardBg: "181818" },
+      { badge: "",              badgeColor: "",     title: "Donate",        body: "Charitable donation\nin your name",         cta: "→ Give back",         ctaColor: MUTED,  border: "333333", cardBg: "141414" },
+    ] as RewardCard[],
+    s3Footer: "Ask the front desk for your personal referral link today  ·  Rewards grow with every referral",
+    deckSlug: "waiting-room",
+    tvStep:   "Display on your waiting room TV",
+  },
+  automotive: {
+    s1Cta:   "Ask our sales team for your personal referral link today",
+    s2Steps: [
+      { num: "01", title: "Get your link",      body: "Ask our sales team for your personal referral link" },
+      { num: "02", title: "Share with friends", body: "Text or email your link to anyone looking for their next vehicle" },
+      { num: "03", title: "Earn rewards",        body: "When they purchase, you automatically earn a reward — your choice" },
+    ],
+    s2Footer: "Gift card · Charitable donation — you choose",
+    s3Subtitle: "Your choice — automatically delivered when your friend purchases",
+    s3Rewards: [
+      { badge: "MOST POPULAR", badgeColor: ORANGE, title: "Gift Card", body: "Amazon, Visa, Target,\nStarbucks & more", cta: "→ Instant delivery", ctaColor: ORANGE, border: ORANGE,   cardBg: CARD_BG  },
+      { badge: "",             badgeColor: "",     title: "Donate",    body: "Charitable donation\nin your name",       cta: "→ Give back",       ctaColor: MUTED,  border: "333333", cardBg: "141414" },
+    ] as RewardCard[],
+    s3Footer: "Ask our sales team for your personal referral link today  ·  Rewards grow with every referral",
+    deckSlug: "showroom-floor",
+    tvStep:   "Display on your showroom floor TV",
+  },
+} as const;
+
+type RewardCard = {
+  badge: string; badgeColor: string; title: string; body: string;
+  cta: string; ctaColor: string; border: string; cardBg: string;
+};
+
 // ── Deck generator ─────────────────────────────────────────────────────────────
-async function generateDeck(practiceName: string): Promise<void> {
+async function generateDeck(practiceName: string, isAuto: boolean): Promise<void> {
+  const content = isAuto ? SLIDE_CONTENT.automotive : SLIDE_CONTENT.dental;
   pptx = new PptxGenJS();
   pptx.layout = "LAYOUT_WIDE";
 
@@ -62,7 +109,9 @@ async function generateDeck(practiceName: string): Promise<void> {
       fontSize: 78, bold: true, color: ORANGE, fontFace: FRAUNCES, align: "center",
     });
     s.addText(
-      "Share your personal link — when they visit, you earn. No forms. No waiting. Automatic.",
+      isAuto
+        ? "Share your personal link — when they buy, you earn. No forms. No waiting. Automatic."
+        : "Share your personal link — when they visit, you earn. No forms. No waiting. Automatic.",
       { x: 1.0, y: 3.45, w: 11.33, h: 0.55, fontSize: 17, color: MUTED, align: "center", fontFace: DM_SANS },
     );
     const TIERS = [
@@ -96,7 +145,7 @@ async function generateDeck(practiceName: string): Promise<void> {
         fontSize: 9.5, color: MUTED, align: "center", fontFace: DM_SANS,
       });
     });
-    s.addText("Ask the front desk for your personal referral link today", {
+    s.addText(content.s1Cta, {
       x: 0.5, y: 5.5, w: 12.33, h: 0.35,
       fontSize: 14, color: MUTED, align: "center", fontFace: DM_SANS,
     });
@@ -110,16 +159,11 @@ async function generateDeck(practiceName: string): Promise<void> {
       x: 0.5, y: 0.85, w: 12.33, h: 1.0,
       fontSize: 64, bold: true, color: WHITE, fontFace: FRAUNCES, align: "center",
     });
-    const STEPS = [
-      { num: "01", title: "Get your link",      body: "Ask the front desk for your personal referral link" },
-      { num: "02", title: "Share with friends", body: "Text or email your link to anyone who needs a great dentist" },
-      { num: "03", title: "Earn rewards",        body: "When they visit, you automatically earn a reward — your choice" },
-    ];
     const cardW = 3.6, cardH = 4.0, gap = 0.5;
-    const totalW = STEPS.length * cardW + (STEPS.length - 1) * gap;
+    const totalW = content.s2Steps.length * cardW + (content.s2Steps.length - 1) * gap;
     const sx = (13.33 - totalW) / 2;
     const sy = 1.85;
-    STEPS.forEach((step, i) => {
+    content.s2Steps.forEach((step, i) => {
       const x = sx + i * (cardW + gap);
       s.addShape(pptx.ShapeType.roundRect, {
         x, y: sy, w: cardW, h: cardH,
@@ -139,7 +183,7 @@ async function generateDeck(practiceName: string): Promise<void> {
         x: x + 0.2, y: sy + 1.7, w: cardW - 0.4, h: 1.2,
         fontSize: 14, color: SOFT, align: "center", lineSpacingMultiple: 1.4, fontFace: DM_SANS,
       });
-      if (i < STEPS.length - 1) {
+      if (i < content.s2Steps.length - 1) {
         const ax = x + cardW + 0.06;
         const ay = sy + cardH / 2 - 0.15;
         s.addShape(pptx.ShapeType.rect, {
@@ -152,7 +196,7 @@ async function generateDeck(practiceName: string): Promise<void> {
         });
       }
     });
-    s.addText("Gift card · Dental credit · Local reward · Charitable donation — you choose", {
+    s.addText(content.s2Footer, {
       x: 0.5, y: 6.5, w: 12.33, h: 0.3,
       fontSize: 12, color: AMBER, align: "center", fontFace: DM_SANS,
     });
@@ -166,23 +210,17 @@ async function generateDeck(practiceName: string): Promise<void> {
       x: 0.5, y: 0.75, w: 12.33, h: 0.95,
       fontSize: 60, bold: true, color: WHITE, fontFace: FRAUNCES, align: "center",
     });
-    // Subtitle sits at 1.65–2.05; badge/cards start at 2.28 to avoid overlap
-    s.addText("Your choice — automatically delivered when your friend visits", {
+    s.addText(content.s3Subtitle, {
       x: 0.5, y: 1.65, w: 12.33, h: 0.4,
       fontSize: 15, color: MUTED, align: "center", fontFace: DM_SANS,
     });
-    const REWARDS = [
-      { badge: "MOST POPULAR",  badgeColor: ORANGE, title: "Gift Card",    body: "Amazon, Visa, Target,\nStarbucks & more",  cta: "→ Instant delivery",  ctaColor: ORANGE, border: ORANGE, cardBg: CARD_BG  },
-      { badge: "MOST VALUABLE", badgeColor: AMBER,  title: "Dental Credit", body: "Applied to your account\nwithin 24 hours", cta: "→ Highest value",     ctaColor: AMBER,  border: AMBER,  cardBg: "1c1000" },
-      { badge: "",              badgeColor: "",     title: "Local Reward",  body: "Redeem at local partner\nbusinesses",      cta: "→ Show PIN in store", ctaColor: SOFT,   border: "444444", cardBg: "181818" },
-      { badge: "",              badgeColor: "",     title: "Donate",        body: "Charitable donation\nin your name",        cta: "→ Give back",         ctaColor: MUTED,  border: "333333", cardBg: "141414" },
-    ];
-    // ry=2.7 ensures badge (at ry-0.42=2.28) clears the subtitle (ends at ~2.05)
-    const rcW = 2.8, rcH = 3.8, rcG = 0.28;
-    const totalW = REWARDS.length * rcW + (REWARDS.length - 1) * rcG;
+    const rcW = isAuto ? 3.8 : 2.8;
+    const rcH = 3.8;
+    const rcG = isAuto ? 0.6 : 0.28;
+    const totalW = content.s3Rewards.length * rcW + (content.s3Rewards.length - 1) * rcG;
     const rx = (13.33 - totalW) / 2;
     const ry = 2.7;
-    REWARDS.forEach((r, i) => {
+    content.s3Rewards.forEach((r, i) => {
       const x = rx + i * (rcW + rcG);
       if (r.badge) {
         s.addShape(pptx.ShapeType.roundRect, {
@@ -215,14 +253,14 @@ async function generateDeck(practiceName: string): Promise<void> {
         fontSize: 11, bold: true, color: r.ctaColor, align: "center", fontFace: DM_SANS,
       });
     });
-    s.addText(
-      "Ask the front desk for your personal referral link today  ·  Rewards grow with every referral",
-      { x: 0.5, y: 6.93, w: 11.0, h: 0.28, fontSize: 10.5, color: MUTED, align: "center", fontFace: DM_SANS },
-    );
+    s.addText(content.s3Footer, {
+      x: 0.5, y: 6.93, w: 11.0, h: 0.28,
+      fontSize: 10.5, color: MUTED, align: "center", fontFace: DM_SANS,
+    });
   }
 
   const slug = (practiceName || "rippl").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  await pptx.writeFile({ fileName: `rippl-waiting-room-${slug}.pptx` });
+  await pptx.writeFile({ fileName: `rippl-${content.deckSlug}-${slug}.pptx` });
 }
 
 // ── Scaled slide previews ──────────────────────────────────────────────────────
@@ -285,7 +323,7 @@ function SlideBorder() {
   );
 }
 
-function Slide1Preview({ name: _ }: { name: string }) {
+function Slide1Preview({ name: _, isAuto = false }: { name: string; isAuto?: boolean }) {
   const TIERS = [
     { label: "INFLUENCER", amt: "$35",  sub: "1st referral", border: "#E0622A", labelColor: "#E0622A" },
     { label: "AMPLIFIER",  amt: "$50",  sub: "3 referrals",  border: "#E0622A", labelColor: "#E0622A" },
@@ -307,7 +345,9 @@ function Slide1Preview({ name: _ }: { name: string }) {
         Earn rewards.
       </div>
       <div style={{ position: "absolute", left: 1.0 * IN, top: 3.45 * IN, width: 11.33 * IN, fontSize: 17 * PT, color: "#888888", textAlign: "center", fontFamily: F_BODY }}>
-        Share your personal link — when they visit, you earn. No forms. No waiting. Automatic.
+        {isAuto
+          ? "Share your personal link — when they buy, you earn. No forms. No waiting. Automatic."
+          : "Share your personal link — when they visit, you earn. No forms. No waiting. Automatic."}
       </div>
       {TIERS.map((t, i) => (
         <div key={t.label} style={{
@@ -326,18 +366,16 @@ function Slide1Preview({ name: _ }: { name: string }) {
         </div>
       ))}
       <div style={{ position: "absolute", left: 0.5 * IN, top: 5.5 * IN, width: 12.33 * IN, fontSize: 14 * PT, color: "#888888", textAlign: "center", fontFamily: F_BODY }}>
-        Ask the front desk for your personal referral link today
+        {isAuto
+          ? "Ask our sales team for your personal referral link today"
+          : "Ask the front desk for your personal referral link today"}
       </div>
     </ScaledSlide>
   );
 }
 
-function Slide2Preview({ name: _ }: { name: string }) {
-  const STEPS = [
-    { num: "01", title: "Get your link",      body: "Ask the front desk for your personal referral link" },
-    { num: "02", title: "Share with friends", body: "Text or email your link to anyone who needs a great dentist" },
-    { num: "03", title: "Earn rewards",        body: "When they visit, you automatically earn a reward — your choice" },
-  ];
+function Slide2Preview({ name: _, isAuto = false }: { name: string; isAuto?: boolean }) {
+  const STEPS = isAuto ? SLIDE_CONTENT.automotive.s2Steps : SLIDE_CONTENT.dental.s2Steps;
   const cW = 3.6 * IN, cH = 4.0 * IN, gap = 0.5 * IN;
   const totalCW = STEPS.length * cW + (STEPS.length - 1) * gap;
   const cX0 = (CW - totalCW) / 2;
@@ -378,21 +416,23 @@ function Slide2Preview({ name: _ }: { name: string }) {
         );
       })}
       <div style={{ position: "absolute", left: 0.5 * IN, top: 6.5 * IN, width: 12.33 * IN, fontSize: 12 * PT, color: "#F5A623", textAlign: "center", fontFamily: F_BODY }}>
-        Gift card · Dental credit · Local reward · Charitable donation — you choose
+        {isAuto ? SLIDE_CONTENT.automotive.s2Footer : SLIDE_CONTENT.dental.s2Footer}
       </div>
     </ScaledSlide>
   );
 }
 
-function Slide3Preview({ name: _ }: { name: string }) {
-  const REWARDS = [
-    { badge: "MOST POPULAR",  bc: "#E0622A", title: "Gift Card",    body: "Amazon, Visa, Target,\nStarbucks & more",  cta: "→ Instant delivery",  cc: "#E0622A", border: "#E0622A", cardBg: "#1e1108" },
-    { badge: "MOST VALUABLE", bc: "#F5A623", title: "Dental Credit", body: "Applied to your account\nwithin 24 hours", cta: "→ Highest value",     cc: "#F5A623", border: "#F5A623", cardBg: "#1c1000" },
-    { badge: "",              bc: "",        title: "Local Reward",  body: "Redeem at local partner\nbusinesses",      cta: "→ Show PIN in store", cc: "#cccccc", border: "#444444", cardBg: "#181818" },
-    { badge: "",              bc: "",        title: "Donate",        body: "Charitable donation\nin your name",        cta: "→ Give back",         cc: "#888888", border: "#333333", cardBg: "#141414" },
-  ];
-  // rY=2.7 so badge top (rY-0.42)*IN = 137px clears subtitle bottom (~123px)
-  const rW = 2.8 * IN, rH = 3.8 * IN, rG = 0.28 * IN;
+function Slide3Preview({ name: _, isAuto = false }: { name: string; isAuto?: boolean }) {
+  const src = isAuto ? SLIDE_CONTENT.automotive : SLIDE_CONTENT.dental;
+  const REWARDS = src.s3Rewards.map(r => ({
+    badge: r.badge, bc: `#${r.badgeColor}`,
+    title: r.title, body: r.body,
+    cta: r.cta, cc: `#${r.ctaColor}`,
+    border: `#${r.border}`, cardBg: `#${r.cardBg}`,
+  }));
+  const rW = (isAuto ? 3.8 : 2.8) * IN;
+  const rH = 3.8 * IN;
+  const rG = (isAuto ? 0.6 : 0.28) * IN;
   const totalRW = REWARDS.length * rW + (REWARDS.length - 1) * rG;
   const rX0 = (CW - totalRW) / 2;
   const rY = 2.7 * IN;
@@ -404,7 +444,7 @@ function Slide3Preview({ name: _ }: { name: string }) {
         Choose your reward
       </div>
       <div style={{ position: "absolute", left: 0.5 * IN, top: 1.65 * IN, width: 12.33 * IN, fontSize: 15 * PT, color: "#888888", textAlign: "center", fontFamily: F_BODY }}>
-        Your choice — automatically delivered when your friend visits
+        {src.s3Subtitle}
       </div>
       {REWARDS.map((r, i) => {
         const x = rX0 + i * (rW + rG);
@@ -438,7 +478,7 @@ function Slide3Preview({ name: _ }: { name: string }) {
         );
       })}
       <div style={{ position: "absolute", left: 0.5 * IN, top: 6.93 * IN, width: 11.0 * IN, fontSize: 10.5 * PT, color: "#888888", textAlign: "center", fontFamily: F_BODY }}>
-        Ask the front desk for your personal referral link today · Rewards grow with every referral
+        {src.s3Footer}
       </div>
     </ScaledSlide>
   );
@@ -456,14 +496,23 @@ const MARKETING_ASSETS = [
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function SlideDeck() {
-  const { profile } = useAuth();
-  const [practiceName, setPracticeName] = useState("Hallmark Dental");
+  const { profile, isDemo, demoVertical } = useAuth();
+  const isAuto = isDemo && demoVertical === "automotive";
+  const defaultName = isAuto ? "Summit Auto Group" : "Hallmark Dental";
+  const deckSectionLabel = isAuto ? "Showroom Floor Slide Deck" : "Waiting Room Slide Deck";
+  const tvStepLabel = isAuto ? "Display on your showroom floor TV" : "Display on your waiting room TV";
+
+  const [practiceName, setPracticeName] = useState(defaultName);
   const [loading, setLoading]           = useState(false);
   const [done, setDone]                 = useState(false);
   const [error, setError]               = useState<string | null>(null);
 
   useEffect(() => {
-    if (!profile) return;
+    setPracticeName(isAuto ? "Summit Auto Group" : "Hallmark Dental");
+  }, [isAuto]);
+
+  useEffect(() => {
+    if (!profile || isDemo) return;
     fetch(`${BASE}/api/offices`)
       .then(r => r.json())
       .then((offices: { name: string }[]) => {
@@ -474,14 +523,14 @@ export default function SlideDeck() {
         }
       })
       .catch(() => {});
-  }, [profile]);
+  }, [profile, isDemo]);
 
   async function handleGenerate() {
     setLoading(true);
     setDone(false);
     setError(null);
     try {
-      await generateDeck(practiceName || "rippl");
+      await generateDeck(practiceName || "rippl", isAuto);
       setDone(true);
       setTimeout(() => setDone(false), 5000);
     } catch (e) {
@@ -506,27 +555,29 @@ export default function SlideDeck() {
         </div>
         <h1 className="text-2xl font-display font-bold text-slate-900 mb-2">Marketing Materials</h1>
         <p className="text-slate-500 leading-relaxed">
-          Download ready-made assets for your practice — slide deck for Google Slides and printable referral materials.
+          {isAuto
+            ? "Download ready-made assets for your dealership — slide deck for Google Slides and referral materials."
+            : "Download ready-made assets for your practice — slide deck for Google Slides and printable referral materials."}
         </p>
       </div>
 
-      {/* ── Section 1: Waiting Room Slide Deck ── */}
+      {/* ── Section 1: Slide Deck ── */}
       <div className="space-y-5">
         <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
           <Monitor className="w-4 h-4 text-slate-400" />
-          Waiting Room Slide Deck
+          {deckSectionLabel}
         </h2>
 
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Practice Name (used in filename)
+              {isAuto ? "Dealership Name (used in filename)" : "Practice Name (used in filename)"}
             </label>
             <input
               type="text"
               value={practiceName}
               onChange={e => setPracticeName(e.target.value)}
-              placeholder="Hallmark Dental"
+              placeholder={defaultName}
               className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#E0622A]/25 focus:border-[#E0622A] transition-all"
             />
           </div>
@@ -573,7 +624,7 @@ export default function SlideDeck() {
               <div key={label} className="space-y-1.5">
                 <p className="text-xs font-semibold text-slate-600">{label}</p>
                 <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-                  <El name={practiceName} />
+                  <El name={practiceName} isAuto={isAuto} />
                 </div>
               </div>
             ))}
@@ -587,10 +638,10 @@ export default function SlideDeck() {
           </div>
           <div className="divide-y divide-slate-100">
             {[
-              { n: "1", t: "Download the .pptx file",       b: 'Click "Download Slide Deck" above — file saves to Downloads.' },
-              { n: "2", t: "Upload to Google Drive",          b: 'drive.google.com → "+ New" → "File upload" → select the .pptx.' },
-              { n: "3", t: "Open as Google Slides",           b: 'Right-click the file → "Open with" → "Google Slides". Converts automatically.' },
-              { n: "4", t: "Display on your waiting room TV", b: 'Slideshow → "Present on another screen." Set to auto-advance every 12 seconds.' },
+              { n: "1", t: "Download the .pptx file",   b: 'Click "Download Slide Deck" above — file saves to Downloads.' },
+              { n: "2", t: "Upload to Google Drive",     b: 'drive.google.com → "+ New" → "File upload" → select the .pptx.' },
+              { n: "3", t: "Open as Google Slides",      b: 'Right-click the file → "Open with" → "Google Slides". Converts automatically.' },
+              { n: "4", t: tvStepLabel,                  b: 'Slideshow → "Present on another screen." Set to auto-advance every 12 seconds.' },
             ].map(({ n, t, b }) => (
               <div key={n} className="flex gap-4 px-5 py-4">
                 <div className="w-6 h-6 rounded-full bg-[#E0622A] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">{n}</div>
