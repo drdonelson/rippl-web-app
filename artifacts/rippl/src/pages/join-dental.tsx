@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { ArrowRight, CheckCircle2, TrendingUp, Users, Zap, Plug } from "lucide-react";
 
 const CALENDLY_URL = "https://calendly.com/david-joinrippl";
@@ -55,7 +56,27 @@ function fmt(n: number) {
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
+function useCalendly() {
+  useEffect(() => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://assets.calendly.com/assets/external/widget.css";
+    document.head.appendChild(link);
+
+    const script = document.createElement("script");
+    script.src = "https://assets.calendly.com/assets/external/widget.js";
+    script.async = true;
+    document.head.appendChild(script);
+
+    return () => {
+      if (document.head.contains(link)) document.head.removeChild(link);
+      if (document.head.contains(script)) document.head.removeChild(script);
+    };
+  }, []);
+}
+
 export default function JoinDental() {
+  useCalendly();
   return (
     <div className="min-h-screen bg-white font-sans">
 
@@ -511,16 +532,11 @@ export default function JoinDental() {
 
             {/* Right — Calendly */}
             <div>
-              <div className="rounded-3xl overflow-hidden border border-slate-200 shadow-sm">
-                <iframe
-                  src={CALENDLY_URL}
-                  width="100%"
-                  height="700"
-                  frameBorder={0}
-                  title="Book a Demo with Rippl"
-                  style={{ display: "block" }}
-                />
-              </div>
+              <div
+                className="calendly-inline-widget rounded-3xl overflow-hidden border border-slate-200 shadow-sm"
+                data-url={CALENDLY_URL}
+                style={{ minWidth: 320, height: 700 }}
+              />
             </div>
           </div>
         </div>
