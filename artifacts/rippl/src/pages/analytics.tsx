@@ -40,17 +40,17 @@ const DEMO_REWARDS = [
 const DEMO_STATS_AUTO = [
   { label: "Total Referrals",   value: "145",  sub: "+22 this month",    icon: TrendingUp, color: "text-[#E0622A]",   bg: "bg-primary/10",    border: "border-[#E0622A]/20"  },
   { label: "Active Customers",  value: "60",   sub: "Summit Auto Group",  icon: Users,      color: "text-violet-400", bg: "bg-violet-500/10", border: "border-violet-500/20" },
-  { label: "Rewards Issued",    value: "89",   sub: "$3,115 total value", icon: Gift,       color: "text-amber-400",  bg: "bg-amber-500/10",  border: "border-amber-500/20"  },
+  { label: "Rewards Issued",    value: "89",   sub: "$10,250 total value", icon: Gift,       color: "text-amber-400",  bg: "bg-amber-500/10",  border: "border-amber-500/20"  },
   { label: "Conversion Rate",   value: "71%",  sub: "referral → deal",   icon: Percent,    color: "text-green-400",  bg: "bg-green-500/10",  border: "border-green-500/20"  },
 ];
 
 const DEMO_TRENDS_AUTO = [
-  { month: "Nov 2025", referrals: 16, rewards: 11, revenue: "$385" },
-  { month: "Dec 2025", referrals: 21, rewards: 15, revenue: "$525" },
-  { month: "Jan 2026", referrals: 25, rewards: 18, revenue: "$630" },
-  { month: "Feb 2026", referrals: 30, rewards: 22, revenue: "$770" },
-  { month: "Mar 2026", referrals: 34, rewards: 24, revenue: "$840" },
-  { month: "Apr 2026", referrals: 19, rewards: 13, revenue: "$455" },
+  { month: "Nov 2025", referrals: 16, rewards: 11, revenue: "$1,210" },
+  { month: "Dec 2025", referrals: 21, rewards: 15, revenue: "$1,650" },
+  { month: "Jan 2026", referrals: 25, rewards: 18, revenue: "$1,980" },
+  { month: "Feb 2026", referrals: 30, rewards: 22, revenue: "$2,420" },
+  { month: "Mar 2026", referrals: 34, rewards: 24, revenue: "$2,640" },
+  { month: "Apr 2026", referrals: 19, rewards: 13, revenue: "$1,430" },
 ];
 
 const DEMO_TOP_REFERRERS_AUTO = [

@@ -237,7 +237,7 @@ function EmailMockupAuto() {
           <div className="text-center py-5 px-4" style={{ background: "linear-gradient(135deg, #F5A623, #E0622A)" }}>
             <p className="text-white/85 text-xs font-medium mb-1">Hey Carlos —</p>
             <p className="text-white/75 text-xs italic mb-3">You've earned it.</p>
-            <p className="text-white font-bold leading-none mb-1" style={{ fontSize: 44, fontFamily: "Georgia, serif" }}>$35</p>
+            <p className="text-white font-bold leading-none mb-1" style={{ fontSize: 44, fontFamily: "Georgia, serif" }}>$100</p>
             <p className="text-white/85 text-xs font-medium">reward for you</p>
           </div>
           <p className="text-center text-xs text-slate-500 px-4 pt-3 pb-2 leading-relaxed">
@@ -246,8 +246,8 @@ function EmailMockupAuto() {
           </p>
           <div className="grid grid-cols-2 gap-1.5 px-3 pb-3">
             {[
-              { emoji: "🎁", amount: "$35", label: "Gift Card",   highlight: true },
-              { emoji: "❤️", amount: "$35", label: "Charity",     highlight: false },
+              { emoji: "🎁", amount: "$100", label: "Gift Card",   highlight: true },
+              { emoji: "❤️", amount: "$100", label: "Charity",     highlight: false },
             ].map((r) => (
               <div
                 key={r.label}
@@ -313,7 +313,7 @@ function GiftCardMockupAuto() {
               no expiration worries. Just click the redemption link below and enjoy!
             </p>
           </div>
-          <p className="text-center text-sm font-bold text-[#E0622A] pb-3">$35.00</p>
+          <p className="text-center text-sm font-bold text-[#E0622A] pb-3">$100.00</p>
           <div className="mx-5 mb-3 border-2 border-slate-200 rounded-xl h-20 flex items-center justify-center bg-slate-50">
             <p className="text-slate-300 text-xs font-medium">Card image</p>
           </div>
@@ -350,7 +350,7 @@ const STEPS_AUTO = [
     blue: true,
     timing: "Before they refer — walk them through the program",
     description:
-      "A page your enrolled customer visits to understand the referral program. Shows the 3-step flow, all four reward tiers ($35–$100), and the redemption options. Share this link at the sales desk, on a card, or via text.",
+      "A page your enrolled customer visits to understand the referral program. Shows the 3-step flow, all four reward tiers ($100–$250), and the redemption options. Share this link at the sales desk, on a card, or via text.",
     href: `${APP_URL}/how-it-works`,
     linkLabel: "Preview How It Works",
     emoji: "📖",
