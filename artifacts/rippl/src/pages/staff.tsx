@@ -93,6 +93,7 @@ function AddStaffModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
                 className={selectClass}
               >
                 <option value="">Select office…</option>
+                <option value="all">All Locations</option>
                 {offices.map(o => (
                   <option key={o.id} value={o.id}>{o.name}</option>
                 ))}
@@ -157,6 +158,7 @@ export function StaffPanel() {
 
   const roleLabel = (role: string) => {
     if (role === "practice_admin") return "Practice Admin";
+    if (role === "staff_all") return "All Locations";
     if (role.startsWith("staff_")) return "Front Desk";
     return role;
   };
@@ -258,7 +260,7 @@ export function StaffPanel() {
                 <div className="text-muted-foreground text-xs truncate">{acct.email}</div>
                 <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
                   <Building2 className="w-3.5 h-3.5 shrink-0 text-primary/60" />
-                  <span className="truncate">{acct.office_name || "—"}</span>
+                  <span className="truncate">{acct.role === "staff_all" ? "All Locations" : (acct.office_name || "—")}</span>
                 </div>
                 <span className="inline-flex items-center px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary text-xs font-semibold">
                   {roleLabel(acct.role)}

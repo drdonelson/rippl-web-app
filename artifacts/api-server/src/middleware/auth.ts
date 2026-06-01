@@ -5,7 +5,7 @@ import { userProfilesTable, practicesTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import type { UserProfile } from "@workspace/db/schema";
 
-export type StaffRole = "staff_brentwood" | "staff_lewisburg" | "staff_greenbrier";
+export type StaffRole = "staff_brentwood" | "staff_lewisburg" | "staff_greenbrier" | "staff_all";
 export type UserRole = "super_admin" | "practice_admin" | "demo" | StaffRole;
 
 export interface AuthUser {

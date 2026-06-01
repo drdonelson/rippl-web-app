@@ -53,12 +53,9 @@ router.post("/", async (req, res) => {
     const user = req.authUser!;
     const body = CreateReferrerBody.parse(req.body);
 
-    // Staff can only create patients tagged to their own assigned office.
-    if (isStaff(user)) {
-      if (!user.office_id) {
-        res.status(403).json({ error: "Your staff account has no assigned office." });
-        return;
-      }
+    // Single-office staff: force office_id to their assigned office.
+    // All-locations staff (staff_all): allow any office in their practice.
+    if (isStaff(user) && user.office_id) {
       body.office_id = user.office_id;
     }
 

@@ -149,24 +149,41 @@ router.post("/onboard-staff", requireAuth, requirePracticeAdmin, async (req, res
     return;
   }
 
+  const allLocations = bodyOfficeId === "all";
+
   let userId: string | null = null;
 
   try {
-    // 1. Verify the office exists (and belongs to caller's practice if practice_admin)
-    const [office] = await db.select().from(officesTable).where(eq(officesTable.id, bodyOfficeId));
-    if (!office) {
-      res.status(400).json({ error: "Office not found" });
-      return;
-    }
-    if (caller.role === "practice_admin" && office.practice_id !== caller.practice_id) {
-      res.status(403).json({ error: "Cannot create staff for another practice's office" });
-      return;
+    let role: string;
+    let assignedOfficeId: string | null;
+    let practiceId: string | null;
+
+    if (allLocations) {
+      // All-locations staff account — scoped to the practice, no specific office
+      if (!caller.practice_id) {
+        res.status(400).json({ error: "Cannot create all-locations staff without a practice context" });
+        return;
+      }
+      role = "staff_all";
+      assignedOfficeId = null;
+      practiceId = caller.practice_id;
+    } else {
+      // 1. Verify the office exists (and belongs to caller's practice if practice_admin)
+      const [office] = await db.select().from(officesTable).where(eq(officesTable.id, bodyOfficeId));
+      if (!office) {
+        res.status(400).json({ error: "Office not found" });
+        return;
+      }
+      if (caller.role === "practice_admin" && office.practice_id !== caller.practice_id) {
+        res.status(403).json({ error: "Cannot create staff for another practice's office" });
+        return;
+      }
+      role = `staff_${office.location_code}`;
+      assignedOfficeId = office.id;
+      practiceId = office.practice_id ?? null;
     }
 
-    // 2. Derive staff role from the office location_code
-    const role = `staff_${office.location_code}`;
-
-    // 3. Create Supabase auth user
+    // 2. Create Supabase auth user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -180,16 +197,16 @@ router.post("/onboard-staff", requireAuth, requirePracticeAdmin, async (req, res
 
     userId = authData.user.id;
 
-    // 4. Create user_profile: office_id = assigned office, practice_id = practice it belongs to
+    // 3. Create user_profile
     await db.insert(userProfilesTable).values({
       id: userId,
       role,
-      practice_id: office.practice_id ?? null,
-      office_id: office.id,
+      practice_id: practiceId,
+      office_id: assignedOfficeId,
       full_name: full_name || null,
     });
 
-    res.status(201).json({ success: true, role, office_id: office.id });
+    res.status(201).json({ success: true, role, office_id: assignedOfficeId });
   } catch (err) {
     console.error("[onboard-staff] Error:", err);
     if (userId) {
