@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { userProfilesTable, officesTable, practicesTable } from "@workspace/db/schema";
-import { eq, like } from "drizzle-orm";
+import { eq, like, or } from "drizzle-orm";
 import { sendEmail } from "../lib/email";
 import { supabaseAdmin } from "../lib/supabase";
 import { getProfileHandler, requireAuth, requireSuperAdmin, requirePracticeAdmin } from "../middleware/auth";
@@ -221,11 +221,10 @@ router.get("/staff-accounts", requireAuth, requirePracticeAdmin, async (req, res
       .from(userProfilesTable)
       .leftJoin(officesTable, eq(userProfilesTable.office_id, officesTable.id));
 
+    const staffOrAdmin = or(like(userProfilesTable.role, "staff_%"), eq(userProfilesTable.role, "practice_admin"));
     const profiles = caller.role === "practice_admin" && caller.practice_id
-      ? await query.where(
-          like(userProfilesTable.role, "staff_%")
-        ).then(rows => rows.filter(r => r.practice_id === caller.practice_id))
-      : await query.where(like(userProfilesTable.role, "staff_%"));
+      ? await query.where(staffOrAdmin).then(rows => rows.filter(r => r.practice_id === caller.practice_id))
+      : await query.where(staffOrAdmin);
 
     if (profiles.length === 0) {
       res.json([]);

@@ -35,6 +35,7 @@ router.get("/active", async (_req, res) => {
   const offices = await db
     .select(safeColumns)
     .from(officesTable)
+    .leftJoin(practicesTable, eq(officesTable.practice_id, practicesTable.id))
     .where(eq(officesTable.active, true))
     .orderBy(officesTable.name);
   res.json(offices);
@@ -46,8 +47,13 @@ router.get("/managed", requireAuth, requirePracticeAdmin, async (req, res) => {
   const caller = req.authUser!;
   try {
     const offices = caller.role === "practice_admin" && caller.practice_id
-      ? await db.select(safeColumns).from(officesTable).where(eq(officesTable.practice_id, caller.practice_id)).orderBy(officesTable.name)
-      : await db.select(safeColumns).from(officesTable).orderBy(officesTable.name);
+      ? await db.select(safeColumns).from(officesTable)
+          .leftJoin(practicesTable, eq(officesTable.practice_id, practicesTable.id))
+          .where(eq(officesTable.practice_id, caller.practice_id))
+          .orderBy(officesTable.name)
+      : await db.select(safeColumns).from(officesTable)
+          .leftJoin(practicesTable, eq(officesTable.practice_id, practicesTable.id))
+          .orderBy(officesTable.name);
     res.json(offices);
   } catch (err) {
     console.error("[offices/managed] Error:", err);
