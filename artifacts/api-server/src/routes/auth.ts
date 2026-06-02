@@ -219,8 +219,8 @@ router.post("/onboard-staff", requireAuth, requirePracticeAdmin, async (req, res
   }
 });
 
-// GET /api/auth/staff-accounts — list staff profiles
-// super_admin: all staff; practice_admin: only their office's staff
+// GET /api/auth/staff-accounts — list staff/admin profiles
+// super_admin: all staff + practice_admin accounts; practice_admin: only their practice's accounts
 router.get("/staff-accounts", requireAuth, requirePracticeAdmin, async (req, res) => {
   const caller = req.authUser!;
   try {

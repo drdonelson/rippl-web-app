@@ -27,7 +27,7 @@ function roleLabel(role: string): string {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface ActiveOffice { id: string; name: string; location_code: string; }
+interface ActiveOffice { id: string; name: string; location_code: string; practice_id: string; }
 interface StaffAccount {
   id: string; full_name: string; email: string;
   role: string; office_name: string; location_code: string; created_at: string;
@@ -241,7 +241,7 @@ export default function Onboard() {
   // ── Staff form ────────────────────────────────────────────────────────────
   const [offices, setOffices] = useState<ActiveOffice[]>([]);
   const [staffForm, setStaffForm] = useState({
-    full_name: "", email: "", password: "", office_id: "",
+    full_name: "", email: "", password: "", office_id: "", practice_id: "",
   });
   const [staffSubmitting, setStaffSubmitting] = useState(false);
   const [staffError, setStaffError] = useState<string | null>(null);
@@ -471,7 +471,8 @@ export default function Onboard() {
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const selectedOffice = offices.find(o => o.id === staffForm.office_id);
-  const derivedRole    = selectedOffice ? `staff_${selectedOffice.location_code}` : null;
+  const derivedRole = staffForm.office_id === "all" ? "staff_all"
+    : selectedOffice ? `staff_${selectedOffice.location_code}` : null;
 
   const pf = practiceForm;
   const setPf = (field: keyof typeof practiceForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -886,11 +887,18 @@ export default function Onboard() {
                     ) : (
                       <select
                         value={staffForm.office_id}
-                        onChange={e => setStaffForm(f => ({ ...f, office_id: e.target.value }))}
+                        onChange={e => {
+                          const val = e.target.value;
+                          const practiceId = val === "all"
+                            ? (offices[0]?.practice_id ?? "")
+                            : (offices.find(o => o.id === val)?.practice_id ?? "");
+                          setStaffForm(f => ({ ...f, office_id: val, practice_id: practiceId }));
+                        }}
                         required
                         className={cn(inputClass, "cursor-pointer")}
                       >
                         <option value="">Select office…</option>
+                        <option value="all">All Locations</option>
                         {offices.map(o => {
                           const d = o.name.lastIndexOf("–");
                           return <option key={o.id} value={o.id}>{d !== -1 ? o.name.slice(d + 2).trim() : o.name}</option>;
