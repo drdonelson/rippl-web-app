@@ -574,21 +574,71 @@ export async function syncOpenDental(options?: {
         logger.info(entry, "[force-debug] R0150 (REF-COMP) procedure");
       }
 
-      // ── Referrer not found in our DB ──────────────────────────────────────
+      // ── Referrer not found in our DB — auto-enroll from Open Dental ─────────
       if (!referrer) {
-        result.unmatched++;
-        logger.warn(
-          { procNum, newPatientPatNum, referringPatNum, refattachCount: refAttaches.length },
-          referringPatNum
-            ? "Referring PatNum found in refattaches but not enrolled in Rippl — needs manual review"
-            : "No referring PatNum in refattaches — needs manual review"
-        );
-        result.errors.push(
-          referringPatNum
-            ? `Proc ${procNum}: referring PatNum ${referringPatNum} not in referrers table`
-            : `Proc ${procNum}: refattaches returned no referring PatNum for new patient ${newPatientPatNum}`
-        );
-        continue;
+        if (!referringPatNum) {
+          result.unmatched++;
+          logger.warn(
+            { procNum, newPatientPatNum, refattachCount: refAttaches.length },
+            "No referring PatNum in refattaches — cannot auto-enroll, skipping"
+          );
+          result.errors.push(`Proc ${procNum}: refattaches returned no referring PatNum for new patient ${newPatientPatNum}`);
+          continue;
+        }
+
+        try {
+          const odPatient = await fetchOdPatient(Number(referringPatNum), headers, odUrl);
+          if (!odPatient) {
+            result.unmatched++;
+            logger.warn({ procNum, referringPatNum }, "Could not fetch referring patient from OD — skipping");
+            continue;
+          }
+          // Anti-Kickback: exclude Medicaid patients
+          if (odPatient.MedicaidID !== "") {
+            result.unmatched++;
+            logger.warn({ procNum, referringPatNum }, "Referring patient is Medicaid — excluded per Anti-Kickback rules");
+            continue;
+          }
+
+          const fullName      = `${odPatient.FName} ${odPatient.LName}`.trim();
+          const phone         = odPatient.WirelessPhone || odPatient.HmPhone || "od-import";
+          const email         = odPatient.Email || null;
+          const referral_code = `${fullName.replace(/\s+/g, "").toUpperCase().slice(0, 4)}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+          const [enrolled] = await db
+            .insert(referrersTable)
+            .values({
+              patient_id:   referringPatNum,
+              name:         fullName,
+              phone,
+              ...(email ? { email } : {}),
+              referral_code,
+              office_id:    office?.id    ?? null,
+              practice_id:  office?.practice_id ?? null,
+            })
+            .onConflictDoNothing()
+            .returning();
+
+          // Handle race condition — if another cycle enrolled them simultaneously
+          referrer = enrolled ?? (
+            await db.select().from(referrersTable).where(eq(referrersTable.patient_id, referringPatNum)).limit(1)
+          )[0];
+
+          if (!referrer) {
+            result.unmatched++;
+            logger.warn({ procNum, referringPatNum }, "Auto-enrollment failed and patient still not found — skipping");
+            continue;
+          }
+
+          logger.info(
+            { referringPatNum, referrerId: referrer.id, name: fullName, procNum },
+            "Auto-enrolled referring patient from Open Dental"
+          );
+        } catch (enrollErr) {
+          result.unmatched++;
+          logger.error({ err: enrollErr, procNum, referringPatNum }, "Auto-enrollment failed — skipping");
+          continue;
+        }
       }
 
       // Force mode: guard against duplicate events
