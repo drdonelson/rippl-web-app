@@ -159,14 +159,15 @@ router.post("/onboard-staff", requireAuth, requirePracticeAdmin, async (req, res
     let practiceId: string | null;
 
     if (allLocations) {
-      // All-locations staff account — scoped to the practice, no specific office
-      if (!caller.practice_id) {
+      // practice_admin uses their own practice_id; super_admin must supply one in the body
+      const resolvedPracticeId: string | null = caller.practice_id ?? (req.body.practice_id as string | undefined) ?? null;
+      if (!resolvedPracticeId) {
         res.status(400).json({ error: "Cannot create all-locations staff without a practice context" });
         return;
       }
       role = "staff_all";
       assignedOfficeId = null;
-      practiceId = caller.practice_id;
+      practiceId = resolvedPracticeId;
     } else {
       // 1. Verify the office exists (and belongs to caller's practice if practice_admin)
       const [office] = await db.select().from(officesTable).where(eq(officesTable.id, bodyOfficeId));

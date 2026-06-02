@@ -39,10 +39,10 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 // ── Add Staff Modal ────────────────────────────────────────────────────────────
 
-interface Office { id: string; name: string; location_code: string; }
+interface Office { id: string; name: string; location_code: string; practice_id: string; }
 
 function AddStaffModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [form, setForm] = useState({ full_name: "", email: "", password: "", office_id: "" });
+  const [form, setForm] = useState({ full_name: "", email: "", password: "", office_id: "", practice_id: "" });
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -89,7 +89,13 @@ function AddStaffModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
               <select
                 required
                 value={form.office_id}
-                onChange={e => setForm(f => ({ ...f, office_id: e.target.value }))}
+                onChange={e => {
+                  const val = e.target.value;
+                  const practiceId = val === "all"
+                    ? (offices[0]?.practice_id ?? "")
+                    : (offices.find(o => o.id === val)?.practice_id ?? "");
+                  setForm(f => ({ ...f, office_id: val, practice_id: practiceId }));
+                }}
                 className={selectClass}
               >
                 <option value="">Select office…</option>
