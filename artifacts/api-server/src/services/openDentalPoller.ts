@@ -1,11 +1,12 @@
 import { db } from "@workspace/db";
-import { referralEventsTable, referrersTable, officesTable, rewardClaimsTable, practicesTable } from "@workspace/db/schema";
+import { referralEventsTable, referrersTable, officesTable, rewardClaimsTable, practicesTable, adminTasksTable } from "@workspace/db/schema";
 import type { Practice } from "@workspace/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { sendRewardNotification } from "./notifications";
 import { calculateTier } from "../lib/tierUtils";
 import { scheduleOnboardingSms } from "./onboardingSms";
+import { checkHouseholdDuplicate } from "./householdDuplicate";
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const OPEN_DENTAL_URL = process.env.OPEN_DENTAL_URL;
@@ -684,6 +685,15 @@ export async function syncOpenDental(options?: {
       // ── Resolve new patient name (referrers table → OD API → fallback) ───────
       const newPatientName = await resolveNewPatientName(newPatientPatNum, office?.id, headers, odUrl);
 
+      // ── Household duplicate check ─────────────────────────────────────────
+      const householdResult = await checkHouseholdDuplicate(
+        newPatientName,
+        proc.PatientPhone ?? "",
+      ).catch(err => {
+        logger.warn({ err, procNum }, "Household check failed — treating as non-duplicate");
+        return { household_id: null as unknown as string, is_duplicate: false, od_address_found: false, conflicting_event_id: undefined };
+      });
+
       // ── Create referral event ─────────────────────────────────────────────
       const [newEvent] = await db
         .insert(referralEventsTable)
@@ -698,10 +708,30 @@ export async function syncOpenDental(options?: {
           practice_id:         office?.practice_id ?? null,
           status:              "Exam Completed",
           external_proc_num:   procNum,
+          household_id:        householdResult.household_id ?? null,
+          household_duplicate: householdResult.is_duplicate,
         })
         .returning();
 
       result.inserted++;
+
+      // ── Household duplicate — record for review, skip reward ─────────────
+      if (householdResult.is_duplicate) {
+        logger.warn(
+          { procNum, newPatientPatNum, referrerId: referrer.id, conflictingEventId: householdResult.conflicting_event_id },
+          "Household duplicate detected — event recorded but no reward issued"
+        );
+        await db.insert(adminTasksTable).values({
+          practice_id:       office?.practice_id ?? null,
+          task_type:         "household-duplicate-review",
+          referrer_id:       referrer.id,
+          referral_event_id: newEvent.id,
+          amount:            0,
+          notes: `Household duplicate detected for ${newPatientName}. Conflicting event: ${householdResult.conflicting_event_id ?? "unknown"}. Address match: ${householdResult.od_address_found ? "yes" : "name only"}. Override in Admin Tasks if this referral is legitimate.`,
+        }).catch(err => logger.error({ err }, "Failed to create household-duplicate admin task"));
+        continue;
+      }
+
       logger.info(
         { procNum, newPatientPatNum, referringPatNum, referrerId: referrer.id, force },
         "Synced new referral event from Open Dental"
