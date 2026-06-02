@@ -427,7 +427,7 @@ async function runOnboardingSweep(
 
 export async function syncOpenDental(options?: {
   force?: boolean;
-  office?: { id: string; name: string; customer_key: string; od_url?: string | null };
+  office?: { id: string; name: string; customer_key: string; od_url?: string | null; practice_id?: string | null };
 }): Promise<SyncResult> {
   const force    = options?.force ?? false;
   const office   = options?.office ?? null;
@@ -776,7 +776,7 @@ async function syncDentalPractice(practice: Practice, options?: { force?: boolea
     try {
       const result = await syncOpenDental({
         ...options,
-        office: { id: office.id, name: office.name, customer_key: office.customer_key ?? "", od_url: odUrl },
+        office: { id: office.id, name: office.name, customer_key: office.customer_key ?? "", od_url: odUrl, practice_id: office.practice_id ?? null },
       });
       results.push(result);
       await db.update(officesTable).set({ last_poll_at: new Date() }).where(eq(officesTable.id, office.id));
