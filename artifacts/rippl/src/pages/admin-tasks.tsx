@@ -42,8 +42,9 @@ type ReferrerSearchResult = {
   email: string | null;
 };
 
-async function fetchTasks(): Promise<AdminTask[]> {
-  return customFetch<AdminTask[]>(`${BASE}/api/admin-tasks`);
+async function fetchTasks(officeId: string): Promise<AdminTask[]> {
+  const params = officeId !== "all" ? `?office_id=${encodeURIComponent(officeId)}` : "";
+  return customFetch<AdminTask[]>(`${BASE}/api/admin-tasks${params}`);
 }
 
 async function completeTask(id: string): Promise<void> {
@@ -228,28 +229,24 @@ export default function AdminTasksPage() {
 
   const demoTasks = demoVertical === "automotive" ? DEMO_ADMIN_TASKS_AUTO : DEMO_ADMIN_TASKS;
 
-  const { data: allTasks, isLoading, isError } = useQuery<AdminTask[]>({
-    queryKey: ["admin-tasks", demoVertical],
-    queryFn: isDemo ? () => Promise.resolve(demoTasks as AdminTask[]) : fetchTasks,
+  const { data: tasks, isLoading, isError } = useQuery<AdminTask[]>({
+    queryKey: ["admin-tasks", demoVertical, selectedOfficeId],
+    queryFn: isDemo ? () => Promise.resolve(demoTasks as AdminTask[]) : () => fetchTasks(selectedOfficeId),
     enabled: isDemo || (!authLoading && !!session),
   });
-
-  const tasks = selectedOfficeId === "all"
-    ? allTasks
-    : allTasks?.filter(t => t.office_id === selectedOfficeId);
 
   const mutation = useMutation({
     mutationFn: completeTask,
     onMutate: (id) => setCompleting(id),
     onSettled: () => setCompleting(null),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-tasks"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-tasks"], exact: false }),
   });
 
   const rewardMutation = useMutation({
     mutationFn: processReward,
     onMutate: (id) => setCompleting(id),
     onSettled: () => setCompleting(null),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-tasks"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-tasks"], exact: false }),
   });
 
   const backfill = useMutation({

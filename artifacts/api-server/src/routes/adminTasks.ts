@@ -16,11 +16,18 @@ const router: IRouter = Router();
 router.get("/", async (req, res) => {
   try {
     const user = req.authUser!;
-    const officeId   = user.role !== "super_admin" ? (user.office_id   ?? null) : null;
-    const practiceId = user.role !== "super_admin" ? (user.practice_id ?? null) : null;
+
+    // Role-based scoping: non-super_admin users are always scoped to their office/practice.
+    // Super admins can optionally pass ?office_id= to scope to a specific office.
+    const roleOfficeId   = user.role !== "super_admin" ? (user.office_id   ?? null) : null;
+    const rolePracticeId = user.role !== "super_admin" ? (user.practice_id ?? null) : null;
+    const queryOfficeId  = (req.query["office_id"] as string | undefined)?.trim() || null;
+
+    // Effective office filter: role-assigned office takes precedence; super_admin uses query param if set
+    const effectiveOfficeId = roleOfficeId ?? (queryOfficeId && queryOfficeId !== "all" ? queryOfficeId : null);
 
     const { rows } = await db.execute(
-      officeId
+      effectiveOfficeId
         ? sql`
             SELECT
               t.id, t.task_type, t.amount, t.notes,
@@ -34,10 +41,10 @@ router.get("/", async (req, res) => {
             LEFT JOIN referrers         r  ON t.referrer_id       = r.id
             LEFT JOIN referral_events   re ON t.referral_event_id = re.id
             WHERE COALESCE(t.status, 'pending') = 'pending'
-              AND re.office_id = ${officeId}
+              AND re.office_id = ${effectiveOfficeId}
             ORDER BY t.created_at DESC
           `
-        : practiceId
+        : rolePracticeId
         ? sql`
             SELECT
               t.id, t.task_type, t.amount, t.notes,
@@ -51,7 +58,7 @@ router.get("/", async (req, res) => {
             LEFT JOIN referrers         r  ON t.referrer_id       = r.id
             LEFT JOIN referral_events   re ON t.referral_event_id = re.id
             WHERE COALESCE(t.status, 'pending') = 'pending'
-              AND t.practice_id = ${practiceId}
+              AND t.practice_id = ${rolePracticeId}
             ORDER BY t.created_at DESC
           `
         : sql`
