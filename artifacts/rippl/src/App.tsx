@@ -42,6 +42,7 @@ const Terms      = lazy(() => import("@/pages/terms"));
 const HowItWorks = lazy(() => import("@/pages/how-it-works"));
 const SmsOptIn        = lazy(() => import("@/pages/sms-opt-in"));
 const SmsConsentForm  = lazy(() => import("@/pages/sms-consent-form"));
+const SmsQrPrint      = lazy(() => import("@/pages/sms-qr-print"));
 const Practices      = lazy(() => import("@/pages/practices"));
 const PracticeAdmin  = lazy(() => import("@/pages/practice-admin"));
 const PatientJourney = lazy(() => import("@/pages/patient-journey"));
@@ -81,6 +82,7 @@ function Router() {
         <Route path="/how-it-works" component={HowItWorks} />
         <Route path="/sms-opt-in" component={SmsOptIn} />
         <Route path="/sms-consent-form" component={SmsConsentForm} />
+        <Route path="/sms-qr-print" component={SmsQrPrint} />
         <Route path="/practices"      component={Practices}     />
         <Route path="/reset-password" component={ResetPassword} />
 
