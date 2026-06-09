@@ -1,19 +1,17 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 
 const OPT_IN_URL = "https://www.joinrippl.com/sms-opt-in";
 
 export default function SmsQrPrint() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [qrSrc, setQrSrc] = useState<string>("");
 
   useEffect(() => {
-    if (canvasRef.current) {
-      QRCode.toCanvas(canvasRef.current, OPT_IN_URL, {
-        width: 240,
-        margin: 2,
-        color: { dark: "#1e1e2e", light: "#ffffff" },
-      });
-    }
+    QRCode.toDataURL(OPT_IN_URL, {
+      width: 240,
+      margin: 2,
+      color: { dark: "#1e1e2e", light: "#ffffff" },
+    }).then(setQrSrc).catch(() => {});
   }, []);
 
   return (
@@ -27,7 +25,7 @@ export default function SmsQrPrint() {
       `}</style>
 
       <p className="no-print text-slate-500 text-sm text-center mb-8">
-        Print this page (Cmd+P / Ctrl+P) and display in your office, on the front desk, or include on marketing materials.
+        Print this page (Cmd+P / Ctrl+P) and display in your office or on marketing materials.
       </p>
 
       {/* Poster card */}
@@ -54,7 +52,10 @@ export default function SmsQrPrint() {
           {/* QR code */}
           <div className="flex justify-center mb-4">
             <div className="border-4 border-[#E0622A] rounded-xl p-3 inline-block bg-white">
-              <canvas ref={canvasRef} />
+              {qrSrc
+                ? <img src={qrSrc} alt="QR code — scan to sign up for referral text notifications" width={240} height={240} />
+                : <div className="w-[240px] h-[240px] bg-slate-100 animate-pulse rounded" />
+              }
             </div>
           </div>
 
@@ -83,7 +84,7 @@ export default function SmsQrPrint() {
 
           {/* Disclaimer */}
           <p className="text-[10px] text-slate-400 leading-relaxed">
-            SMS sign-up is optional — it is not required to earn rewards. Up to 4 messages/month.
+            SMS sign-up is optional — not required to earn rewards. Up to 4 messages/month.
             Message &amp; data rates may apply. Reply <strong>STOP</strong> to opt out,{" "}
             <strong>HELP</strong> for help. Terms: joinrippl.com/terms · Privacy: joinrippl.com/privacy
           </p>
