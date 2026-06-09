@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { referralEventsTable, referrersTable, adminTasksTable, rewardClaimsTable } from "@workspace/db/schema";
+import { referralEventsTable, referrersTable, adminTasksTable, rewardClaimsTable, staffPoolConfigsTable, staffPoolEntriesTable } from "@workspace/db/schema";
 import { eq, sql, and } from "drizzle-orm";
 import {
   CreateReferralBody,
@@ -143,6 +143,24 @@ router.patch("/:id/status", async (req, res) => {
         }
       } catch (tierErr) {
         req.log.error({ err: tierErr }, "Failed to update referrer tier");
+      }
+
+      // Staff pool: add contribution entry if practice has pool enabled
+      if (event.practice_id) {
+        try {
+          const [poolConfig] = await db
+            .select()
+            .from(staffPoolConfigsTable)
+            .where(eq(staffPoolConfigsTable.practice_id, event.practice_id));
+          if (poolConfig?.enabled) {
+            await db.insert(staffPoolEntriesTable).values({
+              practice_id: event.practice_id,
+              amount:      poolConfig.amount_per_referral,
+            });
+          }
+        } catch (poolErr) {
+          req.log.error({ err: poolErr }, "Failed to insert staff pool entry");
+        }
       }
 
       let claimToken: string = referrer.referral_code;
