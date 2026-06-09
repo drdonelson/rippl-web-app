@@ -233,6 +233,7 @@ export default function AdminTasksPage() {
     queryKey: ["admin-tasks", demoVertical, selectedOfficeId],
     queryFn: isDemo ? () => Promise.resolve(demoTasks as AdminTask[]) : () => fetchTasks(selectedOfficeId),
     enabled: isDemo || (!authLoading && !!session),
+    staleTime: 0, // always re-fetch when office selection changes
   });
 
   const mutation = useMutation({

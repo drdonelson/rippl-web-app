@@ -49,6 +49,8 @@ router.get("/", async (req, res) => {
       household_id: referralEventsTable.household_id,
       household_duplicate: referralEventsTable.household_duplicate,
       created_at: referralEventsTable.created_at,
+      // Most recent reward claim status — used to distinguish confirmed-ineligible from under-review
+      claim_status: sql<string | null>`(SELECT status FROM reward_claims WHERE referral_event_id = ${referralEventsTable.id} ORDER BY created_at DESC LIMIT 1)`,
     })
     .from(referralEventsTable)
     .leftJoin(referrersTable, eq(referralEventsTable.referrer_id, referrersTable.id))

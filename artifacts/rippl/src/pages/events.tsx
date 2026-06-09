@@ -82,6 +82,7 @@ interface ReferralEvent {
   reward_type?: string | null;
   reward_value?: number | null;
   household_duplicate?: boolean | null;
+  claim_status?: string | null;
   created_at: string;
 }
 
@@ -212,7 +213,8 @@ export default function Events() {
     booked:         (events ?? []).filter(e => e.status === "Booked").length,
     "exam-completed": (events ?? []).filter(e => e.status === "Exam Completed").length,
     "reward-sent":  (events ?? []).filter(e => e.status === "Reward Sent").length,
-    flagged:        (events ?? []).filter(e => e.household_duplicate).length,
+    // "flagged" = household_duplicate AND not yet confirmed ineligible (no voided claim)
+    flagged:        (events ?? []).filter(e => e.household_duplicate && e.claim_status !== "voided").length,
   }), [events]);
 
   // Filter by tab + search
@@ -227,7 +229,7 @@ export default function Events() {
         activeTab === "booked"         ? e.status === "Booked" :
         activeTab === "exam-completed" ? e.status === "Exam Completed" :
         activeTab === "reward-sent"    ? e.status === "Reward Sent" :
-        activeTab === "flagged"        ? !!e.household_duplicate :
+        activeTab === "flagged"        ? (!!e.household_duplicate && e.claim_status !== "voided") :
         true;
       return matchesSearch && matchesTab;
     });
@@ -440,8 +442,13 @@ export default function Events() {
                           <p className="text-xs text-muted-foreground mt-0.5">{event.new_patient_phone}</p>
                         </div>
                         {event.household_duplicate && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/25 whitespace-nowrap">
-                            Household Review
+                          <span className={cn(
+                            "px-2 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap",
+                            event.claim_status === "voided"
+                              ? "bg-slate-500/15 text-slate-400 border-slate-500/25"
+                              : "bg-amber-500/15 text-amber-400 border-amber-500/25"
+                          )}>
+                            {event.claim_status === "voided" ? "Not Eligible" : "Household Review"}
                           </span>
                         )}
                       </div>
@@ -473,14 +480,20 @@ export default function Events() {
                     </td>
                     <td className="px-6 py-5 text-right">
                       {event.household_duplicate ? (
-                        <button
-                          onClick={() => handleOverrideAndReward(event)}
-                          disabled={overrideHousehold.isPending}
-                          className="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg text-sm font-semibold border border-amber-500/30 transition-all flex items-center gap-2 ml-auto disabled:opacity-50"
-                        >
-                          <ShieldCheck className="w-4 h-4" />
-                          Override &amp; Reward
-                        </button>
+                        event.claim_status === "voided" ? (
+                          <span className="text-xs text-slate-500 italic ml-auto block text-right">
+                            No reward issued
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleOverrideAndReward(event)}
+                            disabled={overrideHousehold.isPending}
+                            className="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg text-sm font-semibold border border-amber-500/30 transition-all flex items-center gap-2 ml-auto disabled:opacity-50"
+                          >
+                            <ShieldCheck className="w-4 h-4" />
+                            Override &amp; Reward
+                          </button>
+                        )
                       ) : effectiveStatus === "Exam Completed" ? (
                         <div className="flex flex-col items-end gap-1.5 ml-auto">
                           {resentEventId === event.id ? (
