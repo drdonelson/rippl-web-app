@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rippl — CarLock Founding Partner Agreement</title>
+  <style>
+    :root {
+      --orange: #E0622A;
+      --orange-light: #F07040;
+      --dark: #1A1A1A;
+      --text: #1A1A1A;
+      --muted: #6B7280;
+      --border: #E5E7EB;
+      --bg: #FAFAFA;
+      --white: #FFFFFF;
+      --highlight: #FFF7F4;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Georgia, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .page {
+      max-width: 780px;
+      margin: 0 auto;
+      background: var(--white);
+      padding: 60px 64px;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ──────────────────────────────────────────── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 40px;
+      padding-bottom: 32px;
+      border-bottom: 2px solid var(--dark);
+    }
+
+    .logo-mark {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: var(--orange);
+    }
+
+    .logo-sub {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .header-right {
+      text-align: right;
+    }
+
+    .doc-type {
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .doc-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .doc-date {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ── FOUNDING BADGE ──────────────────────────────────── */
+    .founding-banner {
+      background: var(--highlight);
+      border: 1.5px solid var(--orange);
+      border-radius: 10px;
+      padding: 16px 24px;
+      margin-bottom: 36px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .founding-icon {
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .founding-text {
+      font-size: 14px;
+      color: var(--dark);
+      line-height: 1.5;
+    }
+
+    .founding-text strong { color: var(--orange); font-weight: 700; }
+
+    /* ── SECTIONS ────────────────────────────────────────── */
+    .section {
+      margin-bottom: 36px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--orange);
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── PARTIES TABLE ───────────────────────────────────── */
+    .parties {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .party-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px 20px;
+    }
+
+    .party-box .party-label {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .party-name {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .party-detail {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ── TERMS TABLE ─────────────────────────────────────── */
+    .terms-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .terms-table tr {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .terms-table tr:last-child {
+      border-bottom: none;
+    }
+
+    .terms-table td {
+      padding: 13px 0;
+      font-size: 14px;
+      vertical-align: top;
+    }
+
+    .terms-table td:first-child {
+      color: var(--muted);
+      font-size: 13px;
+      width: 200px;
+      padding-right: 20px;
+    }
+
+    .terms-table td strong {
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .terms-table td .highlight-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--orange);
+    }
+
+    /* ── PRICING CALLOUT ─────────────────────────────────── */
+    .pricing-box {
+      background: var(--highlight);
+      border: 1.5px solid rgba(224,98,42,0.3);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 12px;
+    }
+
+    .pricing-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(224,98,42,0.15);
+    }
+
+    .pricing-row:last-child { border-bottom: none; }
+
+    .pricing-label { font-size: 14px; color: var(--dark); }
+    .pricing-label .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .pricing-value {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--orange);
+    }
+
+    .pricing-note {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    /* ── CHECKLIST ───────────────────────────────────────── */
+    .checklist {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .check-icon {
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid var(--orange);
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .check-icon.filled { background: var(--orange); }
+    .check-icon.filled::after { content: '✓'; font-size: 10px; color: white; font-weight: 700; }
+
+    /* ── LEGAL TEXT ──────────────────────────────────────── */
+    .legal {
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .legal p { margin-bottom: 10px; }
+    .legal p:last-child { margin-bottom: 0; }
+
+    /* ── BILLING FIELDS ──────────────────────────────────── */
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .field-group.full {
+      grid-column: 1 / -1;
+    }
+
+    .field-label {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .field-line {
+      border: none;
+      border-bottom: 1px solid var(--border);
+      height: 32px;
+      width: 100%;
+      font-size: 14px;
+      background: transparent;
+      color: var(--dark);
+      font-family: inherit;
+      outline: none;
+      padding-bottom: 4px;
+    }
+
+    .field-line:focus { border-bottom-color: var(--orange); }
+
+    /* ── SIGNATURE BLOCK ─────────────────────────────────── */
+    .sig-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-top: 8px;
+    }
+
+    .sig-party { font-size: 12px; color: var(--muted); margin-bottom: 16px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+
+    .sig-line-wrap { margin-bottom: 14px; }
+    .sig-line-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .sig-line { border: none; border-bottom: 1px solid var(--dark); height: 28px; width: 100%; background: transparent; }
+
+    /* ── FOOTER ──────────────────────────────────────────── */
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-left { font-size: 12px; color: var(--muted); }
+    .footer-right { font-size: 12px; color: var(--muted); text-align: right; }
+
+    @media print {
+      body { background: white; }
+      .page { padding: 40px 48px; box-shadow: none; }
+      .field-line, .sig-line { border-bottom-color: #ccc; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <div class="logo-mark">RIPPL</div>
+      <div class="logo-sub">Referral Platform by Discovery Expeditions PLLC</div>
+    </div>
+    <div class="header-right">
+      <div class="doc-type">Binding Agreement</div>
+      <div class="doc-title">Founding Partner Order Form</div>
+      <div class="doc-date">Effective Date: ____________________</div>
+    </div>
+  </div>
+
+  <!-- FOUNDING PARTNER BANNER -->
+  <div class="founding-banner">
+    <div class="founding-icon">🏆</div>
+    <div class="founding-text">
+      This agreement establishes CarLock as a <strong>Rippl Founding Partner</strong> — first automotive group in the Nashville market. Pricing is locked for 24 months and includes market exclusivity, product steering rights, and co-marketing recognition.
+    </div>
+  </div>
+
+  <!-- PARTIES -->
+  <div class="section">
+    <div class="section-title">Parties</div>
+    <div class="parties">
+      <div class="party-box">
+        <div class="party-label">Service Provider ("Rippl")</div>
+        <div class="party-name">Discovery Expeditions PLLC</div>
+        <div class="party-detail">
+          d/b/a Rippl<br>
+          Nashville, Tennessee<br>
+          david@joinrippl.com<br>
+          joinrippl.com
+        </div>
+      </div>
+      <div class="party-box">
+        <div class="party-label">Client ("CarLock")</div>
+        <div class="party-name">CarLock Automotive Group</div>
+        <div class="party-detail">
+          Legal name: ______________________________<br>
+          Address: ________________________________<br>
+          _________________________________________<br>
+          Primary contact: _________________________
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRICING -->
+  <div class="section">
+    <div class="section-title">Founding Partner Pricing</div>
+    <div class="pricing-box">
+      <div class="pricing-row">
+        <div class="pricing-label">
+          Monthly Platform Fee
+          <div class="sub">Billed on the 1st of each month · Net 15</div>
+        </div>
+        <div class="pricing-value">$299/mo</div>
+      </div>
+      <div class="pricing-row">
+        <div class="pricing-label">
+          Per-Referral Success Fee
+          <div class="sub">Per closed/delivered deal attributed to a Rippl referral link or SFTP match</div>
+        </div>
+        <div class="pricing-value">$50</div>
+      </div>
+      <div class="pricing-row">
+        <div class="pricing-label">
+          Gift Card Reward Funding
+          <div class="sub">Funded by CarLock directly via Tango Card · Recommended $100 minimum</div>
+        </div>
+        <div class="pricing-value" style="font-size:14px;font-weight:600;color:var(--muted);">At cost</div>
+      </div>
+    </div>
+    <div class="pricing-note">
+      Standard rate (after 24-month Founding Partner period): $499/mo + $75/closed referral.<br>
+      Per-referral fee is invoiced monthly alongside platform fee, based on closed deals verified via DriveCentric SFTP export.
+    </div>
+  </div>
+
+  <!-- KEY TERMS -->
+  <div class="section">
+    <div class="section-title">Key Terms</div>
+    <table class="terms-table">
+      <tr>
+        <td>Agreement term</td>
+        <td><strong>24 months</strong> from Effective Date, auto-renewing at standard rate unless cancelled 60 days prior</td>
+      </tr>
+      <tr>
+        <td>Price lock</td>
+        <td>Founding Partner pricing (above) is <strong>guaranteed for 24 months</strong> from Effective Date, regardless of standard rate changes</td>
+      </tr>
+      <tr>
+        <td>Market exclusivity</td>
+        <td>Rippl will not onboard a competing automotive dealer group in the <strong>Nashville, TN metro market</strong> during the Founding Partner term</td>
+      </tr>
+      <tr>
+        <td>Locations covered</td>
+        <td>All CarLock locations with DriveCentric SFTP access · No per-location fee</td>
+      </tr>
+      <tr>
+        <td>DriveCentric integration</td>
+        <td>CarLock provides SFTP credentials within <strong>30 days</strong> of signing. Rippl configures integration at no additional cost.</td>
+      </tr>
+      <tr>
+        <td>Referral attribution</td>
+        <td>Rippl referral links (primary) + DriveCentric SFTP SourceDescription matching (secondary). Both methods count toward success fee.</td>
+      </tr>
+      <tr>
+        <td>Customer enrollment</td>
+        <td>Previous buyers imported from DriveCentric SFTP on launch. New buyers auto-enrolled on delivery. <strong>No opt-in required for initial email</strong> (existing business relationship); SMS opt-in captured via referral link click.</td>
+      </tr>
+      <tr>
+        <td>Cancellation</td>
+        <td>Either party may cancel with <strong>60 days written notice</strong> after Month 12. No early termination fee after Month 12.</td>
+      </tr>
+      <tr>
+        <td>Payment method</td>
+        <td>ACH / credit card on file · Net 15 from invoice date</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- WHAT'S INCLUDED -->
+  <div class="section">
+    <div class="section-title">What's Included</div>
+    <ul class="checklist">
+      <li><div class="check-icon filled"></div>DriveCentric SFTP integration — daily deal processing, automatic referral detection</li>
+      <li><div class="check-icon filled"></div>Referral link platform — personalized links for every CarLock buyer</li>
+      <li><div class="check-icon filled"></div>Bulk import of previous DriveCentric customers as referrers at launch</li>
+      <li><div class="check-icon filled"></div>Tango Card gift card delivery — automated on referral close</li>
+      <li><div class="check-icon filled"></div>SMS + email reward notifications (Twilio / Brevo)</li>
+      <li><div class="check-icon filled"></div>Admin dashboard — all locations, real-time referral tracking</li>
+      <li><div class="check-icon filled"></div>Unmatched referral resolution — admin task queue with name-match UI</li>
+      <li><div class="check-icon filled"></div>Tier/reward system — higher rewards as referrer total grows</li>
+      <li><div class="check-icon filled"></div>Quarterly product steering call — CarLock shapes automotive roadmap</li>
+      <li><div class="check-icon filled"></div>"Founding Partner" recognition on joinrippl.com automotive launch page</li>
+      <li><div class="check-icon"></div>White-label option (custom domain, CarLock branding) — available at no additional cost</li>
+    </ul>
+  </div>
+
+  <!-- CO-MARKETING -->
+  <div class="section">
+    <div class="section-title">Co-Marketing &amp; Product Rights</div>
+    <div class="legal">
+      <p><strong>Co-marketing:</strong> CarLock agrees that Rippl may identify CarLock as an automotive Founding Partner in marketing materials, the Rippl website, and investor/partner presentations. CarLock may approve or request modification of any specific use within 5 business days of notice; silence constitutes approval.</p>
+      <p><strong>Case study:</strong> Upon CarLock's approval (not to be unreasonably withheld), Rippl may publish aggregated referral performance data as a case study. No individual customer data will be included.</p>
+      <p><strong>Product steering:</strong> CarLock will receive one quarterly product steering call with Rippl leadership to influence the automotive feature roadmap. Roadmap decisions remain at Rippl's discretion.</p>
+      <p><strong>Reference:</strong> CarLock agrees to be available as a reference for potential Rippl automotive clients in non-competing markets, up to 2 reference calls per year.</p>
+    </div>
+  </div>
+
+  <!-- DATA & COMPLIANCE -->
+  <div class="section">
+    <div class="section-title">Data &amp; Compliance</div>
+    <div class="legal">
+      <p><strong>Data ownership:</strong> All customer data remains the property of CarLock. Rippl processes it solely to operate the referral platform and does not sell, share, or use it for any other purpose.</p>
+      <p><strong>TCPA compliance:</strong> CarLock represents that it has an existing business relationship with all customers imported at launch, sufficient for CAN-SPAM-compliant email outreach. SMS messages are sent only after explicit opt-in captured via the Rippl referral platform. CarLock is responsible for ensuring its customer list meets applicable legal requirements at import time.</p>
+      <p><strong>DriveCentric credentials:</strong> SFTP credentials are stored encrypted in Rippl's production environment (Render/Supabase) and used solely for deal data export processing. Credentials are never logged or shared.</p>
+    </div>
+  </div>
+
+  <!-- BILLING INFO -->
+  <div class="section">
+    <div class="section-title">Billing &amp; SFTP Setup</div>
+    <div class="field-grid">
+      <div class="field-group full">
+        <div class="field-label">Billing contact name &amp; title</div>
+        <input class="field-line" type="text" />
+      </div>
+      <div class="field-group">
+        <div class="field-label">Billing email</div>
+        <input class="field-line" type="email" />
+      </div>
+      <div class="field-group">
+        <div class="field-label">Billing phone</div>
+        <input class="field-line" type="tel" />
+      </div>
+      <div class="field-group">
+        <div class="field-label">SFTP contact (IT / DriveCentric admin)</div>
+        <input class="field-line" type="text" />
+      </div>
+      <div class="field-group">
+        <div class="field-label">SFTP contact email</div>
+        <input class="field-line" type="email" />
+      </div>
+      <div class="field-group">
+        <div class="field-label">Number of CarLock locations</div>
+        <input class="field-line" type="number" />
+      </div>
+      <div class="field-group">
+        <div class="field-label">Preferred gift card reward amount per referral ($)</div>
+        <input class="field-line" type="text" placeholder="e.g. 100" />
+      </div>
+    </div>
+  </div>
+
+  <!-- SIGNATURES -->
+  <div class="section">
+    <div class="section-title">Signatures</div>
+    <p style="font-size:13px; color:var(--muted); margin-bottom:20px;">By signing below, both parties agree to the terms of this Founding Partner Order Form. This document constitutes a binding agreement.</p>
+
+    <div class="sig-grid">
+      <div>
+        <div class="sig-party">Rippl / Discovery Expeditions PLLC</div>
+        <div class="sig-line-wrap">
+          <div class="sig-line-label">Signature</div>
+          <div class="sig-line"></div>
+        </div>
+        <div class="sig-line-wrap">
+          <div class="sig-line-label">Printed Name</div>
+          <div class="sig-line"></div>
+        </div>
+        <div class="sig-line-wrap">
+          <div class="sig-line-label">Title</div>
+          <div class="sig-line"></div>
+        </div>
+        <div class="sig-line-wrap">
+          <div class="sig-line-label">Date</div>
+          <div class="sig-line"></div>
+        </div>
+      </div>
+      <div>
+        <div class="sig-party">CarLock Automotive Group</div>
+        <div class="sig-line-wrap">
+          <div class="sig-line-label">Signature</div>
+          <div class="sig-line"></div>
+        </div>
+        <div class="sig-line-wrap">
+          <div class="sig-line-label">Printed Name</div>
+          <div class="sig-line"></div>
+        </div>
+        <div class="sig-line-wrap">
+          <div class="sig-line-label">Title</div>
+          <div class="sig-line"></div>
+        </div>
+        <div class="sig-line-wrap">
+          <div class="sig-line-label">Date</div>
+          <div class="sig-line"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-left">
+      Rippl · Discovery Expeditions PLLC · Nashville, TN<br>
+      david@joinrippl.com · joinrippl.com
+    </div>
+    <div class="footer-right">
+      Founding Partner Agreement v1.0<br>
+      Confidential · June 2026
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

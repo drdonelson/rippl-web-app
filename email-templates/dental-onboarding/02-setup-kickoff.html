@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rippl — Setup Kickoff (Dental Practice Onboarding #2)</title>
+  <!--
+    TEMPLATE: 02 — Setup Kickoff
+    TRIGGER:  Sent by David manually (or 1hr after welcome email)
+    FROM:     David Donelson <david@joinrippl.com>
+    SUBJECT:  5 quick things I need to get [Practice Name] live
+    NOTES:    Personal, direct. Should feel like a reply from a real person, not a drip campaign.
+              Most practices can gather these in 10-15 min.
+  -->
+  <style>
+    body { margin: 0; padding: 40px 20px; background: #F4F5F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }
+    .preview-bar { max-width: 640px; margin: 0 auto 16px; display: flex; justify-content: space-between; align-items: center; }
+    .preview-label { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: #9CA3AF; font-weight: 600; }
+    .preview-meta { font-size: 12px; color: #9CA3AF; }
+    .email-wrap { max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .email-header { background: #E0622A; padding: 28px 40px; }
+    .email-wordmark { font-size: 22px; font-weight: 900; color: white; letter-spacing: -0.5px; }
+    .email-tagline { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 4px; }
+    .email-body { padding: 40px 40px 32px; }
+    p { margin: 0 0 16px; font-size: 15px; line-height: 1.65; color: #1A1A1A; }
+    p:last-child { margin-bottom: 0; }
+    .greeting { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+    .need-list { list-style: none; margin: 24px 0; padding: 0; display: flex; flex-direction: column; gap: 0; border: 1px solid #E5E7EB; border-radius: 8px; overflow: hidden; }
+    .need-item { padding: 16px 20px; border-bottom: 1px solid #E5E7EB; display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: flex-start; }
+    .need-item:last-child { border-bottom: none; }
+    .need-num { font-size: 13px; font-weight: 800; color: #E0622A; margin-top: 1px; }
+    .need-content {}
+    .need-title { font-size: 14px; font-weight: 700; color: #1A1A1A; margin-bottom: 4px; }
+    .need-detail { font-size: 13px; color: #6B7280; line-height: 1.5; }
+    .need-detail code { background: #F3F4F6; padding: 2px 6px; border-radius: 3px; font-size: 12px; color: #374151; font-family: 'Courier New', monospace; }
+    .divider { border: none; border-top: 1px solid #E5E7EB; margin: 24px 0; }
+    .cta-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 4px 0 24px; }
+    .cta-btn { display: inline-block; background: #E0622A; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 700; }
+    .cta-alt { font-size: 14px; color: #6B7280; }
+    .cta-alt a { color: #E0622A; text-decoration: none; font-weight: 600; }
+    .signature { margin-top: 28px; padding-top: 24px; border-top: 1px solid #E5E7EB; }
+    .sig-name { font-size: 15px; font-weight: 700; }
+    .sig-detail { font-size: 13px; color: #6B7280; margin-top: 4px; line-height: 1.5; }
+    .email-footer { background: #F9FAFB; padding: 20px 40px; border-top: 1px solid #E5E7EB; }
+    .footer-text { font-size: 12px; color: #9CA3AF; line-height: 1.6; }
+    .placeholder { background: #FFF3CD; border-radius: 3px; padding: 0 4px; font-style: italic; color: #92400E; }
+  </style>
+</head>
+<body>
+<div class="preview-bar">
+  <div class="preview-label">Email 2 of 6 — Setup Kickoff</div>
+  <div class="preview-meta">Subject: 5 quick things I need to get <span class="placeholder">[Practice Name]</span> live</div>
+</div>
+
+<div class="email-wrap">
+  <div class="email-header">
+    <div class="email-wordmark">RIPPL</div>
+    <div class="email-tagline">Setup kickoff</div>
+  </div>
+
+  <div class="email-body">
+    <p class="greeting">Hi <span class="placeholder">[First Name]</span>,</p>
+
+    <p>Let's get you live. I need five things — most offices have these ready in about 10 minutes. Reply to this email with them and I'll have the integration running within 24-48 hours.</p>
+
+    <ul class="need-list">
+      <li class="need-item">
+        <div class="need-num">1</div>
+        <div class="need-content">
+          <div class="need-title">Open Dental server URL</div>
+          <div class="need-detail">The web address your eConnector is running on — usually something like <code>http://192.168.x.x:8080</code> or a public URL if you're cloud-hosted. Your IT team or Open Dental rep will know this.</div>
+        </div>
+      </li>
+      <li class="need-item">
+        <div class="need-num">2</div>
+        <div class="need-content">
+          <div class="need-title">Open Dental Customer Key</div>
+          <div class="need-detail">Found in Open Dental under <code>Setup → eServices → eConnector</code>. It's called the "API Customer Key" — a long string of letters and numbers. (Developer Key is different — don't need that one.)</div>
+        </div>
+      </li>
+      <li class="need-item">
+        <div class="need-num">3</div>
+        <div class="need-content">
+          <div class="need-title">Practice logo</div>
+          <div class="need-detail">PNG or SVG preferred, any size. Used on your patient-facing referral page. If you don't have a digital file handy, a JPEG works fine too.</div>
+        </div>
+      </li>
+      <li class="need-item">
+        <div class="need-num">4</div>
+        <div class="need-content">
+          <div class="need-title">Gift card reward amount</div>
+          <div class="need-detail">How much do you want to reward patients who successfully refer someone? Standard is <strong>$35</strong>. Some practices go $50 for higher engagement. You can change this anytime.</div>
+        </div>
+      </li>
+      <li class="need-item">
+        <div class="need-num">5</div>
+        <div class="need-content">
+          <div class="need-title">Patient-facing practice name</div>
+          <div class="need-detail">What patients see in their texts and emails — usually just your practice name. Let me know if you want something slightly different (e.g., "Hallmark Family Dental" vs "Hallmark Dental").</div>
+        </div>
+      </li>
+    </ul>
+
+    <p>Just hit reply and paste those in. If any of them take a minute to track down, no worries — send what you have and we'll fill in the gaps on a quick call.</p>
+
+    <hr class="divider">
+
+    <p>Prefer to do this on a call instead?</p>
+
+    <div class="cta-row">
+      <a href="https://calendly.com/rippl/setup" class="cta-btn">Book a 30-Min Setup Call</a>
+      <div class="cta-alt">Or reply here — whichever's easier.</div>
+    </div>
+
+    <div class="signature">
+      <div class="sig-name">David Donelson</div>
+      <div class="sig-detail">
+        Founder, Rippl<br>
+        david@joinrippl.com · <span class="placeholder">[phone]</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="email-footer">
+    <div class="footer-text">
+      Rippl · Discovery Expeditions PLLC · Nashville, TN<br>
+      Questions? Reply directly to this email — I read every one.
+    </div>
+  </div>
+</div>
+</body>
+</html>

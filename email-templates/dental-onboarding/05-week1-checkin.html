@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rippl — Week 1 Check-In (Dental Practice Onboarding #5)</title>
+  <!--
+    TEMPLATE: 05 — Week 1 Check-In
+    TRIGGER:  7 days after go-live date (automated or David manually)
+    FROM:     David Donelson <david@joinrippl.com>
+    SUBJECT:  Week one — how's [Practice Name] doing?
+    NOTES:    Personal, informal. Pull real stats from the dashboard and paste in.
+              Goal is to show value early and catch any issues before they fester.
+  -->
+  <style>
+    body { margin: 0; padding: 40px 20px; background: #F4F5F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }
+    .preview-bar { max-width: 640px; margin: 0 auto 16px; display: flex; justify-content: space-between; align-items: center; }
+    .preview-label { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: #9CA3AF; font-weight: 600; }
+    .preview-meta { font-size: 12px; color: #9CA3AF; }
+    .email-wrap { max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .email-header { background: #E0622A; padding: 28px 40px; }
+    .email-wordmark { font-size: 22px; font-weight: 900; color: white; letter-spacing: -0.5px; }
+    .email-tagline { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 4px; }
+    .email-body { padding: 40px 40px 32px; }
+    p { margin: 0 0 16px; font-size: 15px; line-height: 1.65; color: #1A1A1A; }
+    .greeting { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 24px 0; }
+    .stat-card { background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 18px 20px; }
+    .stat-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #9CA3AF; font-weight: 600; margin-bottom: 6px; }
+    .stat-value { font-size: 32px; font-weight: 900; color: #E0622A; line-height: 1; letter-spacing: -0.5px; }
+    .stat-sub { font-size: 12px; color: #6B7280; margin-top: 4px; }
+    .checkin-qs { list-style: none; padding: 0; margin: 24px 0; display: flex; flex-direction: column; gap: 0; background: #FFF7F4; border: 1px solid rgba(224,98,42,0.2); border-radius: 8px; overflow: hidden; }
+    .q-item { padding: 14px 18px; border-bottom: 1px solid rgba(224,98,42,0.12); font-size: 14px; color: #374151; line-height: 1.5; display: flex; align-items: flex-start; gap: 10px; }
+    .q-item:last-child { border-bottom: none; }
+    .q-item::before { content: '?'; font-weight: 900; color: #E0622A; font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+    .reply-cta { background: #1A1A1A; color: white; border-radius: 8px; padding: 20px 24px; margin: 20px 0; font-size: 15px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .reply-cta .label { color: rgba(255,255,255,0.7); font-size: 13px; margin-bottom: 4px; }
+    .reply-cta .value { color: white; font-weight: 600; }
+    .reply-cta a { background: #E0622A; color: white; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+    .signature { margin-top: 28px; padding-top: 24px; border-top: 1px solid #E5E7EB; }
+    .sig-name { font-size: 15px; font-weight: 700; }
+    .sig-detail { font-size: 13px; color: #6B7280; margin-top: 4px; line-height: 1.5; }
+    .email-footer { background: #F9FAFB; padding: 20px 40px; border-top: 1px solid #E5E7EB; }
+    .footer-text { font-size: 12px; color: #9CA3AF; line-height: 1.6; }
+    .placeholder { background: #FFF3CD; border-radius: 3px; padding: 0 4px; font-style: italic; color: #92400E; }
+    .stat-zero { color: #D1D5DB; }
+  </style>
+</head>
+<body>
+<div class="preview-bar">
+  <div class="preview-label">Email 5 of 6 — Week 1 Check-In</div>
+  <div class="preview-meta">Subject: Week one — how's <span class="placeholder">[Practice Name]</span> doing?</div>
+</div>
+
+<div class="email-wrap">
+  <div class="email-header">
+    <div class="email-wordmark">RIPPL</div>
+    <div class="email-tagline">Week 1 recap — <span class="placeholder">[Practice Name]</span></div>
+  </div>
+
+  <div class="email-body">
+    <p class="greeting">Hi <span class="placeholder">[First Name]</span>,</p>
+
+    <p>One week in. Here's what Rippl has done at <span class="placeholder">[Practice Name]</span> so far:</p>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Patients Enrolled</div>
+        <div class="stat-value"><span class="placeholder">[N]</span></div>
+        <div class="stat-sub">Onboarding texts sent</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Referrals Detected</div>
+        <div class="stat-value"><span class="placeholder">[N]</span></div>
+        <div class="stat-sub">R0150 completions matched</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Rewards Issued</div>
+        <div class="stat-value"><span class="placeholder">[N]</span></div>
+        <div class="stat-sub">Gift cards sent automatically</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Rewards Value</div>
+        <div class="stat-value">$<span class="placeholder">[N]</span></div>
+        <div class="stat-sub">This week</div>
+      </div>
+    </div>
+
+    <p>If those numbers look low (especially referrals), that's completely normal in week 1 — the onboarding texts are just going out, and the R0150 triggers only fire when a procedure is completed. Give it 2-3 weeks and you'll see the momentum build.</p>
+
+    <p>A few things worth checking on your end:</p>
+
+    <ul class="checkin-qs">
+      <li class="q-item">Is your front desk completing the R0150 procedure in Open Dental when patients mention a referral? That's the trigger for the reward.</li>
+      <li class="q-item">Any patients asking about rewards or saying they didn't get a text? We can check opt-outs and delivery logs in the dashboard.</li>
+      <li class="q-item">Any unmatched referrals in the Tasks queue? (app.joinrippl.com → Tasks) — these are cases where the referrer name didn't automatically match a patient record.</li>
+      <li class="q-item">Anything else feeling off or not what you expected?</li>
+    </ul>
+
+    <div class="reply-cta">
+      <div>
+        <div class="label">Just hit reply</div>
+        <div class="value">Happy to jump on a call if anything needs attention.</div>
+      </div>
+      <a href="https://calendly.com/rippl/checkin">Book a Call</a>
+    </div>
+
+    <div class="signature">
+      <div class="sig-name">David Donelson</div>
+      <div class="sig-detail">
+        Founder, Rippl<br>
+        david@joinrippl.com · <span class="placeholder">[phone]</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="email-footer">
+    <div class="footer-text">
+      Rippl · Discovery Expeditions PLLC · Nashville, TN<br>
+      View your full dashboard at app.joinrippl.com
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rippl — Welcome Email (Dental Practice Onboarding #1)</title>
+  <!--
+    TEMPLATE: 01 — Welcome
+    TRIGGER:  Immediately after practice agreement is signed / account created
+    FROM:     David Donelson <david@joinrippl.com>
+    SUBJECT:  Welcome to Rippl, [Practice Name]
+    NOTES:    Warm, personal, sets expectations for the next 5-7 days
+  -->
+  <style>
+    body { margin: 0; padding: 40px 20px; background: #F4F5F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }
+    .preview-bar { max-width: 640px; margin: 0 auto 16px; display: flex; justify-content: space-between; align-items: center; }
+    .preview-label { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: #9CA3AF; font-weight: 600; }
+    .preview-meta { font-size: 12px; color: #9CA3AF; }
+    .email-wrap { max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .email-header { background: #E0622A; padding: 28px 40px; }
+    .email-wordmark { font-size: 22px; font-weight: 900; color: white; letter-spacing: -0.5px; }
+    .email-tagline { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 4px; letter-spacing: 0.05em; }
+    .email-body { padding: 40px 40px 32px; }
+    p { margin: 0 0 16px; font-size: 15px; line-height: 1.65; color: #1A1A1A; }
+    p:last-child { margin-bottom: 0; }
+    .greeting { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+    .timeline { background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 20px 24px; margin: 24px 0; }
+    .timeline-title { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #9CA3AF; font-weight: 600; margin-bottom: 14px; }
+    .timeline-row { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 12px; }
+    .timeline-row:last-child { margin-bottom: 0; }
+    .timeline-dot { width: 8px; height: 8px; border-radius: 50%; background: #E0622A; flex-shrink: 0; margin-top: 7px; }
+    .timeline-text { font-size: 14px; line-height: 1.5; color: #374151; }
+    .timeline-text strong { color: #1A1A1A; }
+    .cta-btn { display: inline-block; background: #E0622A; color: white; text-decoration: none; padding: 13px 28px; border-radius: 6px; font-size: 15px; font-weight: 700; margin: 8px 0 24px; }
+    .signature { margin-top: 28px; padding-top: 24px; border-top: 1px solid #E5E7EB; }
+    .sig-name { font-size: 15px; font-weight: 700; color: #1A1A1A; }
+    .sig-detail { font-size: 13px; color: #6B7280; margin-top: 4px; line-height: 1.5; }
+    .email-footer { background: #F9FAFB; padding: 20px 40px; border-top: 1px solid #E5E7EB; }
+    .footer-text { font-size: 12px; color: #9CA3AF; line-height: 1.6; }
+    .placeholder { background: #FFF3CD; border-radius: 3px; padding: 0 4px; font-style: italic; color: #92400E; }
+  </style>
+</head>
+<body>
+<div class="preview-bar">
+  <div class="preview-label">Email 1 of 6 — Welcome</div>
+  <div class="preview-meta">Subject: Welcome to Rippl, <span class="placeholder">[Practice Name]</span></div>
+</div>
+
+<div class="email-wrap">
+  <div class="email-header">
+    <div class="email-wordmark">RIPPL</div>
+    <div class="email-tagline">Referral platform for dental practices</div>
+  </div>
+
+  <div class="email-body">
+    <p class="greeting">Hi <span class="placeholder">[First Name]</span>,</p>
+
+    <p>You're in. <span class="placeholder">[Practice Name]</span> is officially joining Rippl — and I'm genuinely excited about this.</p>
+
+    <p>Here's what the next 5-7 days look like:</p>
+
+    <div class="timeline">
+      <div class="timeline-title">Your Go-Live Timeline</div>
+      <div class="timeline-row">
+        <div class="timeline-dot"></div>
+        <div class="timeline-text"><strong>Today:</strong> You'll get a quick follow-up email from me with 5 things I need to get you connected</div>
+      </div>
+      <div class="timeline-row">
+        <div class="timeline-dot"></div>
+        <div class="timeline-text"><strong>Days 1–3:</strong> I configure your Open Dental integration and test the connection</div>
+      </div>
+      <div class="timeline-row">
+        <div class="timeline-dot"></div>
+        <div class="timeline-text"><strong>Day 4–5:</strong> Integration confirmed — you'll get a walkthrough of what's running automatically</div>
+      </div>
+      <div class="timeline-row">
+        <div class="timeline-dot"></div>
+        <div class="timeline-text"><strong>Day 5–7:</strong> <strong>Rippl goes live</strong> — patients start receiving onboarding texts and referral links</div>
+      </div>
+    </div>
+
+    <p>Your admin dashboard is at <strong>app.joinrippl.com</strong> — you can log in now with your email address. Your front desk team can be invited under Settings → Team.</p>
+
+    <a href="https://app.joinrippl.com" class="cta-btn">Open Your Dashboard</a>
+
+    <p>Any questions before we get started, just reply here or reach me directly.</p>
+
+    <div class="signature">
+      <div class="sig-name">David Donelson</div>
+      <div class="sig-detail">
+        Founder, Rippl<br>
+        david@joinrippl.com · <span class="placeholder">[phone]</span><br>
+        joinrippl.com
+      </div>
+    </div>
+  </div>
+
+  <div class="email-footer">
+    <div class="footer-text">
+      Rippl · Discovery Expeditions PLLC · Nashville, TN<br>
+      You're receiving this because you signed up for Rippl. Questions? Reply to this email.
+    </div>
+  </div>
+</div>
+</body>
+</html>

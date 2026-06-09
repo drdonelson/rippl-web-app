@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rippl — Go-Live (Dental Practice Onboarding #4)</title>
+  <!--
+    TEMPLATE: 04 — Go-Live
+    TRIGGER:  Day Rippl goes officially live for the practice
+    FROM:     Rippl <hello@joinrippl.com>
+    SUBJECT:  [Practice Name] is live on Rippl
+    NOTES:    Celebratory but concise. Tells them what's running, where the dashboard is,
+              what to watch for in week 1. Includes emergency contact.
+  -->
+  <style>
+    body { margin: 0; padding: 40px 20px; background: #F4F5F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }
+    .preview-bar { max-width: 640px; margin: 0 auto 16px; display: flex; justify-content: space-between; align-items: center; }
+    .preview-label { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: #9CA3AF; font-weight: 600; }
+    .preview-meta { font-size: 12px; color: #9CA3AF; }
+    .email-wrap { max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .email-header { background: linear-gradient(135deg, #E0622A 0%, #C04E1E 100%); padding: 36px 40px; text-align: center; }
+    .email-hero-icon { font-size: 44px; margin-bottom: 12px; }
+    .email-wordmark { font-size: 22px; font-weight: 900; color: white; letter-spacing: -0.5px; }
+    .email-headline { font-size: 24px; font-weight: 800; color: white; margin-top: 12px; }
+    .email-subhead { font-size: 14px; color: rgba(255,255,255,0.8); margin-top: 6px; }
+    .email-body { padding: 40px 40px 32px; }
+    p { margin: 0 0 16px; font-size: 15px; line-height: 1.65; color: #1A1A1A; }
+    .greeting { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+    .live-check-list { list-style: none; padding: 0; margin: 24px 0; display: flex; flex-direction: column; gap: 10px; }
+    .live-check-list li { display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 500; color: #1A1A1A; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 7px; padding: 12px 16px; }
+    .check-icon { font-size: 17px; flex-shrink: 0; }
+    .watch-section { background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 20px 24px; margin: 24px 0; }
+    .watch-title { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: #9CA3AF; font-weight: 600; margin-bottom: 14px; }
+    .watch-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; font-size: 14px; line-height: 1.5; color: #374151; }
+    .watch-item:last-child { margin-bottom: 0; }
+    .watch-item::before { content: '→'; color: #E0622A; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+    .dashboard-box { background: #E0622A; border-radius: 8px; padding: 20px 24px; margin: 20px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .dashboard-label { font-size: 13px; color: rgba(255,255,255,0.8); margin-bottom: 4px; }
+    .dashboard-url { font-size: 16px; font-weight: 700; color: white; }
+    .dashboard-btn { background: white; color: #E0622A; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+    .emergency { background: #FFF7F4; border: 1px solid rgba(224,98,42,0.3); border-radius: 8px; padding: 16px 20px; margin: 20px 0; font-size: 14px; color: #374151; line-height: 1.5; }
+    .emergency strong { color: #E0622A; }
+    .signature { margin-top: 28px; padding-top: 24px; border-top: 1px solid #E5E7EB; }
+    .sig-name { font-size: 15px; font-weight: 700; }
+    .sig-detail { font-size: 13px; color: #6B7280; margin-top: 4px; line-height: 1.5; }
+    .email-footer { background: #F9FAFB; padding: 20px 40px; border-top: 1px solid #E5E7EB; }
+    .footer-text { font-size: 12px; color: #9CA3AF; line-height: 1.6; }
+    .placeholder { background: #FFF3CD; border-radius: 3px; padding: 0 4px; font-style: italic; color: #92400E; }
+  </style>
+</head>
+<body>
+<div class="preview-bar">
+  <div class="preview-label">Email 4 of 6 — Go-Live</div>
+  <div class="preview-meta">Subject: <span class="placeholder">[Practice Name]</span> is live on Rippl</div>
+</div>
+
+<div class="email-wrap">
+  <div class="email-header">
+    <div class="email-hero-icon">🎉</div>
+    <div class="email-wordmark">RIPPL</div>
+    <div class="email-headline"><span class="placeholder">[Practice Name]</span> is live.</div>
+    <div class="email-subhead">Referrals are now tracked automatically.</div>
+  </div>
+
+  <div class="email-body">
+    <p class="greeting">Hi <span class="placeholder">[First Name]</span>,</p>
+
+    <p>As of today, Rippl is running at <span class="placeholder">[Practice Name]</span>. Here's what's active right now:</p>
+
+    <ul class="live-check-list">
+      <li><span class="check-icon">✓</span> Open Dental sync running every 5 minutes</li>
+      <li><span class="check-icon">✓</span> New patient onboarding texts active (2-hour delay)</li>
+      <li><span class="check-icon">✓</span> Tango gift card rewards ready to send ($<span class="placeholder">[amount]</span> per referral)</li>
+      <li><span class="check-icon">✓</span> Admin dashboard live for your team</li>
+    </ul>
+
+    <div class="dashboard-box">
+      <div>
+        <div class="dashboard-label">Your admin dashboard</div>
+        <div class="dashboard-url">app.joinrippl.com</div>
+      </div>
+      <a href="https://app.joinrippl.com" class="dashboard-btn">Open Dashboard</a>
+    </div>
+
+    <div class="watch-section">
+      <div class="watch-title">What to watch for this week</div>
+      <div class="watch-item"><strong>Onboarding SMS count</strong> — visible on your dashboard. Should increment after new patient visits.</div>
+      <div class="watch-item"><strong>First referral event</strong> — you'll get a separate email the moment it fires. Usually within the first week or two.</div>
+      <div class="watch-item"><strong>Tasks queue</strong> — rare, but if Rippl can't automatically match a referrer name, it appears here for manual resolution. Quick dropdown fix.</div>
+      <div class="watch-item"><strong>Team access</strong> — invite your front desk under Settings → Team. They can see referral activity and resolve any tasks.</div>
+    </div>
+
+    <div class="emergency">
+      <strong>Something feels off?</strong> Text or call me directly: <strong><span class="placeholder">[phone]</span></strong><br>
+      I monitor the integration actively in the first two weeks. Don't wait — just reach out.
+    </div>
+
+    <p>Proud to have <span class="placeholder">[Practice Name]</span> running on Rippl. This is the part where your patients start doing your marketing for you.</p>
+
+    <div class="signature">
+      <div class="sig-name">David Donelson</div>
+      <div class="sig-detail">
+        Founder, Rippl<br>
+        david@joinrippl.com · <span class="placeholder">[phone]</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="email-footer">
+    <div class="footer-text">
+      Rippl · Discovery Expeditions PLLC · Nashville, TN<br>
+      You're receiving this because <span class="placeholder">[Practice Name]</span> just went live on Rippl.
+    </div>
+  </div>
+</div>
+</body>
+</html>

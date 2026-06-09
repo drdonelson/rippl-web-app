@@ -1,6 +1,10 @@
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { syncAllOffices } from "../services/openDentalPoller";
+import { pollDriveCentricSftp } from "../services/driveCentricSftp";
 import { requireAuth } from "../middleware/auth";
+import { db } from "@workspace/db";
+import { practicesTable } from "@workspace/db/schema";
+import { eq } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -63,6 +67,60 @@ router.post("/opendental", requireSyncAuth, async (req, res) => {
       ? `No R0150 (REF-COMP) completions found across ${results.length} office(s) (${totals.od_total} total procedures checked).`
       : `Found ${totals.fetched} R0150 (REF-COMP) completion(s) — ${totals.inserted} new event(s) created, ${totals.skipped} already synced, ${totals.unmatched} unmatched.${force ? " [force mode]" : ""}`,
     ...(force ? { per_office: results.map(r => ({ ...r })) } : {}),
+  });
+});
+
+// POST /api/sync/drivecentric — run the SFTP export poller for one or all automotive practices
+// Body: { practice_id?: string }  — omit to run all practices with sftp_host configured
+router.post("/drivecentric", requireSyncAuth, async (req, res) => {
+  const { practice_id } = (req.body ?? {}) as { practice_id?: string };
+
+  let practiceIds: string[] = [];
+
+  if (practice_id) {
+    practiceIds = [practice_id];
+  } else {
+    // Find all automotive practices that have sftp_host configured
+    const practices = await db
+      .select({ id: practicesTable.id, cfg: practicesTable.integration_config })
+      .from(practicesTable)
+      .where(eq(practicesTable.vertical, "automotive"));
+    practiceIds = practices
+      .filter(p => !!(p.cfg as Record<string, string>)?.["sftp_host"])
+      .map(p => p.id);
+  }
+
+  if (practiceIds.length === 0) {
+    res.json({ success: false, message: "No automotive practices with SFTP configured" });
+    return;
+  }
+
+  req.log.info({ practiceIds }, "[sync] DriveCentric SFTP sync triggered");
+
+  const results = await Promise.all(practiceIds.map(id => pollDriveCentricSftp(id)));
+
+  const totals = results.reduce(
+    (acc, r) => ({
+      dealsScanned:       acc.dealsScanned       + r.dealsScanned,
+      deliveredDeals:     acc.deliveredDeals     + r.deliveredDeals,
+      referralsDetected:  acc.referralsDetected  + r.referralsDetected,
+      alreadyProcessed:   acc.alreadyProcessed   + r.alreadyProcessed,
+      unmatched:          acc.unmatched          + r.unmatched,
+      errors:             [...acc.errors,         ...r.errors],
+    }),
+    { dealsScanned: 0, deliveredDeals: 0, referralsDetected: 0, alreadyProcessed: 0, unmatched: 0, errors: [] as string[] }
+  );
+
+  res.json({
+    success:            totals.errors.length === 0,
+    practices_synced:   results.length,
+    deals_scanned:      totals.dealsScanned,
+    delivered_deals:    totals.deliveredDeals,
+    referrals_detected: totals.referralsDetected,
+    already_processed:  totals.alreadyProcessed,
+    unmatched:          totals.unmatched,
+    errors:             totals.errors,
+    per_practice:       results,
   });
 });
 

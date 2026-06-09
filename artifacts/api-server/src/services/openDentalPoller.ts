@@ -64,6 +64,7 @@ interface OdPatient {
   PatNum: number;
   FName: string;
   LName: string;
+  Address?: string;       // Street address line 1
   HmPhone: string;        // Home phone
   WirelessPhone: string;  // Mobile / wireless phone (preferred for SMS)
   Email: string;
@@ -686,9 +687,32 @@ export async function syncOpenDental(options?: {
       const newPatientName = await resolveNewPatientName(newPatientPatNum, office?.id, headers, odUrl);
 
       // ── Household duplicate check ─────────────────────────────────────────
+      // Look up the new patient by PatNum to get their real last name + address.
+      // We do NOT use the phone from the procedure record — OD does not populate
+      // PatientPhone in R0150 records, so it's always empty.
+      let householdLastName: string | undefined;
+      let householdAddress: string | undefined;
+      try {
+        const patNum = parseInt(newPatientPatNum, 10);
+        if (!isNaN(patNum) && patNum > 0) {
+          const odPat = await fetchOdPatient(patNum, headers, odUrl);
+          if (odPat) {
+            householdLastName = odPat.LName?.trim() || undefined;
+            householdAddress  = odPat.Address?.trim() || undefined;
+          }
+        }
+      } catch {
+        // fall through to name-based fallback inside checkHouseholdDuplicate
+      }
+      if (!householdLastName) {
+        const parts = newPatientName.trim().split(/\s+/);
+        householdLastName = parts[parts.length - 1] ?? newPatientName;
+      }
+
       const householdResult = await checkHouseholdDuplicate(
-        newPatientName,
-        proc.PatientPhone ?? "",
+        householdLastName,
+        householdAddress,
+        referrer.id,
       ).catch(err => {
         logger.warn({ err, procNum }, "Household check failed — treating as non-duplicate");
         return { household_id: null as unknown as string, is_duplicate: false, od_address_found: false, conflicting_event_id: undefined };

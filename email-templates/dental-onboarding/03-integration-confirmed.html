@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rippl — Integration Confirmed (Dental Practice Onboarding #3)</title>
+  <!--
+    TEMPLATE: 03 — Integration Confirmed
+    TRIGGER:  After David configures and verifies the Open Dental connection
+    FROM:     Rippl <hello@joinrippl.com>  (or David personally)
+    SUBJECT:  Your Open Dental integration is live — here's what's running
+    NOTES:    Technical confirmation. Explains exactly what Rippl is doing in the background.
+              Builds confidence. Sets expectations before official go-live.
+  -->
+  <style>
+    body { margin: 0; padding: 40px 20px; background: #F4F5F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }
+    .preview-bar { max-width: 640px; margin: 0 auto 16px; display: flex; justify-content: space-between; align-items: center; }
+    .preview-label { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: #9CA3AF; font-weight: 600; }
+    .preview-meta { font-size: 12px; color: #9CA3AF; }
+    .email-wrap { max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .email-header { background: #E0622A; padding: 28px 40px; display: flex; align-items: center; justify-content: space-between; }
+    .email-wordmark { font-size: 22px; font-weight: 900; color: white; letter-spacing: -0.5px; }
+    .status-badge { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.35); color: white; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ADE80; }
+    .email-body { padding: 40px 40px 32px; }
+    p { margin: 0 0 16px; font-size: 15px; line-height: 1.65; color: #1A1A1A; }
+    .greeting { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+    .how-it-works { margin: 24px 0; display: flex; flex-direction: column; gap: 16px; }
+    .how-card { background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 18px 20px; display: grid; grid-template-columns: 40px 1fr; gap: 0 14px; align-items: flex-start; }
+    .how-icon { font-size: 22px; margin-top: 2px; }
+    .how-content {}
+    .how-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: #1A1A1A; }
+    .how-detail { font-size: 13px; color: #4B5563; line-height: 1.55; }
+    .how-detail code { background: #E5E7EB; padding: 2px 5px; border-radius: 3px; font-size: 12px; color: #1A1A1A; font-family: 'Courier New', monospace; }
+    .how-detail strong { color: #1A1A1A; }
+    .action-box { background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 18px 20px; margin: 24px 0; }
+    .action-title { font-size: 13px; font-weight: 700; color: #166534; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .action-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+    .action-list li { font-size: 14px; color: #166534; display: flex; align-items: flex-start; gap: 8px; line-height: 1.5; }
+    .action-list li::before { content: '✓'; font-weight: 700; flex-shrink: 0; }
+    .cta-btn { display: inline-block; background: #E0622A; color: white; text-decoration: none; padding: 13px 28px; border-radius: 6px; font-size: 15px; font-weight: 700; margin: 8px 0 24px; }
+    .signature { margin-top: 28px; padding-top: 24px; border-top: 1px solid #E5E7EB; }
+    .sig-name { font-size: 15px; font-weight: 700; }
+    .sig-detail { font-size: 13px; color: #6B7280; margin-top: 4px; line-height: 1.5; }
+    .email-footer { background: #F9FAFB; padding: 20px 40px; border-top: 1px solid #E5E7EB; }
+    .footer-text { font-size: 12px; color: #9CA3AF; line-height: 1.6; }
+    .placeholder { background: #FFF3CD; border-radius: 3px; padding: 0 4px; font-style: italic; color: #92400E; }
+  </style>
+</head>
+<body>
+<div class="preview-bar">
+  <div class="preview-label">Email 3 of 6 — Integration Confirmed</div>
+  <div class="preview-meta">Subject: Your Open Dental integration is live — here's what's running</div>
+</div>
+
+<div class="email-wrap">
+  <div class="email-header">
+    <div class="email-wordmark">RIPPL</div>
+    <div class="status-badge"><div class="status-dot"></div> Integration live</div>
+  </div>
+
+  <div class="email-body">
+    <p class="greeting">Hi <span class="placeholder">[First Name]</span>,</p>
+
+    <p>Your Open Dental connection is verified and running. Here's exactly what Rippl is doing in the background at <span class="placeholder">[Practice Name]</span> right now:</p>
+
+    <div class="how-it-works">
+      <div class="how-card">
+        <div class="how-icon">🔍</div>
+        <div class="how-content">
+          <div class="how-title">Referral detection — every 5 minutes</div>
+          <div class="how-detail">Rippl checks your Open Dental for completed <code>R0150</code> procedures (procedure code <code>REF_COMP</code> — the Referral Completed code). When one is found, it looks up the referring patient and fires a reward automatically. <strong>No manual steps.</strong></div>
+        </div>
+      </div>
+      <div class="how-card">
+        <div class="how-icon">📲</div>
+        <div class="how-content">
+          <div class="how-title">New patient onboarding — 2 hours after appointment</div>
+          <div class="how-detail">When a new patient visits, Rippl sends them an onboarding text 2 hours later: <em>"Thanks for visiting <span class="placeholder">[Practice Name]</span>! Here's your referral link — share it and earn a gift card for every friend you bring in."</em> They're enrolled as a referrer from that moment.</div>
+        </div>
+      </div>
+      <div class="how-card">
+        <div class="how-icon">🎁</div>
+        <div class="how-content">
+          <div class="how-title">Reward delivery — fully automatic</div>
+          <div class="how-detail">When a referral is detected, Rippl sends the referring patient a <strong>$<span class="placeholder">[amount]</span> Tango gift card link</strong> by email and text. No staff involvement required. The gift card link arrives within minutes of the R0150 completing.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-box">
+      <div class="action-title">What your front desk should know</div>
+      <ul class="action-list">
+        <li>No workflow change required — Rippl runs in the background</li>
+        <li>When a patient mentions they were referred, mark the R0150 procedure as complete in Open Dental as normal</li>
+        <li>If a referral match is uncertain, it shows up in the "Tasks" queue in your dashboard — staff can resolve it there</li>
+        <li>Patients asking "did my gift card send?" — direct them to check their email and texts</li>
+      </ul>
+    </div>
+
+    <a href="https://app.joinrippl.com" class="cta-btn">Check Your Dashboard</a>
+
+    <p>We're in the final check stage — I'll send you a go-live confirmation in the next day or two. Reach me at <span class="placeholder">[phone]</span> or reply here if anything comes up.</p>
+
+    <div class="signature">
+      <div class="sig-name">David Donelson</div>
+      <div class="sig-detail">
+        Founder, Rippl<br>
+        david@joinrippl.com · <span class="placeholder">[phone]</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="email-footer">
+    <div class="footer-text">
+      Rippl · Discovery Expeditions PLLC · Nashville, TN<br>
+      Questions about the integration? Reply here — I'm on it.
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -21,6 +21,7 @@
     "helmet": "^8.1.0",
     "pino": "^9",
     "pino-http": "^10",
+    "ssh2-sftp-client": "^12.1.1",
     "twilio": "^5.13.1"
   },
   "devDependencies": {

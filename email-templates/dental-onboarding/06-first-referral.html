@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rippl — First Referral (Dental Practice Onboarding #6)</title>
+  <!--
+    TEMPLATE: 06 — First Referral Notification
+    TRIGGER:  Automatically when the first referral_event is created for this practice
+    FROM:     Rippl <hello@joinrippl.com>
+    SUBJECT:  Your first Rippl referral just came through
+    NOTES:    This is a milestone moment. Make it feel like a celebration.
+              Pull [Referrer Name], [New Patient Name], [Amount] from the referral event.
+              Include a link to the specific referral in the dashboard.
+  -->
+  <style>
+    body { margin: 0; padding: 40px 20px; background: #F4F5F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }
+    .preview-bar { max-width: 640px; margin: 0 auto 16px; display: flex; justify-content: space-between; align-items: center; }
+    .preview-label { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: #9CA3AF; font-weight: 600; }
+    .preview-meta { font-size: 12px; color: #9CA3AF; }
+    .email-wrap { max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .email-header { background: linear-gradient(135deg, #E0622A 0%, #C04E1E 100%); padding: 36px 40px; text-align: center; }
+    .email-hero { font-size: 52px; margin-bottom: 8px; }
+    .email-wordmark { font-size: 22px; font-weight: 900; color: white; letter-spacing: -0.5px; }
+    .email-headline { font-size: 20px; font-weight: 800; color: white; margin-top: 10px; line-height: 1.3; }
+    .email-body { padding: 40px 40px 32px; }
+    p { margin: 0 0 16px; font-size: 15px; line-height: 1.65; color: #1A1A1A; }
+    .greeting { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+    .referral-card { background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 10px; padding: 24px; margin: 24px 0; }
+    .referral-flow { display: flex; align-items: center; gap: 0; }
+    .ref-person { flex: 1; text-align: center; }
+    .ref-avatar { width: 52px; height: 52px; border-radius: 50%; background: #E0622A; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: white; margin: 0 auto 8px; }
+    .ref-role { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #9CA3AF; font-weight: 600; margin-bottom: 4px; }
+    .ref-name { font-size: 15px; font-weight: 700; color: #1A1A1A; }
+    .ref-arrow { font-size: 22px; color: #D1D5DB; padding: 0 8px; flex-shrink: 0; margin-bottom: 16px; }
+    .referral-detail { margin-top: 20px; padding-top: 16px; border-top: 1px solid #E5E7EB; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .detail-item {}
+    .detail-label { font-size: 11px; color: #9CA3AF; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 3px; }
+    .detail-value { font-size: 14px; font-weight: 600; color: #1A1A1A; }
+    .what-happened { background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+    .wh-title { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #166534; font-weight: 600; margin-bottom: 10px; }
+    .wh-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 7px; }
+    .wh-list li { font-size: 14px; color: #166534; display: flex; align-items: flex-start; gap: 8px; line-height: 1.45; }
+    .wh-list li::before { content: '✓'; font-weight: 700; flex-shrink: 0; }
+    .cta-btn { display: block; background: #E0622A; color: white; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-size: 15px; font-weight: 700; text-align: center; margin: 24px 0; }
+    .ps { font-size: 14px; color: #6B7280; line-height: 1.55; font-style: italic; margin-top: 8px; }
+    .email-footer { background: #F9FAFB; padding: 20px 40px; border-top: 1px solid #E5E7EB; }
+    .footer-text { font-size: 12px; color: #9CA3AF; line-height: 1.6; }
+    .placeholder { background: #FFF3CD; border-radius: 3px; padding: 0 4px; font-style: italic; color: #92400E; }
+    .ref-avatar.new { background: #1A1A1A; }
+  </style>
+</head>
+<body>
+<div class="preview-bar">
+  <div class="preview-label">Email 6 of 6 — First Referral</div>
+  <div class="preview-meta">Subject: Your first Rippl referral just came through</div>
+</div>
+
+<div class="email-wrap">
+  <div class="email-header">
+    <div class="email-hero">🎯</div>
+    <div class="email-wordmark">RIPPL</div>
+    <div class="email-headline">Your first referral<br>just came through.</div>
+  </div>
+
+  <div class="email-body">
+    <p class="greeting">Hi <span class="placeholder">[First Name]</span>,</p>
+
+    <p>This is the moment Rippl is built for. A patient you treated just earned a reward for bringing someone new to <span class="placeholder">[Practice Name]</span> — and it happened completely automatically.</p>
+
+    <div class="referral-card">
+      <div class="referral-flow">
+        <div class="ref-person">
+          <div class="ref-avatar"><span class="placeholder">[R]</span></div>
+          <div class="ref-role">Referrer</div>
+          <div class="ref-name"><span class="placeholder">[Referrer Name]</span></div>
+        </div>
+        <div class="ref-arrow">→</div>
+        <div class="ref-person">
+          <div class="ref-avatar new"><span class="placeholder">[N]</span></div>
+          <div class="ref-role">New Patient</div>
+          <div class="ref-name"><span class="placeholder">[New Patient Name]</span></div>
+        </div>
+      </div>
+      <div class="referral-detail">
+        <div class="detail-item">
+          <div class="detail-label">Reward Sent</div>
+          <div class="detail-value">$<span class="placeholder">[amount]</span> gift card</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Delivered By</div>
+          <div class="detail-value">Email + SMS (automatic)</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Detected Via</div>
+          <div class="detail-value">R0150 completion</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Staff Steps Required</div>
+          <div class="detail-value">Zero</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="what-happened">
+      <div class="wh-title">What Rippl did automatically</div>
+      <ul class="wh-list">
+        <li>Detected the R0150 procedure completion in Open Dental</li>
+        <li>Matched the new patient to <span class="placeholder">[Referrer Name]</span></li>
+        <li>Updated <span class="placeholder">[Referrer Name]</span>'s referral count and reward tier</li>
+        <li>Sent a $<span class="placeholder">[amount]</span> Tango gift card link by email and text</li>
+        <li>Logged everything in your dashboard</li>
+      </ul>
+    </div>
+
+    <a href="https://app.joinrippl.com" class="cta-btn">View This Referral in Your Dashboard</a>
+
+    <p class="ps">P.S. — <span class="placeholder">[Referrer Name]</span> now has 1 referral on record. When they hit the next tier, their reward value increases automatically. This is how word-of-mouth compounds.</p>
+  </div>
+
+  <div class="email-footer">
+    <div class="footer-text">
+      Rippl · Discovery Expeditions PLLC · Nashville, TN<br>
+      Questions? david@joinrippl.com · joinrippl.com
+    </div>
+  </div>
+</div>
+</body>
+</html>

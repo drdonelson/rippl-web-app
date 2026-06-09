@@ -28,7 +28,8 @@ router.get("/", async (req, res) => {
               t.referral_event_id, t.created_at,
               r.name  AS referrer_name,
               r.email AS referrer_email,
-              re.new_patient_name
+              re.new_patient_name,
+              re.office_id
             FROM admin_tasks t
             LEFT JOIN referrers         r  ON t.referrer_id       = r.id
             LEFT JOIN referral_events   re ON t.referral_event_id = re.id
@@ -44,7 +45,8 @@ router.get("/", async (req, res) => {
               t.referral_event_id, t.created_at,
               r.name  AS referrer_name,
               r.email AS referrer_email,
-              re.new_patient_name
+              re.new_patient_name,
+              re.office_id
             FROM admin_tasks t
             LEFT JOIN referrers         r  ON t.referrer_id       = r.id
             LEFT JOIN referral_events   re ON t.referral_event_id = re.id
@@ -59,7 +61,8 @@ router.get("/", async (req, res) => {
               t.referral_event_id, t.created_at,
               r.name  AS referrer_name,
               r.email AS referrer_email,
-              re.new_patient_name
+              re.new_patient_name,
+              re.office_id
             FROM admin_tasks t
             LEFT JOIN referrers         r  ON t.referrer_id       = r.id
             LEFT JOIN referral_events   re ON t.referral_event_id = re.id

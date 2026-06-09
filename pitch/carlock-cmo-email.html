@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CarLock CMO Outreach Email</title>
+  <style>
+    :root {
+      --orange: #E0622A;
+      --dark: #1A1A1A;
+      --muted: #6B7280;
+      --border: #E5E7EB;
+      --bg: #F4F5F7;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--dark);
+      padding: 40px 20px;
+    }
+
+    .wrapper {
+      max-width: 760px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .card-header {
+      background: var(--orange);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-header .label {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.75);
+      font-weight: 600;
+    }
+
+    .copy-btn {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 5px 14px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+
+    .copy-btn:hover { background: rgba(255,255,255,0.3); }
+
+    .card-body {
+      padding: 24px;
+    }
+
+    /* Subject line card */
+    .subject-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .subject-option {
+      background: #F9FAFB;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .subject-option:hover { border-color: var(--orange); }
+    .subject-option.recommended { border-color: var(--orange); background: #FFF7F4; }
+
+    .subject-option .rec-tag {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--orange);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .subject-option .subject-text {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    .subject-option .subject-why {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* Email body card */
+    .email-body {
+      grid-column: 1 / -1;
+    }
+
+    .email-meta {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 4px 12px;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .meta-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding-top: 2px;
+    }
+
+    .meta-value {
+      font-size: 14px;
+    }
+
+    .email-content {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--dark);
+      white-space: pre-wrap;
+    }
+
+    .placeholder {
+      background: #FFF3CD;
+      border-radius: 3px;
+      padding: 0 4px;
+      font-style: italic;
+      color: #92400E;
+      font-size: 13px;
+    }
+
+    /* Notes sidebar */
+    .notes-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .notes-card .card-header { background: var(--dark); }
+
+    .note-item {
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--dark);
+    }
+
+    .note-item:last-child { border-bottom: none; }
+
+    .note-item strong { color: var(--orange); }
+
+    /* Context banner */
+    .context-banner {
+      grid-column: 1 / -1;
+      background: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      border-radius: 8px;
+      padding: 14px 20px;
+      font-size: 13px;
+      color: #166534;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="context-banner">
+    <span style="font-size:18px;flex-shrink:0;">💡</span>
+    <span><strong>Context:</strong> This is a warm introduction email — David already has a relationship through the DriveCentric team. Write this as follow-up to a prior conversation, not cold outreach. Customize the <span style="background:#FFF3CD;border-radius:3px;padding:0 4px;font-style:italic;color:#92400E;">highlighted fields</span> before sending.</span>
+  </div>
+
+  <!-- Subject Lines -->
+  <div class="card">
+    <div class="card-header">
+      <div class="label">Subject Line Options</div>
+    </div>
+    <div class="card-body">
+      <div class="subject-options">
+        <div class="subject-option recommended">
+          <div class="rec-tag">Recommended</div>
+          <div class="subject-text">Billy referred Sue. DriveCentric called it "Internet." 20 min?</div>
+          <div class="subject-why">Uses their own attribution problem as the hook. Specific, not generic.</div>
+        </div>
+        <div class="subject-option">
+          <div class="subject-text">I fixed the referral attribution problem (dental first, now automotive)</div>
+          <div class="subject-why">Credibility-led. Works if they're more product-minded.</div>
+        </div>
+        <div class="subject-option">
+          <div class="subject-text">Your referral channel is your best-kept secret — let's fix that</div>
+          <div class="subject-why">Softer. Use if the CMO is less technical.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sending Notes -->
+  <div class="notes-card card">
+    <div class="card-header">
+      <div class="label">Sending Notes</div>
+    </div>
+    <div class="card-body">
+      <div class="note-item"><strong>Tone:</strong> Peer to peer, not vendor to prospect. You've already talked — this is a natural follow-up, not a pitch.</div>
+      <div class="note-item"><strong>Length:</strong> Keep it under 200 words. CMOs don't read long emails. This one hits ~170.</div>
+      <div class="note-item"><strong>Best time to send:</strong> Tuesday–Thursday, 8–10am CT. Avoid Monday morning and Friday afternoon.</div>
+      <div class="note-item"><strong>Follow-up:</strong> If no reply in 4 business days, one follow-up: "Bumping this up — does Thursday work?"</div>
+      <div class="note-item"><strong>If they ask for materials first:</strong> Send the deck (carlock-deck.html) but offer the Zoom anyway — "Happy to walk through it together."</div>
+    </div>
+  </div>
+
+  <!-- Email Body -->
+  <div class="card email-body">
+    <div class="card-header">
+      <div class="label">Email Body</div>
+      <button class="copy-btn" onclick="copyEmail()">Copy Text</button>
+    </div>
+    <div class="card-body">
+      <div class="email-meta">
+        <div class="meta-label">From</div>
+        <div class="meta-value">David Donelson &lt;david@joinrippl.com&gt;</div>
+        <div class="meta-label">To</div>
+        <div class="meta-value"><span class="placeholder">[CMO First Name] [Last Name]</span> &lt;<span class="placeholder">[email]</span>&gt;</div>
+        <div class="meta-label">Subject</div>
+        <div class="meta-value">Billy referred Sue. DriveCentric called it "Internet." 20 min?</div>
+      </div>
+
+      <div class="email-content" id="emailBody">Hi <span class="placeholder">[First Name]</span>,
+
+I've been thinking about the attribution problem your team mentioned — Billy refers Sue, she googles CarLock on the way in, clicks a retargeting ad, and the deal closes as "Internet." Billy gets nothing. You lose visibility into your best channel.
+
+I spent 18 months solving the same problem in dental. Rippl is live at three Hallmark Dental locations — 2,400+ patients enrolled, and I can tell you exactly which patients are driving referrals, who they referred, and what reward fired. The attribution lives in Rippl before the patient ever touches a search engine.
+
+The same system transfers directly to automotive. DriveCentric's SFTP export is the integration layer — we've already built it. CarLock would be the first automotive group running it.
+
+I'd love 20 minutes on Zoom to show you how it works. Do <span class="placeholder">[Day, e.g., "Tuesday the 10th"]</span> or <span class="placeholder">[Day, e.g., "Thursday the 12th"]</span> work for you?
+
+— David
+david@joinrippl.com
+<span class="placeholder">[phone]</span>
+joinrippl.com</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function copyEmail() {
+  const body = document.getElementById('emailBody');
+  const text = body.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy Text', 2000);
+  });
+}
+</script>
+</body>
+</html>

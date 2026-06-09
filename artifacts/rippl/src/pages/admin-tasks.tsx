@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
+import { useOffice } from "@/contexts/office-context";
 import { customFetch } from "@workspace/api-client-react";
 import { DEMO_ADMIN_TASKS, DEMO_ADMIN_TASKS_AUTO } from "@/lib/demo-data";
 
@@ -31,6 +32,7 @@ type AdminTask = {
   referrer_name: string | null;
   referrer_email: string | null;
   new_patient_name: string | null;
+  office_id: string | null;
 };
 
 type ReferrerSearchResult = {
@@ -76,6 +78,13 @@ function taskLabel(task_type: string): { icon: React.ReactNode; label: string; c
       icon: <UserSearch className="w-4 h-4" />,
       label: "Unmatched Referral",
       color: "text-amber-700 bg-amber-50 border-amber-200",
+    };
+  }
+  if (task_type === "reward-pending") {
+    return {
+      icon: <AlertTriangle className="w-4 h-4" />,
+      label: "Missed Reward",
+      color: "text-red-700 bg-red-50 border-red-200",
     };
   }
   return {
@@ -211,14 +220,19 @@ export default function AdminTasksPage() {
   const [completing, setCompleting] = useState<string | null>(null);
   const [backfillResult, setBackfillResult] = useState<BackfillReport | null>(null);
   const { session, isLoading: authLoading, isDemo, demoVertical } = useAuth();
+  const { selectedOfficeId } = useOffice();
 
   const demoTasks = demoVertical === "automotive" ? DEMO_ADMIN_TASKS_AUTO : DEMO_ADMIN_TASKS;
 
-  const { data: tasks, isLoading, isError } = useQuery<AdminTask[]>({
+  const { data: allTasks, isLoading, isError } = useQuery<AdminTask[]>({
     queryKey: ["admin-tasks", demoVertical],
     queryFn: isDemo ? () => Promise.resolve(demoTasks as AdminTask[]) : fetchTasks,
     enabled: isDemo || (!authLoading && !!session),
   });
+
+  const tasks = selectedOfficeId === "all"
+    ? allTasks
+    : allTasks?.filter(t => t.office_id === selectedOfficeId);
 
   const mutation = useMutation({
     mutationFn: completeTask,
