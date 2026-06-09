@@ -95,8 +95,16 @@ app.use("/api", router);
 // ── Frontend static files (production only) ──────────────────────────────────
 if (process.env.NODE_ENV === "production") {
   const ripplDist = path.resolve(import.meta.dirname, "../../rippl/dist/public");
-  app.use(express.static(ripplDist));
+  // Hashed assets (JS/CSS) can be cached forever; index.html must always be fresh
+  app.use(express.static(ripplDist, {
+    setHeaders(res, filePath) {
+      if (filePath.endsWith("index.html")) {
+        res.setHeader("Cache-Control", "no-store");
+      }
+    },
+  }));
   app.use((_req: Request, res: Response) => {
+    res.setHeader("Cache-Control", "no-store");
     res.sendFile(path.join(ripplDist, "index.html"));
   });
 } else {
