@@ -25,19 +25,19 @@ export function getNotificationCopy(practice: Practice | null): NotificationCopy
   switch (vertical) {
     case "automotive":
       return {
-        sms:              `Hi {{firstName}}, your referral just purchased a vehicle at ${name}! Click to claim your reward: {{claimUrl}}`,
+        sms:              `Hi {{firstName}}, your referral just purchased a vehicle at ${name}! Claim your reward: {{claimUrl}} Reply STOP to opt out.`,
         email_subject:    `Your referral reward from ${name} is ready!`,
         referral_trigger: "purchased a vehicle",
       };
     case "salon":
       return {
-        sms:              `Hi {{firstName}}, your referred friend completed their first appointment at ${name}! Click to claim your reward: {{claimUrl}}`,
+        sms:              `Hi {{firstName}}, your referred friend completed their first appointment at ${name}! Claim your reward: {{claimUrl}} Reply STOP to opt out.`,
         email_subject:    `You've earned a reward from ${name}!`,
         referral_trigger: "completed their first appointment",
       };
     default:
       return {
-        sms:              `Hi {{firstName}}, your referred patient completed their first visit at ${name}! Click to claim your reward: {{claimUrl}}`,
+        sms:              `Hi {{firstName}}, your referred patient completed their first visit at ${name}! Claim your reward: {{claimUrl}} Reply STOP to opt out.`,
         email_subject:    `You've earned a reward from ${name}!`,
         referral_trigger: "completed their first visit",
       };

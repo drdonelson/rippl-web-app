@@ -45,7 +45,7 @@ export async function sendOnboardingSmsNow(
   referralCode: string
 ): Promise<{ success: boolean; smsSid?: string; error?: string }> {
   const shareUrl = `${REFERRAL_BASE_URL}/refer?ref=${referralCode}`;
-  const body = `Hi ${firstName} — welcome to Hallmark Dental! We're so glad you came in. If you know anyone who could use a great dentist, share your personal link and earn a reward when they become a patient: ${shareUrl} 🦷`;
+  const body = `Hi ${firstName} — welcome to Hallmark Dental! Share your referral link and earn a reward when friends become patients: ${shareUrl} Reply STOP to opt out.`;
 
   try {
     if (!SMS_ENABLED) {
