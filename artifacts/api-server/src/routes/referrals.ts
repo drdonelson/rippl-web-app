@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { referralEventsTable, referrersTable, adminTasksTable, rewardClaimsTable, staffPoolConfigsTable, staffPoolEntriesTable } from "@workspace/db/schema";
+import { referralEventsTable, referrersTable, adminTasksTable, rewardClaimsTable, staffPoolConfigsTable } from "@workspace/db/schema";
 import { eq, sql, and } from "drizzle-orm";
 import {
   CreateReferralBody,
@@ -153,12 +153,11 @@ router.patch("/:id/status", async (req, res) => {
             .from(staffPoolConfigsTable)
             .where(eq(staffPoolConfigsTable.practice_id, event.practice_id));
           if (poolConfig?.enabled) {
-            await db.insert(staffPoolEntriesTable).values({
-              practice_id:       event.practice_id,
-              office_id:         event.office_id ?? null,
-              referral_event_id: id,
-              amount:            poolConfig.amount_per_referral,
-            });
+            await db.execute(sql`
+              INSERT INTO staff_pool_entries (id, practice_id, office_id, referral_event_id, amount)
+              VALUES (gen_random_uuid(), ${event.practice_id}, ${event.office_id ?? null}, ${id}, ${poolConfig.amount_per_referral})
+              ON CONFLICT (referral_event_id) WHERE referral_event_id IS NOT NULL DO NOTHING
+            `);
           }
         } catch (poolErr) {
           req.log.error({ err: poolErr }, "Failed to insert staff pool entry");
