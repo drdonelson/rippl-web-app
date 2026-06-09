@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   CheckSquare, Loader2, AlertTriangle, CheckCircle2, Clock,
-  Building2, Heart, Wand2, UserSearch, ChevronDown, X,
+  Building2, Heart, Wand2, UserSearch, ChevronDown, X, Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
@@ -48,6 +48,10 @@ async function fetchTasks(): Promise<AdminTask[]> {
 
 async function completeTask(id: string): Promise<void> {
   await customFetch(`${BASE}/api/admin-tasks/${id}/complete`, { method: "PATCH" });
+}
+
+async function processReward(id: string): Promise<void> {
+  await customFetch(`${BASE}/api/admin-tasks/${id}/process-reward`, { method: "POST" });
 }
 
 async function matchReferrer(taskId: string, referrerId: string): Promise<void> {
@@ -241,6 +245,13 @@ export default function AdminTasksPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-tasks"] }),
   });
 
+  const rewardMutation = useMutation({
+    mutationFn: processReward,
+    onMutate: (id) => setCompleting(id),
+    onSettled: () => setCompleting(null),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-tasks"] }),
+  });
+
   const backfill = useMutation({
     mutationFn: runUnknownNameBackfill,
     onSuccess: (report) => {
@@ -358,8 +369,9 @@ export default function AdminTasksPage() {
           <div className="divide-y divide-border">
             {tasks.map((task) => {
               const { icon, label, color } = taskLabel(task.task_type);
-              const isUnmatched  = task.task_type === "unmatched-referral";
-              const isProcessing = completing === task.id || mutation.isPending;
+              const isUnmatched    = task.task_type === "unmatched-referral";
+              const isRewardTask   = task.task_type === "reward-pending";
+              const isProcessing   = completing === task.id || mutation.isPending || rewardMutation.isPending;
 
               return (
                 <div
@@ -423,6 +435,25 @@ export default function AdminTasksPage() {
                         taskId={task.id}
                         onSuccess={() => qc.invalidateQueries({ queryKey: ["admin-tasks"] })}
                       />
+                    ) : isRewardTask ? (
+                      <button
+                        onClick={() => rewardMutation.mutate(task.id)}
+                        disabled={isProcessing}
+                        title="Send reward notification and create claim"
+                        className={cn(
+                          "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all",
+                          isProcessing && completing === task.id
+                            ? "bg-red-100 border-red-300 text-red-800 cursor-wait"
+                            : "bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+                        )}
+                      >
+                        {isProcessing && completing === task.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Gift className="w-3.5 h-3.5" />
+                        )}
+                        Send Reward
+                      </button>
                     ) : (
                       <button
                         onClick={() => mutation.mutate(task.id)}

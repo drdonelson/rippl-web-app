@@ -178,6 +178,105 @@ router.patch("/:id/override", async (req, res) => {
   }
 });
 
+// ── POST /api/admin-tasks/:id/process-reward ─────────────────────────────────
+// For reward-pending tasks: creates a reward_claim on the existing referral_event,
+// increments referrer totals, and fires the notification. Does NOT create a new event.
+router.post("/:id/process-reward", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const { rows: taskRows } = await db.execute(sql`SELECT * FROM admin_tasks WHERE id = ${id}`);
+    const task = taskRows[0] as {
+      id: string;
+      task_type: string;
+      referral_event_id: string | null;
+      referrer_id: string | null;
+      status: string | null;
+      practice_id: string | null;
+    } | undefined;
+
+    if (!task) { res.status(404).json({ error: "Task not found" }); return; }
+    if (task.task_type !== "reward-pending") {
+      res.status(400).json({ error: "Task is not a reward-pending task" });
+      return;
+    }
+    if ((task.status ?? "pending") !== "pending") {
+      res.status(409).json({ error: "Task already completed" });
+      return;
+    }
+    if (!task.referral_event_id || !task.referrer_id || !task.practice_id) {
+      res.status(400).json({ error: "Task is missing referral_event_id, referrer_id, or practice_id" });
+      return;
+    }
+
+    // Check no claim already exists for this event
+    const [existingClaim] = await db
+      .select({ id: rewardClaimsTable.id })
+      .from(rewardClaimsTable)
+      .where(eq(rewardClaimsTable.referral_event_id, task.referral_event_id));
+    if (existingClaim) {
+      res.status(409).json({ error: "A reward claim already exists for this referral event" });
+      return;
+    }
+
+    const [[referrer], [practice], [event]] = await Promise.all([
+      db.select().from(referrersTable).where(eq(referrersTable.id, task.referrer_id)),
+      db.select().from(practicesTable).where(eq(practicesTable.id, task.practice_id)),
+      db.select().from(referralEventsTable).where(eq(referralEventsTable.id, task.referral_event_id)),
+    ]);
+
+    if (!referrer) { res.status(404).json({ error: "Referrer not found" }); return; }
+    if (!practice) { res.status(404).json({ error: "Practice not found" }); return; }
+    if (!event)    { res.status(404).json({ error: "Referral event not found" }); return; }
+
+    const tierData = calculateTier(referrer.total_referrals + 1);
+
+    // Update referrer totals + tier
+    await db.update(referrersTable).set({
+      total_referrals:  referrer.total_referrals + 1,
+      tier:             tierData.name,
+      tier_unlocked_at: tierData.name !== referrer.tier ? new Date() : referrer.tier_unlocked_at,
+      reward_value:     tierData.rewardValue,
+    }).where(eq(referrersTable.id, referrer.id));
+
+    // Create reward_claim on the existing event
+    const claimToken = crypto.randomUUID();
+    await db.insert(rewardClaimsTable).values({
+      claim_token:       claimToken,
+      referral_event_id: task.referral_event_id,
+      referrer_id:       referrer.id,
+      reward_value:      tierData.rewardValue,
+      practice_id:       task.practice_id,
+      status:            "pending",
+    });
+
+    // Mark task complete
+    await db.execute(sql`
+      UPDATE admin_tasks SET status = 'completed', completed = true WHERE id = ${id}
+    `);
+
+    // Fire notification (non-blocking)
+    sendRewardNotification(
+      referrer.name,
+      referrer.phone,
+      referrer.email ?? null,
+      event.new_patient_name ?? "your referred patient",
+      claimToken,
+      practice.name,
+      tierData.rewardValue,
+      task.practice_id,
+    ).catch((err) => {
+      req.log.error({ err, taskId: id }, "[admin-tasks] process-reward notification failed");
+    });
+
+    req.log.info({ taskId: id, referrerId: referrer.id, claimToken }, "[admin-tasks] Missed reward processed");
+    res.json({ success: true, claimToken, referral_event_id: task.referral_event_id });
+  } catch (err) {
+    req.log.error({ err, id }, "[admin-tasks] process-reward failed");
+    res.status(500).json({ error: err instanceof Error ? err.message : "Failed to process reward" });
+  }
+});
+
 // ── POST /api/admin-tasks/:id/match-referrer ──────────────────────────────────
 // Resolve an unmatched-referral task by linking it to an existing referrer.
 // Creates referral_event + reward_claim + sends notification, then completes the task.
