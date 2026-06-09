@@ -154,8 +154,10 @@ router.patch("/:id/status", async (req, res) => {
             .where(eq(staffPoolConfigsTable.practice_id, event.practice_id));
           if (poolConfig?.enabled) {
             await db.insert(staffPoolEntriesTable).values({
-              practice_id: event.practice_id,
-              amount:      poolConfig.amount_per_referral,
+              practice_id:       event.practice_id,
+              office_id:         event.office_id ?? null,
+              referral_event_id: id,
+              amount:            poolConfig.amount_per_referral,
             });
           }
         } catch (poolErr) {

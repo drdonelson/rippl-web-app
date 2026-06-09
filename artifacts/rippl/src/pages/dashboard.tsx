@@ -67,10 +67,11 @@ function useAdminTasks(enabled: boolean) {
   });
 }
 
-function usePoolBalance(enabled: boolean) {
+function usePoolBalance(enabled: boolean, officeId: string) {
+  const params = officeId !== "all" ? `?office_id=${encodeURIComponent(officeId)}` : "";
   return useQuery<{ config: { enabled: boolean; amount_per_referral: number }; balance: number }>({
-    queryKey: ["/api/practice/pool"],
-    queryFn: () => customFetch(`${BASE}/api/practice/pool`),
+    queryKey: ["/api/practice/pool", officeId],
+    queryFn: () => customFetch(`${BASE}/api/practice/pool${params}`),
     enabled,
     staleTime: 60_000,
   });
@@ -96,7 +97,7 @@ export default function Dashboard() {
 
   const { data: fetchedStats, isLoading, error } = useDashboard(selectedOfficeId, queryEnabled);
   const { data: adminTasks = [] } = useAdminTasks(queryEnabled);
-  const { data: poolData } = usePoolBalance(queryEnabled && !!profile?.practice_id);
+  const { data: poolData } = usePoolBalance(queryEnabled && !!profile?.practice_id, selectedOfficeId);
   const completeTask = useCompleteTask();
 
   const [welcomeDismissed, setWelcomeDismissed] = useState(() => {

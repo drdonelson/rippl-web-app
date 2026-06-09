@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { staffPoolConfigsTable, staffPoolEntriesTable } from "@workspace/db/schema";
-import { eq, sum, desc } from "drizzle-orm";
+import { eq, sum, desc, and } from "drizzle-orm";
 import { requireAuth, requirePracticeAdmin } from "../middleware/auth";
 
 const router = Router();
@@ -15,25 +15,35 @@ router.get("/pool", requireAuth, async (req, res) => {
     return;
   }
 
+  // office_id scoping: role-assigned office takes precedence; super_admin uses query param
+  const roleOfficeId  = req.authUser!.role !== "super_admin" ? (req.authUser!.office_id ?? null) : null;
+  const queryOfficeId = (req.query["office_id"] as string | undefined)?.trim() || null;
+  const officeId      = roleOfficeId ?? (queryOfficeId && queryOfficeId !== "all" ? queryOfficeId : null);
+
   const [config] = await db
     .select()
     .from(staffPoolConfigsTable)
     .where(eq(staffPoolConfigsTable.practice_id, practice_id));
 
+  const filters = [
+    eq(staffPoolEntriesTable.practice_id, practice_id),
+    ...(officeId ? [eq(staffPoolEntriesTable.office_id, officeId)] : []),
+  ];
+
   const [{ total }] = await db
     .select({ total: sum(staffPoolEntriesTable.amount) })
     .from(staffPoolEntriesTable)
-    .where(eq(staffPoolEntriesTable.practice_id, practice_id));
+    .where(and(...filters));
 
   const entries = await db
     .select()
     .from(staffPoolEntriesTable)
-    .where(eq(staffPoolEntriesTable.practice_id, practice_id))
+    .where(and(...filters))
     .orderBy(desc(staffPoolEntriesTable.created_at))
     .limit(30);
 
   res.json({
-    config:         config ?? { enabled: false, amount_per_referral: 10 },
+    config:         config ?? { enabled: false, amount_per_referral: 5 },
     balance:        parseInt(total ?? "0", 10),
     recent_entries: entries,
   });
