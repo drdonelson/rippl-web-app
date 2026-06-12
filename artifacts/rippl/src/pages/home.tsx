@@ -110,8 +110,32 @@ export default function Home() {
         </div>
       </main>
 
-      <footer className="border-t border-slate-200 mt-16">
-        <div className="max-w-2xl mx-auto px-6 py-6 text-xs text-slate-400 text-center">
+      {/* Business info — required for carrier/Twilio review */}
+      <section className="border-t border-slate-200 bg-white">
+        <div className="max-w-2xl mx-auto px-6 py-8">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">About</p>
+          <div className="grid sm:grid-cols-2 gap-6 text-sm text-slate-600">
+            <div>
+              <p className="font-semibold text-slate-800 mb-1">Hallmark Dental</p>
+              <p>1585 Mallory Lane, Suite 101</p>
+              <p>Brentwood, TN 37027</p>
+              <a href="tel:+16152217771" className="text-[#E0622A] hover:underline mt-1 block">(615) 221-7771</a>
+              <a href="mailto:hello@joinrippl.com" className="text-[#E0622A] hover:underline block">hello@joinrippl.com</a>
+            </div>
+            <div>
+              <p className="font-semibold text-slate-800 mb-1">About Rippl</p>
+              <p className="leading-relaxed text-slate-500">
+                Rippl is a patient referral rewards platform operated by Hallmark Dental.
+                Patients refer friends and family and earn gift card rewards when their referral
+                completes a first dental visit.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer className="border-t border-slate-200">
+        <div className="max-w-2xl mx-auto px-6 py-5 text-xs text-slate-400 text-center">
           © {new Date().getFullYear()} Rippl · Powered by Hallmark Dental ·{" "}
           <a href="/privacy" className="hover:text-slate-600 transition-colors">Privacy Policy</a>
           {" · "}

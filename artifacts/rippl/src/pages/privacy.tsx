@@ -29,7 +29,7 @@ export default function Privacy() {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Privacy Policy</h1>
-            <p className="text-slate-500 text-sm mt-1">Effective April 2026</p>
+            <p className="text-slate-500 text-sm mt-1">Effective June 2026</p>
           </div>
         </div>
 
@@ -85,6 +85,36 @@ export default function Privacy() {
             <p className="mt-4">
               We do <span className="text-slate-900 font-medium">not</span> use your information for marketing,
               advertising, or any purpose beyond operating the referral program.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-base font-semibold text-slate-900 mb-3">Text Message (SMS) Communications</h2>
+            <p className="mb-3">
+              Hallmark Dental (powered by Rippl) may send SMS text messages to patients who have voluntarily
+              opted in to receive them. SMS consent is <span className="text-slate-900 font-medium">entirely
+              optional</span> — it is not required to receive dental services or to participate in the referral
+              rewards program.
+            </p>
+            <ul className="space-y-2 pl-4 mb-4">
+              {[
+                { label: "Types of messages", desc: "Your personal referral link, reward notifications when a referred patient completes their first visit, and occasional referral program reminders." },
+                { label: "Message frequency", desc: "Up to 4 messages per month." },
+                { label: "Message and data rates", desc: "Standard message and data rates from your carrier may apply." },
+                { label: "How to opt in", desc: "Visit joinrippl.com/sms-opt-in and complete the form with an explicit, unchecked consent checkbox. Consent is never pre-checked." },
+                { label: "How to opt out", desc: "Reply STOP to any text message at any time to unsubscribe immediately. You will receive one confirmation message and no further messages." },
+                { label: "Help", desc: "Reply HELP to any message or email hello@joinrippl.com for assistance." },
+              ].map(({ label, desc }) => (
+                <li key={label} className="flex gap-2">
+                  <span className="text-[#E0622A] flex-shrink-0 mt-0.5">·</span>
+                  <span><span className="text-slate-900 font-medium">{label}</span> — {desc}</span>
+                </li>
+              ))}
+            </ul>
+            <p>
+              Phone numbers collected for SMS are used solely to deliver referral program messages.
+              We do <span className="text-slate-900 font-medium">not</span> sell, share, or use mobile
+              numbers for any other purpose.
             </p>
           </section>
 
