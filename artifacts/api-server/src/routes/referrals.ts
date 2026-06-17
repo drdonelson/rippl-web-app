@@ -63,6 +63,47 @@ router.post("/", async (req, res) => {
   const user = req.authUser!;
   const body = CreateReferralBody.parse(req.body);
 
+  // Block self-referrals and circular referrals (A referred B → B cannot refer A back)
+  const [currentReferrer] = await db
+    .select({ phone: referrersTable.phone, name: referrersTable.name })
+    .from(referrersTable)
+    .where(eq(referrersTable.id, body.referrer_id));
+
+  if (currentReferrer) {
+    const normalize = (p: string | null | undefined) =>
+      (p ?? "").replace(/\D/g, "").slice(-10);
+
+    const referrerPhone    = normalize(currentReferrer.phone);
+    const newPatientPhone  = normalize(body.new_patient_phone);
+
+    // Self-referral: same phone number
+    if (referrerPhone && newPatientPhone && referrerPhone === newPatientPhone) {
+      res.status(400).json({ error: "A patient cannot refer themselves." });
+      return;
+    }
+
+    // Circular referral: new patient previously referred the current referrer
+    if (newPatientPhone && referrerPhone) {
+      const circular = await db.execute(sql`
+        SELECT re.id FROM referral_events re
+        JOIN referrers r ON re.referrer_id = r.id
+        WHERE RIGHT(REGEXP_REPLACE(r.phone, '[^0-9]', '', 'g'), 10) = ${newPatientPhone}
+        AND RIGHT(REGEXP_REPLACE(re.new_patient_phone, '[^0-9]', '', 'g'), 10) = ${referrerPhone}
+        LIMIT 1
+      `);
+      if ((circular.rows as unknown[]).length > 0) {
+        req.log.warn(
+          { referrerId: body.referrer_id, newPatientPhone },
+          "Circular referral blocked — new patient previously referred this referrer"
+        );
+        res.status(400).json({
+          error: `Circular referral: ${currentReferrer.name} was previously referred by this patient. This referral cannot be created.`,
+        });
+        return;
+      }
+    }
+  }
+
   const householdResult = await checkHouseholdDuplicate(
     body.new_patient_name,
     body.new_patient_phone

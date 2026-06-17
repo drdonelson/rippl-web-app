@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rippl × Dental Collective</title>
+<style>
+  :root {
+    --green: #2ECC71;
+    --dark: #0A1A0D;
+    --forest: #0F2219;
+    --panel: #142A18;
+    --panel2: #1A3520;
+    --border: #1E3D24;
+    --text: #F0EDE6;
+    --muted: #8BAA8B;
+    --muted2: #3D6040;
+    --gold: #D4A72C;
+    --gold-glow: rgba(212,167,44,0.10);
+    --gold-border: rgba(212,167,44,0.28);
+    --green-glow: rgba(46,204,113,0.10);
+    --green-border: rgba(46,204,113,0.28);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--dark);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  /* ── Deck shell ── */
+  .deck { width: 100vw; height: 100vh; position: relative; }
+
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    padding: 60px 72px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.35s ease;
+  }
+  .slide.active { opacity: 1; pointer-events: auto; }
+
+  /* Subtle grid texture */
+  .slide::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 48px 48px;
+    opacity: 0.18;
+    pointer-events: none;
+  }
+
+  /* ── Nav dots ── */
+  .nav-dots {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 8px; z-index: 100;
+  }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--muted2);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .dot.active { background: var(--green); transform: scale(1.4); }
+
+  /* ── Arrow hint ── */
+  .arrow-hint {
+    position: fixed; bottom: 28px; right: 36px;
+    font-size: 11px; color: var(--muted2);
+    letter-spacing: 0.12em; text-transform: uppercase;
+    z-index: 100;
+  }
+
+  /* ── Shared type ── */
+  .eyebrow {
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--green); font-weight: 700; margin-bottom: 14px;
+  }
+  .eyebrow.gold { color: var(--gold); }
+
+  h1 { font-size: 52px; font-weight: 900; line-height: 1.08; letter-spacing: -1.5px; color: var(--text); }
+  h2 { font-size: 38px; font-weight: 900; line-height: 1.1; letter-spacing: -1px; color: var(--text); }
+
+  .subtitle {
+    font-size: 17px; color: var(--muted); line-height: 1.6; margin-top: 18px;
+    max-width: 560px;
+  }
+
+  /* ── SLIDE 1 — Cover ── */
+  #s1 { background: var(--dark); }
+  #s1 .wordmark {
+    font-size: 13px; font-weight: 800; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--green); margin-bottom: 48px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  #s1 .wordmark span { color: var(--muted2); }
+  #s1 h1 {
+    font-size: 56px; max-width: 720px; text-align: center;
+    background: linear-gradient(135deg, var(--text) 0%, #9EC99E 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  #s1 .cover-sub {
+    font-size: 17px; color: var(--muted); margin-top: 20px; text-align: center; max-width: 540px; line-height: 1.6;
+  }
+  #s1 .personal-note {
+    margin-top: 52px; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px 24px; max-width: 520px;
+    font-size: 13px; color: var(--muted); line-height: 1.65; font-style: italic;
+    border-left: 3px solid var(--green);
+  }
+  #s1 .personal-note strong { color: var(--text); font-style: normal; }
+
+  /* ── SLIDE 2 — Problem ── */
+  #s2 { background: var(--dark); align-items: flex-start; }
+  .problem-split {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; margin-top: 32px;
+  }
+  .prob-col {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 28px 30px;
+  }
+  .prob-col.bad { border-color: rgba(220,60,60,0.3); }
+  .prob-col.good { border-color: var(--green-border); }
+  .prob-col-label {
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    font-weight: 700; margin-bottom: 18px;
+  }
+  .prob-col.bad .prob-col-label { color: #E05050; }
+  .prob-col.good .prob-col-label { color: var(--green); }
+  .prob-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 14px; color: var(--text); line-height: 1.5;
+    margin-bottom: 13px;
+  }
+  .prob-item:last-child { margin-bottom: 0; }
+  .prob-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+  .stat-callout {
+    background: var(--forest); border: 1px solid var(--gold-border);
+    border-radius: 10px; padding: 16px 22px; margin-top: 24px;
+    display: flex; align-items: center; gap: 20px;
+  }
+  .stat-big { font-size: 42px; font-weight: 900; color: var(--gold); letter-spacing: -1px; line-height: 1; }
+  .stat-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .stat-desc strong { color: var(--text); }
+
+  /* ── SLIDE 3 — How It Works ── */
+  #s3 { background: var(--dark); align-items: flex-start; }
+  .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 32px; width: 100%; }
+  .step {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px 26px;
+  }
+  .step-num {
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    font-weight: 700; color: var(--green); margin-bottom: 12px;
+  }
+  .step-title { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+  .step-desc { font-size: 13px; color: var(--muted); line-height: 1.55; }
+  .step-tag {
+    display: inline-block; margin-top: 12px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    background: var(--green-glow); border: 1px solid var(--green-border);
+    color: var(--green); border-radius: 4px; padding: 3px 8px;
+  }
+
+  /* ── SLIDE 4 — Proof ── */
+  #s4 { background: var(--dark); align-items: flex-start; }
+  .proof-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 32px; width: 100%; }
+  .proof-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 24px 22px;
+  }
+  .proof-card.hero { border-color: var(--green-border); grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0; border-radius: 12px; padding: 0; overflow: hidden; }
+  .proof-hero-stat { padding: 24px 22px; border-right: 1px solid var(--border); }
+  .proof-hero-stat:last-child { border-right: none; }
+  .proof-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+  .proof-val { font-size: 34px; font-weight: 900; color: var(--green); letter-spacing: -1px; line-height: 1; }
+  .proof-sub { font-size: 12px; color: var(--muted); margin-top: 5px; }
+  .practice-tag {
+    margin-top: 20px; font-size: 11px; color: var(--muted); letter-spacing: 0.1em;
+    text-transform: uppercase; display: flex; align-items: center; gap: 8px;
+  }
+  .practice-tag::before { content: ''; display: block; width: 20px; height: 1px; background: var(--muted2); }
+  .quote-card {
+    background: var(--panel2); border: 1px solid var(--gold-border); border-radius: 12px;
+    padding: 24px 26px; margin-top: 16px; font-size: 15px; font-style: italic;
+    color: var(--text); line-height: 1.65; width: 100%;
+  }
+  .quote-attr { font-size: 12px; color: var(--muted); margin-top: 12px; font-style: normal; font-weight: 600; }
+
+  /* ── SLIDE 5 — Pricing ── */
+  #s5 { background: var(--dark); align-items: flex-start; padding-top: 60px; padding-bottom: 60px; }
+  .tier-grid-dc { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; width: 100%; }
+  .tier-dc {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+  }
+  .tier-dc.featured { border-color: var(--green-border); }
+  .tier-dc.annual-card { border-color: var(--gold-border); }
+  .tier-dc-header { padding: 14px 18px 10px; border-bottom: 1px solid var(--border); }
+  .tier-dc-tag {
+    display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; border-radius: 4px; padding: 3px 8px; margin-bottom: 6px;
+    background: rgba(255,255,255,0.06); color: var(--muted);
+  }
+  .tier-dc-tag.green { background: var(--green-glow); color: var(--green); }
+  .tier-dc-tag.gold { background: var(--gold-glow); color: var(--gold); }
+  .tier-dc-name { font-size: 15px; font-weight: 800; color: var(--text); }
+  .tier-dc-locs { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .tier-dc-price { padding: 10px 18px; border-bottom: 1px solid var(--border); }
+  .tier-dc-main { font-size: 28px; font-weight: 900; color: var(--text); line-height: 1; }
+  .tier-dc-main.green { color: var(--green); }
+  .tier-dc-main.gold { color: var(--gold); }
+  .tier-dc-period { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .tier-dc-rate { padding: 8px 18px; font-size: 11px; color: var(--muted); border-bottom: 1px solid var(--border); }
+  .tier-dc-rate strong { color: var(--text); }
+  .tier-dc-best { padding: 10px 18px 12px; font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .tier-dc-best strong { color: var(--text); display: block; font-size: 11px; margin-bottom: 2px; }
+
+  /* ── SLIDE 6 — GPO Fit ── */
+  #s6 { background: var(--dark); align-items: flex-start; }
+  .gpo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 32px; width: 100%; }
+  .gpo-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 26px 28px;
+  }
+  .gpo-card-title { font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .gpo-card-title .icon { font-size: 18px; }
+  .gpo-list { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+  .gpo-list li { font-size: 13px; color: var(--muted); line-height: 1.5; display: flex; align-items: flex-start; gap: 9px; }
+  .gpo-list li::before { content: '→'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .gpo-list li strong { color: var(--text); }
+  .math-box {
+    background: var(--forest); border: 1px solid var(--green-border); border-radius: 10px;
+    padding: 20px 24px; margin-top: 20px; width: 100%;
+  }
+  .math-title { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--green); font-weight: 700; margin-bottom: 14px; }
+  .math-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .math-row:last-child { border-bottom: none; font-weight: 700; }
+  .math-row .label { color: var(--text); }
+  .math-row .val { font-weight: 600; }
+  .math-row .val.green { color: var(--green); }
+  .math-row .val.dim { color: var(--muted2); }
+
+  /* ── SLIDE 7 — What DC Gets ── */
+  #s7 { background: var(--dark); align-items: flex-start; }
+  .gets-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 32px; width: 100%; }
+  .gets-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px;
+  }
+  .gets-icon { font-size: 26px; margin-bottom: 10px; }
+  .gets-title { font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 7px; }
+  .gets-desc { font-size: 13px; color: var(--muted); line-height: 1.55; }
+  .rev-callout {
+    grid-column: 1 / -1; background: var(--panel2);
+    border: 1px solid var(--gold-border); border-radius: 12px;
+    padding: 22px 28px; display: flex; align-items: center; gap: 28px;
+  }
+  .rev-num { font-size: 52px; font-weight: 900; color: var(--gold); letter-spacing: -2px; line-height: 1; flex-shrink: 0; }
+  .rev-detail { font-size: 13px; color: var(--muted); line-height: 1.65; }
+  .rev-detail strong { color: var(--text); }
+
+  /* ── SLIDE 8 — Next Steps ── */
+  #s8 { background: var(--dark); align-items: flex-start; }
+  .asks { display: flex; flex-direction: column; gap: 14px; margin-top: 32px; width: 100%; max-width: 640px; }
+  .ask {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 22px 24px; display: flex; align-items: flex-start; gap: 18px;
+  }
+  .ask-num {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--green);
+    color: var(--dark); font-size: 14px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;
+  }
+  .ask-body { flex: 1; }
+  .ask-title { font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 5px; }
+  .ask-desc { font-size: 13px; color: var(--muted); line-height: 1.55; }
+  .contact-box {
+    margin-top: 36px; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 22px 26px; display: flex; align-items: center; justify-content: space-between;
+    width: 100%; max-width: 640px;
+  }
+  .contact-label { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 5px; }
+  .contact-name { font-size: 16px; font-weight: 800; color: var(--text); }
+  .contact-detail { font-size: 13px; color: var(--muted); margin-top: 3px; }
+  .contact-detail a { color: var(--green); text-decoration: none; }
+  .rippl-badge {
+    font-size: 20px; font-weight: 900; letter-spacing: -0.5px; color: var(--green);
+    background: var(--green-glow); border: 1px solid var(--green-border);
+    border-radius: 8px; padding: 8px 16px;
+  }
+</style>
+</head>
+<body>
+
+<div class="deck">
+
+  <!-- ── SLIDE 1: Cover ── -->
+  <section class="slide active" id="s1">
+    <div class="wordmark">RIPPL <span>×</span> Dental Collective</div>
+    <h1>Your members are getting referrals.<br>They just can't see them.</h1>
+    <p class="cover-sub">Rippl closes the loop automatically — detecting referrals from your practice management software and rewarding patients without a single staff step.</p>
+    <div class="personal-note">
+      <strong>Michael, Casey —</strong> I built Rippl for the independent practice market, and Dental Collective is exactly the community I had in mind. This is a look at how it works, what your members would pay, and what DC earns for bringing it to them.
+    </div>
+  </section>
+
+  <!-- ── SLIDE 2: Problem ── -->
+  <section class="slide" id="s2">
+    <div class="eyebrow">The Problem</div>
+    <h2>Independent practices run on referrals.<br>None of them track it.</h2>
+    <div class="problem-split">
+      <div class="prob-col bad">
+        <div class="prob-col-label">Without Rippl</div>
+        <div class="prob-item"><span class="prob-icon">✗</span>"How'd you hear about us?" asked at the desk, forgotten by 3pm</div>
+        <div class="prob-item"><span class="prob-icon">✗</span>No automated reward — patients who refer hear nothing back</div>
+        <div class="prob-item"><span class="prob-icon">✗</span>Staff manually tracks (or ignores) who referred whom</div>
+        <div class="prob-item"><span class="prob-icon">✗</span>No data on which patients drive the most growth</div>
+        <div class="prob-item"><span class="prob-icon">✗</span>Word-of-mouth happens by luck, not by design</div>
+      </div>
+      <div class="prob-col good">
+        <div class="prob-col-label">With Rippl</div>
+        <div class="prob-item"><span class="prob-icon">✓</span>Referrals detected automatically from Open Dental / Vagaro</div>
+        <div class="prob-item"><span class="prob-icon">✓</span>Referrer rewarded by email + SMS within minutes</div>
+        <div class="prob-item"><span class="prob-icon">✓</span>Zero staff involvement — runs while the team treats patients</div>
+        <div class="prob-item"><span class="prob-icon">✓</span>Dashboard shows every referrer, reward, and trend</div>
+        <div class="prob-item"><span class="prob-icon">✓</span>Word-of-mouth compounding over time</div>
+      </div>
+    </div>
+    <div class="stat-callout">
+      <div class="stat-big">~77%</div>
+      <div class="stat-desc">of dental patients say they'd refer a friend if asked — but <strong>less than 30% of practices have any system to capture or reward it.</strong> Referrals are the highest-trust, lowest-cost acquisition channel in dentistry, and most of it is invisible.</div>
+    </div>
+  </section>
+
+  <!-- ── SLIDE 3: How It Works ── -->
+  <section class="slide" id="s3">
+    <div class="eyebrow">How It Works</div>
+    <h2>Four steps. Zero staff involvement.</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">Step 01</div>
+        <div class="step-title">New patient visits the practice</div>
+        <div class="step-desc">Within 2 hours, Rippl sends an automated welcome text — including a simple referral link and onboarding to the rewards program.</div>
+        <div class="step-tag">SMS · Automatic</div>
+      </div>
+      <div class="step">
+        <div class="step-num">Step 02</div>
+        <div class="step-title">Practice management software logs the visit</div>
+        <div class="step-desc">Rippl syncs with Open Dental (dental) or Vagaro (salon) every 5 minutes, watching for procedure codes that signal a referred patient — no manual data entry.</div>
+        <div class="step-tag">Open Dental · Vagaro</div>
+      </div>
+      <div class="step">
+        <div class="step-num">Step 03</div>
+        <div class="step-title">Referrer is automatically matched and rewarded</div>
+        <div class="step-desc">Rippl identifies the patient who made the referral, updates their reward tier, and sends a Tango gift card by email and SMS. No staff steps required.</div>
+        <div class="step-tag">Tango Card · Instant</div>
+      </div>
+      <div class="step">
+        <div class="step-num">Step 04</div>
+        <div class="step-title">Practice sees everything in the dashboard</div>
+        <div class="step-desc">Every referral, reward, and patient tier is logged. Unmatched cases surface as a simple Tasks queue with a one-click dropdown fix — rare but handled.</div>
+        <div class="step-tag">Real-time Dashboard</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SLIDE 4: Proof ── -->
+  <section class="slide" id="s4">
+    <div class="eyebrow">Live Proof</div>
+    <h2>Already running at a DC-style practice.</h2>
+    <div class="proof-grid">
+      <div class="proof-card hero">
+        <div class="proof-hero-stat">
+          <div class="proof-label">Patients Enrolled</div>
+          <div class="proof-val">2,400+</div>
+          <div class="proof-sub">Onboarded via SMS</div>
+        </div>
+        <div class="proof-hero-stat">
+          <div class="proof-label">Referral Visibility</div>
+          <div class="proof-val">23%</div>
+          <div class="proof-sub">Previously untracked</div>
+        </div>
+        <div class="proof-hero-stat">
+          <div class="proof-label">Staff Steps</div>
+          <div class="proof-val">0</div>
+          <div class="proof-sub">Per referral detected</div>
+        </div>
+        <div class="proof-hero-stat">
+          <div class="proof-label">Setup Time</div>
+          <div class="proof-val">~2h</div>
+          <div class="proof-sub">Then fully automated</div>
+        </div>
+      </div>
+    </div>
+    <div class="practice-tag">Hallmark Dental · Brentwood, TN · Independent, Single Location</div>
+    <div class="quote-card">
+      "The first referral fired while I was with a patient. I didn't do anything — Rippl sent the reward, logged it in the dashboard, and I saw it that evening. That's what I needed."
+      <div class="quote-attr">— Dr. Donelson, Hallmark Dental</div>
+    </div>
+  </section>
+
+  <!-- ── SLIDE 5: DC Member Pricing ── -->
+  <section class="slide" id="s5">
+    <div class="eyebrow gold">DC Member Pricing — Exclusive Rates</div>
+    <h2>Every DC practice saves 30–60% off standard.</h2>
+    <div class="tier-grid-dc">
+
+      <!-- Free -->
+      <div class="tier-dc">
+        <div class="tier-dc-header">
+          <div class="tier-dc-tag green">DC Member Rate</div>
+          <div class="tier-dc-name">Free</div>
+          <div class="tier-dc-locs">Any size practice</div>
+        </div>
+        <div class="tier-dc-price">
+          <div class="tier-dc-main green">$0<span style="font-size:14px;color:var(--muted);font-weight:400;">/mo</span></div>
+          <div class="tier-dc-period">Pay only when referrals happen</div>
+        </div>
+        <div class="tier-dc-rate"><strong>$55/referral</strong> · Standard is $85 — you save $30/ref</div>
+        <div class="tier-dc-best">
+          <strong>Best for</strong>
+          New practices, or fewer than 3 referrals/month
+        </div>
+      </div>
+
+      <!-- Hybrid -->
+      <div class="tier-dc featured">
+        <div class="tier-dc-header">
+          <div class="tier-dc-tag green">Most Popular</div>
+          <div class="tier-dc-name">Hybrid</div>
+          <div class="tier-dc-locs">Any size practice</div>
+        </div>
+        <div class="tier-dc-price">
+          <div class="tier-dc-main green">$99<span style="font-size:14px;color:var(--muted);font-weight:400;">/mo</span></div>
+          <div class="tier-dc-period">+ $8/referral detected</div>
+        </div>
+        <div class="tier-dc-rate"><strong>Breaks even with Monthly at 25 refs</strong> · cheapest from 3–24 refs/mo</div>
+        <div class="tier-dc-best">
+          <strong>Best for</strong>
+          Active referral practices, 3–24 refs/month — lowest total cost in that range
+        </div>
+      </div>
+
+      <!-- Monthly -->
+      <div class="tier-dc">
+        <div class="tier-dc-header">
+          <div class="tier-dc-tag">DC Member Rate</div>
+          <div class="tier-dc-name">Monthly Flat</div>
+          <div class="tier-dc-locs">1–2 locations</div>
+        </div>
+        <div class="tier-dc-price">
+          <div class="tier-dc-main">$299<span style="font-size:14px;color:var(--muted);font-weight:400;">/mo</span></div>
+          <div class="tier-dc-period">Unlimited referrals included</div>
+        </div>
+        <div class="tier-dc-rate"><strong>Unlimited referrals</strong> · Standard non-DC rate is $1,674/mo</div>
+        <div class="tier-dc-best">
+          <strong>Best for</strong>
+          Established practices with 25+ referrals/month — flat cost, no per-ref fee
+        </div>
+      </div>
+
+      <!-- Annual -->
+      <div class="tier-dc annual-card">
+        <div class="tier-dc-header">
+          <div class="tier-dc-tag gold">Best Value</div>
+          <div class="tier-dc-name">Annual</div>
+          <div class="tier-dc-locs">1–2 locations · $2,988/yr</div>
+        </div>
+        <div class="tier-dc-price">
+          <div class="tier-dc-main gold">$249<span style="font-size:14px;color:var(--muted);font-weight:400;">/mo</span></div>
+          <div class="tier-dc-period">Billed $2,988 annually · saves $600/yr</div>
+        </div>
+        <div class="tier-dc-rate"><strong>Unlimited referrals</strong> · vs. $299/mo saves $600/year</div>
+        <div class="tier-dc-best">
+          <strong>Best for</strong>
+          Practices committed to referral growth — best per-month rate available
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── SLIDE 6: GPO Fit ── -->
+  <section class="slide" id="s6">
+    <div class="eyebrow">The GPO Alignment</div>
+    <h2>Dental Collective is exactly the right structure for this.</h2>
+    <div class="gpo-grid">
+      <div class="gpo-card">
+        <div class="gpo-card-title"><span class="icon">🤝</span> Why DC is a natural fit</div>
+        <ul class="gpo-list">
+          <li><strong>Members are independent practices</strong> — the exact segment Rippl is built for; no DSO overhead, no multiple approvals</li>
+          <li><strong>GPO model = collective buying power</strong> — DC negotiates discounts; Rippl slots in as one more member benefit</li>
+          <li><strong>Vendor partners are not tech companies</strong> — low risk that supply partners copy a SaaS referral product</li>
+          <li><strong>200+ practices = instant distribution</strong> — one announcement to the network is better than 200 cold calls</li>
+          <li><strong>No-risk launch</strong> — Free tier means every member can try Rippl with zero budget commitment</li>
+        </ul>
+      </div>
+      <div class="gpo-card">
+        <div class="gpo-card-title"><span class="icon">📊</span> Math example for your members</div>
+        <div class="math-box">
+          <div class="math-title">7 refs/month — DC Hybrid tier</div>
+          <div class="math-row"><span class="label">Free ($55/ref)</span><span class="val dim">$385/mo</span></div>
+          <div class="math-row"><span class="label">Hybrid ($99 + 7×$8)</span><span class="val green">$155/mo</span></div>
+          <div class="math-row"><span class="label">Monthly flat</span><span class="val dim">$299/mo</span></div>
+          <div class="math-row"><span class="label">Hybrid saves vs. Free</span><span class="val green">$230/mo · $2,760/yr</span></div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.5;">At 25 refs/month, Hybrid ($99 + 25×$8 = $299) ties exactly with Monthly flat — natural upgrade trigger with clear math to show members.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SLIDE 7: What DC Gets ── -->
+  <section class="slide" id="s7">
+    <div class="eyebrow">What Dental Collective Earns</div>
+    <h2>Revenue share. No risk. Better member retention.</h2>
+    <div class="gets-grid">
+      <div class="gets-card rev-callout">
+        <div class="rev-num">15%</div>
+        <div class="rev-detail">
+          <strong>Revenue share on every Rippl subscription from a DC member.</strong><br>
+          At 50 active paying practices averaging $150/mo each, DC earns $1,125/mo — growing automatically as members upgrade tiers or add locations. No invoicing, no chasing — paid monthly.
+        </div>
+      </div>
+      <div class="gets-card">
+        <div class="gets-icon">🛡️</div>
+        <div class="gets-title">Zero risk to offer</div>
+        <div class="gets-desc">Free tier means DC can put Rippl in front of every member with no pressure. Practices try it at no cost, upgrade when they see value. DC never touches refund or support requests.</div>
+      </div>
+      <div class="gets-card">
+        <div class="gets-icon">📈</div>
+        <div class="gets-title">Benchmarking data</div>
+        <div class="gets-desc">Aggregate (anonymized) referral data across DC practices — which markets generate the most referrals, average reward ROI, tier upgrade rates. Unique data asset no GPO has today.</div>
+      </div>
+      <div class="gets-card">
+        <div class="gets-icon">🏅</div>
+        <div class="gets-title">First GPO with referral automation</div>
+        <div class="gets-desc">Dental Collective becomes the first GPO to offer an automated referral program as a member benefit. Differentiated from every other buying group in the market.</div>
+      </div>
+      <div class="gets-card">
+        <div class="gets-icon">🔒</div>
+        <div class="gets-title">Member stickiness</div>
+        <div class="gets-desc">Practices using Rippl build referral data over time — referrer history, tier levels, trend graphs. That context makes switching GPOs (and losing Rippl access) more costly.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SLIDE 8: Next Steps ── -->
+  <section class="slide" id="s8">
+    <div class="eyebrow">Three Asks</div>
+    <h2>Here's exactly what I'm asking DC for.</h2>
+    <div class="asks">
+      <div class="ask">
+        <div class="ask-num">1</div>
+        <div class="ask-body">
+          <div class="ask-title">DC Vendor Directory Listing</div>
+          <div class="ask-desc">List Rippl as a member benefit with the DC-exclusive pricing displayed. Let members find it the same way they find dental supply vendors — no special announcement required.</div>
+        </div>
+      </div>
+      <div class="ask">
+        <div class="ask-num">2</div>
+        <div class="ask-body">
+          <div class="ask-title">3 Pilot Practices</div>
+          <div class="ask-desc">Identify 3 willing DC members to run a 60-day pilot at no cost (Free tier). I'll handle setup, monitoring, and reporting. DC gets the data; members get a free referral program. Zero risk.</div>
+        </div>
+      </div>
+      <div class="ask">
+        <div class="ask-num">3</div>
+        <div class="ask-body">
+          <div class="ask-title">Group Demo / Member Webinar</div>
+          <div class="ask-desc">A 20-minute live demo for interested DC members — I walk through how it works, answer questions, and offer the DC-exclusive rates to anyone who signs up during the session. Easy win for a member call.</div>
+        </div>
+      </div>
+    </div>
+    <div class="contact-box">
+      <div>
+        <div class="contact-label">Contact</div>
+        <div class="contact-name">David Donelson</div>
+        <div class="contact-detail">Founder, Rippl · <a href="mailto:david@joinrippl.com">david@joinrippl.com</a> · joinrippl.com</div>
+      </div>
+      <div class="rippl-badge">RIPPL</div>
+    </div>
+  </section>
+
+</div>
+
+<!-- Nav dots -->
+<div class="nav-dots" id="navDots"></div>
+<div class="arrow-hint">← → to navigate</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const dotsEl = document.getElementById('navDots');
+  let cur = 0;
+
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', () => go(i));
+    dotsEl.appendChild(d);
+  });
+
+  function go(n) {
+    slides[cur].classList.remove('active');
+    dotsEl.children[cur].classList.remove('active');
+    cur = Math.max(0, Math.min(slides.length - 1, n));
+    slides[cur].classList.add('active');
+    dotsEl.children[cur].classList.add('active');
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(cur + 1);
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') go(cur - 1);
+  });
+</script>
+</body>
+</html>
