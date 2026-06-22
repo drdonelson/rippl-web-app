@@ -1322,7 +1322,7 @@ export default function Patients() {
             <div>
               <p className="text-xs font-medium text-muted-foreground mb-1.5">Message <span className="font-normal opacity-60">(optional — leave blank for default)</span></p>
               <textarea value={sendCustomMessage} onChange={e => setSendCustomMessage(e.target.value)} rows={3}
-                placeholder={`Hi ${(sendLinkReferrer?.name as string ?? "").split(" ")[0] || "[Patient]"} — thanks for being a Hallmark Dental patient! Share your personal link with anyone looking for a great dentist…`}
+                placeholder={`Hi ${(sendLinkReferrer?.name as string ?? "").split(" ")[0] || "[Patient]"} — thanks for being a patient! Share your personal link with anyone looking for a great dentist…`}
                 className="w-full px-4 py-2.5 bg-background border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none" />
             </div>
             <div className="flex gap-2 pt-1">

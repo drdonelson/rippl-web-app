@@ -970,7 +970,7 @@ function BespokeDeckSection() {
 export default function SlideDeck() {
   const { profile, isDemo, demoVertical } = useAuth();
   const isAuto = isDemo && demoVertical === "automotive";
-  const defaultName = isAuto ? "Summit Auto Group" : "Hallmark Dental";
+  const defaultName = isAuto ? "Summit Auto Group" : isDemo ? "Smile Care Dental" : "Hallmark Dental";
   const deckSectionLabel = isAuto ? "Showroom Floor Slide Deck" : "Waiting Room Slide Deck";
   const tvStepLabel = isAuto ? "Display on your showroom floor TV" : "Display on your waiting room TV";
 
@@ -980,7 +980,7 @@ export default function SlideDeck() {
   const [error, setError]               = useState<string | null>(null);
 
   useEffect(() => {
-    setPracticeName(isAuto ? "Summit Auto Group" : "Hallmark Dental");
+    setPracticeName(isAuto ? "Summit Auto Group" : isDemo ? "Smile Care Dental" : "Hallmark Dental");
   }, [isAuto]);
 
   useEffect(() => {

@@ -38,9 +38,9 @@ const FILTER_OPTIONS: FilterOption[] = [
   { value: "tier_rippler",        label: "Tier: Amplifier",             description: "Patients at the Amplifier tier (3–5 referrals)" },
   { value: "tier_super_rippler",  label: "Tier: Ambassador",            description: "Patients at the Ambassador tier (6–9 referrals)" },
   { value: "tier_rippl_legend",   label: "Tier: Legend",                description: "Patients at the Legend tier (10+ referrals)" },
-  { value: "office_brentwood",    label: "Office: Brentwood",           description: "Patients assigned to Hallmark Dental – Brentwood" },
-  { value: "office_lewisburg",    label: "Office: Lewisburg",           description: "Patients assigned to Hallmark Dental – Lewisburg" },
-  { value: "office_greenbrier",   label: "Office: Greenbrier",          description: "Patients assigned to Hallmark Dental – Greenbrier" },
+  { value: "office_brentwood",    label: "Office: Brentwood",           description: "Patients assigned to the Brentwood location" },
+  { value: "office_lewisburg",    label: "Office: Lewisburg",           description: "Patients assigned to the Lewisburg location" },
+  { value: "office_greenbrier",   label: "Office: Greenbrier",          description: "Patients assigned to the Greenbrier location" },
   { value: "no_referrals_90d",    label: "No referrals in last 90 days", description: "Patients who haven't referred anyone in 90 days (re-engagement)" },
 ];
 
@@ -343,7 +343,7 @@ const DEMO_COUNT_RESULT: CountResult = {
     referral_code: "SARAH1234",
     tier:          "starter",
     reward_value:  35,
-    office_name:   "Hallmark Dental – Brentwood",
+    office_name:   "Smile Care Dental – Brentwood",
   },
 };
 
