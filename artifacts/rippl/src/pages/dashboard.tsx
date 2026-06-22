@@ -151,7 +151,7 @@ export default function Dashboard() {
     try { localStorage.setItem(`rippl_welcome_dismissed_${profile?.id}`, "1"); } catch {}
     setWelcomeDismissed(true);
   };
-  const showWelcomeBanner = !isDemo && isPracticeAdmin && !welcomeDismissed && stats.total_referrals === 0;
+  const showWelcomeBanner = isDemo || (isPracticeAdmin && !welcomeDismissed && stats.total_referrals === 0);
 
   return (
     <div className="space-y-10">
