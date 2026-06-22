@@ -11,9 +11,9 @@ import { cn } from "@/lib/utils";
 // ── Demo fake data ─────────────────────────────────────────────────────────────
 
 const DEMO_STAFF = [
-  { id: "s1", full_name: "Sarah Johnson",  email: "sarah.johnson@hallmarkdds.com",   office_name: "Brentwood",  role_label: "Front Desk" },
-  { id: "s2", full_name: "Mike Williams",  email: "mike.williams@hallmarkdds.com",   office_name: "Brentwood",  role_label: "Front Desk" },
-  { id: "s3", full_name: "Lisa Chen",      email: "lisa.chen@hallmarkdds.com",       office_name: "Lewisburg",  role_label: "Front Desk" },
+  { id: "s1", full_name: "Sarah Johnson",  email: "sarah.johnson@smilecaredental.com",   office_name: "Brentwood",  role_label: "Front Desk" },
+  { id: "s2", full_name: "Mike Williams",  email: "mike.williams@smilecaredental.com",   office_name: "Brentwood",  role_label: "Front Desk" },
+  { id: "s3", full_name: "Lisa Chen",      email: "lisa.chen@smilecaredental.com",       office_name: "Lewisburg",  role_label: "Front Desk" },
 ];
 
 const DEMO_STAFF_AUTO = [
