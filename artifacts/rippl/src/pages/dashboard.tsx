@@ -108,6 +108,9 @@ export default function Dashboard() {
   const stats: DashboardStats | undefined = isDemo ? (demoStats as DashboardStats) : fetchedStats;
   const loading = !isDemo && (authIsLoading || isLoading);
 
+  const DEMO_POOL = { config: { enabled: true, amount_per_referral: 5 }, balance: 85 };
+  const poolDisplay = isDemo ? DEMO_POOL : poolData;
+
   if (loading) {
     return (
       <div className="space-y-8 animate-pulse">
@@ -209,7 +212,7 @@ export default function Dashboard() {
       </div>
 
       {/* Staff Incentive Pool balance — shown when pool is enabled */}
-      {!isDemo && poolData?.config?.enabled && (
+      {poolDisplay?.config?.enabled && (
         <div className="flex items-center gap-5 bg-card/50 border border-border rounded-2xl px-6 py-5">
           <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
             <Wallet className="w-5 h-5 text-primary" />
@@ -217,17 +220,17 @@ export default function Dashboard() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-muted-foreground">Team Referral Pool</p>
             <p className="text-xs text-muted-foreground/70 mt-0.5">
-              ${poolData.config.amount_per_referral} is added to this pool every time a referral completes.
+              ${poolDisplay.config.amount_per_referral} is added to this pool every time a referral completes.
               Your practice owner distributes it to the team.
             </p>
           </div>
           <div className="text-right shrink-0">
             <p className="text-3xl font-black text-primary" style={{ fontFamily: "Georgia, serif" }}>
-              ${poolData.balance}
+              ${poolDisplay.balance}
             </p>
             <p className="text-xs text-muted-foreground">current balance</p>
           </div>
-          {isPracticeAdmin && (
+          {(isPracticeAdmin || isDemo) && (
             <Link
               href="/offices"
               className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
