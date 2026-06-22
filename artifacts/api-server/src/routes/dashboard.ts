@@ -34,9 +34,10 @@ router.get("/", async (req, res) => {
     const officeFilter   = officeId   ? eq(referralEventsTable.office_id,   officeId)   : undefined;
     const practiceFilter = practiceId ? eq(referralEventsTable.practice_id, practiceId) : undefined;
 
-    const bothFilters = [officeFilter, practiceFilter, demoExclusionFilter]
-      .filter(Boolean)
-      .reduce((acc, f) => acc ? and(acc, f!) : f);
+    const filterParts = [officeFilter, practiceFilter, demoExclusionFilter].filter(Boolean);
+    const bothFilters = filterParts.length === 0
+      ? undefined
+      : filterParts.reduce((acc, f) => acc ? and(acc, f!) : f);
 
     // Look up vertical so automotive practices get deal-closed count instead of exam count
     let practiceVertical: string | null = null;
