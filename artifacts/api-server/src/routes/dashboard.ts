@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { referralEventsTable, referrersTable, rewardsTable, practicesTable } from "@workspace/db/schema";
-import { eq, sql, and, inArray, notInArray, or, isNull } from "drizzle-orm";
+import { referralEventsTable, referrersTable, rewardClaimsTable, practicesTable } from "@workspace/db/schema";
+import { eq, sql, and, inArray, notInArray, or, isNull, ne } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -75,14 +75,15 @@ router.get("/", async (req, res) => {
         .from(referralEventsTable)
         .where(examCondition),
 
-      // 3. Rewards issued
+      // 3. Rewards issued (reward_claims is the active table; rewards is legacy/empty)
       bothFilters
         ? db.select({ count: sql<number>`count(*)::int` })
-            .from(rewardsTable)
-            .leftJoin(referralEventsTable, eq(rewardsTable.referral_event_id, referralEventsTable.id))
-            .where(bothFilters)
+            .from(rewardClaimsTable)
+            .leftJoin(referralEventsTable, eq(rewardClaimsTable.referral_event_id, referralEventsTable.id))
+            .where(and(bothFilters, ne(rewardClaimsTable.status, "voided")))
         : db.select({ count: sql<number>`count(*)::int` })
-            .from(rewardsTable),
+            .from(rewardClaimsTable)
+            .where(ne(rewardClaimsTable.status, "voided")),
 
       // 4. Active referrers (distinct)
       db.select({ count: sql<number>`count(distinct ${referralEventsTable.referrer_id})::int` })
