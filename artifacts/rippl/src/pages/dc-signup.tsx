@@ -18,7 +18,7 @@ const STATS = [
   { val: "23%",  label: "More new patients traced to a referrer" },
   { val: "0",    label: "Staff steps per referral detected" },
   { val: "~2h",  label: "Setup time — then fully automated" },
-  { val: "$0",   label: "To start — no commitment" },
+  { val: "$0",   label: "To start — no upfront charge" },
 ];
 
 const HOW = [
@@ -161,7 +161,7 @@ export default function DcSignup() {
                 <div className="text-sm text-slate-500 mb-4">+ $55 per referral detected</div>
                 <div className="text-xs text-slate-400 pt-4 border-t border-slate-100 leading-relaxed">
                   Standard rate: <span className="line-through">$85/ref</span><br />
-                  Start free. No commitment.
+                  Start free. No upfront charge.
                 </div>
               </div>
               {/* Growth */}
@@ -228,7 +228,7 @@ export default function DcSignup() {
                   <p className="text-slate-500 text-sm">
                     {mode === "demo"
                       ? "We'll walk you through a live practice — referral detected, reward sent, dashboard updated. Usually 20 minutes."
-                      : "DC members start on the Free tier with no commitment. We'll reach out within 24 hours to get you connected."}
+                      : "DC members start on the Free tier with no upfront charge. We'll reach out within 24 hours to get you connected."}
                   </p>
                 </div>
 
@@ -297,7 +297,7 @@ export default function DcSignup() {
                 </form>
 
                 <p className="text-center text-xs text-slate-400 mt-5">
-                  No credit card. No contract. DC-exclusive rates applied automatically.
+                  No upfront charge. No contract. DC-exclusive rates applied automatically.
                 </p>
               </div>
             ) : (
