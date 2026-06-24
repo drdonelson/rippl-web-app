@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, CheckCircle2, Zap, Plug, Target } from "lucide-react";
 import { useAuth, staffOfficeLabel } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 
@@ -82,15 +82,15 @@ export default function Login() {
           </p>
           <div className="space-y-4">
             {[
-              { icon: "⚡", text: "Zero staff work required" },
-              { icon: "🔗", text: "Software-connected, auto-verified" },
-              { icon: "🎯", text: "Only pay when referrals fire" },
-            ].map((f) => (
-              <div key={f.text} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-base shrink-0">
-                  {f.icon}
+              { Icon: Zap,    text: "Zero staff work required" },
+              { Icon: Plug,   text: "Software-connected, auto-verified" },
+              { Icon: Target, text: "Only pay when referrals fire" },
+            ].map(({ Icon, text }) => (
+              <div key={text} className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
+                  <Icon className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-white font-semibold text-base">{f.text}</span>
+                <span className="text-white font-semibold text-base">{text}</span>
               </div>
             ))}
           </div>
