@@ -54,7 +54,7 @@ function BillingBadge({ status }: { status: string | null }) {
 
 // ── Billing panel (inside edit drawer) ────────────────────────────────────────
 
-function BillingPanel({ practice }: { practice: Practice & { id: string } }) {
+function BillingPanel({ practice, onBillingError }: { practice: Practice & { id: string }; onBillingError?: (msg: string) => void }) {
   const [copied, setCopied] = useState(false);
   const [chargeResult, setChargeResult] = useState<string | null>(null);
   const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -66,9 +66,21 @@ function BillingPanel({ practice }: { practice: Practice & { id: string } }) {
         body: JSON.stringify({ practice_id: practice.id }),
       }),
     onSuccess: async (data) => {
-      await navigator.clipboard.writeText(data.url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 3000);
+      try {
+        await navigator.clipboard.writeText(data.url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 3000);
+      } catch {
+        // Clipboard blocked — prompt to manually copy
+        window.prompt("Copy this link and send to the practice owner:", data.url);
+      }
+    },
+    onError: (err) => {
+      const detail =
+        (err as { data?: { detail?: string; error?: string } } | null)?.data?.detail ??
+        (err as { data?: { detail?: string; error?: string } } | null)?.data?.error ??
+        (err instanceof Error ? err.message : "Unknown error");
+      onBillingError?.(detail);
     },
   });
 
@@ -246,10 +258,12 @@ function PracticeForm({
   initial,
   onClose,
   onSaved,
+  onBillingError,
 }: {
   initial: PracticeFormData & { id?: string };
   onClose: () => void;
   onSaved: () => void;
+  onBillingError?: (msg: string) => void;
 }) {
   const [form, setForm] = useState<PracticeFormData>(initial);
   const [error, setError] = useState<string | null>(null);
@@ -427,7 +441,7 @@ function PracticeForm({
           )}
 
           {/* Stripe billing — only shown when editing an existing practice */}
-          {isEdit && <BillingPanel practice={initial as Practice & { id: string }} />}
+          {isEdit && <BillingPanel practice={initial as Practice & { id: string }} onBillingError={onBillingError} />}
         </form>
 
         {/* Footer */}
@@ -529,6 +543,7 @@ export default function PracticeAdminPage() {
   const { profile, isLoading: authLoading } = useAuth();
   const [showCreate, setShowCreate] = useState(false);
   const [editTarget, setEditTarget] = useState<Practice | null>(null);
+  const [billingError, setBillingError] = useState<string | null>(null);
 
   const { data: practices, isLoading, isError } = useQuery<Practice[]>({
     queryKey: ["/api/practices"],
@@ -567,6 +582,17 @@ export default function PracticeAdminPage() {
   return (
     <>
       <div className="space-y-8">
+        {/* Billing error banner — survives drawer close */}
+        {billingError && (
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20">
+            <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-destructive">Stripe billing error</p>
+              <p className="text-xs text-destructive/80 font-mono mt-0.5 break-all">{billingError}</p>
+            </div>
+            <button onClick={() => setBillingError(null)} className="text-destructive/60 hover:text-destructive text-xs shrink-0">✕</button>
+          </div>
+        )}
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
@@ -649,6 +675,7 @@ export default function PracticeAdminPage() {
           initial={toFormData(editTarget)}
           onClose={() => setEditTarget(null)}
           onSaved={() => setEditTarget(null)}
+          onBillingError={setBillingError}
         />
       )}
     </>

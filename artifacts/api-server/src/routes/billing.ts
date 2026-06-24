@@ -59,8 +59,6 @@ router.post("/create-setup-session", requireAuth, requireSuperAdmin, async (req,
     const session = await stripe.checkout.sessions.create({
       mode: "setup",
       customer: customerId,
-      currency: "usd",
-      payment_method_types: ["card"],
       success_url: `${APP_URL}/billing/setup?session_id={CHECKOUT_SESSION_ID}&practice_id=${practice_id}`,
       cancel_url:  `${APP_URL}/billing/setup?cancelled=true&practice_id=${practice_id}`,
       metadata: { practice_id },
