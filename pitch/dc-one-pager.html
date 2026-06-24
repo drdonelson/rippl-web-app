@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rippl — DC Member Exclusive</title>
+<style>
+  @page { size: letter; margin: 0; }
+
+  :root {
+    --green: #1A7A3A;
+    --green-light: #EAF5EE;
+    --green-border: #B8DCC3;
+    --green-dark: #145E2C;
+    --text: #111;
+    --muted: #555;
+    --soft: #777;
+    --border: #DDD;
+    --bg: #F8F9F7;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    color: var(--text);
+    background: white;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 36px 48px 32px;
+    line-height: 1.5;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--green);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-name {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--green);
+    letter-spacing: -0.5px;
+  }
+  .brand-sep { color: #CCC; font-size: 18px; }
+  .brand-dc { font-size: 14px; font-weight: 700; color: var(--muted); letter-spacing: 0.05em; }
+  .exclusive-badge {
+    background: var(--green);
+    color: white;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 20px;
+  }
+
+  /* ── Headline ── */
+  .headline-block { margin-bottom: 22px; }
+  h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: -0.8px;
+    color: var(--text);
+    margin-bottom: 10px;
+    max-width: 580px;
+  }
+  h1 em {
+    color: var(--green);
+    font-style: normal;
+  }
+  .subhead {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.6;
+    max-width: 560px;
+  }
+
+  /* ── Stats row ── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+  .stat {
+    background: var(--green-light);
+    border: 1px solid var(--green-border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .stat-val {
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--green);
+    letter-spacing: -0.5px;
+    line-height: 1;
+    margin-bottom: 5px;
+  }
+  .stat-lbl {
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.35;
+    font-weight: 500;
+  }
+
+  /* ── How it works ── */
+  .section-label {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 10px;
+  }
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+  .step {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 13px 14px;
+  }
+  .step-num {
+    font-size: 9px;
+    font-weight: 800;
+    color: var(--green);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .step-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+  .step-desc {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+  .step-tag {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--green);
+    background: var(--green-light);
+    border: 1px solid var(--green-border);
+    border-radius: 3px;
+    padding: 2px 6px;
+  }
+
+  /* ── Quote ── */
+  .quote {
+    background: var(--bg);
+    border-left: 3px solid var(--green);
+    border-radius: 0 6px 6px 0;
+    padding: 13px 16px;
+    margin-bottom: 22px;
+    font-size: 13px;
+    font-style: italic;
+    color: #2A3A2E;
+    line-height: 1.6;
+  }
+  .quote-attr {
+    font-style: normal;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--green);
+    margin-top: 7px;
+  }
+
+  /* ── Pricing ── */
+  .pricing {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .price-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .price-card.featured {
+    border-color: var(--green);
+  }
+  .price-card-header {
+    padding: 10px 16px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .price-card.featured .price-card-header {
+    background: var(--green);
+  }
+  .price-tier {
+    font-size: 14px;
+    font-weight: 900;
+    color: var(--text);
+  }
+  .price-card.featured .price-tier { color: white; }
+  .price-badge {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--green);
+    background: var(--green-light);
+    border: 1px solid var(--green-border);
+    border-radius: 3px;
+    padding: 2px 6px;
+  }
+  .price-card.featured .price-badge {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.4);
+    color: white;
+  }
+  .price-card-body { padding: 14px 16px; }
+  .price-main {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 3px;
+  }
+  .price-card.featured .price-main { color: var(--green); }
+  .price-per { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .price-compare {
+    font-size: 11px;
+    color: var(--soft);
+    line-height: 1.4;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+  .price-compare strong { color: var(--text); }
+
+  /* ── CTA ── */
+  .cta {
+    background: var(--green);
+    border-radius: 10px;
+    padding: 22px 26px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .cta-left { flex: 1; }
+  .cta-headline {
+    font-size: 18px;
+    font-weight: 900;
+    color: white;
+    letter-spacing: -0.3px;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .cta-sub {
+    font-size: 12px;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+  .cta-link {
+    display: inline-block;
+    background: white;
+    color: var(--green);
+    font-size: 13px;
+    font-weight: 900;
+    text-decoration: none;
+    padding: 9px 20px;
+    border-radius: 6px;
+    letter-spacing: -0.2px;
+  }
+  .cta-url {
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 7px;
+  }
+  .qr-block {
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .qr-block img {
+    display: block;
+    width: 100px;
+    height: 100px;
+    border-radius: 6px;
+    background: white;
+    padding: 4px;
+  }
+  .qr-label {
+    font-size: 9px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    margin-top: 18px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    color: var(--soft);
+  }
+
+  /* ── Print ── */
+  @media print {
+    body {
+      padding: 28px 40px 24px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .cta-link { border: 2px solid var(--green); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="brand">
+    <div class="brand-name">rippl</div>
+    <div class="brand-sep">×</div>
+    <div class="brand-dc">Dental Collective</div>
+  </div>
+  <div class="exclusive-badge">DC Member Exclusive</div>
+</div>
+
+<!-- Headline -->
+<div class="headline-block">
+  <h1>Your best patients are already<br>sending you referrals.<br><em>Most practices never find out.</em></h1>
+  <p class="subhead">Rippl connects to Open Dental and automatically detects, tracks, and rewards every referral — without a single staff step. You see every referrer. Rewards fire in minutes. Your team treats patients.</p>
+</div>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-val">23%</div>
+    <div class="stat-lbl">More new patients<br>traced to a referrer</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">0</div>
+    <div class="stat-lbl">Staff steps per<br>referral detected</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">~2h</div>
+    <div class="stat-lbl">Setup time, then<br>fully automated</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">$0</div>
+    <div class="stat-lbl">To start — no<br>commitment required</div>
+  </div>
+</div>
+
+<!-- How it works -->
+<div class="section-label">How it works</div>
+<div class="steps">
+  <div class="step">
+    <div class="step-num">Step 01</div>
+    <div class="step-title">Connects to Open Dental</div>
+    <div class="step-desc">Syncs every 5 minutes. Watches for new patient procedure codes. No manual data entry.</div>
+    <div class="step-tag">Automatic</div>
+  </div>
+  <div class="step">
+    <div class="step-num">Step 02</div>
+    <div class="step-title">Welcome text goes out</div>
+    <div class="step-desc">New patient gets a referral link within 2 hours of their visit. Front desk does nothing.</div>
+    <div class="step-tag">SMS · Auto</div>
+  </div>
+  <div class="step">
+    <div class="step-num">Step 03</div>
+    <div class="step-title">Referral detected</div>
+    <div class="step-desc">When a referred patient completes their exam, Rippl matches them to the referrer instantly.</div>
+    <div class="step-tag">Instant Match</div>
+  </div>
+  <div class="step">
+    <div class="step-num">Step 04</div>
+    <div class="step-title">Gift card sent</div>
+    <div class="step-desc">Tango gift card delivered by email + SMS. No staff involved at any step. Rewards increase as patients refer more.</div>
+    <div class="step-tag">Tango Card</div>
+  </div>
+</div>
+
+<!-- Quote -->
+<div class="quote">
+  "The first referral fired while I was with a patient. I didn't do anything — Rippl sent the reward, logged it in the dashboard, and I saw it that evening. That's what I needed."
+  <div class="quote-attr">Dr. David Donelson · Hallmark Dental · Brentwood, TN · Independent, Single Location</div>
+</div>
+
+<!-- Pricing -->
+<div class="section-label">DC Member Pricing — Exclusive Rates</div>
+<div class="pricing">
+  <div class="price-card">
+    <div class="price-card-header">
+      <div class="price-tier">Free</div>
+      <div class="price-badge">DC Member Rate</div>
+    </div>
+    <div class="price-card-body">
+      <div class="price-main">$0<span style="font-size:14px;font-weight:400;color:var(--muted);">/mo</span></div>
+      <div class="price-per">Pay only when referrals happen</div>
+      <div class="price-compare">
+        <strong>$55 per referral</strong> — standard rate is $85<br>
+        Start free. No commitment, no contract.
+      </div>
+    </div>
+  </div>
+  <div class="price-card featured">
+    <div class="price-card-header">
+      <div class="price-tier">Growth</div>
+      <div class="price-badge">Most Popular</div>
+    </div>
+    <div class="price-card-body">
+      <div class="price-main">$149<span style="font-size:14px;font-weight:400;color:var(--muted);">/mo</span></div>
+      <div class="price-per">+ $30 per referral detected</div>
+      <div class="price-compare">
+        <strong>Breaks even with Free at 6 referrals/month</strong><br>
+        Standard rate: $199/mo + $35/ref — DC saves $50/mo + $5/ref
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta">
+  <div class="cta-left">
+    <div class="cta-headline">Start free today.<br>DC members get exclusive pricing.</div>
+    <div class="cta-sub">No setup fee. No contract. Connect Open Dental, run your first referral, and see it fire — in under two hours.</div>
+    <a class="cta-link" href="https://joinrippl.com/dc">Get started at joinrippl.com/dc</a>
+    <div class="cta-url">joinrippl.com/dc &nbsp;·&nbsp; Questions: david@joinrippl.com</div>
+  </div>
+  <div class="qr-block">
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://joinrippl.com/dc&color=1A7A3A&bgcolor=FFFFFF&margin=2" alt="Scan to sign up">
+    <div class="qr-label">Scan to sign up</div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <div>Rippl · BD America LLC DBA Rippl · Nashville, TN · joinrippl.com</div>
+  <div>DC Member Exclusive Pricing · Available to Dental Collective members only</div>
+</div>
+
+</body>
+</html>
