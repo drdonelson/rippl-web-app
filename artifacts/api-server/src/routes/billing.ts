@@ -14,6 +14,25 @@ const APP_URL = (process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://w
 
 const router: IRouter = Router();
 
+// GET /api/billing/config-check — super_admin only
+// Verifies Stripe key is valid without doing anything billable
+router.get("/config-check", requireAuth, requireSuperAdmin, async (_req, res) => {
+  const key = process.env.STRIPE_SECRET_KEY ?? "";
+  if (!key) {
+    res.status(500).json({ ok: false, error: "STRIPE_SECRET_KEY is not set" }); return;
+  }
+  if (!key.startsWith("sk_")) {
+    res.status(500).json({ ok: false, error: `Key must start with sk_test_ or sk_live_, got: ${key.slice(0, 8)}…` }); return;
+  }
+  try {
+    const acct = await stripe.accounts.retrieve();
+    res.json({ ok: true, account_id: acct.id, livemode: acct.charges_enabled });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ ok: false, error: msg });
+  }
+});
+
 // POST /api/billing/create-setup-session — super_admin only
 // Generates a Stripe Checkout setup URL for a practice to enter their card
 router.post("/create-setup-session", requireAuth, requireSuperAdmin, async (req, res) => {
@@ -49,8 +68,9 @@ router.post("/create-setup-session", requireAuth, requireSuperAdmin, async (req,
 
     res.json({ url: session.url, session_id: session.id });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
     logger.error({ err, practice_id }, "[billing] create-setup-session failed");
-    res.status(500).json({ error: "Failed to create billing session" });
+    res.status(500).json({ error: "Failed to create billing session", detail: msg });
   }
 });
 

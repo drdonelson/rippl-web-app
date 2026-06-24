@@ -61,7 +61,7 @@ function BillingPanel({ practice }: { practice: Practice & { id: string } }) {
 
   const setupMut = useMutation({
     mutationFn: () =>
-      customFetch<{ url: string }>(`${BASE}/api/billing/create-setup-session`, {
+      customFetch<{ url: string; detail?: string }>(`${BASE}/api/billing/create-setup-session`, {
         method: "POST",
         body: JSON.stringify({ practice_id: practice.id }),
       }),
@@ -114,7 +114,12 @@ function BillingPanel({ practice }: { practice: Practice & { id: string } }) {
             )}
           </button>
           {setupMut.isError && (
-            <p className="text-xs text-destructive mt-2">Failed to generate link. Check Stripe config.</p>
+            <p className="text-xs text-destructive mt-2">
+              Failed to generate link.{" "}
+              {(setupMut.error as { detail?: string } | null)?.detail
+                ? `Stripe error: ${(setupMut.error as { detail?: string }).detail}`
+                : "Check Stripe config."}
+            </p>
           )}
         </div>
 

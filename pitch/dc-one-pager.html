@@ -10,13 +10,12 @@
   :root {
     --green: #1A7A3A;
     --green-light: #EAF5EE;
-    --green-border: #B8DCC3;
-    --green-dark: #145E2C;
-    --text: #111;
-    --muted: #555;
-    --soft: #777;
-    --border: #DDD;
-    --bg: #F8F9F7;
+    --green-border: #C4DEC9;
+    --text: #0F1A13;
+    --muted: #4A5A50;
+    --soft: #7A8A7E;
+    --border: #DDE5DF;
+    --bg: #F6F8F6;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -25,10 +24,11 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
     color: var(--text);
     background: white;
-    max-width: 760px;
+    width: 7.5in;
     margin: 0 auto;
-    padding: 36px 48px 32px;
-    line-height: 1.5;
+    padding: 0.38in 0.5in 0.3in;
+    line-height: 1.45;
+    font-size: 11px;
   }
 
   /* ── Header ── */
@@ -36,130 +36,191 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 28px;
-    padding-bottom: 16px;
+    margin-bottom: 0.22in;
+    padding-bottom: 10px;
     border-bottom: 2px solid var(--green);
   }
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
+  .brand { display: flex; align-items: center; gap: 8px; }
   .brand-name {
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 900;
-    color: var(--green);
     letter-spacing: -0.5px;
   }
-  .brand-sep { color: #CCC; font-size: 18px; }
-  .brand-dc { font-size: 14px; font-weight: 700; color: var(--muted); letter-spacing: 0.05em; }
+  .brand-name .rip { color: var(--text); }
+  .brand-name .pl  { color: var(--green); }
+  .brand-sep { color: #BCC8C0; font-size: 16px; }
+  .brand-dc  { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.04em; }
   .exclusive-badge {
     background: var(--green);
     color: white;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 800;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
-    padding: 5px 12px;
+    padding: 4px 11px;
     border-radius: 20px;
   }
 
-  /* ── Headline ── */
-  .headline-block { margin-bottom: 22px; }
+  /* ── Top section: 2-col ── */
+  .top {
+    display: grid;
+    grid-template-columns: 1fr 200px;
+    gap: 0.3in;
+    margin-bottom: 0.2in;
+    align-items: start;
+  }
   h1 {
-    font-size: 30px;
+    font-size: 26px;
     font-weight: 900;
-    line-height: 1.15;
+    line-height: 1.12;
     letter-spacing: -0.8px;
     color: var(--text);
-    margin-bottom: 10px;
-    max-width: 580px;
+    margin-bottom: 9px;
   }
-  h1 em {
-    color: var(--green);
-    font-style: normal;
-  }
+  h1 em { color: var(--green); font-style: normal; }
   .subhead {
-    font-size: 14px;
+    font-size: 11.5px;
     color: var(--muted);
-    line-height: 1.6;
-    max-width: 560px;
+    line-height: 1.55;
+    max-width: 380px;
   }
 
-  /* ── Stats row ── */
+  /* ── Stats (right column) ── */
   .stats {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin-bottom: 22px;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
   }
   .stat {
     background: var(--green-light);
     border: 1px solid var(--green-border);
-    border-radius: 8px;
-    padding: 12px 14px;
+    border-radius: 7px;
+    padding: 10px 10px 8px;
     text-align: center;
   }
   .stat-val {
-    font-size: 26px;
+    font-size: 22px;
     font-weight: 900;
     color: var(--green);
     letter-spacing: -0.5px;
     line-height: 1;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
   }
   .stat-lbl {
-    font-size: 10px;
+    font-size: 9px;
     color: var(--muted);
-    line-height: 1.35;
+    line-height: 1.3;
     font-weight: 500;
   }
 
-  /* ── How it works ── */
+  /* ── Divider ── */
+  .rule {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0 0 0.15in;
+  }
+
+  /* ── Section label ── */
   .section-label {
-    font-size: 9px;
+    font-size: 8.5px;
     font-weight: 800;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--green);
-    margin-bottom: 10px;
+    margin-bottom: 9px;
   }
+
+  /* ── How it works ── */
   .steps {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin-bottom: 22px;
+    gap: 0;
+    margin-bottom: 0.18in;
+    position: relative;
   }
-  .step {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 13px 14px;
+  .steps::before {
+    content: '';
+    position: absolute;
+    top: 13px;
+    left: 13px;
+    right: 13px;
+    height: 1px;
+    background: var(--green-border);
+    z-index: 0;
   }
+  .step { position: relative; padding-right: 12px; }
   .step-num {
-    font-size: 9px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--green);
+    color: white;
+    font-size: 10px;
     font-weight: 800;
-    color: var(--green);
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 1;
   }
   .step-title {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 800;
     color: var(--text);
-    margin-bottom: 4px;
-    line-height: 1.3;
+    margin-bottom: 3px;
+    line-height: 1.25;
   }
   .step-desc {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--muted);
-    line-height: 1.45;
+    line-height: 1.4;
   }
-  .step-tag {
-    display: inline-block;
-    margin-top: 8px;
-    font-size: 9px;
+
+  /* ── Quote ── */
+  .quote {
+    border-left: 3px solid var(--green);
+    padding: 8px 14px;
+    margin-bottom: 0.18in;
+    font-size: 11.5px;
+    font-style: italic;
+    color: #2A3A2E;
+    line-height: 1.55;
+  }
+  .quote-attr {
+    font-style: normal;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--green);
+    margin-top: 5px;
+  }
+
+  /* ── Pricing ── */
+  .pricing {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 0.18in;
+  }
+  .price-card {
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    overflow: hidden;
+  }
+  .price-card.featured { border-color: var(--green); border-width: 1.5px; }
+  .price-card-header {
+    padding: 8px 13px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .price-card.featured .price-card-header { background: var(--green); border-color: var(--green); }
+  .price-tier { font-size: 12px; font-weight: 800; color: var(--text); }
+  .price-card.featured .price-tier { color: white; }
+  .price-badge {
+    font-size: 8.5px;
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -167,92 +228,29 @@
     background: var(--green-light);
     border: 1px solid var(--green-border);
     border-radius: 3px;
-    padding: 2px 6px;
-  }
-
-  /* ── Quote ── */
-  .quote {
-    background: var(--bg);
-    border-left: 3px solid var(--green);
-    border-radius: 0 6px 6px 0;
-    padding: 13px 16px;
-    margin-bottom: 22px;
-    font-size: 13px;
-    font-style: italic;
-    color: #2A3A2E;
-    line-height: 1.6;
-  }
-  .quote-attr {
-    font-style: normal;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--green);
-    margin-top: 7px;
-  }
-
-  /* ── Pricing ── */
-  .pricing {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 22px;
-  }
-  .price-card {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  .price-card.featured {
-    border-color: var(--green);
-  }
-  .price-card-header {
-    padding: 10px 16px;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .price-card.featured .price-card-header {
-    background: var(--green);
-  }
-  .price-tier {
-    font-size: 14px;
-    font-weight: 900;
-    color: var(--text);
-  }
-  .price-card.featured .price-tier { color: white; }
-  .price-badge {
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--green);
-    background: var(--green-light);
-    border: 1px solid var(--green-border);
-    border-radius: 3px;
-    padding: 2px 6px;
+    padding: 2px 5px;
   }
   .price-card.featured .price-badge {
-    background: rgba(255,255,255,0.2);
-    border-color: rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.18);
+    border-color: rgba(255,255,255,0.35);
     color: white;
   }
-  .price-card-body { padding: 14px 16px; }
+  .price-card-body { padding: 11px 13px; }
   .price-main {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 900;
     color: var(--text);
     line-height: 1;
-    margin-bottom: 3px;
+    margin-bottom: 2px;
   }
   .price-card.featured .price-main { color: var(--green); }
-  .price-per { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .price-main span { font-size: 12px; font-weight: 400; color: var(--muted); }
+  .price-per { font-size: 11px; color: var(--muted); margin-bottom: 7px; }
   .price-compare {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--soft);
     line-height: 1.4;
-    padding-top: 8px;
+    padding-top: 7px;
     border-top: 1px solid var(--border);
   }
   .price-compare strong { color: var(--text); }
@@ -260,84 +258,75 @@
   /* ── CTA ── */
   .cta {
     background: var(--green);
-    border-radius: 10px;
-    padding: 22px 26px;
+    border-radius: 9px;
+    padding: 18px 22px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 24px;
+    gap: 22px;
   }
   .cta-left { flex: 1; }
   .cta-headline {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 900;
     color: white;
     letter-spacing: -0.3px;
     line-height: 1.2;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
   }
   .cta-sub {
-    font-size: 12px;
-    color: rgba(255,255,255,0.75);
-    line-height: 1.5;
-    margin-bottom: 14px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.72);
+    line-height: 1.45;
+    margin-bottom: 12px;
   }
   .cta-link {
     display: inline-block;
     background: white;
     color: var(--green);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 900;
     text-decoration: none;
-    padding: 9px 20px;
-    border-radius: 6px;
+    padding: 7px 17px;
+    border-radius: 5px;
     letter-spacing: -0.2px;
   }
   .cta-url {
-    font-size: 11px;
-    color: rgba(255,255,255,0.6);
-    margin-top: 7px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.55);
+    margin-top: 6px;
   }
-  .qr-block {
-    text-align: center;
-    flex-shrink: 0;
-  }
+  .qr-block { text-align: center; flex-shrink: 0; }
   .qr-block img {
     display: block;
-    width: 100px;
-    height: 100px;
-    border-radius: 6px;
+    width: 88px;
+    height: 88px;
+    border-radius: 5px;
     background: white;
     padding: 4px;
   }
   .qr-label {
-    font-size: 9px;
-    color: rgba(255,255,255,0.6);
-    margin-top: 5px;
+    font-size: 8.5px;
+    color: rgba(255,255,255,0.55);
+    margin-top: 4px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
 
   /* ── Footer ── */
   .footer {
-    margin-top: 18px;
-    padding-top: 12px;
+    margin-top: 12px;
+    padding-top: 9px;
     border-top: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 10px;
+    font-size: 9px;
     color: var(--soft);
   }
 
-  /* ── Print ── */
   @media print {
-    body {
-      padding: 28px 40px 24px;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-    .cta-link { border: 2px solid var(--green); }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .cta-link { border: 1.5px solid var(--green); }
   }
 </style>
 </head>
@@ -346,67 +335,55 @@
 <!-- Header -->
 <div class="header">
   <div class="brand">
-    <div class="brand-name">rippl</div>
+    <div class="brand-name"><span class="rip">rip</span><span class="pl">pl</span></div>
     <div class="brand-sep">×</div>
     <div class="brand-dc">Dental Collective</div>
   </div>
   <div class="exclusive-badge">DC Member Exclusive</div>
 </div>
 
-<!-- Headline -->
-<div class="headline-block">
-  <h1>Your best patients are already<br>sending you referrals.<br><em>Most practices never find out.</em></h1>
-  <p class="subhead">Rippl connects to Open Dental and automatically detects, tracks, and rewards every referral — without a single staff step. You see every referrer. Rewards fire in minutes. Your team treats patients.</p>
+<!-- Top: headline + stats -->
+<div class="top">
+  <div>
+    <h1>Your patients are already<br>sending referrals.<br><em>Most practices never find out.</em></h1>
+    <p class="subhead">Rippl connects to Open Dental and automatically detects, tracks, and rewards every referral — without a single staff step. DC members get exclusive pricing available nowhere else.</p>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-val">23%</div><div class="stat-lbl">More new patients traced to a referrer</div></div>
+    <div class="stat"><div class="stat-val">0</div><div class="stat-lbl">Staff steps per referral detected</div></div>
+    <div class="stat"><div class="stat-val">~2h</div><div class="stat-lbl">Setup time, then fully automated</div></div>
+    <div class="stat"><div class="stat-val">$0</div><div class="stat-lbl">To start — no upfront charge</div></div>
+  </div>
 </div>
 
-<!-- Stats -->
-<div class="stats">
-  <div class="stat">
-    <div class="stat-val">23%</div>
-    <div class="stat-lbl">More new patients<br>traced to a referrer</div>
-  </div>
-  <div class="stat">
-    <div class="stat-val">0</div>
-    <div class="stat-lbl">Staff steps per<br>referral detected</div>
-  </div>
-  <div class="stat">
-    <div class="stat-val">~2h</div>
-    <div class="stat-lbl">Setup time, then<br>fully automated</div>
-  </div>
-  <div class="stat">
-    <div class="stat-val">$0</div>
-    <div class="stat-lbl">To start — no<br>commitment required</div>
-  </div>
-</div>
+<hr class="rule">
 
 <!-- How it works -->
 <div class="section-label">How it works</div>
 <div class="steps">
   <div class="step">
-    <div class="step-num">Step 01</div>
+    <div class="step-num">1</div>
     <div class="step-title">Connects to Open Dental</div>
-    <div class="step-desc">Syncs every 5 minutes. Watches for new patient procedure codes. No manual data entry.</div>
-    <div class="step-tag">Automatic</div>
+    <div class="step-desc">Syncs every 5 minutes. Watches for new patient visits automatically. No manual entry.</div>
   </div>
   <div class="step">
-    <div class="step-num">Step 02</div>
-    <div class="step-title">Welcome text goes out</div>
-    <div class="step-desc">New patient gets a referral link within 2 hours of their visit. Front desk does nothing.</div>
-    <div class="step-tag">SMS · Auto</div>
+    <div class="step-num">2</div>
+    <div class="step-title">Patient gets a referral link</div>
+    <div class="step-desc">New patient receives a text within 2 hours of their visit. Front desk does nothing.</div>
   </div>
   <div class="step">
-    <div class="step-num">Step 03</div>
-    <div class="step-title">Referral detected</div>
-    <div class="step-desc">When a referred patient completes their exam, Rippl matches them to the referrer instantly.</div>
-    <div class="step-tag">Instant Match</div>
+    <div class="step-num">3</div>
+    <div class="step-title">Referral matched instantly</div>
+    <div class="step-desc">When a referred patient completes their exam, Rippl matches them to who sent them.</div>
   </div>
   <div class="step">
-    <div class="step-num">Step 04</div>
-    <div class="step-title">Gift card sent</div>
-    <div class="step-desc">Tango gift card delivered by email + SMS. No staff involved at any step. Rewards increase as patients refer more.</div>
-    <div class="step-tag">Tango Card</div>
+    <div class="step-num">4</div>
+    <div class="step-title">Gift card sent in minutes</div>
+    <div class="step-desc">Tango card delivered by email + SMS. Rewards grow as patients refer more people.</div>
   </div>
 </div>
+
+<hr class="rule">
 
 <!-- Quote -->
 <div class="quote">
@@ -423,12 +400,9 @@
       <div class="price-badge">DC Member Rate</div>
     </div>
     <div class="price-card-body">
-      <div class="price-main">$0<span style="font-size:14px;font-weight:400;color:var(--muted);">/mo</span></div>
-      <div class="price-per">Pay only when referrals happen</div>
-      <div class="price-compare">
-        <strong>$55 per referral</strong> — standard rate is $85<br>
-        Start free. No upfront charge, no contract.
-      </div>
+      <div class="price-main">$0<span>/mo</span></div>
+      <div class="price-per">Pay only when referrals are detected</div>
+      <div class="price-compare"><strong>$55 per referral</strong> — standard rate is $85<br>No upfront charge. No contract.</div>
     </div>
   </div>
   <div class="price-card featured">
@@ -437,12 +411,9 @@
       <div class="price-badge">Most Popular</div>
     </div>
     <div class="price-card-body">
-      <div class="price-main">$149<span style="font-size:14px;font-weight:400;color:var(--muted);">/mo</span></div>
+      <div class="price-main">$149<span>/mo</span></div>
       <div class="price-per">+ $30 per referral detected</div>
-      <div class="price-compare">
-        <strong>Breaks even with Free at 6 referrals/month</strong><br>
-        Standard rate: $199/mo + $35/ref — DC saves $50/mo + $5/ref
-      </div>
+      <div class="price-compare"><strong>Breaks even with Free at 6 referrals/month</strong><br>Standard: $199 + $35/ref — DC saves $50/mo + $5/ref</div>
     </div>
   </div>
 </div>
