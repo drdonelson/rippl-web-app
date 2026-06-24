@@ -31,6 +31,11 @@ export const practicesTable = pgTable("practices", {
   in_house_credit_label: text("in_house_credit_label").default("$100 Dental Account Credit"),
   in_house_credit_value: integer("in_house_credit_value").default(100),
 
+  // Stripe billing
+  stripe_customer_id:        text("stripe_customer_id"),
+  stripe_payment_method_id:  text("stripe_payment_method_id"),
+  billing_status:            text("billing_status").default("pending"), // pending | active | failed | exempt
+
   created_at: timestamp("created_at").notNull().defaultNow(),
 });
 

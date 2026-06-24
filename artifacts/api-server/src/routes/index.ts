@@ -23,11 +23,13 @@ import backfillRouter from "./backfill";
 import webhooksRouter from "./webhooks";
 import smsOptInRouter from "./smsOptIn";
 import staffPoolRouter from "./staffPool";
+import billingRouter from "./billing";
 import { requireAuth } from "../middleware/auth";
 
 const router: IRouter = Router();
 
 // Always-public routes
+router.use("/billing", billingRouter);
 router.use(healthRouter);
 router.use(smsOptInRouter);
 router.use("/webhooks", webhooksRouter);

@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Building2, Plus, X, Loader2, AlertTriangle, ChevronRight,
-  CheckCircle2, Pencil, Globe, DollarSign,
+  CheckCircle2, Pencil, Globe, DollarSign, CreditCard, Copy, Check,
+  Zap,
 } from "lucide-react";
 import { customFetch } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
@@ -27,8 +28,132 @@ interface Practice {
   sendgrid_from_name: string | null;
   tango_email_template_id: string | null;
   primary_color: string | null;
+  billing_status: string | null;
+  stripe_customer_id: string | null;
+  stripe_payment_method_id: string | null;
   created_at: string;
   office_count?: number;
+}
+
+// ── Billing status badge ──────────────────────────────────────────────────────
+
+function BillingBadge({ status }: { status: string | null }) {
+  const s = status ?? "pending";
+  const styles: Record<string, string> = {
+    active:  "bg-green-500/10 text-green-600 border-green-500/20",
+    pending: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+    failed:  "bg-red-500/10 text-red-600 border-red-500/20",
+    exempt:  "bg-blue-500/10 text-blue-600 border-blue-500/20",
+  };
+  return (
+    <span className={cn("text-xs border px-2 py-0.5 rounded-full font-medium capitalize", styles[s] ?? styles.pending)}>
+      {s === "active" ? "billing active" : s === "pending" ? "no card" : s}
+    </span>
+  );
+}
+
+// ── Billing panel (inside edit drawer) ────────────────────────────────────────
+
+function BillingPanel({ practice }: { practice: Practice & { id: string } }) {
+  const [copied, setCopied] = useState(false);
+  const [chargeResult, setChargeResult] = useState<string | null>(null);
+  const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+  const setupMut = useMutation({
+    mutationFn: () =>
+      customFetch<{ url: string }>(`${BASE}/api/billing/create-setup-session`, {
+        method: "POST",
+        body: JSON.stringify({ practice_id: practice.id }),
+      }),
+    onSuccess: async (data) => {
+      await navigator.clipboard.writeText(data.url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+    },
+  });
+
+  const chargeMut = useMutation({
+    mutationFn: () =>
+      customFetch<{ month: string; results: { name: string; status: string; amount_dollars?: string; referral_count?: number; reason?: string; error?: string }[] }>(
+        `${BASE}/api/billing/charge-month`,
+        { method: "POST", body: JSON.stringify({ practice_id: practice.id }) }
+      ),
+    onSuccess: (data) => {
+      const r = data.results[0];
+      if (!r) { setChargeResult("No result returned."); return; }
+      if (r.status === "charged") setChargeResult(`Charged $${r.amount_dollars} for ${r.referral_count} referrals (${data.month}).`);
+      else if (r.status === "skipped") setChargeResult(`Skipped: ${r.reason}`);
+      else setChargeResult(`Failed: ${r.error}`);
+    },
+  });
+
+  return (
+    <section className="border-t border-border pt-6 mt-2">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Stripe Billing</h3>
+        <BillingBadge status={practice.billing_status} />
+      </div>
+
+      <div className="space-y-3">
+        {/* Generate setup link */}
+        <div className="p-4 rounded-xl bg-muted/20 border border-border">
+          <p className="text-xs text-muted-foreground mb-3">
+            Generate a billing setup link and copy it to your clipboard. Send it to the practice owner to collect their card on file.
+          </p>
+          <button
+            onClick={() => setupMut.mutate()}
+            disabled={setupMut.isPending}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 disabled:opacity-60 transition-colors"
+          >
+            {setupMut.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : copied ? (
+              <><Check className="w-4 h-4" /> Link copied!</>
+            ) : (
+              <><Copy className="w-4 h-4" /> Generate & copy setup link</>
+            )}
+          </button>
+          {setupMut.isError && (
+            <p className="text-xs text-destructive mt-2">Failed to generate link. Check Stripe config.</p>
+          )}
+        </div>
+
+        {/* Charge this month */}
+        <div className="p-4 rounded-xl bg-muted/20 border border-border">
+          <p className="text-xs text-muted-foreground mb-3">
+            Charge this practice for the current billing period's detected referrals.
+            {!practice.stripe_payment_method_id && (
+              <span className="text-amber-600 font-medium"> No card on file yet.</span>
+            )}
+          </p>
+          <button
+            onClick={() => { setChargeResult(null); chargeMut.mutate(); }}
+            disabled={chargeMut.isPending || !practice.stripe_payment_method_id}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border font-semibold text-sm hover:bg-muted/40 disabled:opacity-60 transition-colors"
+          >
+            {chargeMut.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <><Zap className="w-4 h-4" /> Charge this month</>
+            )}
+          </button>
+          {chargeResult && (
+            <p className="text-xs text-muted-foreground mt-2 font-medium">{chargeResult}</p>
+          )}
+        </div>
+
+        {/* Stripe IDs for reference */}
+        {practice.stripe_customer_id && (
+          <div className="text-[10px] text-muted-foreground font-mono space-y-1 px-1">
+            <div>Customer: {practice.stripe_customer_id}</div>
+            {practice.stripe_payment_method_id && (
+              <div>Payment method: {practice.stripe_payment_method_id}</div>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
+  );
 }
 
 interface PracticeFormData {
@@ -293,6 +418,9 @@ function PracticeForm({
               {error}
             </div>
           )}
+
+          {/* Stripe billing — only shown when editing an existing practice */}
+          {isEdit && <BillingPanel practice={initial as Practice & { id: string }} />}
         </form>
 
         {/* Footer */}
@@ -356,6 +484,7 @@ function PracticeCard({ practice, onEdit }: { practice: Practice; onEdit: (p: Pr
               Inactive
             </span>
           )}
+          <BillingBadge status={practice.billing_status} />
         </div>
         <div className="flex items-center gap-3 mt-1 flex-wrap">
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -364,7 +493,7 @@ function PracticeCard({ practice, onEdit }: { practice: Practice; onEdit: (p: Pr
           </span>
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <DollarSign className="w-3 h-3" />
-            ${practice.reward_value} reward · {practice.plan === "per_referral" ? `$${practice.per_referral_fee}/referral` : `$${practice.monthly_fee}/mo`}
+            ${practice.reward_value} reward · {practice.plan === "per_referral" ? `$${practice.per_referral_fee}/referral` : `$${(practice.monthly_fee / 100).toFixed(0)}/mo + $${practice.per_referral_fee}/ref`}
           </span>
           {practice.office_count !== undefined && (
             <span className="text-xs text-muted-foreground">

@@ -50,6 +50,7 @@ const ResetPassword  = lazy(() => import("@/pages/reset-password"));
 const Playbook       = lazy(() => import("@/pages/playbook"));
 const SlideDeck      = lazy(() => import("@/pages/slide-deck"));
 const DcSignup       = lazy(() => import("@/pages/dc-signup"));
+const BillingSetup   = lazy(() => import("@/pages/billing-setup"));
 const NotFound       = lazy(() => import("@/pages/not-found"));
 
 const queryClient = new QueryClient({
@@ -96,6 +97,7 @@ function Router() {
         <Route path="/join/salon">{() => <Join vertical="salon" />}</Route>
         <Route path="/join" component={JoinDental} />
         <Route path="/dc" component={DcSignup} />
+        <Route path="/billing/setup" component={BillingSetup} />
         <Route path="/join-waitlist" component={Waitlist} />
         <Route path="/icon" component={IconExport} />
         <Route path="/card-print" component={CardPrint} />
