@@ -7,7 +7,7 @@ import { requireAuth, requireSuperAdmin } from "../middleware/auth";
 import { logger } from "../lib/logger";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
-  apiVersion: "2025-04-30.basil",
+  apiVersion: "2026-05-27.dahlia",
 });
 
 const APP_URL = (process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://www.joinrippl.com").replace(/\/$/, "");
@@ -45,9 +45,6 @@ router.post("/create-setup-session", requireAuth, requireSuperAdmin, async (req,
       success_url: `${APP_URL}/billing/setup?session_id={CHECKOUT_SESSION_ID}&practice_id=${practice_id}`,
       cancel_url:  `${APP_URL}/billing/setup?cancelled=true&practice_id=${practice_id}`,
       metadata: { practice_id },
-      custom_text: {
-        submit: { message: `Card on file for ${practice.name} — Rippl referral billing. You won't be charged until referrals are detected.` },
-      },
     });
 
     res.json({ url: session.url, session_id: session.id });

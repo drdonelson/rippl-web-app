@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="80" viewBox="0 0 280 80">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,900&amp;display=block');
+    </style>
+  </defs>
+  <text
+    x="8"
+    y="64"
+    font-family="Fraunces, Georgia, 'Times New Roman', serif"
+    font-weight="900"
+    font-size="72"
+    letter-spacing="-1.5"
+    fill="#1a1a1a"
+  ><tspan fill="#1a1a1a">rip</tspan><tspan fill="#E0622A">pl</tspan></text>
+</svg>
