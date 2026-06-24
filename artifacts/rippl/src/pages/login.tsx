@@ -75,16 +75,16 @@ export default function Login() {
         {/* Headline + bullets */}
         <div className="relative">
           <h2 className="text-white font-black text-4xl leading-tight mb-4">
-            Turn patients into your best marketers.
+            Turn customers into your best marketers.
           </h2>
           <p className="text-white text-base leading-relaxed mb-10">
-            Automated referral rewards — fully integrated with Open Dental.
+            Automated referral rewards — detected, tracked, and sent without a single staff step.
           </p>
           <div className="space-y-4">
             {[
               { icon: "⚡", text: "Zero staff work required" },
-              { icon: "🦷", text: "EMR-connected, auto-verified" },
-              { icon: "💰", text: "Pay only $20 per new patient" },
+              { icon: "🔗", text: "Software-connected, auto-verified" },
+              { icon: "🎯", text: "Only pay when referrals fire" },
             ].map((f) => (
               <div key={f.text} className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-base shrink-0">
@@ -99,7 +99,7 @@ export default function Login() {
         {/* Footer */}
         <div className="relative">
           <p className="text-white/50 text-xs">
-            © 2026 Rippl · Made by dentists, for dentists.
+            © 2026 Rippl
           </p>
         </div>
       </div>
@@ -111,7 +111,7 @@ export default function Login() {
           <h1 className="text-3xl font-display font-bold mb-1">
             <span className="text-slate-900">rip</span><span className="text-[#E0622A]">pl</span>
           </h1>
-          <p className="text-slate-500 text-sm">Referral rewards for dental practices</p>
+          <p className="text-slate-500 text-sm">Automated referral rewards</p>
         </div>
 
         <div className="w-full max-w-sm">
@@ -199,7 +199,7 @@ export default function Login() {
           </form>
 
           <p className="text-center text-slate-400 text-xs mt-8">
-            © 2026 Rippl — Made by dentists, for dentists.
+            © 2026 Rippl
           </p>
         </div>
       </div>
