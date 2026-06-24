@@ -114,12 +114,14 @@ function BillingPanel({ practice }: { practice: Practice & { id: string } }) {
             )}
           </button>
           {setupMut.isError && (
-            <p className="text-xs text-destructive mt-2">
-              Failed to generate link.{" "}
-              {(setupMut.error as { detail?: string } | null)?.detail
-                ? `Stripe error: ${(setupMut.error as { detail?: string }).detail}`
-                : "Check Stripe config."}
-            </p>
+            <div className="mt-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <p className="text-xs text-destructive font-semibold mb-0.5">Failed to generate link</p>
+              <p className="text-xs text-destructive/80 font-mono break-all">
+                {((setupMut.error as { data?: { detail?: string; error?: string } } | null)?.data?.detail)
+                  ?? ((setupMut.error as { data?: { detail?: string; error?: string } } | null)?.data?.error)
+                  ?? (setupMut.error instanceof Error ? setupMut.error.message : "Check Stripe config.")}
+              </p>
+            </div>
           )}
         </div>
 

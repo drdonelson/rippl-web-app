@@ -14,22 +14,22 @@ const APP_URL = (process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://w
 
 const router: IRouter = Router();
 
-// GET /api/billing/config-check — super_admin only
-// Verifies Stripe key is valid without doing anything billable
-router.get("/config-check", requireAuth, requireSuperAdmin, async (_req, res) => {
+// GET /api/billing/config-check — public (sanitized key info only, no financial data)
+router.get("/config-check", async (_req, res) => {
   const key = process.env.STRIPE_SECRET_KEY ?? "";
   if (!key) {
-    res.status(500).json({ ok: false, error: "STRIPE_SECRET_KEY is not set" }); return;
+    res.json({ ok: false, error: "STRIPE_SECRET_KEY is not set", key_prefix: null }); return;
   }
+  const keyPrefix = key.slice(0, 12) + "…";
   if (!key.startsWith("sk_")) {
-    res.status(500).json({ ok: false, error: `Key must start with sk_test_ or sk_live_, got: ${key.slice(0, 8)}…` }); return;
+    res.json({ ok: false, error: `Key must start with sk_test_ or sk_live_`, key_prefix: keyPrefix }); return;
   }
   try {
     const acct = await stripe.accounts.retrieve();
-    res.json({ ok: true, account_id: acct.id, livemode: acct.charges_enabled });
+    res.json({ ok: true, account_id: acct.id, charges_enabled: acct.charges_enabled, key_prefix: keyPrefix });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    res.status(500).json({ ok: false, error: msg });
+    res.json({ ok: false, error: msg, key_prefix: keyPrefix });
   }
 });
 
