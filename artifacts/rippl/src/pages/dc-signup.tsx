@@ -182,7 +182,7 @@ export default function DcSignup() {
                 "The first referral fired while I was with a patient. I didn't do anything — Rippl sent the reward, logged it in the dashboard, and I saw it that evening. That's what I needed."
               </p>
               <footer className="text-xs font-bold text-[#1A7A3A]">
-                Dr. Alicia Park · Summit Dental · Scottsdale, AZ
+                Dr. Ian Fontenot · Fontenot Family Dentistry · Carencro, LA
               </footer>
             </blockquote>
 
