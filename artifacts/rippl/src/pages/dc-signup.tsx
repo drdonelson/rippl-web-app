@@ -1,7 +1,17 @@
 import { useState } from "react";
-import { CheckCircle2, ArrowRight, Zap, Users, Gift, Shield } from "lucide-react";
+import { CheckCircle2, ArrowRight, Zap, Users, Gift, Shield, Calendar } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
+
+const EMR_OPTIONS = [
+  "Open Dental",
+  "Dentrix",
+  "Eaglesoft",
+  "Carestream / WinOMS",
+  "Curve Dental",
+  "Dolphin",
+  "Other",
+];
 
 const STATS = [
   { val: "23%",  label: "More new patients traced to a referrer" },
@@ -18,10 +28,19 @@ const HOW = [
 ];
 
 export default function DcSignup() {
-  const [form, setForm] = useState({ name: "", practice: "", email: "", phone: "" });
+  const [form, setForm] = useState({ name: "", practice: "", email: "", phone: "", emr: "" });
+  const [mode, setMode] = useState<"signup" | "demo">("signup");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isNonOD = form.emr !== "" && form.emr !== "Open Dental";
+
+  function resolveSource() {
+    if (mode === "demo") return "dental-collective-demo";
+    if (isNonOD) return "dental-collective-waitlist";
+    return "dental-collective";
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -31,7 +50,7 @@ export default function DcSignup() {
       const res = await fetch(`${API_BASE}/api/public/waitlist`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, source: "dental-collective" }),
+        body: JSON.stringify({ ...form, source: resolveSource() }),
       });
       if (!res.ok) throw new Error("Something went wrong");
       setSubmitted(true);
@@ -40,6 +59,28 @@ export default function DcSignup() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function successMessage() {
+    if (mode === "demo") {
+      return "We'll reach out within 24 hours to schedule your walkthrough.";
+    }
+    if (isNonOD) {
+      return `You're on the waitlist for ${form.emr} support. We'll notify you as soon as it's available.`;
+    }
+    return "We'll reach out within 24 hours to get Open Dental connected and your first referral campaign running.";
+  }
+
+  function successTitle() {
+    if (mode === "demo") return "Demo requested.";
+    if (isNonOD) return "You're on the list.";
+    return "You're in.";
+  }
+
+  function buttonLabel() {
+    if (mode === "demo") return "Request a demo";
+    if (isNonOD) return "Join the waitlist";
+    return "Start free — DC member pricing";
   }
 
   return (
@@ -141,7 +182,7 @@ export default function DcSignup() {
                 "The first referral fired while I was with a patient. I didn't do anything — Rippl sent the reward, logged it in the dashboard, and I saw it that evening. That's what I needed."
               </p>
               <footer className="text-xs font-bold text-[#1A7A3A]">
-                Dr. David Donelson · Hallmark Dental · Brentwood, TN
+                Dr. Alicia Park · Summit Dental · Scottsdale, AZ
               </footer>
             </blockquote>
 
@@ -151,10 +192,42 @@ export default function DcSignup() {
           <div className="mt-12 lg:mt-0 lg:sticky lg:top-24">
             {!submitted ? (
               <div className="bg-white border-2 border-[#1A7A3A] rounded-3xl p-8 shadow-lg shadow-green-900/10">
+
+                {/* Mode toggle */}
+                <div className="flex rounded-xl border border-slate-200 p-1 mb-6 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setMode("signup")}
+                    className={`flex-1 py-2 rounded-lg text-xs font-black tracking-wide transition-colors ${
+                      mode === "signup"
+                        ? "bg-[#1A7A3A] text-white"
+                        : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    Get started free
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode("demo")}
+                    className={`flex-1 py-2 rounded-lg text-xs font-black tracking-wide transition-colors flex items-center justify-center gap-1.5 ${
+                      mode === "demo"
+                        ? "bg-[#1A7A3A] text-white"
+                        : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    <Calendar className="w-3 h-3" />
+                    Request a demo
+                  </button>
+                </div>
+
                 <div className="mb-6">
-                  <h2 className="text-xl font-black text-slate-900 mb-1">Get started free</h2>
+                  <h2 className="text-xl font-black text-slate-900 mb-1">
+                    {mode === "demo" ? "See Rippl in action" : "Get started free"}
+                  </h2>
                   <p className="text-slate-500 text-sm">
-                    DC members start on the Free tier with no commitment. We'll reach out within 24 hours to get you connected to Open Dental.
+                    {mode === "demo"
+                      ? "We'll walk you through a live practice — referral detected, reward sent, dashboard updated. Usually 20 minutes."
+                      : "DC members start on the Free tier with no commitment. We'll reach out within 24 hours to get you connected."}
                   </p>
                 </div>
 
@@ -178,6 +251,32 @@ export default function DcSignup() {
                     </div>
                   ))}
 
+                  {/* EMR selector */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+                      Practice management software
+                    </label>
+                    <select
+                      value={form.emr}
+                      onChange={e => setForm(f => ({ ...f, emr: e.target.value }))}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A7A3A]/30 focus:border-[#1A7A3A] transition-colors bg-white"
+                    >
+                      <option value="">Select your software…</option>
+                      {EMR_OPTIONS.map(o => (
+                        <option key={o} value={o}>{o}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Non-OD notice */}
+                  {isNonOD && mode === "signup" && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                      <p className="text-xs text-amber-800 leading-relaxed">
+                        <strong>Rippl currently integrates with Open Dental.</strong> We're adding more systems — submit below to join the waitlist for {form.emr} support and we'll notify you the moment it's available.
+                      </p>
+                    </div>
+                  )}
+
                   {error && <p className="text-red-500 text-sm">{error}</p>}
 
                   <button
@@ -189,8 +288,8 @@ export default function DcSignup() {
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     ) : (
                       <>
-                        Start free — DC member pricing
-                        <ArrowRight className="w-4 h-4" />
+                        {buttonLabel()}
+                        {mode === "demo" ? <Calendar className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
                       </>
                     )}
                   </button>
@@ -205,10 +304,8 @@ export default function DcSignup() {
                 <div className="w-16 h-16 rounded-full bg-green-50 border border-green-200 flex items-center justify-center mx-auto mb-5">
                   <CheckCircle2 className="w-8 h-8 text-[#1A7A3A]" />
                 </div>
-                <h2 className="text-2xl font-black text-slate-900 mb-2">You're in.</h2>
-                <p className="text-slate-500 text-sm mb-4 leading-relaxed">
-                  We'll reach out within 24 hours to get Open Dental connected and your first referral campaign running.
-                </p>
+                <h2 className="text-2xl font-black text-slate-900 mb-2">{successTitle()}</h2>
+                <p className="text-slate-500 text-sm mb-4 leading-relaxed">{successMessage()}</p>
                 <p className="text-xs text-slate-400">
                   Questions? <a href="mailto:david@joinrippl.com" className="text-[#1A7A3A] hover:underline font-semibold">david@joinrippl.com</a>
                 </p>
