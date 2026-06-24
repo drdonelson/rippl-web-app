@@ -9,7 +9,8 @@ const EMR_OPTIONS = [
   "Eaglesoft",
   "Carestream / WinOMS",
   "Curve Dental",
-  "Dolphin",
+  "Archy",
+  "Carestack",
   "Other",
 ];
 
@@ -269,7 +270,7 @@ export default function DcSignup() {
                   </div>
 
                   {/* Non-OD notice */}
-                  {isNonOD && mode === "signup" && (
+                  {isNonOD && (
                     <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
                       <p className="text-xs text-amber-800 leading-relaxed">
                         <strong>Rippl currently integrates with Open Dental.</strong> We're adding more systems — submit below to join the waitlist for {form.emr} support and we'll notify you the moment it's available.
