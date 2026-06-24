@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rippl × CarLock — CMO Call Guide</title>
+<style>
+  :root {
+    --orange: #C4501E;
+    --orange-light: #FFF4EE;
+    --orange-border: #F4C4AE;
+    --green: #1A6B35;
+    --green-light: #E8F5EC;
+    --green-border: #C3E0CB;
+    --gold: #7A5500;
+    --gold-light: #FFF8E6;
+    --gold-border: #F0D98A;
+    --purple: #5B21B6;
+    --purple-light: #F5F3FF;
+    --purple-border: #DDD6FE;
+    --text: #111;
+    --muted: #555;
+    --border: #DDD;
+    --panel: #F7F8F6;
+    --blue-light: #EFF6FF;
+    --blue-border: #BFDBFE;
+    --red-light: #FEF2F2;
+    --red-border: #FECACA;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    font-size: 13px; color: var(--text); background: white;
+    padding: 32px 40px; max-width: 820px; margin: 0 auto; line-height: 1.5;
+  }
+
+  .page-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding-bottom: 14px; border-bottom: 2px solid var(--orange); margin-bottom: 20px;
+  }
+  .page-title { font-size: 20px; font-weight: 900; color: var(--orange); letter-spacing: -0.5px; }
+  .page-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .page-meta { text-align: right; font-size: 11px; color: var(--muted); line-height: 1.7; }
+  .page-meta strong { color: var(--text); }
+
+  .goal-bar {
+    background: var(--orange-light); border: 1px solid var(--orange-border);
+    border-radius: 6px; padding: 10px 16px; margin-bottom: 20px;
+    display: flex; align-items: flex-start; gap: 10px; font-size: 12px;
+  }
+  .goal-label { font-weight: 800; color: var(--orange); text-transform: uppercase;
+    letter-spacing: 0.1em; font-size: 10px; flex-shrink: 0; padding-top: 1px; }
+
+  .warning-bar {
+    background: var(--red-light); border: 1px solid var(--red-border);
+    border-radius: 6px; padding: 10px 16px; margin-bottom: 20px;
+    font-size: 12px; color: #7F1D1D; line-height: 1.55;
+  }
+  .warning-bar strong { color: #B91C1C; }
+
+  .timeline { display: flex; margin-bottom: 22px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .tl-item { flex: 1; padding: 10px 14px; border-right: 1px solid var(--border); font-size: 11px; }
+  .tl-item:last-child { border-right: none; }
+  .tl-time { font-weight: 800; color: var(--orange); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 3px; }
+  .tl-label { color: var(--text); font-weight: 600; }
+
+  .section { margin-bottom: 18px; }
+  .section-header {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 6px 6px 0 0; padding: 8px 14px; border-bottom: none;
+  }
+  .section-num {
+    width: 22px; height: 22px; border-radius: 50%; background: var(--orange);
+    color: white; font-size: 11px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .section-title { font-size: 13px; font-weight: 800; color: var(--text); flex: 1; }
+  .section-time { font-size: 10px; color: var(--muted); font-weight: 600; }
+  .section-body {
+    border: 1px solid var(--border); border-radius: 0 0 6px 6px;
+    padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;
+  }
+
+  .say {
+    background: var(--orange-light); border-left: 3px solid var(--orange);
+    border-radius: 0 4px 4px 0; padding: 8px 12px;
+    font-size: 12px; color: #5C2000; font-style: italic; line-height: 1.55;
+  }
+  .say::before { content: 'SAY → '; font-style: normal; font-weight: 800; font-size: 10px; color: var(--orange); letter-spacing: 0.08em; }
+
+  .dont-say {
+    background: var(--red-light); border-left: 3px solid #EF4444;
+    border-radius: 0 4px 4px 0; padding: 8px 12px;
+    font-size: 12px; color: #7F1D1D; font-style: italic; line-height: 1.55;
+  }
+  .dont-say::before { content: 'DON\'T SAY → '; font-style: normal; font-weight: 800; font-size: 10px; color: #B91C1C; letter-spacing: 0.08em; }
+
+  ul.points { list-style: none; display: flex; flex-direction: column; gap: 6px; padding-left: 4px; }
+  ul.points li { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--text); line-height: 1.5; }
+  ul.points li::before { content: '→'; color: var(--orange); font-weight: 800; flex-shrink: 0; margin-top: 1px; }
+  ul.points li strong { color: var(--text); }
+
+  .stats-row { display: flex; gap: 10px; }
+  .stat-box {
+    flex: 1; background: white; border: 1px solid var(--green-border);
+    border-radius: 6px; padding: 10px 12px; text-align: center;
+  }
+  .stat-val { font-size: 22px; font-weight: 900; color: var(--green); letter-spacing: -0.5px; line-height: 1; }
+  .stat-lbl { font-size: 10px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+
+  .compare { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .compare-head { display: grid; grid-template-columns: 1fr 1fr 1fr; background: var(--panel); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; }
+  .compare-head div { padding: 8px 12px; border-right: 1px solid var(--border); color: var(--muted); }
+  .compare-head div:first-child { color: var(--text); }
+  .compare-head div:last-child { color: var(--green); border-right: none; }
+  .compare-row { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: 1px solid var(--border); font-size: 12px; }
+  .compare-row div { padding: 8px 12px; border-right: 1px solid var(--border); line-height: 1.4; }
+  .compare-row div:last-child { border-right: none; font-weight: 700; color: var(--green); }
+  .compare-row .metric { color: var(--muted); font-weight: 600; }
+  .compare-row .bad { color: #B91C1C; }
+
+  /* Discovery questions */
+  .discovery-grid { display: flex; flex-direction: column; gap: 8px; }
+  .dq {
+    background: var(--purple-light); border: 1px solid var(--purple-border);
+    border-radius: 6px; padding: 10px 14px;
+  }
+  .dq-label { font-size: 10px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--purple); margin-bottom: 5px; }
+  .dq-text { font-size: 12px; font-style: italic; color: var(--text); line-height: 1.5; }
+  .dq-why { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* Beta proposal */
+  .beta-box {
+    background: var(--green-light); border: 1px solid var(--green-border);
+    border-radius: 6px; padding: 14px 16px;
+  }
+  .beta-title { font-size: 11px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.12em; color: var(--green); margin-bottom: 10px; }
+  .beta-stages { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .beta-stage { background: white; border: 1px solid var(--green-border); border-radius: 6px; padding: 12px 14px; }
+  .beta-stage-label { font-size: 10px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--green); margin-bottom: 6px; }
+  .beta-stage-head { font-size: 14px; font-weight: 900; color: var(--text); margin-bottom: 6px; }
+  .beta-stage ul { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+  .beta-stage ul li { font-size: 11px; color: var(--text); display: flex; gap: 6px; line-height: 1.4; }
+  .beta-stage ul li::before { content: '✓'; color: var(--green); font-weight: 800; flex-shrink: 0; }
+
+  /* Ask */
+  .ask-section { background: var(--gold-light); border: 1px solid var(--gold-border); border-radius: 6px; padding: 14px 16px; }
+  .ask-title { font-size: 11px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.12em; color: var(--gold); margin-bottom: 10px; }
+  .ask-list { display: flex; flex-direction: column; gap: 8px; }
+  .ask-item { display: flex; align-items: flex-start; gap: 10px; }
+  .ask-num {
+    width: 20px; height: 20px; border-radius: 50%; background: var(--gold);
+    color: white; font-size: 10px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+  }
+  .ask-body { font-size: 12px; color: var(--text); line-height: 1.5; }
+  .ask-body strong { color: var(--gold); }
+
+  .if-asked-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .if-asked { background: var(--blue-light); border: 1px solid var(--blue-border); border-radius: 6px; padding: 10px 12px; }
+  .if-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #1E40AF; margin-bottom: 6px; }
+  .if-answer { font-size: 12px; color: var(--text); line-height: 1.5; }
+
+  .cmo-box {
+    background: var(--purple-light); border: 1px solid var(--purple-border);
+    border-radius: 6px; padding: 12px 16px;
+    font-size: 12px; color: var(--text); line-height: 1.55;
+  }
+  .cmo-box strong { color: var(--purple); }
+
+  .page-footer {
+    margin-top: 22px; padding-top: 12px; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; font-size: 10px; color: var(--muted);
+  }
+
+  @media print {
+    body { padding: 20px 28px; font-size: 12px; }
+    .section-body { break-inside: avoid; }
+    .ask-section { break-inside: avoid; }
+    .beta-box { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div>
+    <div class="page-title">RIPPL × CarLock — CMO Call Guide</div>
+    <div class="page-sub">Tomorrow · CMO · Beta Partner Conversation · 7 dealerships incl. Bentley</div>
+  </div>
+  <div class="page-meta">
+    <strong>David Donelson</strong><br>
+    david@joinrippl.com<br>
+    BD America LLC DBA Rippl
+  </div>
+</div>
+
+<div class="goal-bar">
+  <div class="goal-label">Goal</div>
+  <div>Walk out with: (1) DriveCentric email consent agreed, (2) one pilot location identified, (3) discovery answers that let you design the right pricing model. <strong>Do not quote a price. Leave today knowing enough to price this correctly for their specific deal mix.</strong></div>
+</div>
+
+<div class="warning-bar">
+  <strong>Do not name a number today.</strong> CarLock has 7 dealerships including Bentley stores. A $50/deal fee on a Bentley referral ($15k–$30k gross profit) is leaving serious money on the table. Use this call to understand their deal mix and reward philosophy — price it correctly afterward.
+</div>
+
+<div class="timeline">
+  <div class="tl-item"><div class="tl-time">0–3 min</div><div class="tl-label">Open — their world</div></div>
+  <div class="tl-item"><div class="tl-time">3–8 min</div><div class="tl-label">Attribution problem</div></div>
+  <div class="tl-item"><div class="tl-time">8–13 min</div><div class="tl-label">How Rippl solves it</div></div>
+  <div class="tl-item"><div class="tl-time">13–18 min</div><div class="tl-label">Discovery questions</div></div>
+  <div class="tl-item"><div class="tl-time">18–20 min</div><div class="tl-label">Beta proposal + asks</div></div>
+</div>
+
+<!-- KNOW YOUR AUDIENCE -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num" style="background:var(--purple);">★</div>
+    <div class="section-title">Know Your Audience — CMO Mindset</div>
+    <div class="section-time">Read before the call</div>
+  </div>
+  <div class="section-body">
+    <div class="cmo-box">
+      A CMO thinks in <strong>cost per acquisition, channel ROI, and attribution</strong>. They're also protective of their marketing budget and skeptical of new vendors. Your edges: <strong>(1) referrals close at 50–70% vs. 5–10% for paid ads</strong>, and <strong>(2) the attribution problem on referrals is real, unsolved, and costs them money every month</strong>. The DriveCentric quote in the deck is your sharpest weapon — it came from their own ecosystem. Use it early.
+    </div>
+  </div>
+</div>
+
+<!-- OPEN -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num">→</div>
+    <div class="section-title">Open — get them talking about attribution</div>
+    <div class="section-time">0–3 min</div>
+  </div>
+  <div class="section-body">
+    <div class="say">Before I get into what we built — when one of your customers refers a friend who ends up buying, how does that show up in your reporting? Does it come in as a referral or does it get lost as organic or a paid lead?</div>
+    <p style="font-size:12px;color:var(--muted);">Let them answer fully. Almost every CMO in automotive will say "we lose it" or "we have no idea." That's your entry point — they just said your pitch for you.</p>
+  </div>
+</div>
+
+<!-- POINT 1 -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num">1</div>
+    <div class="section-title">The Attribution Problem — Billy and Sue</div>
+    <div class="section-time">3–8 min</div>
+  </div>
+  <div class="section-body">
+    <ul class="points">
+      <li><strong>Billy tells Sue about CarLock</strong> — Sue goes home, Googles CarLock, clicks a retargeting ad, fills out a form. Your CRM logs: Source = Google Ads. Billy gets nothing.</li>
+      <li>This happens on every referral — paid ads get credit for word-of-mouth your customer earned</li>
+      <li><strong>You're paying Google for referrals your own customers generated</strong></li>
+      <li>And because Billy never hears back, he has no reason to do it again — the flywheel never starts</li>
+    </ul>
+    <div class="say">A DriveCentric executive told us directly: "Billy refers Sue to CarLock, she goes online and does most of the process from an online ad, and Billy never gets the attribution. It appears as an organic lead from the internet." That's the exact problem we solve — and it came from inside your own CRM ecosystem.</div>
+  </div>
+</div>
+
+<!-- POINT 2 -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num">2</div>
+    <div class="section-title">How Rippl Solves It — Two-Layer Attribution</div>
+    <div class="section-time">8–13 min</div>
+  </div>
+  <div class="section-body">
+    <ul class="points">
+      <li><strong>Layer 1 — Referral link:</strong> When a customer buys, they get a personal referral link by SMS + email. Sue clicks it → attribution is locked before she touches any paid channel</li>
+      <li><strong>Layer 2 — DriveCentric SFTP:</strong> When Sue's deal closes as Delivered in DriveCentric, Rippl matches it back to Billy automatically. Gift card sent. Zero staff steps.</li>
+      <li>Two layers means <strong>no referral gets lost</strong> — even if Sue clicks ten ads between Billy's link and signing paperwork</li>
+    </ul>
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-val">18mo</div><div class="stat-lbl">Live in production</div></div>
+      <div class="stat-box"><div class="stat-val">2,400+</div><div class="stat-lbl">Customers enrolled</div></div>
+      <div class="stat-box"><div class="stat-val">23%</div><div class="stat-lbl">Referral visibility (was 0%)</div></div>
+      <div class="stat-box"><div class="stat-val">0</div><div class="stat-lbl">Staff steps per referral</div></div>
+    </div>
+    <p style="font-size:11px;color:var(--muted);font-style:italic;">Live at Hallmark Dental, 3 locations. Same platform — DriveCentric SFTP replaces Open Dental for automotive.</p>
+    <div class="compare">
+      <div class="compare-head">
+        <div>Metric</div>
+        <div style="color:#B91C1C;">Paid Ads</div>
+        <div>Rippl Referrals</div>
+      </div>
+      <div class="compare-row">
+        <div class="metric">Lead-to-close rate</div>
+        <div class="bad">5 – 10%</div>
+        <div>50 – 70%</div>
+      </div>
+      <div class="compare-row">
+        <div class="metric">Attribution visibility</div>
+        <div class="bad">Full (you pay for it)</div>
+        <div>Full (free)</div>
+      </div>
+      <div class="compare-row">
+        <div class="metric">ROI on acquisition cost</div>
+        <div class="bad">6 – 10×</div>
+        <div style="font-size:14px;">20 – 33×</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DISCOVERY -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num" style="background:var(--purple);">?</div>
+    <div class="section-title">Discovery Questions — listen, don't pitch</div>
+    <div class="section-time">13–18 min</div>
+  </div>
+  <div class="section-body">
+    <p style="font-size:12px;color:var(--muted);">These answers let you price this correctly. Take notes. Don't fill the silence — let them talk.</p>
+    <div class="discovery-grid">
+      <div class="dq">
+        <div class="dq-label">Deal Mix</div>
+        <div class="dq-text">"Across your 7 stores, what's the rough split between mainstream brands and your luxury stores — Bentley and others?"</div>
+        <div class="dq-why">You need to know if Bentley is 1 store or 3. A Bentley referral is a completely different economic event than a Honda referral.</div>
+      </div>
+      <div class="dq">
+        <div class="dq-label">Referral Volume Guess</div>
+        <div class="dq-text">"If you had to guess, how many deals a month do you think come in through word-of-mouth but get attributed to something else?"</div>
+        <div class="dq-why">Anchors the value of the problem. Even a conservative answer (5–10/mo) tells you this is worth serious money to them.</div>
+      </div>
+      <div class="dq">
+        <div class="dq-label">Reward Philosophy</div>
+        <div class="dq-text">"What kind of reward do you think would actually motivate your customers to refer? Does that change for someone who just bought a Bentley vs. a Cadillac?"</div>
+        <div class="dq-why">Tells you their reward budget per segment. A Bentley buyer probably expects $500–$1,000 — which completely changes the platform economics.</div>
+      </div>
+      <div class="dq">
+        <div class="dq-label">DriveCentric Coverage</div>
+        <div class="dq-text">"Are all 7 stores on DriveCentric, or is the Bentley store on a different CRM?"</div>
+        <div class="dq-why">Bentley franchises sometimes use a manufacturer-mandated CRM. If it's not DriveCentric, the integration path is different.</div>
+      </div>
+    </div>
+    <div class="dont-say">Here's our pricing — it's $299 a month plus $50 per deal.</div>
+    <div class="say">I'm intentionally not throwing a number at you today. Once I understand your deal mix and what reward values make sense for your different brands, I can put together pricing that actually reflects the value on both sides — a Bentley referral and a Civic referral shouldn't cost the same.</div>
+  </div>
+</div>
+
+<!-- BETA PROPOSAL -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num" style="background:var(--green);">✓</div>
+    <div class="section-title">The Beta Proposal — how this starts</div>
+    <div class="section-time">18–20 min</div>
+  </div>
+  <div class="section-body">
+    <div class="beta-box">
+      <div class="beta-title">Two stages — free to prove, then priced to reflect real value</div>
+      <div class="beta-stages">
+        <div class="beta-stage">
+          <div class="beta-stage-label">Stage 1 — Beta (free)</div>
+          <div class="beta-stage-head">60–90 days, no cost</div>
+          <ul>
+            <li>CarLock provides DriveCentric email consent — integration gets built</li>
+            <li>One pilot location, configured and live</li>
+            <li>Rippl tracks referrals, fires rewards, logs everything</li>
+            <li>You give feedback — we shape the automotive product together</li>
+            <li>At 60 days: real data on referral volume and deal mix</li>
+          </ul>
+        </div>
+        <div class="beta-stage">
+          <div class="beta-stage-label">Stage 2 — Partner (TBD pricing)</div>
+          <div class="beta-stage-head">Priced from real data</div>
+          <ul>
+            <li>Pricing designed from Stage 1 findings — fair to both sides</li>
+            <li>Rate locked for first 12 months from go-live</li>
+            <li>Nashville market exclusivity maintained</li>
+            <li>Expand to remaining locations on same rate</li>
+            <li>CarLock permanently listed as Founding Automotive Partner</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="say">You're not just buying software — you're helping build the automotive version of this product. That's worth something. In exchange, you get in before anyone else in Nashville, you shape how it works, and when we price Stage 2 we'll do it based on what we actually saw together — not a number I invented before knowing your deal mix.</div>
+  </div>
+</div>
+
+<!-- THE ASKS -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num" style="background:var(--gold);">★</div>
+    <div class="section-title">The Three Asks</div>
+    <div class="section-time">Close</div>
+  </div>
+  <div class="section-body">
+    <div class="ask-section">
+      <div class="ask-title">What I need from CarLock to make this happen</div>
+      <div class="ask-list">
+        <div class="ask-item">
+          <div class="ask-num">1</div>
+          <div class="ask-body"><strong>DriveCentric email consent</strong> — this is the unlock. DriveCentric requires a written consent from CarLock to activate the SFTP feed. One email from you to your DriveCentric rep is all it takes. Without this, nothing moves.</div>
+        </div>
+        <div class="ask-item">
+          <div class="ask-num">2</div>
+          <div class="ask-body"><strong>One pilot location</strong> — your call which store. I'd suggest a mainstream-brand location first so we can validate the integration before touching the Bentley store. 60 days, no cost, I handle setup.</div>
+        </div>
+        <div class="ask-item">
+          <div class="ask-num">3</div>
+          <div class="ask-body"><strong>A follow-up call in two weeks</strong> — after I've digested what you told me today, I'll come back with a pricing structure that reflects your actual deal mix and reward philosophy. That's when we talk numbers.</div>
+        </div>
+      </div>
+    </div>
+    <div class="say">I'm not asking you to commit to anything financially today. I need your DriveCentric consent to start, one store to prove it, and two weeks to come back with pricing that makes sense for a 7-store group with your brand mix. That's it.</div>
+  </div>
+</div>
+
+<!-- IF ASKED -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num" style="background:#1E40AF;">?</div>
+    <div class="section-title">If They Ask…</div>
+    <div class="section-time">Have ready</div>
+  </div>
+  <div class="section-body">
+    <div class="if-asked-grid">
+      <div class="if-asked">
+        <div class="if-label">What does this cost?</div>
+        <div class="if-answer">"I'm not going to quote you a number today — not because I'm hiding something, but because your deal mix with 7 stores including Bentley means a flat rate would either shortchange you or shortchange me. Two weeks after today I'll have something that actually fits."</div>
+      </div>
+      <div class="if-asked">
+        <div class="if-label">Why free during beta?</div>
+        <div class="if-answer">"Because the DriveCentric integration doesn't exist yet — I'm building it. You're doing me a favor by being first. It would be wrong to charge you while we're still proving it works."</div>
+      </div>
+      <div class="if-asked">
+        <div class="if-label">What if it doesn't work?</div>
+        <div class="if-answer">"You walk away having spent nothing. The beta is genuinely free. If the integration doesn't produce referral attribution data that impresses you, there's no obligation to go to Stage 2."</div>
+      </div>
+      <div class="if-asked">
+        <div class="if-label">What's the DriveCentric email?</div>
+        <div class="if-answer">"It's a simple consent to activate the SFTP data feed — something like 'We authorize DriveCentric to share deal data with Rippl (BD America LLC) for referral tracking purposes.' I can draft the exact language for you."</div>
+      </div>
+      <div class="if-asked">
+        <div class="if-label">How long does setup take?</div>
+        <div class="if-answer">"Two to three weeks from DriveCentric consent to live: one week to coordinate the SFTP feed, one week to configure and test, a few days of soft-launch. You'll see the first referrals tracked within a month of the consent email."</div>
+      </div>
+      <div class="if-asked">
+        <div class="if-label">Can I see the product?</div>
+        <div class="if-answer">Pull up carlock-deck.html and walk slides 3–5. Or offer a 30-min demo of the live Hallmark Dental dashboard — same admin experience they'd get, with real referral data running.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-footer">
+  <div>BD America LLC DBA Rippl · Nashville, TN · joinrippl.com · david@joinrippl.com</div>
+  <div>Deck: carlock-deck.html · Keep open in second tab · Do not share order form today</div>
+</div>
+
+</body>
+</html>

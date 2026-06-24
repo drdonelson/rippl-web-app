@@ -19,6 +19,7 @@ type NavItem = {
   icon: React.ElementType;
   external?: boolean;
   minRole?: "practice_admin" | "super_admin";
+  skipForDemo?: boolean;
 };
 
 type NavSection = {
@@ -42,7 +43,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/partners",    label: "Local Partners", icon: Store,       minRole: "super_admin"    },
       { href: "/campaigns",   label: "Campaigns",      icon: Megaphone,   minRole: "practice_admin" },
-      { href: "/admin-tasks", label: "Admin Tasks",    icon: CheckSquare                            },
+      { href: "/admin-tasks", label: "Admin Tasks",    icon: CheckSquare, skipForDemo: true         },
       { href: "/offices",     label: "Offices & Team", icon: Building2,   minRole: "practice_admin" },
     ],
   },
@@ -62,8 +63,9 @@ const NAV_SECTIONS: NavSection[] = [
     demoVisible: true,
     demoOnly: true,
     items: [
-      { href: "/campaigns", label: "Campaigns",      icon: Megaphone },
-      { href: "/offices",   label: "Offices & Team", icon: Building2 },
+      { href: "/admin-tasks", label: "Admin Tasks",    icon: CheckSquare },
+      { href: "/campaigns",   label: "Campaigns",      icon: Megaphone   },
+      { href: "/offices",     label: "Offices & Team", icon: Building2   },
     ],
   },
   {
@@ -109,6 +111,7 @@ function getSections(role: UserRole | undefined, isDemo = false): NavSection[] {
     .map((s) => ({
       ...s,
       items: s.items.filter((item) => {
+        if (isDemo && item.skipForDemo) return false;
         if (isDemo && !item.minRole) return true;
         if (!item.minRole) return true;
         if (item.minRole === "practice_admin") return level >= 2;

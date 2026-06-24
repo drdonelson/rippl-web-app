@@ -172,20 +172,22 @@ export default function Dashboard() {
           </button>
           <h2 className="text-lg font-bold text-foreground mb-1">You're live on Rippl</h2>
           <p className="text-muted-foreground text-sm mb-4 max-w-lg">
-            Rippl monitors your Open Dental for completed new-patient referral exams. When one is detected, the referring patient is notified and can claim their reward automatically. Your first reward notification will fire within the next poll cycle.
+            {isAuto
+              ? "Rippl monitors your DriveCentric for closed deals. When a referral is detected, the referring customer is notified and can claim their reward automatically. Your first reward notification will fire within 24 hours of deal close."
+              : "Rippl monitors your Open Dental for completed new-patient referral exams. When one is detected, the referring patient is notified and can claim their reward automatically. Your first reward notification will fire within the next poll cycle."}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Link href="/offices" className="flex items-center gap-2.5 px-4 py-3 bg-card/60 hover:bg-card border border-border rounded-xl text-sm font-medium text-foreground transition-colors">
               <Building2 className="w-4 h-4 text-primary shrink-0" />
-              Upload your practice logo
+              {isAuto ? "Upload your dealership logo" : "Upload your practice logo"}
             </Link>
             <Link href="/offices" className="flex items-center gap-2.5 px-4 py-3 bg-card/60 hover:bg-card border border-border rounded-xl text-sm font-medium text-foreground transition-colors">
               <UserCog className="w-4 h-4 text-primary shrink-0" />
-              Invite front desk staff
+              {isAuto ? "Invite your sales team" : "Invite front desk staff"}
             </Link>
             <a href="https://www.joinrippl.com/how-it-works" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 px-4 py-3 bg-card/60 hover:bg-card border border-border rounded-xl text-sm font-medium text-foreground transition-colors">
               <ExternalLink className="w-4 h-4 text-primary shrink-0" />
-              Share Rippl with your patients
+              {isAuto ? "Share Rippl with your customers" : "Share Rippl with your patients"}
             </a>
           </div>
         </div>
