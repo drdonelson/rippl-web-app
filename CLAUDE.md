@@ -129,15 +129,17 @@ RLS is enabled on ALL tables. Always use service role key in backend.
 
 ## Twilio SMS
 
-**Current status:** In transition — setting up a new Twilio account the right way.
+**Current status:** Toll-free verification submitted July 2, 2026 — awaiting approval.
 
-- **Old number:** +16158824095 (local 10DLC — do not use, A2P campaign was rejected)
-- **New account plan:** Register Rippl as ISV/Platform (not Hallmark Dental) — one Twilio account for Rippl, subaccounts per practice
-- **Phone strategy:** Toll-free number per practice (simpler verification than 10DLC, no TCR)
-- **New number:** TBD — update `TWILIO_PHONE_NUMBER` env var on Render when assigned
-- **SMS_ENABLED flag:** Keep `false` until new number is verified and approved
+- **Old number:** +16158824095 (local 10DLC — do not use, dead)
+- **10DLC campaigns:** All rejected (5 attempts) — abandoned in favor of toll-free
+- **New number:** Toll-free number purchased under Hallmark Dental PLLC compliance profile — TBD once verified. Update `TWILIO_PHONE_NUMBER` env var on Render when approved.
+- **Twilio compliance profile used:** Hallmark Dental PLLC (Direct Customer, non-ISV) — ISV profile cannot be used for toll-free
+- **SMS_ENABLED flag:** Keep `false` until toll-free number is verified and approved
+- **When approved:** Set `TWILIO_PHONE_NUMBER` on Render + set `SMS_ENABLED=true` + deploy
 - **Opt-out:** Check `sms_opt_out` field at fire time, not just at schedule time
-- **Onboarding delay:** 2 hours post-appointment
+- **Onboarding SMS:** Do NOT include new patient onboarding SMS in any Twilio registration description — those patients haven't explicitly opted in via web form and it triggers "opt-in doesn't match use case" rejections
+- **Approved use case (toll-free):** Reward notifications only — existing patients who opted in at /sms-opt-in receive SMS when their referral completes a first visit
 - **Future multi-office:** `offices` table will need `twilio_phone_number` column when office #2 onboards
 
 ---
@@ -160,6 +162,7 @@ RLS is enabled on ALL tables. Always use service role key in backend.
 3. **Fallback:** If Tango fails, create admin_task with `task_type = 'gift-card'` so no reward is ever lost
 4. **Dental credit:** Always $100 (3x the gift card value) — pushed first in UI to encourage in-practice redemption
 5. **No monthly fees:** Per-referral pricing only ($20/referral for other practices)
+6. **Circular referral guard:** Backend blocks self-referrals and circular referrals (A referred B → B cannot refer A back) at `POST /api/referrals`. Checks by phone number normalized to last 10 digits. Returns 400 with clear error message.
 
 ---
 
@@ -192,6 +195,8 @@ Patient counts: Brentwood 2,132 · Lewisburg 6,267 · Greenbrier 2,850
 | `/join` | Alias for `/join/dental` |
 | `/join-waitlist` | Simple waitlist form (legacy) |
 | `/sms-opt-in` | Standalone voluntary SMS opt-in (TCPA compliant — explicitly not required for rewards) |
+| `/sms-consent-form` | Print-optimized paper consent form for in-office use |
+| `/sms-qr-print` | Print-optimized QR code poster linking to /sms-opt-in |
 
 ---
 
@@ -300,4 +305,4 @@ Before making any changes in a new session:
 
 ---
 
-*Last updated: May 2026 — Rippl v1.4: Email migrated to Brevo, SMS opt-in page updated for TCPA compliance, Twilio being rebuilt as ISV/Platform with toll-free numbers per practice*
+*Last updated: July 2026 — Rippl v1.5: Twilio toll-free verification submitted for Hallmark Dental; 10DLC abandoned after 5 rejections; circular referral guard added; /sms-consent-form and /sms-qr-print pages added; privacy policy updated with SMS section; home page updated with business info for carrier compliance*

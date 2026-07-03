@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Building2, Plus, X, Loader2, AlertTriangle, ChevronRight,
   CheckCircle2, Pencil, Globe, DollarSign, CreditCard, Copy, Check,
-  Zap,
+  Zap, Link2,
 } from "lucide-react";
 import { customFetch } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
@@ -167,6 +167,146 @@ function BillingPanel({ practice, onBillingError }: { practice: Practice & { id:
             <div>Customer: {practice.stripe_customer_id}</div>
             {practice.stripe_payment_method_id && (
               <div>Payment method: {practice.stripe_payment_method_id}</div>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ── Vagaro integration panel (inside edit drawer, salon vertical only) ────────
+
+const VAGARO_WEBHOOK_URL = "https://rippl.onrender.com/api/webhooks/vagaro";
+
+function VagaroPanel({ practiceId }: { practiceId: string }) {
+  const [copiedWebhook, setCopiedWebhook] = useState(false);
+  const [credResult, setCredResult]       = useState<{ ok: boolean; message?: string; error?: string } | null>(null);
+  const [testForm, setTestForm]           = useState({ client_name: "", referral_name: "", client_phone: "" });
+  const [testResult, setTestResult]       = useState<{
+    matched?: boolean; message?: string; referrer?: { name: string }; action?: string;
+  } | null>(null);
+
+  function copyWebhook() {
+    navigator.clipboard.writeText(VAGARO_WEBHOOK_URL).then(() => {
+      setCopiedWebhook(true);
+      setTimeout(() => setCopiedWebhook(false), 2000);
+    });
+  }
+
+  const credMut = useMutation({
+    mutationFn: () =>
+      customFetch<{ ok: boolean; message?: string; error?: string }>(
+        `${BASE}/api/test/vagaro-credentials`,
+        { method: "POST", body: JSON.stringify({ practice_id: practiceId }) },
+      ),
+    onSuccess: (data) => setCredResult(data),
+    onError:   (err: any) => setCredResult({ ok: false, error: err?.data?.error ?? "Request failed" }),
+  });
+
+  const webhookMut = useMutation({
+    mutationFn: () =>
+      customFetch<{ matched: boolean; message: string; referrer?: { name: string }; action?: string }>(
+        `${BASE}/api/test/vagaro-webhook`,
+        { method: "POST", body: JSON.stringify({ practice_id: practiceId, ...testForm }) },
+      ),
+    onSuccess: (data) => setTestResult(data),
+    onError:   (err: any) => setTestResult({ matched: false, message: err?.data?.error ?? "Request failed" }),
+  });
+
+  return (
+    <section className="border-t border-border pt-6 mt-2">
+      <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Vagaro Integration</h3>
+
+      {/* Webhook URL */}
+      <div className="p-4 rounded-xl bg-muted/20 border border-border mb-3 space-y-2">
+        <p className="text-xs text-muted-foreground">
+          Register this endpoint in your Vagaro developer dashboard under <strong>Webhooks</strong>:
+        </p>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0 px-3 py-2 rounded-lg bg-muted/40 border border-border">
+            <Link2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <code className="text-xs font-mono text-foreground truncate">{VAGARO_WEBHOOK_URL}</code>
+          </div>
+          <button
+            type="button"
+            onClick={copyWebhook}
+            className="shrink-0 p-2 rounded-lg hover:bg-muted/40 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {copiedWebhook ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Test credentials */}
+      <div className="p-4 rounded-xl bg-muted/20 border border-border mb-3">
+        <p className="text-xs text-muted-foreground mb-3">
+          Verify the <code className="font-mono">vagaro_api_key</code> and <code className="font-mono">vagaro_api_secret</code> stored in this practice's <code className="font-mono">integration_config</code>.
+        </p>
+        <button
+          type="button"
+          onClick={() => { setCredResult(null); credMut.mutate(); }}
+          disabled={credMut.isPending}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border font-semibold text-sm hover:bg-muted/40 disabled:opacity-60 transition-colors"
+        >
+          {credMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Test Credentials"}
+        </button>
+        {credResult && (
+          <p className={cn(
+            "mt-2 p-3 rounded-lg border text-xs font-medium",
+            credResult.ok
+              ? "bg-green-500/10 border-green-500/20 text-green-700"
+              : "bg-destructive/10 border-destructive/20 text-destructive",
+          )}>
+            {credResult.ok ? credResult.message : credResult.error}
+          </p>
+        )}
+      </div>
+
+      {/* Send test webhook */}
+      <div className="p-4 rounded-xl bg-muted/20 border border-border">
+        <p className="text-xs text-muted-foreground mb-3">
+          Simulate a completed first-time Vagaro appointment and run the full referral pipeline end-to-end.
+        </p>
+        <div className="space-y-2 mb-3">
+          {(["client_name", "referral_name", "client_phone"] as const).map((k) => (
+            <input
+              key={k}
+              type={k === "client_phone" ? "tel" : "text"}
+              placeholder={
+                k === "client_name"   ? "New client name (e.g. Jane Smith)" :
+                k === "referral_name" ? "Referrer name they gave (e.g. Mary Jones)" :
+                                        "Client phone — optional"
+              }
+              value={testForm[k]}
+              onChange={e => setTestForm(f => ({ ...f, [k]: e.target.value }))}
+              className="w-full px-3 py-2 rounded-xl bg-muted/30 border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => { setTestResult(null); webhookMut.mutate(); }}
+          disabled={webhookMut.isPending || !testForm.referral_name.trim()}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 disabled:opacity-60 transition-colors"
+        >
+          {webhookMut.isPending ? (
+            <><Loader2 className="w-4 h-4 animate-spin" /> Running…</>
+          ) : (
+            <><Zap className="w-4 h-4" /> Send Test Webhook</>
+          )}
+        </button>
+        {testResult && (
+          <div className={cn(
+            "mt-2 p-3 rounded-lg border text-xs",
+            testResult.matched
+              ? "bg-green-500/10 border-green-500/20 text-green-700"
+              : "bg-amber-500/10 border-amber-500/20 text-amber-700",
+          )}>
+            <p className="font-semibold mb-0.5">{testResult.matched ? "Referral matched!" : "No match found"}</p>
+            <p>{testResult.message}</p>
+            {testResult.referrer && (
+              <p className="mt-1 font-mono">Referrer: {testResult.referrer.name}</p>
             )}
           </div>
         )}
@@ -442,6 +582,9 @@ function PracticeForm({
 
           {/* Stripe billing — only shown when editing an existing practice */}
           {isEdit && <BillingPanel practice={initial as Practice & { id: string }} onBillingError={onBillingError} />}
+
+          {/* Vagaro integration — only for salon practices */}
+          {isEdit && form.vertical === "hair_salon" && <VagaroPanel practiceId={initial.id!} />}
         </form>
 
         {/* Footer */}
