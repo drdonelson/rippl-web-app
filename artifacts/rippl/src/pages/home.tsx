@@ -80,7 +80,7 @@ export default function Home() {
               { n: "1", text: "Patient visits joinrippl.com/sms-opt-in" },
               { n: "2", text: "Enters their name and mobile number" },
               { n: "3", text: "Checks an explicit, unchecked consent checkbox" },
-              { n: "4", text: "Receives their referral link via SMS" },
+              { n: "4", text: "Receives reward notifications via SMS (referral link also available in-office or by email)" },
             ].map(({ n, text }) => (
               <div key={n} className="flex items-center gap-4 px-5 py-3.5">
                 <span className="w-6 h-6 rounded-full bg-[#E0622A] text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
