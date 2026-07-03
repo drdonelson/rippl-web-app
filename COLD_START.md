@@ -164,9 +164,19 @@ Rippl is a **multi-vertical patient/customer referral rewards platform**. It:
 
 ### The Business Model
 
-- No monthly fee — per-referral pricing ($20/referral for non-Hallmark practices)
-- Dental credit ($100) pushed as the first reward option — 3× the gift card value — to encourage in-practice redemption
-- Currently running live at Hallmark Dental. Expanding to salon and automotive.
+- **Dental (direct):** $20–55/referral depending on channel (DC members $55, standard $85); Growth plan $149/mo + $30/ref
+- **Automotive (direct):** $30/referral (Carlock beta rate); same Stripe billing as dental
+- **Salon (channel partner via Peydan):** ~$99/office/mo + Tango at cost — Peydan licenses and resells; agreement pending
+- Dental credit ($100) pushed first — 3× gift card value — encourages in-practice redemption
+
+### Active Clients (July 2026)
+
+| Practice | Vertical | Status |
+|----------|---------|--------|
+| Hallmark Dental (3 offices) | Dental | Live |
+| Carlock Automotive | Automotive | Live — awaiting first DriveCentric file |
+| Volvo of Cool Springs | Automotive | Onboarding — SSH key sent to Darren Sabino |
+| Peydan's salons | Salon | Pre-sales — channel partner agreement being negotiated |
 
 ---
 
@@ -420,18 +430,37 @@ Pages were mobile-first but wasted desktop space. Rippl needed marketing pages f
 ### Vagaro (Salon)
 
 - **Trigger:** `POST /api/webhooks/vagaro` — `bookingStatus: "Service Completed"` + `appointmentTypeCode: "NR"`
+- **Business matching:** matches webhook `businessId` to `integration_config.vagaro_business_id` across all salon practices
 - **Referral field:** form response where `fieldName` matches `/refer/i`
 - **Auth:** `client_credentials` OAuth from `integration_config.vagaro_api_key/secret`
 - **Dedup:** `external_proc_num = appointmentId` per practice
+- **Test endpoints** (super_admin only, in `routes/test.ts`):
+  - `POST /api/test/vagaro-credentials` — validates stored credentials via token exchange
+  - `POST /api/test/vagaro-webhook` — simulates full referral pipeline (body: `practice_id`, `client_name`, `referral_name`, `client_phone?`)
+- **Admin UI:** `VagaroPanel` in `practice-admin.tsx` — shows webhook URL, credential test, test webhook form; renders only for `hair_salon` vertical in edit mode
 
 ---
 
-### DriveCentric (Automotive)
+### DriveCentric (Automotive) — SFTP Implementation (ACTIVE)
 
-- **Trigger:** Daily poll `pollDriveCentric(practiceId)` — `GET /v1/dealers/{dealerId}/deals?status=closed&since={iso}`
-- **Auth:** Bearer `drivecentric_api_key` from `integration_config`
-- **Referral detection:** survey responses matching `survey_referral_question` and `referral_lead_source_tags`
-- **Dedup:** `external_proc_num = deal.id` per practice
+- **Trigger:** `POST /api/sync/drivecentric` — auth via `X-Sync-Secret: rippl-sync-2026` header
+- **Service:** `driveCentricSftp.ts` → `pollDriveCentricSftp(practiceId)` — connects to dealer SFTP, downloads CSV batch
+- **File format:** `{storeNum}_v2_{table}_{from}_{to}_{timestamp}.csv` — tables: Deal, Customer, CustomerContact, SourceDescriptionGroup
+- **Referral trigger:** `Deal.Status = "Delivered"` + person name in `SourceDescription` (2-4 capitalized words, no digits, no `/–|,`)
+- **Dedup:** `external_proc_num = DealId`; status `"Completed"` (automotive)
+- **integration_config keys:** `sftp_host`, `sftp_port`, `sftp_username`, `sftp_private_key`, `sftp_path`
+- **DriveCentric contact:** Darren Sabino — email him for SFTP setup per dealer store
+- **REST API standby:** `driveCentric.ts` exists for future direct API — do not delete
+
+### SFTP Server Infrastructure
+
+- **Droplet:** DigitalOcean `167.99.15.170` (Ubuntu 24.04, $4/mo)
+- **SFTP user:** `drivecentric` — SSH key auth only
+- **Carlock path:** `/home/drivecentric/carlock/`
+- **Firewall:** UFW whitelist by IP — new dealers need Darren's outbound IP added: `ufw allow from <IP> to any port 22`
+- **Daily cron:** `0 6 * * *` → `/usr/local/bin/rippl-sync.sh` → hits sync endpoint
+- **Log:** `/var/log/rippl-sync.log`
+- **David's admin IP:** `173.8.85.193` (whitelisted for SSH to droplet)
 
 ---
 
@@ -555,7 +584,7 @@ TANGO_PLATFORM_KEY                  TANGO_ACCOUNT_ID
 TANGO_CUSTOMER_ID                   TANGO_EMAIL_TEMPLATE_ID
 APP_URL                             DATABASE_URL
 NODE_ENV                            NODE_VERSION
-SMS_ENABLED
+SMS_ENABLED                         SYNC_SECRET
 ```
 
 ---
@@ -629,5 +658,5 @@ The work is the argument. The output is the proof. The standard is non-negotiabl
 
 ---
 
-*Last updated: May 2026 — Rippl v1.4*  
+*Last updated: July 2026 — Rippl v1.5*  
 *Read CLAUDE.md next. Read DESIGN.md before any UI work.*

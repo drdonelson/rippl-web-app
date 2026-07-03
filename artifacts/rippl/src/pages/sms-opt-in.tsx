@@ -111,17 +111,16 @@ export default function SmsOptIn() {
           </div>
         </div>
 
-        {/* How it works */}
+        {/* What you'll receive */}
         <div className="bg-white border border-slate-200 rounded-xl p-5 mb-8 space-y-3">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">What you'll receive by text</p>
           {[
-            { n: "1", text: "You share your personal referral link with someone you know." },
-            { n: "2", text: "They book and complete a new patient appointment at Hallmark Dental." },
-            { n: "3", text: "You earn a gift card reward — $35 to $100 — redeemable by email or text." },
-          ].map(({ n, text }) => (
-            <div key={n} className="flex items-start gap-3">
-              <span className="w-6 h-6 rounded-full bg-[#E0622A] text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
-                {n}
-              </span>
+            "Your personal referral link (also available from office staff or by email — SMS is not required).",
+            "A notification when someone you referred completes their first visit and you've earned a reward.",
+            "Occasional referral program reminders — up to 4 messages per month total.",
+          ].map((text, i) => (
+            <div key={i} className="flex items-start gap-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#E0622A] flex-shrink-0 mt-2" />
               <p className="text-slate-600 text-sm leading-relaxed">{text}</p>
             </div>
           ))}
