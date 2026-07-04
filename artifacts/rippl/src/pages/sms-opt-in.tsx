@@ -115,8 +115,7 @@ export default function SmsOptIn() {
         <div className="bg-white border border-slate-200 rounded-xl p-5 mb-8 space-y-3">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">What you'll receive by text</p>
           {[
-            "Your personal referral link (also available from office staff or by email — SMS is not required).",
-            "A notification when someone you referred completes their first visit and you've earned a reward.",
+            "A text notification when someone you referred completes their first visit — with a link to claim your reward.",
             "Occasional referral program reminders — up to 4 messages per month total.",
           ].map((text, i) => (
             <div key={i} className="flex items-start gap-3">
@@ -124,6 +123,7 @@ export default function SmsOptIn() {
               <p className="text-slate-600 text-sm leading-relaxed">{text}</p>
             </div>
           ))}
+          <p className="text-xs text-slate-400 pt-1">Rewards are also delivered by email — SMS sign-up is not required to earn or claim rewards.</p>
         </div>
 
         {/* Form */}
