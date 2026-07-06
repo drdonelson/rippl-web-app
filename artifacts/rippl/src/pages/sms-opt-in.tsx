@@ -94,7 +94,7 @@ export default function SmsOptIn() {
         <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-8 flex items-start gap-3">
           <span className="text-blue-500 text-lg leading-none mt-0.5">ℹ</span>
           <p className="text-blue-800 text-sm leading-relaxed">
-            <span className="font-semibold">SMS notifications are completely optional.</span> As a Hallmark Dental patient you are already eligible to earn referral rewards. This form is only to add text message notifications — you can earn and claim rewards without signing up for texts.
+            <span className="font-semibold">Already a Hallmark Dental patient? You are already enrolled in our referral rewards program.</span> This page only adds optional text message notifications. You can earn and claim rewards by email or in person — no SMS sign-up required.
           </p>
         </div>
 
