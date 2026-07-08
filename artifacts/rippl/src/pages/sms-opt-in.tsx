@@ -27,15 +27,16 @@ export default function SmsOptIn() {
     const digits = phone.replace(/\D/g, "");
     if (!name.trim()) { setError("Please enter your name."); return; }
     if (digits.length !== 10) { setError("Please enter a valid 10-digit U.S. phone number."); return; }
-    if (!consented) { setError("Please check the consent box to sign up for text notifications."); return; }
 
     setLoading(true);
     try {
-      await fetch("/api/sms-opt-in", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), phone: `+1${digits}` }),
-      });
+      if (consented) {
+        await fetch("/api/sms-opt-in", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: name.trim(), phone: `+1${digits}` }),
+        });
+      }
     } catch {
       // Non-blocking — show success regardless (practice staff will confirm enrollment)
     } finally {
@@ -51,12 +52,23 @@ export default function SmsOptIn() {
           <div className="w-16 h-16 rounded-full bg-green-50 border border-green-200 flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-3">You're signed up for texts!</h1>
-          <p className="text-slate-500 text-[15px] leading-relaxed mb-6">
-            You'll receive an SMS shortly with your referral link. You can reply{" "}
-            <span className="font-mono text-orange-700 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded text-sm">STOP</span>{" "}
-            at any time to unsubscribe — your reward eligibility is unaffected.
-          </p>
+          {consented ? (
+            <>
+              <h1 className="text-2xl font-bold text-slate-900 mb-3">You're signed up for texts!</h1>
+              <p className="text-slate-500 text-[15px] leading-relaxed mb-6">
+                You'll receive a reward notification by text when someone you referred completes their first visit. You can reply{" "}
+                <span className="font-mono text-orange-700 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded text-sm">STOP</span>{" "}
+                at any time to unsubscribe — your reward eligibility is unaffected.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold text-slate-900 mb-3">No problem!</h1>
+              <p className="text-slate-500 text-[15px] leading-relaxed mb-6">
+                You've chosen not to receive text notifications — that's completely fine. Your referral rewards will be delivered by email, or ask a staff member at the office for your referral link.
+              </p>
+            </>
+          )}
           <a
             href="https://www.hallmarkdds.com"
             className="text-[#E0622A] hover:text-orange-700 font-medium text-sm transition-colors"
