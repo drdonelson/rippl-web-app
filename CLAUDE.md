@@ -129,18 +129,20 @@ RLS is enabled on ALL tables. Always use service role key in backend.
 
 ## Twilio SMS
 
-**Current status:** Toll-free verification submitted July 2, 2026 — awaiting approval.
+**Current status:** LIVE — toll-free +18555027538 approved July 10, 2026. SMS is active.
 
-- **Old number:** +16158824095 (local 10DLC — do not use, dead)
-- **10DLC campaigns:** All rejected (5 attempts) — abandoned in favor of toll-free
-- **New number:** Toll-free number purchased under Hallmark Dental PLLC compliance profile — TBD once verified. Update `TWILIO_PHONE_NUMBER` env var on Render when approved.
-- **Twilio compliance profile used:** Hallmark Dental PLLC (Direct Customer, non-ISV) — ISV profile cannot be used for toll-free
-- **SMS_ENABLED flag:** Keep `false` until toll-free number is verified and approved
-- **When approved:** Set `TWILIO_PHONE_NUMBER` on Render + set `SMS_ENABLED=true` + deploy
+- **Active number:** `+18555027538` (toll-free, Hallmark Dental PLLC Direct Customer profile)
+- **Old number:** +16158824095 (local 10DLC — dead, do not use)
+- **10DLC campaigns:** All rejected (5 attempts) — permanently abandoned in favor of toll-free
+- **SMS_ENABLED:** `true` on Render — reward notifications and onboarding SMS are live
+- **Approved use case:** ACCOUNT_NOTIFICATION — reward notifications to patients who opted in at /sms-opt-in when their referral completes a first visit
+- **Onboarding SMS:** Fires automatically 2 hours after Exam Completed status set — do NOT mention in Twilio registration (patients haven't explicitly opted in via web form)
+- **Onboarding SMS cutoff:** Only fires for new exams from July 13, 2026 onward — no retroactive blasts
 - **Opt-out:** Check `sms_opt_out` field at fire time, not just at schedule time
-- **Onboarding SMS:** Do NOT include new patient onboarding SMS in any Twilio registration description — those patients haven't explicitly opted in via web form and it triggers "opt-in doesn't match use case" rejections
-- **Approved use case (toll-free):** Reward notifications only — existing patients who opted in at /sms-opt-in receive SMS when their referral completes a first visit
+- **Compliance profile:** Hallmark Dental PLLC (Direct Customer) — ISV/Rippl profile cannot be used for toll-free
+- **What unlocked approval:** Carlos B. (Twilio support) manual review + IRS CP 575 EIN letter via Google Drive + ACCOUNT_NOTIFICATION use case + checkbox truly optional (no error if unchecked)
 - **Future multi-office:** `offices` table will need `twilio_phone_number` column when office #2 onboards
+- **Kill switch:** Set `SMS_ENABLED=false` on Render to disable all SMS without code changes
 
 ---
 
@@ -278,7 +280,7 @@ Tango email templates by vertical (`resolveTangoTemplate` in `practiceConfig.ts`
 - `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR` — add `app.set('trust proxy', 1)` before rate limiter if not already done
 - Admin tasks table has BOTH `completed` boolean AND `status` text — handle both
 - New patient names show as 'Unknown Patient' if not yet in referrers table — poller now checks OD API as fallback
-- **SMS_ENABLED=false** — keep false until new Twilio toll-free number is verified
+- **SMS_ENABLED=true** — +18555027538 is live and approved as of July 10, 2026
 - Tango amount must be in dollars not cents
 - `staff_pool_configs` and `staff_pool_entries` — RLS enabled May 2026, no public policies (backend uses service role)
 
@@ -305,4 +307,4 @@ Before making any changes in a new session:
 
 ---
 
-*Last updated: July 2026 — Rippl v1.5: Twilio toll-free verification submitted for Hallmark Dental; 10DLC abandoned after 5 rejections; circular referral guard added; /sms-consent-form and /sms-qr-print pages added; privacy policy updated with SMS section; home page updated with business info for carrier compliance*
+*Last updated: July 10, 2026 — Rippl v1.5: Twilio toll-free +18555027538 APPROVED and live; SMS_ENABLED=true; 10DLC abandoned; circular referral guard deployed; TCPA-compliant /sms-opt-in (checkbox truly optional, no error if unchecked); privacy policy updated with SMS section; home page updated with business info for carrier compliance*
