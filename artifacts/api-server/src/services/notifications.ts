@@ -48,6 +48,14 @@ function resolveSmsBody(template: string, vars: Record<string, string>): string 
   return template.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? "");
 }
 
+function toE164(phone: string | null | undefined): string {
+  if (!phone) return "";
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  return phone; // pass through as-is; Twilio will return a clear error
+}
+
 function getTwilioClient() {
   if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
     throw new Error("Twilio credentials not configured (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)");
@@ -89,7 +97,7 @@ export async function sendRewardNotification(
       const msg = await client.messages.create({
         body: smsBody,
         from: fromPhone,
-        to: referrerPhone,
+        to: toE164(referrerPhone),
       });
       results.sms = msg.sid;
       logger.info({ sid: msg.sid, to: referrerPhone }, "SMS sent via Twilio");

@@ -19,6 +19,14 @@ function getTwilioClient() {
   return twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 }
 
+function toE164(phone: string | null | undefined): string {
+  if (!phone) return "";
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  return phone;
+}
+
 /** Generate a referral code: first 4 letters of first name + last 4 of a UUID segment */
 function generateReferralCode(fullName: string, uniqueSuffix: string): string {
   const firstName = fullName.trim().split(/\s+/)[0] ?? "ANON";
@@ -54,7 +62,7 @@ export async function sendOnboardingSmsNow(
     }
     if (!TWILIO_PHONE_NUMBER) throw new Error("TWILIO_PHONE_NUMBER not set");
     const client = getTwilioClient();
-    const msg = await client.messages.create({ body, from: TWILIO_PHONE_NUMBER, to: phone });
+    const msg = await client.messages.create({ body, from: TWILIO_PHONE_NUMBER, to: toE164(phone) });
     logger.info({ sid: msg.sid, to: phone, referralCode }, "Onboarding SMS sent");
     return { success: true, smsSid: msg.sid };
   } catch (err) {
@@ -77,8 +85,9 @@ export async function scheduleOnboardingSms(params: {
 }): Promise<OnboardingResult> {
   const { newPatientName, newPatientPhone, referralEventId } = params;
 
-  // Normalise phone for lookup
-  const phone = newPatientPhone.trim();
+  // Normalise phone for lookup and Twilio
+  const phoneRaw = newPatientPhone.trim();
+  const phone = toE164(phoneRaw) || phoneRaw;
 
   // Check if this patient is already a referrer (by phone)
   const existing = await db
