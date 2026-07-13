@@ -1,6 +1,6 @@
 import { Droplets, MessageSquare, Shield, FileText, Zap, Search, Gift, ChevronRight } from "lucide-react";
 
-const DEMO_EMAIL = "mailto:hello@joinrippl.com?subject=Rippl%20Demo%20Request";
+const CALENDLY_URL = "https://calendly.com/david-joinrippl/30min";
 
 export default function Home() {
   return (
@@ -19,10 +19,10 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-4">
             <a
-              href={DEMO_EMAIL}
+              href={CALENDLY_URL}
               className="hidden sm:inline-flex items-center gap-1.5 bg-[#E0622A] hover:bg-[#C9551E] text-white text-xs font-semibold px-4 py-2 rounded-full transition-colors"
             >
-              Request a Demo <ChevronRight className="w-3 h-3" />
+              Book an Intro Call <ChevronRight className="w-3 h-3" />
             </a>
             <a href="/login" className="text-xs font-semibold text-slate-400 hover:text-slate-700 transition-colors">
               Staff Login →
@@ -60,10 +60,10 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <a
-                href={DEMO_EMAIL}
+                href={CALENDLY_URL}
                 className="inline-flex items-center justify-center gap-2 bg-white text-[#E0622A] font-bold text-sm px-6 py-3.5 rounded-full transition-all hover:bg-orange-50 shadow-lg shadow-black/10"
               >
-                Request a Demo <ChevronRight className="w-4 h-4" />
+                Book an Intro Call <ChevronRight className="w-4 h-4" />
               </a>
               <a
                 href="#how-it-works"
@@ -208,13 +208,13 @@ export default function Home() {
             Ready to turn your best customers into your marketing team?
           </h2>
           <p className="text-white/70 text-base mb-8 max-w-xl mx-auto">
-            We'll walk you through the integration, show you a live referral firing, and get you up in days — not months.
+            A 30-minute conversation to see if Rippl is the right fit — no deck, no pressure. We'll look at your setup, see the product live, and figure out what it takes to go live.
           </p>
           <a
-            href={DEMO_EMAIL}
+            href={CALENDLY_URL}
             className="inline-flex items-center gap-2 bg-white text-[#E0622A] font-bold text-sm px-8 py-4 rounded-full transition-all hover:bg-orange-50 shadow-lg shadow-black/10"
           >
-            Book a 15-minute demo <ChevronRight className="w-4 h-4" />
+            Book a 30-minute intro call <ChevronRight className="w-4 h-4" />
           </a>
         </div>
       </section>
