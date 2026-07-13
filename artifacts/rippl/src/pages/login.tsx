@@ -4,6 +4,8 @@ import { Eye, EyeOff, Loader2, CheckCircle2, Zap, Plug, Target } from "lucide-re
 import { useAuth, staffOfficeLabel } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 
+const VERTICALS = ["Dental", "Automotive", "Salon"] as const;
+
 export default function Login() {
   const { login, session, isLoading, profile } = useAuth();
   const [, navigate] = useLocation();
@@ -15,8 +17,6 @@ export default function Login() {
   const [loginSuccess, setLoginSuccess] = useState(false);
   const [loginLabel, setLoginLabel] = useState<string | null>(null);
 
-  // Auto-redirect already-logged-in users; skip during an active login flow
-  // (loginSuccess=true means we just submitted — let the second effect handle navigation)
   useEffect(() => {
     if (!isLoading && session && !loginSuccess && !submitting) {
       navigate("/dashboard");
@@ -58,57 +58,85 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex">
-      {/* ── Left brand panel ───────────────────────────────────────────── */}
-      <div className="hidden md:flex w-[45%] flex-col justify-between p-12 relative overflow-hidden shrink-0" style={{ background: "linear-gradient(135deg, #F5A623 0%, #E0622A 100%)" }}>
+
+      {/* ── Left brand panel ─────────────────────────────────────────── */}
+      <div
+        className="hidden md:flex w-[45%] flex-col justify-between p-12 relative overflow-hidden shrink-0"
+        style={{ background: "linear-gradient(135deg, #F5A623 0%, #E0622A 100%)" }}
+      >
+        {/* Background orbs */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/3 -right-16 w-56 h-56 bg-white/5 rounded-full blur-2xl" />
           <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-black/10 rounded-full blur-2xl" />
         </div>
 
         {/* Logo */}
-        <div className="relative flex items-center gap-3">
-          <span className="font-display font-bold text-2xl">
+        <div className="relative">
+          <span className="font-bold text-3xl tracking-tight" style={{ fontFamily: "var(--font-sans)" }}>
             <span className="text-white/70">rip</span><span className="text-white">pl</span>
           </span>
         </div>
 
-        {/* Headline + bullets */}
-        <div className="relative">
-          <h2 className="text-white font-black text-4xl leading-tight mb-4">
-            Turn customers into your best marketers.
-          </h2>
-          <p className="text-white text-base leading-relaxed mb-10">
-            Automated referral rewards — detected, tracked, and sent without a single staff step.
-          </p>
-          <div className="space-y-4">
+        {/* Headline block */}
+        <div className="relative space-y-8">
+          <div>
+            <h2
+              className="text-white text-5xl leading-[1.1] mb-5"
+              style={{ fontFamily: "var(--font-fraunces)", fontWeight: 700 }}
+            >
+              Turn customers into your best marketers.
+            </h2>
+            <p className="text-white/80 text-base leading-relaxed">
+              Automatic referral rewards — detected, sent, and celebrated without a single staff step.
+            </p>
+          </div>
+
+          {/* Feature bullets */}
+          <div className="space-y-3">
             {[
               { Icon: Zap,    text: "Zero staff work required" },
               { Icon: Plug,   text: "Software-connected, auto-verified" },
               { Icon: Target, text: "Only pay when referrals fire" },
             ].map(({ Icon, text }) => (
               <div key={text} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
                   <Icon className="w-4 h-4 text-white" />
                 </div>
                 <span className="text-white font-semibold text-base">{text}</span>
               </div>
             ))}
           </div>
+
+          {/* Vertical badges */}
+          <div className="flex items-center gap-2 pt-2">
+            {VERTICALS.map((v, i) => (
+              <React.Fragment key={v}>
+                <span className="text-white/70 text-sm font-medium">{v}</span>
+                {i < VERTICALS.length - 1 && (
+                  <span className="text-white/30 text-xs">·</span>
+                )}
+              </React.Fragment>
+            ))}
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="relative">
-          <p className="text-white/50 text-xs">
-            © 2026 Rippl
-          </p>
+        <div className="relative flex items-center justify-between">
+          <p className="text-white/40 text-xs">© 2026 Rippl</p>
+          <div className="flex items-center gap-1.5 bg-white/10 rounded-full px-3 py-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-300 shrink-0" />
+            <span className="text-white/70 text-xs font-medium">SMS verified by Twilio</span>
+          </div>
         </div>
       </div>
 
-      {/* ── Right form panel ───────────────────────────────────────────── */}
+      {/* ── Right form panel ─────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 bg-white">
+
         {/* Mobile logo */}
         <div className="flex flex-col items-center mb-8 md:hidden">
-          <h1 className="text-3xl font-display font-bold mb-1">
+          <h1 className="text-3xl font-bold mb-1" style={{ fontFamily: "var(--font-sans)" }}>
             <span className="text-slate-900">rip</span><span className="text-[#E0622A]">pl</span>
           </h1>
           <p className="text-slate-500 text-sm">Automated referral rewards</p>
@@ -117,7 +145,7 @@ export default function Login() {
         <div className="w-full max-w-sm">
           <div className="mb-8 hidden md:block">
             <h2 className="text-3xl font-bold text-slate-900">Welcome back</h2>
-            <p className="text-slate-500 text-base mt-1">Sign in to your practice dashboard</p>
+            <p className="text-slate-500 text-base mt-1">Sign in to your dashboard</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -129,7 +157,7 @@ export default function Login() {
                 onChange={e => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                placeholder="you@yourpractice.com"
+                placeholder="you@yourbusiness.com"
                 className={cn(
                   "w-full bg-slate-50 border rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400",
                   "focus:outline-none focus:ring-2 focus:ring-[#E0622A]/30 focus:border-[#E0622A] transition-all",
@@ -139,7 +167,15 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-base font-medium text-slate-700 mb-1.5">Password</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-base font-medium text-slate-700">Password</label>
+                <a
+                  href="/reset-password"
+                  className="text-sm text-[#E0622A] hover:text-[#C9551E] transition-colors font-medium"
+                >
+                  Forgot password?
+                </a>
+              </div>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
