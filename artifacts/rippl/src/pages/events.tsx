@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useGetReferrers, useCreateReward, useUpdateReferralStatus, customFetch } from "@workspace/api-client-react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Gift, Search, MoreHorizontal, CheckCircle2, ChevronDown, ShieldAlert, ShieldCheck, Plus, ArrowUpDown, ArrowUp, ArrowDown, Mail, Send, Loader2 } from "lucide-react";
+import { Gift, Search, MoreHorizontal, CheckCircle2, ChevronDown, ShieldAlert, ShieldCheck, Plus, ArrowUpDown, ArrowUp, ArrowDown, Mail, MessageSquare, Send, Loader2 } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { cn } from "@/lib/utils";
 import { useForm } from "react-hook-form";
@@ -497,14 +497,22 @@ export default function Events() {
                       ) : effectiveStatus === "Exam Completed" ? (
                         <div className="flex flex-col items-end gap-1.5 ml-auto">
                           {resentEventId === event.id ? (
-                            <div className="flex items-center gap-1.5 text-green-400 text-xs font-medium">
+                            <div className="flex items-center gap-2 text-green-400 text-xs font-medium">
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               Resent!
                             </div>
                           ) : (
-                            <div className="flex items-center gap-1.5 text-primary text-xs font-medium">
-                              <Mail className="w-3.5 h-3.5" />
-                              Claim email sent
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1 text-primary text-xs font-medium">
+                                <MessageSquare className="w-3 h-3" />
+                                SMS
+                              </div>
+                              <span className="text-muted-foreground/40 text-xs">·</span>
+                              <div className="flex items-center gap-1 text-primary text-xs font-medium">
+                                <Mail className="w-3 h-3" />
+                                Email
+                              </div>
+                              <span className="text-primary/50 text-xs">sent</span>
                             </div>
                           )}
                           <div className="flex items-center gap-2">
