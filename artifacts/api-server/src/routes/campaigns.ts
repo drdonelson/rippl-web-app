@@ -336,7 +336,7 @@ router.post("/send", async (req, res) => {
             if (filter === "not_contacted") {
               await db
                 .update(referrersTable)
-                .set({ onboarding_sms_sent: true })
+                .set({ onboarding_sms_sent: true, onboarding_sms_sent_at: new Date() })
                 .where(eq(referrersTable.id, referrer.id));
             }
           } else {

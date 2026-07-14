@@ -149,7 +149,7 @@ router.post("/bulk-send-links", requireSuperAdmin, async (req, res) => {
           // Flip the flag so this patient won't appear in future bulk sends
           await db
             .update(referrersTable)
-            .set({ onboarding_sms_sent: true })
+            .set({ onboarding_sms_sent: true, onboarding_sms_sent_at: new Date() })
             .where(eq(referrersTable.id, referrer.id));
           sent++;
         } else {
@@ -273,7 +273,7 @@ router.post("/:id/send-link", async (req, res) => {
     if (anyDelivered) {
       await db
         .update(referrersTable)
-        .set({ onboarding_sms_sent: true })
+        .set({ onboarding_sms_sent: true, onboarding_sms_sent_at: new Date() })
         .where(eq(referrersTable.id, id));
     }
 
