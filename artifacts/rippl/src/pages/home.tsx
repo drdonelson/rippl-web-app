@@ -18,6 +18,9 @@ export default function Home() {
             </span>
           </div>
           <div className="flex items-center gap-4">
+            <a href="/pricing" className="hidden sm:block text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors">
+              Pricing
+            </a>
             <a
               href={CALENDLY_URL}
               target="_blank"

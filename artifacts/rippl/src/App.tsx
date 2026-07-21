@@ -51,6 +51,7 @@ const Playbook       = lazy(() => import("@/pages/playbook"));
 const SlideDeck      = lazy(() => import("@/pages/slide-deck"));
 const DcSignup       = lazy(() => import("@/pages/dc-signup"));
 const BillingSetup   = lazy(() => import("@/pages/billing-setup"));
+const Pricing        = lazy(() => import("@/pages/pricing"));
 const NotFound       = lazy(() => import("@/pages/not-found"));
 
 const queryClient = new QueryClient({
@@ -74,6 +75,7 @@ function Router() {
       <Switch>
         {/* Public routes — no sidebar */}
         <Route path="/" component={Home} />
+        <Route path="/pricing" component={Pricing} />
         <Route path="/login" component={Login} />
         <Route path="/demo/auto"   component={DemoAuto} />
         <Route path="/demo" component={Demo} />
