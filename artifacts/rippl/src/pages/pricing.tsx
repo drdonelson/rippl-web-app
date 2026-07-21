@@ -5,32 +5,38 @@ import { cn } from "@/lib/utils";
 const CALENDLY_URL = "https://calendly.com/david-joinrippl/30min";
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
-const VERTICALS = [
+const DENTAL_PLANS = [
   {
-    label: "Dental",
-    integration: "Open Dental",
-    fee: 20,
+    name: "Per Referral",
+    monthly: null,
+    perReferral: 55,
     reward: 35,
-    tag: "Live",
-    description: "Rippl connects to Open Dental via eConnector. Referrals are detected the moment a patient completes their first appointment.",
-    emr: "Open Dental",
+    highlight: false,
+    description: "No monthly commitment. Pay only when a verified referral completes their first appointment.",
   },
+  {
+    name: "Growth",
+    monthly: 149,
+    perReferral: 35,
+    reward: 35,
+    highlight: true,
+    description: "Best for practices generating 5+ referrals per month. Lower per-referral cost at scale.",
+  },
+];
+
+const VERTICALS = [
   {
     label: "Automotive",
     integration: "DriveCentric",
-    fee: 30,
-    reward: 35,
-    tag: "Live",
-    description: "DriveCentric pushes deal data to Rippl's secure SFTP. Rewards fire automatically when the referred customer closes.",
+    tag: "Coming Soon",
+    description: "DriveCentric integration coming soon. Rewards fire automatically when a referred customer closes a vehicle purchase.",
     emr: "DriveCentric",
   },
   {
     label: "Salon",
     integration: "Vagaro",
-    fee: null,
-    reward: 35,
     tag: "Coming Soon",
-    description: "Rippl listens for Vagaro appointment webhooks. Rewards fire when a referred client completes their first service.",
+    description: "Vagaro integration coming soon. Rewards fire when a referred client completes their first service.",
     emr: "Vagaro",
   },
 ];
@@ -154,87 +160,117 @@ export default function Pricing() {
         </div>
       </section>
 
-      {/* ── Pricing cards ─────────────────────────────────────────────── */}
+      {/* ── Dental pricing ────────────────────────────────────────────── */}
       <section className="py-20 bg-white">
         <div className="max-w-5xl mx-auto px-6">
-          <p className="text-xs font-bold text-[#E0622A] uppercase tracking-widest mb-3 text-center">Plans by vertical</p>
+          <div className="flex items-center gap-3 mb-3">
+            <p className="text-xs font-bold text-[#E0622A] uppercase tracking-widest">Dental</p>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">Live · Open Dental</span>
+          </div>
           <h2
-            className="text-3xl text-slate-900 mb-12 text-center"
+            className="text-3xl text-slate-900 mb-3"
             style={{ fontFamily: "var(--font-fraunces)", fontWeight: 700 }}
           >
-            One flat fee. Zero guesswork.
+            Two plans. Zero surprises.
           </h2>
+          <p className="text-slate-500 text-sm mb-10 max-w-xl">
+            Both plans include a $35 digital reward paid to your patient when their referral completes a first visit. You're only ever charged when a referral converts.
+          </p>
 
-          <div className="grid sm:grid-cols-3 gap-6">
-            {VERTICALS.map(({ label, integration, fee, reward, tag, description, emr }) => {
-              const isLive = tag === "Live";
-              return (
-                <div
-                  key={label}
-                  className={cn(
-                    "rounded-2xl border p-7 flex flex-col gap-5 relative",
-                    isLive ? "border-slate-200 bg-white shadow-lg shadow-slate-100" : "border-slate-100 bg-slate-50"
-                  )}
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-bold text-slate-900 text-lg">{label}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">via {integration}</p>
-                    </div>
-                    <span className={cn(
-                      "text-xs font-semibold px-2.5 py-1 rounded-full shrink-0",
-                      isLive ? "bg-green-50 text-green-700 border border-green-200" : "bg-slate-100 text-slate-500"
-                    )}>
-                      {tag}
-                    </span>
+          <div className="grid sm:grid-cols-2 gap-6 max-w-2xl">
+            {DENTAL_PLANS.map(({ name, monthly, perReferral, reward, highlight, description }) => (
+              <div
+                key={name}
+                className={cn(
+                  "rounded-2xl border p-8 flex flex-col gap-5 relative",
+                  highlight
+                    ? "border-[#E0622A] bg-orange-50/40 shadow-lg shadow-orange-100"
+                    : "border-slate-200 bg-white shadow-sm"
+                )}
+              >
+                {highlight && (
+                  <div className="absolute -top-3 left-6">
+                    <span className="bg-[#E0622A] text-white text-xs font-bold px-3 py-1 rounded-full">Most Popular</span>
                   </div>
-
-                  {isLive ? (
-                    <div>
-                      <div className="flex items-baseline gap-1.5 mb-1">
-                        <span className="text-5xl font-bold text-slate-900" style={{ fontFamily: "var(--font-fraunces)" }}>
-                          ${fee}
-                        </span>
+                )}
+                <div>
+                  <p className="font-bold text-slate-900 text-lg">{name}</p>
+                </div>
+                <div>
+                  {monthly ? (
+                    <>
+                      <div className="flex items-baseline gap-1.5 mb-0.5">
+                        <span className="text-4xl font-bold text-slate-900" style={{ fontFamily: "var(--font-fraunces)" }}>${monthly}</span>
+                        <span className="text-slate-500 text-sm font-medium">/ mo</span>
+                      </div>
+                      <p className="text-sm text-slate-500">+ <strong className="text-slate-700">${perReferral}</strong> per verified referral</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-baseline gap-1.5 mb-0.5">
+                        <span className="text-4xl font-bold text-slate-900" style={{ fontFamily: "var(--font-fraunces)" }}>${perReferral}</span>
                         <span className="text-slate-500 text-sm font-medium">/ referral</span>
                       </div>
-                      <p className="text-xs text-slate-400">+ ${reward} reward paid to your customer</p>
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="text-2xl font-bold text-slate-400" style={{ fontFamily: "var(--font-fraunces)" }}>Coming Soon</p>
-                      <p className="text-xs text-slate-400 mt-1">Pricing to be announced</p>
-                    </div>
+                      <p className="text-sm text-slate-500">No monthly fee</p>
+                    </>
                   )}
-
-                  <p className="text-sm text-slate-500 leading-relaxed flex-1">{description}</p>
-
-                  {isLive ? (
-                    <button
-                      onClick={() => openModal(emr)}
-                      className="w-full py-2.5 bg-[#E0622A] hover:bg-[#C9551E] text-white text-sm font-semibold rounded-xl transition-colors"
-                    >
-                      Get Started →
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => openModal()}
-                      className="w-full py-2.5 bg-slate-100 text-slate-400 text-sm font-semibold rounded-xl cursor-default"
-                      disabled
-                    >
-                      Notify Me
-                    </button>
-                  )}
+                  <p className="text-xs text-slate-400 mt-1">+ ${reward} reward to your patient</p>
                 </div>
-              );
-            })}
+                <p className="text-sm text-slate-500 leading-relaxed flex-1">{description}</p>
+                <button
+                  onClick={() => openModal("Open Dental")}
+                  className={cn(
+                    "w-full py-2.5 text-sm font-semibold rounded-xl transition-colors",
+                    highlight
+                      ? "bg-[#E0622A] hover:bg-[#C9551E] text-white"
+                      : "bg-slate-900 hover:bg-slate-700 text-white"
+                  )}
+                >
+                  Get Started →
+                </button>
+              </div>
+            ))}
           </div>
 
-          <p className="text-center text-xs text-slate-400 mt-6">
+          <p className="text-xs text-slate-400 mt-6">
             All plans include a 30-day trial period. Questions?{" "}
             <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer" className="text-[#E0622A] hover:underline font-medium">
               Book a 30-minute call
             </a>
           </p>
+        </div>
+      </section>
+
+      {/* ── Coming soon verticals ─────────────────────────────────────── */}
+      <section className="py-16 bg-slate-50 border-t border-slate-100">
+        <div className="max-w-5xl mx-auto px-6">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Coming Soon</p>
+          <h2
+            className="text-2xl text-slate-900 mb-8"
+            style={{ fontFamily: "var(--font-fraunces)", fontWeight: 700 }}
+          >
+            More verticals on the way.
+          </h2>
+          <div className="grid sm:grid-cols-2 gap-4 max-w-2xl">
+            {VERTICALS.map(({ label, integration, description, emr }) => (
+              <div key={label} className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col gap-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-bold text-slate-900">{label}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">via {integration}</p>
+                  </div>
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-500">Coming Soon</span>
+                </div>
+                <p className="text-sm text-slate-500 leading-relaxed">{description}</p>
+                <button
+                  onClick={() => openModal(emr)}
+                  className="text-xs font-semibold text-[#E0622A] hover:underline text-left"
+                >
+                  Notify me when available →
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
