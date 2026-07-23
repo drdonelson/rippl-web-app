@@ -11,6 +11,7 @@ import { logger } from "../lib/logger";
 import { sendRewardNotification } from "./notifications";
 import { matchReferrerByName } from "../lib/matchReferrer";
 import { calculateTier } from "../lib/tierUtils";
+import { chargeReferralCompletion } from "./billingService";
 
 const DC_API_BASE = "https://api.drivecentric.com/v1";
 
@@ -221,6 +222,8 @@ export async function pollDriveCentric(
       }).returning();
 
       if (!newEvent) continue;
+
+      chargeReferralCompletion(newEvent.id).catch(err => logger.error({ err }, "[billing] DC charge error"));
 
       const tierData = calculateTier(referrer.total_referrals + 1);
 

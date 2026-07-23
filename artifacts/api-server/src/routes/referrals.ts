@@ -12,6 +12,7 @@ import { sendRewardNotification } from "../services/notifications";
 import { scheduleOnboardingSms } from "../services/onboardingSms";
 import { checkHouseholdDuplicate } from "../services/householdDuplicate";
 import { calculateTier } from "../lib/tierUtils";
+import { chargeReferralCompletion } from "../services/billingService";
 
 const router: IRouter = Router();
 
@@ -163,6 +164,8 @@ router.patch("/:id/status", async (req, res) => {
   const [referrer] = await db.select().from(referrersTable).where(eq(referrersTable.id, event.referrer_id));
 
   if (body.status === "Exam Completed") {
+    chargeReferralCompletion(id).catch(err => req.log.error({ err }, "[billing] Manual charge error"));
+
     if (referrer) {
       try {
         const newTotal    = (referrer.total_referrals ?? 0) + 1;

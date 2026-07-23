@@ -1,4 +1,4 @@
-import { pgTable, text, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, boolean, timestamp, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { practicesTable } from "./practices";
@@ -21,6 +21,9 @@ export const referralEventsTable = pgTable("referral_events", {
   household_duplicate: boolean("household_duplicate").notNull().default(false),
   office_id: text("office_id").references(() => officesTable.id), // nullable — legacy rows have no office_id
   created_at: timestamp("created_at").notNull().defaultNow(),
+  stripe_charge_id:     text("stripe_charge_id"),     // PaymentIntent ID — set when per-referral charge fires
+  charged_at:           timestamp("charged_at"),       // when charge succeeded
+  charge_amount_cents:  integer("charge_amount_cents"), // amount charged in cents
 });
 
 export const insertReferralEventSchema = createInsertSchema(referralEventsTable).omit({ id: true, created_at: true });

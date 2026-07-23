@@ -13,6 +13,7 @@ import { getVagaroAccessToken, getFormResponse, extractReferralName } from "../s
 import { matchReferrerByName } from "../lib/matchReferrer";
 import { sendRewardNotification } from "../services/notifications";
 import { calculateTier } from "../lib/tierUtils";
+import { chargeReferralCompletion } from "../services/billingService";
 
 const router: IRouter = Router();
 
@@ -152,6 +153,8 @@ router.post("/vagaro", async (req, res) => {
     logger.error({ appointmentId }, "[webhook/vagaro] Failed to insert referral_event");
     return;
   }
+
+  chargeReferralCompletion(newEvent.id).catch(err => logger.error({ err }, "[billing] Vagaro charge error"));
 
   const tierData = calculateTier(referrer.total_referrals + 1);
 

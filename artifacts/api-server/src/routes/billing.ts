@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import Stripe from "stripe";
 import { db } from "@workspace/db";
 import { practicesTable, referralEventsTable } from "@workspace/db/schema";
-import { eq, and, gte, lt, inArray } from "drizzle-orm";
+import { eq, and, gte, lt, inArray, isNull } from "drizzle-orm";
 import { requireAuth, requireSuperAdmin } from "../middleware/auth";
 import { logger } from "../lib/logger";
 
@@ -139,7 +139,21 @@ router.post("/charge-month", requireAuth, requireSuperAdmin, async (req, res) =>
         ? ["Completed", "Rewarded"]
         : ["Exam Completed", "Rewarded"];
 
-      const events = await db
+      // Per-referral charges already fired in real-time via billingService.
+      // charge-month only bills the monthly platform fee for Growth plan practices.
+      const uncharged = await db
+        .select({ id: referralEventsTable.id })
+        .from(referralEventsTable)
+        .where(and(
+          eq(referralEventsTable.practice_id, practice.id),
+          inArray(referralEventsTable.status, completedStatuses),
+          gte(referralEventsTable.created_at, periodStart),
+          lt(referralEventsTable.created_at, periodEnd),
+          isNull(referralEventsTable.stripe_charge_id), // catch any that slipped through
+        ));
+
+      // Count all completed referrals for the description (charged + uncharged)
+      const allEvents = await db
         .select({ id: referralEventsTable.id })
         .from(referralEventsTable)
         .where(and(
@@ -149,10 +163,11 @@ router.post("/charge-month", requireAuth, requireSuperAdmin, async (req, res) =>
           lt(referralEventsTable.created_at, periodEnd),
         ));
 
-      const referralCount = events.length;
-      const monthlyFeeCents  = practice.monthly_fee ?? 0;           // already cents
-      const perRefCents      = (practice.per_referral_fee ?? 0) * 100; // dollars → cents
-      const totalCents       = monthlyFeeCents + referralCount * perRefCents;
+      const referralCount = allEvents.length;
+      const unchargedCount = uncharged.length;
+      const monthlyFeeCents = practice.monthly_fee ?? 0;             // already cents (Growth plan flat fee)
+      const perRefCents     = (practice.per_referral_fee ?? 0) * 100; // catch-up for any uncharged events
+      const totalCents      = monthlyFeeCents + unchargedCount * perRefCents;
 
       if (totalCents === 0) {
         results.push({ practice_id: practice.id, name: practice.name, status: "skipped", reason: "zero charges", referral_count: 0 });
@@ -167,13 +182,14 @@ router.post("/charge-month", requireAuth, requireSuperAdmin, async (req, res) =>
           payment_method: practice.stripe_payment_method_id,
           off_session:    true,
           confirm:        true,
-          description:    `Rippl — ${practice.name} — ${targetMonth} (${referralCount} referrals)`,
+          description:    `Rippl — ${practice.name} — ${targetMonth} (monthly fee + ${unchargedCount} catch-up referral${unchargedCount !== 1 ? "s" : ""})`,
           metadata: {
-            practice_id:        practice.id,
-            month:              targetMonth,
-            referral_count:     String(referralCount),
-            monthly_fee_cents:  String(monthlyFeeCents),
-            per_ref_cents:      String(perRefCents),
+            practice_id:         practice.id,
+            month:               targetMonth,
+            referral_count:      String(referralCount),
+            uncharged_count:     String(unchargedCount),
+            monthly_fee_cents:   String(monthlyFeeCents),
+            per_ref_cents:       String(perRefCents),
           },
         });
 
@@ -184,6 +200,7 @@ router.post("/charge-month", requireAuth, requireSuperAdmin, async (req, res) =>
           amount_cents:      totalCents,
           amount_dollars:    (totalCents / 100).toFixed(2),
           referral_count:    referralCount,
+          uncharged_count:   unchargedCount,
           payment_intent_id: pi.id,
         });
       } catch (chargeErr: unknown) {

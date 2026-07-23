@@ -7,6 +7,7 @@ import { sendRewardNotification } from "./notifications";
 import { calculateTier } from "../lib/tierUtils";
 import { scheduleOnboardingSms } from "./onboardingSms";
 import { checkHouseholdDuplicate } from "./householdDuplicate";
+import { chargeReferralCompletion } from "./billingService";
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const OPEN_DENTAL_URL = process.env.OPEN_DENTAL_URL;
@@ -738,6 +739,8 @@ export async function syncOpenDental(options?: {
         .returning();
 
       result.inserted++;
+
+      chargeReferralCompletion(newEvent.id).catch(err => logger.error({ err }, "[billing] OD charge error"));
 
       // ── Household duplicate — record for review, skip reward ─────────────
       if (householdResult.is_duplicate) {
