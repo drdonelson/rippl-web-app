@@ -6,9 +6,12 @@ import { eq, and, gte, lt, inArray, isNull } from "drizzle-orm";
 import { requireAuth, requireSuperAdmin } from "../middleware/auth";
 import { logger } from "../lib/logger";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
-  apiVersion: "2026-05-27.dahlia",
-});
+let _stripe: Stripe | null = null;
+function getStripe(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY ?? "";
+  if (!_stripe) _stripe = new Stripe(key, { apiVersion: "2026-05-27.dahlia" });
+  return _stripe;
+}
 
 const APP_URL = (process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://www.joinrippl.com").replace(/\/$/, "");
 
@@ -25,7 +28,7 @@ router.get("/config-check", async (_req, res) => {
     res.json({ ok: false, error: `Key must start with sk_test_ or sk_live_`, key_prefix: keyPrefix }); return;
   }
   try {
-    const acct = await stripe.accounts.retrieve();
+    const acct = await getStripe().accounts.retrieve();
     res.json({ ok: true, account_id: acct.id, charges_enabled: acct.charges_enabled, key_prefix: keyPrefix });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -46,7 +49,7 @@ router.post("/create-setup-session", requireAuth, requireSuperAdmin, async (req,
     // Create or reuse Stripe customer
     let customerId = practice.stripe_customer_id;
     if (!customerId) {
-      const customer = await stripe.customers.create({
+      const customer = await getStripe().customers.create({
         name: practice.name,
         metadata: { practice_id: practice.id, slug: practice.slug },
       });
@@ -56,7 +59,7 @@ router.post("/create-setup-session", requireAuth, requireSuperAdmin, async (req,
         .where(eq(practicesTable.id, practice_id));
     }
 
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       mode: "setup",
       customer: customerId,
       currency: "usd",
@@ -79,7 +82,7 @@ router.post("/confirm-setup", async (req, res) => {
   if (!session_id || !practice_id) { res.status(400).json({ error: "session_id and practice_id required" }); return; }
 
   try {
-    const session = await stripe.checkout.sessions.retrieve(session_id, {
+    const session = await getStripe().checkout.sessions.retrieve(session_id, {
       expand: ["setup_intent"],
     });
 
@@ -175,7 +178,7 @@ router.post("/charge-month", requireAuth, requireSuperAdmin, async (req, res) =>
       }
 
       try {
-        const pi = await stripe.paymentIntents.create({
+        const pi = await getStripe().paymentIntents.create({
           amount:         totalCents,
           currency:       "usd",
           customer:       practice.stripe_customer_id,

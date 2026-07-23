@@ -4,9 +4,17 @@ import { referralEventsTable, practicesTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
-  apiVersion: "2026-05-27.dahlia",
-});
+// Lazy singleton — only initialize when first needed so a missing key
+// doesn't crash the server at startup.
+let _stripe: Stripe | null = null;
+function getStripe(): Stripe | null {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) return null;
+  if (!_stripe) {
+    _stripe = new Stripe(key, { apiVersion: "2026-05-27.dahlia" });
+  }
+  return _stripe;
+}
 
 /**
  * Charge the practice's card on file for a single completed referral.
@@ -58,6 +66,12 @@ export async function chargeReferralCompletion(eventId: string): Promise<void> {
     const amountCents = (row.per_referral_fee ?? 0) * 100;
     if (amountCents === 0) {
       logger.info({ eventId }, "[billing] Per-referral fee is $0 — skipping charge");
+      return;
+    }
+
+    const stripe = getStripe();
+    if (!stripe) {
+      logger.warn({ eventId }, "[billing] STRIPE_SECRET_KEY not set — skipping charge");
       return;
     }
 
