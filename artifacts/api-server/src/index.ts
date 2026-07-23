@@ -47,10 +47,14 @@ async function runDriveCentricSync() {
 }
 
 function startDriveCentricPoller() {
-  logger.info({ intervalMs: DC_POLL_INTERVAL_MS }, "[dc-poller] Starting DriveCentric SFTP poller");
-  runDriveCentricSync();
-  const timer = setInterval(runDriveCentricSync, DC_POLL_INTERVAL_MS);
-  timer.unref();
+  logger.info({ intervalMs: DC_POLL_INTERVAL_MS }, "[dc-poller] Starting DriveCentric SFTP poller (first run in 60s)");
+  // Delay first run 60s so health check passes before the SFTP/CSV memory spike.
+  const firstRun = setTimeout(() => {
+    runDriveCentricSync();
+    const timer = setInterval(runDriveCentricSync, DC_POLL_INTERVAL_MS);
+    timer.unref();
+  }, 60_000);
+  firstRun.unref();
 }
 
 app.listen(port, (err) => {
