@@ -52,6 +52,7 @@ const SlideDeck      = lazy(() => import("@/pages/slide-deck"));
 const DcSignup       = lazy(() => import("@/pages/dc-signup"));
 const BillingSetup   = lazy(() => import("@/pages/billing-setup"));
 const Pricing        = lazy(() => import("@/pages/pricing"));
+const Specialists    = lazy(() => import("@/pages/specialists"));
 const NotFound       = lazy(() => import("@/pages/not-found"));
 
 const queryClient = new QueryClient({
@@ -76,6 +77,7 @@ function Router() {
         {/* Public routes — no sidebar */}
         <Route path="/" component={Home} />
         <Route path="/pricing" component={Pricing} />
+        <Route path="/specialists" component={Specialists} />
         <Route path="/login" component={Login} />
         <Route path="/demo/auto"   component={DemoAuto} />
         <Route path="/demo" component={Demo} />
