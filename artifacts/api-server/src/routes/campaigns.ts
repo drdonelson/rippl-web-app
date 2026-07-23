@@ -8,6 +8,7 @@ import { eq, sql, desc } from "drizzle-orm";
 import twilio from "twilio";
 import { SMS_ENABLED } from "../lib/smsEnabled";
 import { sendEmail } from "../lib/email";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
