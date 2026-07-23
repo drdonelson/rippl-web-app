@@ -29,6 +29,16 @@ async function buildAll() {
     // - use path traversal to read files (e.g. @google-cloud/secret-manager loads sibling .proto files)
     external: [
       "*.node",
+      // Large SDKs — externalized to prevent 11MB+ bundle that blows V8 heap on startup
+      "stripe",
+      "@supabase/supabase-js",
+      "drizzle-orm",
+      "drizzle-orm/*",
+      "@neondatabase/serverless",
+      "twilio",
+      "ssh2",
+      "ssh2-sftp-client",
+      // native / unbundleable
       "sharp",
       "better-sqlite3",
       "sqlite3",
