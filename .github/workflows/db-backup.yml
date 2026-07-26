@@ -1,0 +1,67 @@
+name: Nightly DB Backup
+
+on:
+  schedule:
+    - cron: '0 8 * * *'   # 08:00 UTC = ~2–3am Central
+  workflow_dispatch:       # manual trigger
+
+jobs:
+  backup:
+    name: pg_dump → artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Fail fast if secret is empty
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$DB_URL" ]; then
+            echo "::error::SUPABASE_DB_URL secret is empty — aborting backup."
+            exit 1
+          fi
+          echo "Secret present ✓"
+
+      - name: Install postgresql-client-17 (PGDG)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gnupg curl lsb-release
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo gpg --dearmor -o /usr/share/keyrings/postgresql.gpg
+          echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] \
+            https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+          /usr/lib/postgresql/17/bin/pg_dump --version
+
+      - name: Run pg_dump
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          FILENAME="rippl-$(date -u +%Y-%m-%d).dump"
+          echo "Dumping to $FILENAME …"
+          /usr/lib/postgresql/17/bin/pg_dump "$DB_URL" \
+            --format=custom \
+            --compress=9 \
+            --no-owner \
+            --no-privileges \
+            --schema=public \
+            --schema=auth \
+            --schema=storage \
+            --file="$FILENAME"
+          echo "DUMP_FILE=$FILENAME" >> "$GITHUB_ENV"
+          echo "Dump complete: $(du -sh "$FILENAME" | cut -f1)"
+
+      - name: Verify dump with pg_restore --list
+        run: |
+          /usr/lib/postgresql/17/bin/pg_restore --list "$DUMP_FILE" | tail -5
+          echo "Verification passed ✓"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.DUMP_FILE }}
+          path: ${{ env.DUMP_FILE }}
+          retention-days: 30
+          if-no-files-found: error
