@@ -20,7 +20,9 @@ router.get("/", async (req, res) => {
     // Role-based scoping: non-super_admin users are always scoped to their office/practice.
     // Super admins can optionally pass ?office_id= to scope to a specific office.
     const roleOfficeId   = user.role !== "super_admin" ? (user.office_id   ?? null) : null;
-    const rolePracticeId = user.role !== "super_admin" ? (user.practice_id ?? null) : null;
+    const rolePracticeId = user.role !== "super_admin"
+      ? (user.practice_id ?? null)
+      : ((req.query["practice_id"] as string | undefined)?.trim() || null);
     const queryOfficeId  = (req.query["office_id"] as string | undefined)?.trim() || null;
 
     // Effective office filter: role-assigned office takes precedence; super_admin uses query param if set

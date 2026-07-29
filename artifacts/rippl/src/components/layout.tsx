@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useOffice } from "@/contexts/office-context";
+import { usePractice } from "@/contexts/practice-context";
 import { useAuth, type UserRole } from "@/contexts/auth-context";
 
 // ── Nav structure ─────────────────────────────────────────────────────────────
@@ -168,6 +169,39 @@ function OfficePicker({ compact = false }: { compact?: boolean }) {
   );
 }
 
+// ── Practice picker (super_admin only) ───────────────────────────────────────
+
+function PracticePicker({ compact = false }: { compact?: boolean }) {
+  const { practices, selectedPracticeId, setSelectedPracticeId } = usePractice();
+  const { profile } = useAuth();
+
+  if (profile?.role !== "super_admin") return null;
+  if (practices.length === 0) return null;
+
+  return (
+    <div className={cn("relative", compact ? "w-full" : "")}>
+      <div className="relative">
+        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+        <select
+          value={selectedPracticeId ?? ""}
+          onChange={e => setSelectedPracticeId(e.target.value || null)}
+          className={cn(
+            "w-full appearance-none bg-primary/10 border border-primary/20 rounded-lg text-sm font-medium text-foreground",
+            "pl-8 pr-7 py-2 cursor-pointer hover:bg-primary/15 transition-colors focus:outline-none focus:ring-1 focus:ring-primary/50",
+            compact ? "text-xs py-1.5" : ""
+          )}
+        >
+          <option value="">All Practices</option>
+          {practices.map(p => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
+        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+      </div>
+    </div>
+  );
+}
+
 // ── Sidebar inner content ─────────────────────────────────────────────────────
 
 function SidebarContent({
@@ -230,8 +264,9 @@ function SidebarContent({
         </div>
       </div>
 
-      {/* Office selector */}
-      <div className="px-4 mb-4">
+      {/* Practice selector (super_admin) + Office selector */}
+      <div className="px-4 mb-4 space-y-2">
+        <PracticePicker />
         <OfficePicker />
       </div>
 
@@ -323,11 +358,14 @@ function SidebarContent({
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location]     = useLocation();
-  const { isDemo, logout } = useAuth();
+  const { isDemo, logout, profile } = useAuth();
   const { selectedOffice, selectedOfficeId } = useOffice();
+  const { selectedPractice } = usePractice();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const subtitleText = selectedOfficeId === "all"
+  const subtitleText = profile?.role === "super_admin" && selectedPractice
+    ? selectedPractice.name
+    : selectedOfficeId === "all"
     ? "All Locations"
     : selectedOffice
       ? (() => {
@@ -400,7 +438,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <span className="text-base font-display font-bold leading-none shrink-0">
             <span className="text-foreground">rip</span><span className="text-primary">pl</span>
           </span>
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 flex gap-2">
+            <PracticePicker compact />
             <OfficePicker compact />
           </div>
         </div>

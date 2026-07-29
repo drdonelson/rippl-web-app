@@ -17,6 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useOffice, type Office } from "@/contexts/office-context";
+import { usePractice } from "@/contexts/practice-context";
 import { useAuth } from "@/contexts/auth-context";
 import { buildReferralUrl } from "@/lib/app-url";
 import { getTierConfig, getTierTooltip } from "@/lib/tier-config";
@@ -312,8 +313,9 @@ export default function Patients() {
   };
 
 
-  // ── Office context ─────────────────────────────────────────────────────────
+  // ── Office + Practice context ──────────────────────────────────────────────
   const { offices, selectedOfficeId } = useOffice();
+  const { selectedPracticeId } = usePractice();
   const importTargetOffice = useMemo((): Office | null => {
     if (!offices.length) return null;
     if (selectedOfficeId !== "all") return offices.find(o => o.id === selectedOfficeId) ?? null;
@@ -579,6 +581,10 @@ export default function Patients() {
   const filteredReferrers = useMemo(() => {
     const term = searchTerm.toLowerCase();
     return (referrers ?? []).filter(r => {
+      if (selectedPracticeId) {
+        const rPracticeId = (r as AnyReferrer).practice_id as string | null;
+        if (rPracticeId !== selectedPracticeId) return false;
+      }
       if (selectedOfficeId !== "all") {
         const rOfficeId = (r as AnyReferrer).office_id as string | null;
         if (rOfficeId !== selectedOfficeId) return false;
@@ -593,7 +599,7 @@ export default function Patients() {
         r.patient_id.toLowerCase().includes(term)
       );
     });
-  }, [referrers, searchTerm, selectedOfficeId, patientFilter, tierFilter]);
+  }, [referrers, searchTerm, selectedOfficeId, selectedPracticeId, patientFilter, tierFilter]);
 
   const sortedReferrers = useMemo(() => {
     const dir = sortDir === "asc" ? 1 : -1;

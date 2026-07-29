@@ -28,7 +28,9 @@ router.get("/", async (req, res) => {
     : rawOfficeId;
 
   // practice_id: cross-tenant isolation
-  const practiceId = user.role !== "super_admin" ? user.practice_id : null;
+  const practiceId = user.role !== "super_admin"
+    ? user.practice_id
+    : (typeof req.query.practice_id === "string" ? req.query.practice_id : null);
 
   const filters = [
     officeId   ? eq(referralEventsTable.office_id,   officeId)   : undefined,

@@ -7,6 +7,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { useOffice } from "@/contexts/office-context";
+import { usePractice } from "@/contexts/practice-context";
 import { customFetch } from "@workspace/api-client-react";
 import { DEMO_ADMIN_TASKS, DEMO_ADMIN_TASKS_AUTO } from "@/lib/demo-data";
 
@@ -42,9 +43,12 @@ type ReferrerSearchResult = {
   email: string | null;
 };
 
-async function fetchTasks(officeId: string): Promise<AdminTask[]> {
-  const params = officeId !== "all" ? `?office_id=${encodeURIComponent(officeId)}` : "";
-  return customFetch<AdminTask[]>(`${BASE}/api/admin-tasks${params}`);
+async function fetchTasks(officeId: string, practiceId: string | null): Promise<AdminTask[]> {
+  const params = new URLSearchParams();
+  if (officeId && officeId !== "all") params.set("office_id", officeId);
+  if (practiceId) params.set("practice_id", practiceId);
+  const qs = params.size ? `?${params}` : "";
+  return customFetch<AdminTask[]>(`${BASE}/api/admin-tasks${qs}`);
 }
 
 async function completeTask(id: string): Promise<void> {
@@ -226,12 +230,13 @@ export default function AdminTasksPage() {
   const [backfillResult, setBackfillResult] = useState<BackfillReport | null>(null);
   const { session, isLoading: authLoading, isDemo, demoVertical } = useAuth();
   const { selectedOfficeId } = useOffice();
+  const { selectedPracticeId } = usePractice();
 
   const demoTasks = demoVertical === "automotive" ? DEMO_ADMIN_TASKS_AUTO : DEMO_ADMIN_TASKS;
 
   const { data: tasks, isLoading, isError } = useQuery<AdminTask[]>({
-    queryKey: ["admin-tasks", demoVertical, selectedOfficeId],
-    queryFn: isDemo ? () => Promise.resolve(demoTasks as AdminTask[]) : () => fetchTasks(selectedOfficeId),
+    queryKey: ["admin-tasks", demoVertical, selectedOfficeId, selectedPracticeId],
+    queryFn: isDemo ? () => Promise.resolve(demoTasks as AdminTask[]) : () => fetchTasks(selectedOfficeId, selectedPracticeId),
     enabled: isDemo || (!authLoading && !!session),
     staleTime: 0, // always re-fetch when office selection changes
   });

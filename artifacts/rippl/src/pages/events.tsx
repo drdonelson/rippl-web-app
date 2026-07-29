@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSearch } from "wouter";
 import { useOffice } from "@/contexts/office-context";
+import { usePractice } from "@/contexts/practice-context";
 import { useAuth } from "@/contexts/auth-context";
 import { DEMO_EVENTS, DEMO_REFERRERS, DEMO_EVENTS_AUTO, DEMO_REFERRERS_AUTO, DEMO_EVENTS_SALON, DEMO_REFERRERS_SALON } from "@/lib/demo-data";
 
@@ -24,11 +25,16 @@ const logReferralSchema = z.object({
 });
 type LogReferralValues = z.infer<typeof logReferralSchema>;
 
-function useReferralEvents(officeId: string, enabled: boolean) {
-  const params = officeId !== "all" ? `?office_id=${officeId}` : "";
+function useReferralEvents(officeId: string, practiceId: string | null, enabled: boolean) {
   return useQuery<ReferralEvent[]>({
-    queryKey: ["/api/referrals", officeId],
-    queryFn: () => customFetch<ReferralEvent[]>(`${BASE}/api/referrals${params}`),
+    queryKey: ["/api/referrals", officeId, practiceId],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (officeId && officeId !== "all") params.set("office_id", officeId);
+      if (practiceId) params.set("practice_id", practiceId);
+      const qs = params.size ? `?${params}` : "";
+      return customFetch<ReferralEvent[]>(`${BASE}/api/referrals${qs}`);
+    },
     enabled,
     refetchInterval: enabled ? 30_000 : false,
   });
@@ -132,12 +138,13 @@ export default function Events() {
 
   const { isDemo, isLoading: authIsLoading, profile, demoVertical } = useAuth();
   const { selectedOfficeId, offices } = useOffice();
+  const { selectedPracticeId } = usePractice();
 
   // Gate queries until auth is fully resolved — prevents API calls from firing
   // before profile loads (when isDemo is still false at first render).
   const queryEnabled = !authIsLoading && !isDemo;
 
-  const { data: fetchedEvents, isLoading } = useReferralEvents(selectedOfficeId, queryEnabled);
+  const { data: fetchedEvents, isLoading } = useReferralEvents(selectedOfficeId, selectedPracticeId, queryEnabled);
   const { data: fetchedReferrers } = useGetReferrers({ query: { enabled: queryEnabled } });
 
   const demoEventsSet = demoVertical === "automotive" ? DEMO_EVENTS_AUTO : demoVertical === "salon" ? DEMO_EVENTS_SALON : DEMO_EVENTS;

@@ -27,7 +27,9 @@ router.get("/", async (req, res) => {
   const effectiveOfficeId = user.role !== "super_admin" && user.office_id
     ? user.office_id
     : rawOfficeId;
-  const practiceId = user.role !== "super_admin" ? user.practice_id : null;
+  const practiceId = user.role !== "super_admin"
+    ? user.practice_id
+    : (typeof req.query.practice_id === "string" ? req.query.practice_id : null);
 
   const conditions = [
     effectiveOfficeId ? eq(referrersTable.office_id, effectiveOfficeId) : undefined,

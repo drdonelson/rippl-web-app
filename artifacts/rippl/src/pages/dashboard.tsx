@@ -4,6 +4,7 @@ import { Users, UserPlus, Gift, Trophy, ArrowRight, Activity, CheckCircle2, Clip
 import { format } from "date-fns";
 import { Link } from "wouter";
 import { useOffice } from "@/contexts/office-context";
+import { usePractice } from "@/contexts/practice-context";
 import { useAuth } from "@/contexts/auth-context";
 import { customFetch } from "@workspace/api-client-react";
 import { DEMO_STATS, DEMO_STATS_AUTO, DEMO_STATS_SALON } from "@/lib/demo-data";
@@ -44,12 +45,14 @@ interface DashboardStats {
   }[];
 }
 
-function useDashboard(officeId: string, enabled: boolean) {
+function useDashboard(officeId: string, practiceId: string | null, enabled: boolean) {
   return useQuery<DashboardStats>({
-    queryKey: ["/api/dashboard", officeId],
-    queryFn: ({ queryKey }) => {
-      const id = queryKey[1] as string;
-      const qs = id && id !== "all" ? `?office_id=${encodeURIComponent(id)}` : "";
+    queryKey: ["/api/dashboard", officeId, practiceId],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (officeId && officeId !== "all") params.set("office_id", officeId);
+      if (practiceId) params.set("practice_id", practiceId);
+      const qs = params.size ? `?${params}` : "";
       return customFetch<DashboardStats>(`${BASE}/api/dashboard${qs}`);
     },
     enabled,
@@ -58,10 +61,13 @@ function useDashboard(officeId: string, enabled: boolean) {
   });
 }
 
-function useAdminTasks(enabled: boolean) {
+function useAdminTasks(practiceId: string | null, enabled: boolean) {
   return useQuery<AdminTask[]>({
-    queryKey: ["/api/admin-tasks"],
-    queryFn: () => customFetch<AdminTask[]>(`${BASE}/api/admin-tasks`),
+    queryKey: ["/api/admin-tasks", practiceId],
+    queryFn: () => {
+      const qs = practiceId ? `?practice_id=${encodeURIComponent(practiceId)}` : "";
+      return customFetch<AdminTask[]>(`${BASE}/api/admin-tasks${qs}`);
+    },
     enabled,
     refetchInterval: enabled ? 30_000 : false,
   });
@@ -89,14 +95,15 @@ function useCompleteTask() {
 export default function Dashboard() {
   const { isDemo, isLoading: authIsLoading, profile, demoVertical } = useAuth();
   const { selectedOfficeId } = useOffice();
+  const { selectedPracticeId } = usePractice();
 
   // Gate queries on auth being fully loaded AND user not being demo.
   // Without !authIsLoading, queries fire before profile resolves (isDemo=false
   // on first render) and bypass the hardcoded demo data entirely.
   const queryEnabled = !authIsLoading && !isDemo;
 
-  const { data: fetchedStats, isLoading, error } = useDashboard(selectedOfficeId, queryEnabled);
-  const { data: adminTasks = [] } = useAdminTasks(queryEnabled);
+  const { data: fetchedStats, isLoading, error } = useDashboard(selectedOfficeId, selectedPracticeId, queryEnabled);
+  const { data: adminTasks = [] } = useAdminTasks(selectedPracticeId, queryEnabled);
   const { data: poolData } = usePoolBalance(queryEnabled && !!profile?.practice_id, selectedOfficeId);
   const completeTask = useCompleteTask();
 

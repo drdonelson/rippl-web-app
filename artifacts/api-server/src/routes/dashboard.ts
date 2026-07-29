@@ -13,7 +13,9 @@ router.get("/", async (req, res) => {
   const officeId = user.role !== "super_admin" && user.office_id
     ? user.office_id
     : rawOfficeId;
-  const practiceId = user.role !== "super_admin" ? user.practice_id : null;
+  const practiceId = user.role !== "super_admin"
+    ? user.practice_id
+    : (typeof req.query.practice_id === "string" ? req.query.practice_id : null);
 
   try {
     // For super_admin viewing all data, exclude demo practices so they don't pollute real stats

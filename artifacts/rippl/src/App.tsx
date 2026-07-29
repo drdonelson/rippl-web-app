@@ -11,6 +11,7 @@ import Home from "@/pages/home";
 import ProtectedRoute from "@/components/protected-route";
 import { OfficeProvider } from "@/contexts/office-context";
 import { AuthProvider } from "@/contexts/auth-context";
+import { PracticeProvider } from "@/contexts/practice-context";
 
 const Dashboard  = lazy(() => import("@/pages/dashboard"));
 const Events     = lazy(() => import("@/pages/events"));
@@ -145,6 +146,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
+          <PracticeProvider>
           <OfficeProvider>
             <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
               <Router />
@@ -152,6 +154,7 @@ function App() {
             <Toaster />
             <SonnerToaster position="top-right" richColors closeButton />
           </OfficeProvider>
+          </PracticeProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/auth-context";
+import { usePractice } from "@/contexts/practice-context";
 import { DEMO_OFFICE } from "@/lib/demo-data";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -59,11 +60,16 @@ export function OfficeProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setIsLoading(false));
   }, [authLoading, isDemo]);
 
+  const { selectedPracticeId } = usePractice();
+
   // Filter offices based on the logged-in user's role
   const offices: Office[] = React.useMemo(() => {
     if (isDemo && !profile?.practice_id) return [DEMO_OFFICE];
     if (authLoading || !profile) return allOffices;
-    if (profile.role === "super_admin") return allOffices.filter(o => !o.is_demo);
+    if (profile.role === "super_admin") {
+      const nonDemo = allOffices.filter(o => !o.is_demo);
+      return selectedPracticeId ? nonDemo.filter(o => o.practice_id === selectedPracticeId) : nonDemo;
+    }
     if (profile.role === "demo" && profile.practice_id) {
       return allOffices.filter(o => o.practice_id === profile.practice_id);
     }
@@ -74,7 +80,7 @@ export function OfficeProvider({ children }: { children: React.ReactNode }) {
     }
     // practice_admin sees all offices (server already scopes by practice)
     return allOffices;
-  }, [allOffices, profile, authLoading, isDemo]);
+  }, [allOffices, profile, authLoading, isDemo, selectedPracticeId]);
 
   // When the filtered office list resolves to exactly one office, auto-select it
   useEffect(() => {
