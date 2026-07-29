@@ -104,7 +104,7 @@ async function downloadText(
 async function findLatestBatch(
   sftp: InstanceType<typeof SftpClient>,
   remotePath: string,
-): Promise<{ deal: string; customer: string; contact: string; sourceGroup: string } | null> {
+): Promise<{ deal: string; customer: string | null; contact: string | null; sourceGroup: string } | null> {
   type SftpEntry = { name: string; type: string };
   const entries = await sftp.list(remotePath) as SftpEntry[];
   const csvFiles = entries
@@ -135,9 +135,13 @@ async function findLatestBatch(
   const contactPath     = find("customercontact");
   const sourceGroupPath = find("sourcedescriptiongroup");
 
-  if (!customerPath || !contactPath || !sourceGroupPath) {
-    logger.warn({ latestDeal, timestamp }, "[dc-sftp] Missing batch files alongside deal CSV");
+  if (!sourceGroupPath) {
+    logger.warn({ latestDeal, timestamp }, "[dc-sftp] Missing sourcedescriptiongroup CSV — cannot process batch");
     return null;
+  }
+
+  if (!customerPath || !contactPath) {
+    logger.warn({ latestDeal, timestamp }, "[dc-sftp] Missing customer/contact CSVs — buyer name/phone will be unknown");
   }
 
   return {
@@ -228,8 +232,8 @@ export async function pollDriveCentricSftp(
 
     const [dealCsv, customerCsv, contactCsv, sourceGroupCsv] = await Promise.all([
       downloadText(sftp, batch.deal),
-      downloadText(sftp, batch.customer),
-      downloadText(sftp, batch.contact),
+      batch.customer ? downloadText(sftp, batch.customer) : Promise.resolve(""),
+      batch.contact  ? downloadText(sftp, batch.contact)  : Promise.resolve(""),
       downloadText(sftp, batch.sourceGroup),
     ]);
 
