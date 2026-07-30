@@ -1,6 +1,6 @@
 # Rippl — Cold Start Document
 
-**Version:** 1.0  
+**Version:** 1.6.0  
 **Classification:** Agent Orientation & Operating Doctrine  
 **Scope:** All agents and sessions operating on the Rippl codebase  
 **Authority:** Dr. David Donelson, Principal — Hallmark Dental / david@hallmarkdds.com
@@ -160,7 +160,7 @@ Rippl is a **multi-vertical patient/customer referral rewards platform**. It:
 **Live URL:** https://www.joinrippl.com  
 **GitHub:** https://github.com/drdonelson/rippl-web-app  
 **Hosting:** Render.com (auto-deploys from GitHub on every push)  
-**Current version:** v1.4 (May 2026)
+**Current version:** v1.6.0 (July 2026)
 
 ### The Business Model
 
@@ -171,12 +171,14 @@ Rippl is a **multi-vertical patient/customer referral rewards platform**. It:
 
 ### Active Clients (July 2026)
 
-| Practice | Vertical | Status |
-|----------|---------|--------|
-| Hallmark Dental (3 offices) | Dental | Live |
-| Carlock Automotive | Automotive | Live — awaiting first DriveCentric file |
-| Volvo of Cool Springs | Automotive | Onboarding — SSH key sent to Darren Sabino |
-| Peydan's salons | Salon | Pre-sales — channel partner agreement being negotiated |
+| Practice | Vertical | Status | Key Contact |
+|----------|---------|--------|-------------|
+| Hallmark Dental (3 offices) | Dental | Live | Dr. David Donelson |
+| Carlock Automotive | Automotive | Live — awaiting first SFTP file | Payden Sewell (CMO) |
+| Volvo of Cool Springs | Automotive | Onboarding — awaiting Darren SFTP config | Payden Sewell (CMO) |
+| Peydan's salons | Salon | Pre-sales — channel partner agreement pending | Payden Sewell |
+
+**Cox Automotive org structure:** Payden Sewell is CMO of Carlock, which owns Volvo of Cool Springs. Each dealership is a separate "rooftop/door" with its own DriveCentric account and CRM ID under the Cox Automotive umbrella. Darren Sabino is a DriveCentric employee (NOT Carlock staff) who configures the SFTP export on the DriveCentric side for each rooftop. **Two separate SFTP setups (carlock/ and volvo-cool-springs/) are correct and intentional** — one per rooftop/CRM ID.
 
 ---
 
@@ -369,6 +371,39 @@ Pages were mobile-first but wasted desktop space. Rippl needed marketing pages f
 - **Desktop-responsive layouts** — `join.tsx`: `lg:grid-cols-2` hero + pricing; `patient-journey.tsx`: `max-w-5xl`, `lg:flex` text-left mockup-right; `onboard.tsx`: sections 3+4 in `lg:grid-cols-2`
 - **SSH deploy** — `deploy.sh` switched from PAT-based HTTPS to `git@github.com:drdonelson/rippl-web-app.git`; key at `~/.ssh/id_ed25519`; no PAT needed
 
+### v1.5.0 (July 2026) — DriveCentric SFTP + Automotive Live
+
+**Why this was built:**
+
+The planned DriveCentric REST API integration required API credentials that Cox Automotive/DriveCentric don't easily expose per-rooftop. SFTP is the actual delivery mechanism DriveCentric uses for its CSV data exports. Carlock came on as the first automotive client and needed a real path to production.
+
+**What shipped:**
+
+- **DriveCentric SFTP integration** — `driveCentricSftp.ts` connects to dealer SFTP, downloads CSVs batch; file pattern `{storeNum}_v2_{table}_{from}_{to}_{timestamp}.csv`; required tables: `deal` + `sourcedescriptiongroup`; customer/customercontact optional
+- **DigitalOcean SFTP droplet** — `167.99.15.170`; `drivecentric` user; UFW firewall; hourly poller on server startup; daily cron via `rippl-sync.sh`
+- **Carlock Automotive onboarding** — store 3364; SFTP path `/home/drivecentric/carlock/`; SSH key exchanged with Darren Sabino
+- **Volvo of Cool Springs onboarding** — separate rooftop, own CRM ID; path `/home/drivecentric/volvo-cool-springs/`; SSH key sent via Bitwarden Send; empty (awaiting Darren config)
+- **Health endpoint DB ping** — `GET /api/health` queries Supabase before returning 200
+- **`POST /api/sync/drivecentric`** — auth via `X-Sync-Secret`; triggers SFTP poll + deal processing
+- **`SMS_ENABLED=false`** in Render during A2P Twilio campaign review — blocks all SMS globally until approved
+
+---
+
+### v1.6.0 (July 2026) — Super_admin Practice Picker
+
+**Why this was built:**
+
+Super_admin (David) could only see Hallmark Dental because the office picker was the only filter mechanism — and automotive practices have 0 offices. Carlock and Volvo were invisible in his dashboard. The practice picker adds a top-level filter that works regardless of office count.
+
+**What shipped:**
+
+- **`PracticeProvider` context** (`practice-context.tsx`) — fetches `/api/practices` filtered to non-demo practices for super_admin; `selectedPracticeId` persisted in localStorage; exposes `practices`, `selectedPracticeId`, `setSelectedPracticeId` via `usePractice()` hook
+- **`PracticePicker` component** in `layout.tsx` — `Building2` icon, "All Practices" option + practice list; renders only for `super_admin`; shown in both desktop sidebar and mobile header
+- **`?practice_id=` query param** on all four main API routes — `dashboard.ts`, `referrals.ts`, `referrers.ts`, `adminTasks.ts`; super_admin passes selected practice, all other roles always use their own `practice_id`
+- **Office context practice filter** — `office-context.tsx` filters offices by `selectedPracticeId`; re-renders on practice selection change
+- **Subtitle shows selected practice name** — layout subtitle updates when super_admin selects a specific practice
+- **Patients page practice filter** — client-side filter applied to referrers list when `selectedPracticeId` is set
+
 ---
 
 ## Part V — Integrations Reference
@@ -449,18 +484,21 @@ Pages were mobile-first but wasted desktop space. Rippl needed marketing pages f
 - **Referral trigger:** `Deal.Status = "Delivered"` + person name in `SourceDescription` (2-4 capitalized words, no digits, no `/–|,`)
 - **Dedup:** `external_proc_num = DealId`; status `"Completed"` (automotive)
 - **integration_config keys:** `sftp_host`, `sftp_port`, `sftp_username`, `sftp_private_key`, `sftp_path`
-- **DriveCentric contact:** Darren Sabino — email him for SFTP setup per dealer store
+- **DriveCentric contact:** Darren Sabino (DriveCentric employee, NOT Carlock staff) — email him for SFTP export config per dealer rooftop
+- **Cox Automotive umbrella:** Each dealership (Carlock, Volvo of Cool Springs) has its own DriveCentric account + CRM ID. Two SFTP setups = correct, intentional.
 - **REST API standby:** `driveCentric.ts` exists for future direct API — do not delete
 
 ### SFTP Server Infrastructure
 
 - **Droplet:** DigitalOcean `167.99.15.170` (Ubuntu 24.04, $4/mo)
 - **SFTP user:** `drivecentric` — SSH key auth only
-- **Carlock path:** `/home/drivecentric/carlock/`
+- **Carlock path:** `/home/drivecentric/carlock/` — store 3364; configured and active
+- **Volvo path:** `/home/drivecentric/volvo-cool-springs/` — empty; awaiting Darren to configure the Volvo rooftop's DriveCentric export
 - **Firewall:** UFW whitelist by IP — new dealers need Darren's outbound IP added: `ufw allow from <IP> to any port 22`
 - **Daily cron:** `0 6 * * *` → `/usr/local/bin/rippl-sync.sh` → hits sync endpoint
 - **Log:** `/var/log/rippl-sync.log`
 - **David's admin IP:** `173.8.85.193` (whitelisted for SSH to droplet)
+- **Last email to Darren:** 2026-07-15 — told him SFTP is configured and ready for both Carlock and Volvo Cool Springs
 
 ---
 
@@ -607,42 +645,61 @@ Backend check: no referral payouts without non-null `agreement_accepted_at`. Adm
 
 ---
 
-## Part IX — All Public Pages
+## Part IX — All Pages
 
-| URL | Purpose | Auth |
-|-----|---------|------|
-| `/` | Login | Public |
-| `/demo` | Generic demo access (role: demo, no practice) | Public |
-| `/demo/dental` | Brentwood Family Dental branded portal (auto-login + redirect) | Public |
-| `/demo/auto` | Summit Auto Group branded portal (auto-login + redirect) | Public |
-| `/how-it-works` | For referrers (existing patients) | Public |
-| `/refer?ref=XXXX` | Prospective patient landing — vertical-aware | Public |
-| `/claim?token=UUID` | Reward claim (gradient, confetti, count-up) | Public |
-| `/find` | Patient referral phone lookup | Public |
-| `/privacy` | Privacy policy | Public |
-| `/terms` | SMS terms | Public |
-| `/help` | Loom training videos | Public |
-| `/join/dental` | Marketing landing — dental practices | Public |
-| `/join/salon` | Marketing landing — salon practices | Public |
-| `/join` | Alias → `/join/dental` | Public |
-| `/join-waitlist` | Legacy waitlist form | Public |
-| `/patient-journey` | 6-step demo tool | super_admin + demo |
-| `/dashboard` | Main admin dashboard | Authenticated |
-| `/patients` | Referrer list + tiers | Authenticated |
-| `/events` | Referral event log | Authenticated |
-| `/admin-tasks` | Manual tasks queue | Authenticated |
+### Public / Unauthenticated
+
+| URL | Purpose |
+|-----|---------|
+| `/` | Home / login |
+| `/pricing` | General pricing page |
+| `/specialists` | Dental specialist marketing landing (OS, ortho, perio, endo, peds, prostho) |
+| `/join/dental` | Dental practice marketing landing |
+| `/join/salon` | Salon practice marketing landing |
+| `/join` | Alias → `/join/dental` |
+| `/dc` | Dental Collective signup page |
+| `/join-waitlist` | Legacy waitlist form |
+| `/demo` | Generic demo (role: demo, no practice_id) |
+| `/demo/auto` | Summit Auto Group branded demo (auto-login + redirect) |
+| `/login` | Login |
+| `/reset-password` | Password reset |
+| `/refer?ref=XXXX` | Prospective patient landing — vertical-aware |
+| `/claim?token=UUID` | Reward claim (gradient, confetti, count-up) |
+| `/find` | Patient referral phone lookup |
+| `/how-it-works` | For referrers (existing patients) |
+| `/privacy` | Privacy policy |
+| `/terms` | SMS terms |
+| `/sms-opt-in` | SMS opt-in flow |
+| `/sms-consent-form` | SMS consent form |
+| `/sms-qr-print` | Printable SMS opt-in QR |
+| `/poster-print` | Printable 8.5×11 poster |
+| `/poster-5x7` | Printable 5×7 poster |
+| `/card-print` | Printable referral card (5.5×4.25in) |
+| `/card-back` | Card back side |
+| `/blinq-bg` | Blinq digital card background |
+| `/icon` | Icon export utility |
+| `/billing/setup` | Billing setup |
+
+### Authenticated
+
+| URL | Purpose | Min Role |
+|-----|---------|----------|
+| `/dashboard` | Main admin dashboard | Any |
+| `/patients` | Referrer list + tiers | Any |
+| `/events` | Referral event log | Any |
+| `/admin-tasks` | Manual tasks queue | Any |
+| `/help` | Loom training videos | Any |
 | `/campaigns` | Bulk SMS/email | practice_admin+ |
 | `/offices` | Office management | practice_admin+ |
-| `/practices` | Practice management | super_admin |
-| `/onboard` | Practice setup console | practice_admin+ |
 | `/analytics` | Analytics dashboard | practice_admin+ |
 | `/staff` | Staff user management | practice_admin+ |
 | `/partners` | Local reward partners | practice_admin+ |
-| `/poster-print` | Printable 8.5×11 poster | Public |
-| `/poster-5x7` | Printable 5×7 poster | Public |
-| `/card-print` | Printable referral card | Public |
-| `/card-back` | Card back side | Public |
-| `/blinq-bg` | Blinq digital card background | Public |
+| `/onboard` | Practice setup console | practice_admin+ |
+| `/practice-admin` | Practice admin panel | practice_admin+ |
+| `/playbook` | Referral playbook | practice_admin+ |
+| `/slide-deck` | Sales/presentation slide deck | practice_admin+ |
+| `/practices` | Practice management | super_admin |
+| `/patient-journey` | 6-step demo tool | super_admin + demo |
 
 ---
 
@@ -658,5 +715,5 @@ The work is the argument. The output is the proof. The standard is non-negotiabl
 
 ---
 
-*Last updated: July 2026 — Rippl v1.5*  
+*Last updated: 2026-07-29 — Rippl v1.6.0*  
 *Read CLAUDE.md next. Read DESIGN.md before any UI work.*

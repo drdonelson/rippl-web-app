@@ -117,7 +117,6 @@ export default function Specialists() {
             </span>
           </a>
           <div className="flex items-center gap-4">
-            <a href="/pricing" className="hidden sm:block text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors">Pricing</a>
             <button
               onClick={openModal}
               className="hidden sm:inline-flex items-center gap-1.5 bg-[#E0622A] hover:bg-[#C9551E] text-white text-xs font-semibold px-4 py-2 rounded-full transition-colors"
@@ -423,7 +422,6 @@ export default function Specialists() {
           <div className="flex items-center gap-4">
             <a href="/privacy" className="hover:text-slate-300 transition-colors">Privacy Policy</a>
             <a href="/terms" className="hover:text-slate-300 transition-colors">SMS Terms</a>
-            <a href="/pricing" className="hover:text-slate-300 transition-colors">General Pricing</a>
           </div>
         </div>
       </footer>
