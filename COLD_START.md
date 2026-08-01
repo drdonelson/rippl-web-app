@@ -1,6 +1,6 @@
 # Rippl — Cold Start Document
 
-**Version:** 1.6.0  
+**Version:** 1.7.0  
 **Classification:** Agent Orientation & Operating Doctrine  
 **Scope:** All agents and sessions operating on the Rippl codebase  
 **Authority:** Dr. David Donelson, Principal — Hallmark Dental / david@hallmarkdds.com
@@ -394,6 +394,41 @@ The planned DriveCentric REST API integration required API credentials that Cox 
 
 ---
 
+### v1.7.0 (August 2026) — Full Automotive UI Vertical
+
+**Why this was built:**
+
+Carlock Volvo's practice_admin was logging in and seeing Hallmark Dental content everywhere — dental language in campaigns (Brentwood/Lewisburg/Greenbrier office filters), dental email templates, dental slide deck name, dental `/how-it-works` page, dental referral cards. The root cause was a critical Express route ordering bug that made `GET /api/practices/mine` return 403 for any practice_admin user, so `useVertical()` defaulted to "dental" for all real accounts.
+
+**What shipped:**
+
+- **Critical: Express route ordering fix** (`practices.ts`) — `GET /mine` was registered after `GET /:id` with `requireSuperAdmin`. Express matched "mine" as the `:id` param and rejected practice_admin. Moved `GET /mine` before `GET /:id`. Without this fix, `myPractice` is always null, `useVertical()` always returns "dental", and every vertical-aware page shows dental content for real automotive accounts regardless of what code is deployed.
+
+- **`useVertical()` now works for real practice_admin accounts** — `patient-journey.tsx` and `slide-deck.tsx` had `const isAuto = isDemo && demoVertical === "automotive"` (demo-only gate). Removed the `isDemo &&` guard — both now use `const vertical = useVertical(); const isAuto = vertical === "automotive"`.
+
+- **Dashboard welcome banner vertical split** — `dashboard.tsx` pulls `myPractice` from `usePractice()`. Automotive: 4-col grid: "Upload your dealership logo" (→ /offices), "Invite your sales team" (→ /offices), "How It Works" (→ `https://rippl.onrender.com/how-it-works/automotive`), "Share with your customers" (→ `https://rippl.onrender.com/enroll/${myPractice?.slug}`). Dental: unchanged 3-col grid.
+
+- **`/how-it-works/automotive`** — New route in `App.tsx` registered BEFORE `/how-it-works`. `how-it-works.tsx` uses `const [matchAuto] = useRoute("/how-it-works/automotive")` from wouter v3. `HowItWorksAuto()`: vehicle-purchase language, flat $100 reward, 3 steps (Share Link / They Visit & Buy / You Earn), no tier table, no Dental Credit, automotive FAQs.
+
+- **Campaigns API cross-practice isolation** — `getFilteredReferrers()` had no `practice_id` scoping, returning all referrers from all practices to any caller. Fixed: added `practiceId: string | null` param + `${practiceWhere}` SQL fragment in all 3 query branches. All callers updated. `GET /api/campaigns` list scoped by `practice_id` for non-super_admin. In `/send`, `senderPracticeId` captured before `res.json()` so background `setImmediate` closure doesn't reference stale `req`.
+
+- **Campaigns UI full automotive reimagining** — `campaigns.tsx`:
+  - `FILTER_OPTIONS_AUTO`: 3 options (not_contacted, active_referrers, no_referrals_90d); no hardcoded Hallmark office filters; "customers" language
+  - `DEFAULT_SMS_AUTO` / `DEFAULT_EMAIL_AUTO`: automotive copy
+  - `TPL_WELCOME_AUTO` / `TPL_SIMPLE_LINK_AUTO`: orange #E0622A / navy #0a1f35 HTML email templates with vehicle steps + flat $100 reward box
+  - `EMAIL_TEMPLATES_AUTO`: 2 templates (no Tier Status since automotive is flat-rate)
+  - All "patient/patients" → "customer/customers" when `isAuto`
+  - Automotive demo: 847 contacts (Carlock Volvo), 3 historical campaigns
+
+- **Print materials: automotive HTML files** — new files in `/public/print/`:
+  - `referral-card-automotive.html` — business card both sides. Back: orange bg, Fraunces italic, 4 steps, QR sidebar. Front: navy bg, vehicle hero, $100 badge.
+  - `flyer-8.5in-automotive.html` — 8.5×11 showroom flyer. Navy bg, orange bars, vehicle copy, QR → joinrippl.com/find, $100 reward box.
+  - Open in browser → Cmd+P → enable "Background graphics" → Save as PDF.
+
+- **Slide deck name prepopulation fix** — `slide-deck.tsx` hardcoded `"Hallmark Dental"` as fallback for non-demo accounts. Now imports `usePractice()` and reads `myPractice?.name`. Effect syncs on `myPractice?.name` change. Removed the fragile `/api/offices` fetch-then-strip approach.
+
+---
+
 ### v1.6.0 (July 2026) — Super_admin Practice Picker
 
 **Why this was built:**
@@ -591,6 +626,10 @@ cat ~/.ssh/id_ed25519.pub    # paste this at github.com/settings/keys if auth fa
 | Proxy trust | Add `app.set('trust proxy', 1)` before rate limiter or you'll get `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR`. |
 | Claim URL | Always a UUID token. Never expose the referral code in the claim URL. |
 | OFFICE_CONFIG | Hardcoded Hallmark Dental in `refer.tsx`. Refactor to `offices` table when a second dental practice joins. |
+| Express route ordering in practices.ts | `router.get("/mine", ...)` MUST come before `router.get("/:id", requireSuperAdmin, ...)`. If reversed, Express matches "mine" as a wildcard `:id` param and returns 403 for practice_admin. This silently breaks `useVertical()` — `myPractice` stays null and ALL automotive pages show dental content. (Fixed 2026-08-01.) |
+| Campaigns practice isolation | `getFilteredReferrers()` must receive `practiceId` and include `AND o.practice_id = ${practiceId}` in all SQL branches. Without it, a practice_admin's campaign count includes referrers from every practice in the DB. |
+| Practice name in slide deck | Use `myPractice?.name` from `usePractice()`. Do NOT fetch `/api/offices` and strip the location suffix — that approach is fragile and defaults to "Hallmark Dental" for any other client. |
+| useVertical() requires /mine to work | `useVertical()` reads `myPractice?.vertical`. If `GET /api/practices/mine` returns 403 (route ordering bug), `myPractice` is null, `useVertical()` returns "dental", and all automotive pages show dental content even after correct code is deployed. |
 
 ### Session Startup Checklist
 
@@ -672,7 +711,8 @@ Backend check: no referral payouts without non-null `agreement_accepted_at`. Adm
 | `/refer?ref=XXXX` | Prospective patient landing — vertical-aware |
 | `/claim?token=UUID` | Reward claim (gradient, confetti, count-up) |
 | `/find` | Patient referral phone lookup |
-| `/how-it-works` | For referrers (existing patients) |
+| `/how-it-works` | For referrers (existing patients) — dental version |
+| `/how-it-works/automotive` | Automotive version — flat $100, vehicle steps, no tier table |
 | `/privacy` | Privacy policy |
 | `/terms` | SMS terms |
 | `/sms-opt-in` | SMS opt-in flow |
@@ -721,5 +761,5 @@ The work is the argument. The output is the proof. The standard is non-negotiabl
 
 ---
 
-*Last updated: 2026-07-29 — Rippl v1.6.0*  
+*Last updated: 2026-08-01 — Rippl v1.7.0*  
 *Read CLAUDE.md next. Read DESIGN.md before any UI work.*
