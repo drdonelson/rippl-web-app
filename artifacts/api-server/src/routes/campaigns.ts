@@ -97,7 +97,9 @@ interface ReferrerRow {
   office_name: string | null;
 }
 
-async function getFilteredReferrers(filter: AudienceFilter): Promise<ReferrerRow[]> {
+async function getFilteredReferrers(filter: AudienceFilter, practiceId: string | null): Promise<ReferrerRow[]> {
+  const practiceWhere = practiceId ? sql`AND o.practice_id = ${practiceId}` : sql``;
+
   // Complex subquery: no referrals in the last 90 days
   if (filter === "no_referrals_90d") {
     const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
@@ -110,6 +112,7 @@ async function getFilteredReferrers(filter: AudienceFilter): Promise<ReferrerRow
       FROM referrers r
       LEFT JOIN offices o ON o.id = r.office_id
       WHERE r.sms_opt_out = false
+        ${practiceWhere}
         AND NOT EXISTS (
           SELECT 1 FROM referral_events re
           WHERE re.referrer_id = r.id
@@ -132,6 +135,7 @@ async function getFilteredReferrers(filter: AudienceFilter): Promise<ReferrerRow
       FROM referrers r
       INNER JOIN offices o ON o.id = r.office_id
       WHERE r.sms_opt_out = false
+        ${practiceWhere}
         AND o.location_code = ${locationCode}
       ORDER BY r.name
     `);
@@ -158,6 +162,7 @@ async function getFilteredReferrers(filter: AudienceFilter): Promise<ReferrerRow
     FROM referrers r
     LEFT JOIN offices o ON o.id = r.office_id
     WHERE r.sms_opt_out = false
+    ${practiceWhere}
     ${extraWhere}
     ORDER BY r.name
   `);
@@ -193,11 +198,15 @@ router.get("/", async (req, res) => {
     return;
   }
   try {
-    const campaigns = await db
+    const isSuperAdmin = req.authUser!.role === "super_admin";
+    const campaignsQuery = db
       .select()
       .from(campaignsTable)
       .orderBy(desc(campaignsTable.created_at))
       .limit(100);
+    const campaigns = isSuperAdmin
+      ? await campaignsQuery
+      : await campaignsQuery.where(eq(campaignsTable.practice_id, req.authUser!.practice_id!));
     res.json(campaigns);
   } catch (err) {
     req.log.error({ err }, "[campaigns] GET failed");
@@ -219,7 +228,7 @@ router.post("/count", async (req, res) => {
     return;
   }
   try {
-    const referrers = await getFilteredReferrers(filter as AudienceFilter);
+    const referrers = await getFilteredReferrers(filter as AudienceFilter, req.authUser!.practice_id ?? null);
     const first     = referrers[0] ?? null;
     res.json({
       count: referrers.length,
@@ -293,6 +302,9 @@ router.post("/send", async (req, res) => {
     })
     .returning();
 
+  // Capture before res.json so we don't reference req in the background closure
+  const senderPracticeId = req.authUser!.practice_id ?? null;
+
   // Respond immediately — processing continues in background
   res.json({
     success:     true,
@@ -304,7 +316,7 @@ router.post("/send", async (req, res) => {
   // ── Background send (fire-and-forget) ─────────────────────────────────────
   setImmediate(async () => {
     try {
-      const referrers = await getFilteredReferrers(filter as AudienceFilter);
+      const referrers = await getFilteredReferrers(filter as AudienceFilter, senderPracticeId);
 
       // Set up clients
       const twilioClient = channel === "sms"
@@ -413,8 +425,8 @@ router.post("/test-send", async (req, res) => {
   }
 
   try {
-    // Get the first matching patient for real template data
-    const referrers = await getFilteredReferrers(filter as AudienceFilter);
+    // Get the first matching referrer for real template data
+    const referrers = await getFilteredReferrers(filter as AudienceFilter, req.authUser!.practice_id ?? null);
     const patient   = referrers[0] ?? null;
 
     // If no real patient, synthesise a placeholder referrer
