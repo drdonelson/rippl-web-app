@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useRoute } from "wouter";
 import { Droplets, ChevronRight, CheckCircle2, Gift, MessageSquare, Shield, Loader2, AlertCircle } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
@@ -27,7 +28,9 @@ function formatPhone(raw: string): string {
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
-export default function Enroll({ slug }: { slug: string }) {
+export default function Enroll() {
+  const [, params] = useRoute<{ slug: string }>("/enroll/:slug");
+  const slug = params?.slug ?? "";
 
   const [practice, setPractice] = useState<PracticeInfo | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
