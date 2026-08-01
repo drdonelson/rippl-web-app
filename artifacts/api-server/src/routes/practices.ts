@@ -26,29 +26,8 @@ router.get("/", requireAuth, requireSuperAdmin, async (req, res) => {
   }
 });
 
-// GET /api/practices/:id — single practice
-router.get("/:id", requireAuth, requireSuperAdmin, async (req, res) => {
-  const { id } = req.params;
-  try {
-    const [practice] = await db
-      .select()
-      .from(practicesTable)
-      .where(eq(practicesTable.id, id));
-    if (!practice) { res.status(404).json({ error: "Practice not found" }); return; }
-
-    const offices = await db
-      .select()
-      .from(officesTable)
-      .where(eq(officesTable.practice_id, id));
-
-    res.json({ ...practice, offices });
-  } catch (err) {
-    req.log.error({ err, id }, "[practices] GET/:id failed");
-    res.status(500).json({ error: "Failed to load practice" });
-  }
-});
-
 // GET /api/practices/mine — returns the caller's own practice (any authenticated role with a practice_id)
+// MUST be before /:id so Express doesn't treat "mine" as an id param
 router.get("/mine", requireAuth, async (req, res) => {
   const caller = req.authUser!;
   if (!caller.practice_id) {
@@ -73,6 +52,28 @@ router.get("/mine", requireAuth, async (req, res) => {
     res.json(practice);
   } catch (err) {
     req.log.error({ err }, "[practices/mine] GET failed");
+    res.status(500).json({ error: "Failed to load practice" });
+  }
+});
+
+// GET /api/practices/:id — single practice (super_admin only)
+router.get("/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [practice] = await db
+      .select()
+      .from(practicesTable)
+      .where(eq(practicesTable.id, id));
+    if (!practice) { res.status(404).json({ error: "Practice not found" }); return; }
+
+    const offices = await db
+      .select()
+      .from(officesTable)
+      .where(eq(officesTable.practice_id, id));
+
+    res.json({ ...practice, offices });
+  } catch (err) {
+    req.log.error({ err, id }, "[practices] GET/:id failed");
     res.status(500).json({ error: "Failed to load practice" });
   }
 });
