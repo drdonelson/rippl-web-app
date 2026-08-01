@@ -149,6 +149,7 @@ router.patch("/:id", requireAuth, requireSuperAdmin, async (req, res) => {
   if (tango_email_template_id   !== undefined) updates.tango_email_template_id   = tango_email_template_id ? String(tango_email_template_id) : null;
   if (primary_color             !== undefined) updates.primary_color             = primary_color ? String(primary_color).replace("#", "") : "E0622A";
   if (integration_config        !== undefined) updates.integration_config        = integration_config as Record<string, string>;
+  if ((req.body as Record<string, unknown>).logo_url !== undefined) updates.logo_url = (req.body as Record<string, unknown>).logo_url ? String((req.body as Record<string, unknown>).logo_url) : null;
   if (white_label_name          !== undefined) updates.white_label_name          = white_label_name ? String(white_label_name) : null;
   if (white_label_logo_url      !== undefined) updates.white_label_logo_url      = white_label_logo_url ? String(white_label_logo_url) : null;
   if (white_label_primary_color !== undefined) updates.white_label_primary_color = white_label_primary_color ? String(white_label_primary_color).replace("#", "") : null;
