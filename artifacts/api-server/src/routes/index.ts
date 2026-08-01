@@ -24,12 +24,14 @@ import webhooksRouter from "./webhooks";
 import smsOptInRouter from "./smsOptIn";
 import staffPoolRouter from "./staffPool";
 import billingRouter from "./billing";
+import enrollRouter from "./enroll";
 import { requireAuth } from "../middleware/auth";
 
 const router: IRouter = Router();
 
 // Always-public routes
 router.use("/billing", billingRouter);
+router.use("/enroll", enrollRouter);
 router.use(healthRouter);
 router.use(smsOptInRouter);
 router.use("/webhooks", webhooksRouter);

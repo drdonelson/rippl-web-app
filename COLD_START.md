@@ -657,6 +657,7 @@ Backend check: no referral payouts without non-null `agreement_accepted_at`. Adm
 | `/join/dental` | Dental practice marketing landing |
 | `/join/salon` | Salon practice marketing landing |
 | `/join` | Alias → `/join/dental` |
+| `/enroll/:slug` | Dealer/practice self-enrollment — branded per practice slug, creates referrer with SMS consent |
 | `/dc` | Dental Collective signup page |
 | `/join-waitlist` | Legacy waitlist form |
 | `/demo` | Generic demo (role: demo, no practice_id) |
