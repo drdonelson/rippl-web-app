@@ -195,4 +195,20 @@ router.delete("/:id/logo", requireAuth, requirePracticeAdmin, async (req, res) =
   }
 });
 
+// DELETE /api/offices/:id — remove an office (super_admin only)
+router.delete("/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await db.delete(officesTable).where(eq(officesTable.id, id)).returning({ id: officesTable.id });
+    if (result.length === 0) {
+      res.status(404).json({ error: "Office not found" });
+      return;
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[offices/delete] Error:", err);
+    res.status(500).json({ error: "Failed to delete office" });
+  }
+});
+
 export default router;

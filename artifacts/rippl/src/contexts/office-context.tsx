@@ -33,7 +33,7 @@ const OfficeContext = createContext<OfficeContextValue>({
 const STORAGE_KEY = "rippl_selected_office_id";
 
 export function OfficeProvider({ children }: { children: React.ReactNode }) {
-  const { profile, isLoading: authLoading, isDemo } = useAuth();
+  const { profile, session, isLoading: authLoading, isDemo } = useAuth();
   const [allOffices, setAllOffices] = useState<Office[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOfficeId, setSelectedOfficeIdState] = useState<string>(() => {
@@ -42,7 +42,6 @@ export function OfficeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Demo users without a real practice_id use the hardcoded demo office.
-    // Demo users with a real practice_id (branded demo accounts) use the real API.
     if (!authLoading && isDemo && !profile?.practice_id) {
       setAllOffices([DEMO_OFFICE]);
       setSelectedOfficeIdState(DEMO_OFFICE.id);
@@ -53,12 +52,16 @@ export function OfficeProvider({ children }: { children: React.ReactNode }) {
 
     if (authLoading) return;
 
-    fetch(`${BASE}/api/offices`)
+    const token = session?.access_token;
+    const url = token ? `${BASE}/api/offices/managed` : `${BASE}/api/offices`;
+    const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+
+    fetch(url, { headers })
       .then(r => r.json())
       .then((data: unknown) => setAllOffices(Array.isArray(data) ? data as Office[] : []))
       .catch(() => setAllOffices([]))
       .finally(() => setIsLoading(false));
-  }, [authLoading, isDemo]);
+  }, [authLoading, isDemo, session]);
 
   const { selectedPracticeId } = usePractice();
 
@@ -74,11 +77,10 @@ export function OfficeProvider({ children }: { children: React.ReactNode }) {
       return allOffices.filter(o => o.practice_id === profile.practice_id);
     }
     if (profile.role.startsWith("staff_")) {
-      // Staff see only their assigned location
       const locationCode = profile.role.replace("staff_", "");
       return allOffices.filter(o => o.location_code === locationCode);
     }
-    // practice_admin sees all offices (server already scopes by practice)
+    // practice_admin — /managed already scopes to their practice
     return allOffices;
   }, [allOffices, profile, authLoading, isDemo, selectedPracticeId]);
 
