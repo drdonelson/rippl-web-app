@@ -48,6 +48,35 @@ router.get("/:id", requireAuth, requireSuperAdmin, async (req, res) => {
   }
 });
 
+// GET /api/practices/mine — returns the caller's own practice (any authenticated role with a practice_id)
+router.get("/mine", requireAuth, async (req, res) => {
+  const caller = req.authUser!;
+  if (!caller.practice_id) {
+    res.status(404).json({ error: "No practice associated with this account" });
+    return;
+  }
+  try {
+    const [practice] = await db
+      .select({
+        id:       practicesTable.id,
+        name:     practicesTable.name,
+        slug:     practicesTable.slug,
+        vertical: practicesTable.vertical,
+        logo_url: practicesTable.logo_url,
+        primary_color: practicesTable.primary_color,
+        white_label_name: practicesTable.white_label_name,
+        reward_value: practicesTable.reward_value,
+      })
+      .from(practicesTable)
+      .where(eq(practicesTable.id, caller.practice_id));
+    if (!practice) { res.status(404).json({ error: "Practice not found" }); return; }
+    res.json(practice);
+  } catch (err) {
+    req.log.error({ err }, "[practices/mine] GET failed");
+    res.status(500).json({ error: "Failed to load practice" });
+  }
+});
+
 // POST /api/practices — create a new practice (super_admin only)
 router.post("/", requireAuth, requireSuperAdmin, async (req, res) => {
   const {

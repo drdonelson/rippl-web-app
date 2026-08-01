@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
+import { usePractice } from "@/contexts/practice-context";
 
 // ── Reusable copy button ───────────────────────────────────────────────────────
 
@@ -570,7 +571,10 @@ function PlaybookAuto() {
 
 export default function Playbook() {
   const { isDemo, demoVertical } = useAuth();
-  if (isDemo && demoVertical === "automotive") return <PlaybookAuto />;
+  const { myPractice } = usePractice();
+  const vertical = (isDemo ? demoVertical : myPractice?.vertical) ?? "dental";
+  if (vertical === "automotive") return <PlaybookAuto />;
+  if (vertical === "salon") return <PlaybookAuto />;
   return (
     <div className="max-w-3xl mx-auto space-y-10 pb-12">
 

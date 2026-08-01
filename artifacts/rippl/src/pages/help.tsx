@@ -1,5 +1,6 @@
 import { BookOpen, CheckCircle2, AlertTriangle, PlayCircle } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
+import { usePractice } from "@/contexts/practice-context";
 
 const LOOM_VIDEO_1 = "https://www.loom.com/embed/d054cba4b20f4a5187c96cf05a4eb47a";
 const LOOM_VIDEO_2 = "https://www.loom.com/embed/84aad24c5ea34363acc8735b344ed046";
@@ -227,7 +228,9 @@ function HelpAuto() {
 
 export default function HelpPage() {
   const { isDemo, demoVertical } = useAuth();
-  if (isDemo && demoVertical === "automotive") return <HelpAuto />;
+  const { myPractice } = usePractice();
+  const vertical = (isDemo ? demoVertical : myPractice?.vertical) ?? "dental";
+  if (vertical === "automotive" || vertical === "salon") return <HelpAuto />;
   return <HelpPageDental />;
 }
 
