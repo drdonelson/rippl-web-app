@@ -5,6 +5,7 @@ import PptxGenJS from "pptxgenjs";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useVertical } from "@/lib/useVertical";
+import { usePractice } from "@/contexts/practice-context";
 import {
   Download, Monitor, Info, CheckCircle2, Loader2, ImageIcon,
 } from "lucide-react";
@@ -969,35 +970,30 @@ function BespokeDeckSection() {
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function SlideDeck() {
-  const { profile, isDemo, demoVertical } = useAuth();
+  const { profile, isDemo } = useAuth();
+  const { myPractice } = usePractice();
   const vertical = useVertical();
   const isAuto = vertical === "automotive";
-  const defaultName = isAuto ? "Summit Auto Group" : isDemo ? "Smile Care Dental" : "Hallmark Dental";
+  const demoDefault = isAuto ? "Summit Auto Group" : "Smile Care Dental";
   const deckSectionLabel = isAuto ? "Showroom Floor Slide Deck" : "Waiting Room Slide Deck";
   const tvStepLabel = isAuto ? "Display on your showroom floor TV" : "Display on your waiting room TV";
 
-  const [practiceName, setPracticeName] = useState(defaultName);
+  const [practiceName, setPracticeName] = useState(isDemo ? demoDefault : (myPractice?.name ?? ""));
   const [loading, setLoading]           = useState(false);
   const [done, setDone]                 = useState(false);
   const [error, setError]               = useState<string | null>(null);
 
+  // Keep field in sync as myPractice loads (real accounts)
   useEffect(() => {
-    setPracticeName(isAuto ? "Summit Auto Group" : isDemo ? "Smile Care Dental" : "Hallmark Dental");
-  }, [isAuto]);
+    if (isDemo) return;
+    if (myPractice?.name) setPracticeName(myPractice.name);
+  }, [myPractice?.name, isDemo]);
 
+  // Demo: update placeholder when vertical changes
   useEffect(() => {
-    if (!profile || isDemo) return;
-    fetch(`${BASE}/api/offices`)
-      .then(r => r.json())
-      .then((offices: { name: string }[]) => {
-        if (Array.isArray(offices) && offices[0]?.name) {
-          const dash = offices[0].name.lastIndexOf("–");
-          const base = dash !== -1 ? offices[0].name.slice(0, dash).trim() : offices[0].name;
-          if (base) setPracticeName(base);
-        }
-      })
-      .catch(() => {});
-  }, [profile, isDemo]);
+    if (!isDemo) return;
+    setPracticeName(isAuto ? "Summit Auto Group" : "Smile Care Dental");
+  }, [isAuto, isDemo]);
 
   async function handleGenerate() {
     setLoading(true);
@@ -1051,7 +1047,7 @@ export default function SlideDeck() {
               type="text"
               value={practiceName}
               onChange={e => setPracticeName(e.target.value)}
-              placeholder={defaultName}
+              placeholder={isDemo ? demoDefault : (myPractice?.name ?? (isAuto ? "Carlock Volvo" : "Your Practice"))}
               className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#E0622A]/25 focus:border-[#E0622A] transition-all"
             />
           </div>
