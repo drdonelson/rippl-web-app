@@ -2,7 +2,6 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { referrersTable, practicesTable } from "@workspace/db/schema";
 import { eq, and } from "drizzle-orm";
-import { z } from "zod/v4";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -11,6 +10,17 @@ function generateReferralCode(name: string): string {
   const clean = name.replace(/\s+/g, "").toUpperCase().slice(0, 4);
   const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
   return `${clean}${rand}`;
+}
+
+function validateEnrollBody(body: unknown): { slug: string; first_name: string; last_name: string; phone: string } | null {
+  if (!body || typeof body !== "object") return null;
+  const b = body as Record<string, unknown>;
+  const slug       = typeof b.slug       === "string" && b.slug.trim()       ? b.slug.trim()       : null;
+  const first_name = typeof b.first_name === "string" && b.first_name.trim() ? b.first_name.trim() : null;
+  const last_name  = typeof b.last_name  === "string" && b.last_name.trim()  ? b.last_name.trim()  : null;
+  const phone      = typeof b.phone      === "string" && b.phone.length >= 10 ? b.phone            : null;
+  if (!slug || !first_name || !last_name || !phone) return null;
+  return { slug, first_name, last_name, phone };
 }
 
 // GET /api/enroll/:slug — practice branding lookup (public, no auth)
@@ -44,19 +54,17 @@ router.get("/:slug", async (req, res) => {
   }
 });
 
-const EnrollBody = z.object({
-  slug:       z.string().min(1),
-  first_name: z.string().min(1).max(100),
-  last_name:  z.string().min(1).max(100),
-  phone:      z.string().min(10).max(20),
-});
-
 // POST /api/enroll — self-enrollment (public, no auth)
 // Creates a referrer record with explicit SMS consent.
 // Deduplicates on phone + practice_id — safe to call twice.
 router.post("/", async (req, res) => {
   try {
-    const body = EnrollBody.parse(req.body);
+    const body = validateEnrollBody(req.body);
+    if (!body) {
+      res.status(400).json({ error: "Invalid request: slug, first_name, last_name, and phone are required" });
+      return;
+    }
+
     const phoneDigits = body.phone.replace(/\D/g, "").slice(-10);
 
     const [practice] = await db
@@ -74,7 +82,7 @@ router.post("/", async (req, res) => {
       return;
     }
 
-    const fullName = `${body.first_name.trim()} ${body.last_name.trim()}`;
+    const fullName = `${body.first_name} ${body.last_name}`;
 
     // Dedup: already enrolled with this phone at this practice
     const existing = await db
@@ -100,7 +108,7 @@ router.post("/", async (req, res) => {
       .insert(referrersTable)
       .values({
         practice_id:   practice.id,
-        patient_id:    `self-${phoneDigits}`, // no EMR ID for self-enrolled customers
+        patient_id:    `self-${phoneDigits}`,
         name:          fullName,
         phone:         phoneDigits,
         referral_code,
@@ -117,10 +125,6 @@ router.post("/", async (req, res) => {
     logger.info({ practice_id: practice.id, name: fullName, slug: body.slug }, "Self-enrollment via /enroll");
     res.status(201).json({ ...referrer, already_enrolled: false });
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      res.status(400).json({ error: "Invalid request", issues: err.issues });
-      return;
-    }
     logger.error({ err }, "POST /api/enroll failed");
     res.status(500).json({ error: "Internal server error" });
   }
