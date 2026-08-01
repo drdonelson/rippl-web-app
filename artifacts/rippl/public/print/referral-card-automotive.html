@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rippl — Automotive Referral Cards</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,900;1,9..144,900&family=DM+Sans:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #d1d5db;
+      font-family: 'DM Sans', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 48px;
+      padding: 60px 40px;
+      min-height: 100vh;
+    }
+
+    @media print {
+      body { background: none; padding: 20px; gap: 24px; }
+      .section-title { display: none; }
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      color: #9ca3af;
+      text-align: center;
+    }
+
+    /* Card: 3.5" × 2" at 240dpi = 840 × 480px */
+    .card {
+      width: 840px;
+      height: 480px;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.28);
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    /* ── CARD BACK — orange ── */
+    .card-back {
+      background: #E0622A;
+      display: flex;
+      padding: 0;
+    }
+
+    .back-left {
+      flex: 1;
+      padding: 40px 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .back-headline {
+      font-family: 'Fraunces', serif;
+      font-style: italic;
+      font-weight: 900;
+      font-size: 42px;
+      line-height: 1.08;
+      color: #ffffff;
+    }
+
+    .back-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .back-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .back-step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 900;
+      color: #ffffff;
+      flex-shrink: 0;
+    }
+
+    .back-step-text {
+      font-size: 15px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.9);
+      line-height: 1.35;
+      padding-top: 3px;
+    }
+
+    .back-footer {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      font-weight: 500;
+      letter-spacing: 0.08em;
+    }
+
+    .back-right {
+      width: 200px;
+      background: rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 24px;
+      flex-shrink: 0;
+    }
+
+    .back-qr {
+      width: 140px;
+      height: 140px;
+      border-radius: 12px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .back-qr img { width: 128px; height: 128px; }
+
+    .back-qr-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.8);
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    .back-qr-url {
+      font-size: 10px;
+      color: rgba(255,255,255,0.4);
+      text-align: center;
+    }
+
+    /* ── CARD FRONT — navy ── */
+    .card-front {
+      background: #0a1f35;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 36px 44px 32px;
+    }
+
+    .front-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .front-logo-area {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .front-logo-hint {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      color: rgba(255,255,255,0.25);
+    }
+
+    .front-logo-box {
+      width: 120px;
+      height: 44px;
+      border-radius: 8px;
+      border: 1.5px dashed rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .front-logo-box span {
+      font-size: 10px;
+      color: rgba(255,255,255,0.2);
+      font-weight: 600;
+      letter-spacing: 0.1em;
+    }
+
+    .front-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      padding: 5px 14px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .front-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #E0622A;
+      flex-shrink: 0;
+    }
+
+    .front-hero { }
+
+    .front-line1 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 54px;
+      font-weight: 900;
+      line-height: 1.0;
+      color: #ffffff;
+    }
+
+    .front-line2 {
+      font-family: 'Fraunces', serif;
+      font-style: italic;
+      font-weight: 900;
+      font-size: 60px;
+      line-height: 1.0;
+      color: #E0622A;
+    }
+
+    .front-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .front-sub {
+      font-size: 13px;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.5;
+      max-width: 340px;
+    }
+
+    .front-reward {
+      text-align: right;
+    }
+
+    .front-reward-amount {
+      font-family: 'Fraunces', serif;
+      font-weight: 900;
+      font-size: 44px;
+      color: #E0622A;
+      line-height: 1;
+    }
+
+    .front-reward-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 0.08em;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CARD BACK -->
+  <p class="section-title">REFERRAL CARD — BACK</p>
+  <div class="card card-back">
+    <div class="back-left">
+      <div>
+        <div class="back-headline">Refer a friend.<br>Earn $100.</div>
+        <div class="back-steps">
+          <div class="back-step">
+            <div class="back-step-num">1</div>
+            <div class="back-step-text">Scan the QR code to find your personal referral link</div>
+          </div>
+          <div class="back-step">
+            <div class="back-step-num">2</div>
+            <div class="back-step-text">Enter your mobile number</div>
+          </div>
+          <div class="back-step">
+            <div class="back-step-num">3</div>
+            <div class="back-step-text">Get your personal link to share</div>
+          </div>
+          <div class="back-step">
+            <div class="back-step-num">4</div>
+            <div class="back-step-text">Earn a $100 gift card when they buy a vehicle</div>
+          </div>
+        </div>
+      </div>
+      <div class="back-footer">joinrippl.com/find</div>
+    </div>
+    <div class="back-right">
+      <div class="back-qr">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://joinrippl.com/find&color=0a1f35&bgcolor=ffffff&margin=3" alt="QR" />
+      </div>
+      <div class="back-qr-label">Scan to find your<br>personal referral link</div>
+      <div class="back-qr-url">joinrippl.com/find</div>
+    </div>
+  </div>
+
+  <!-- CARD FRONT -->
+  <p class="section-title">REFERRAL CARD — FRONT</p>
+  <div class="card card-front">
+    <div class="front-top">
+      <div class="front-logo-area">
+        <div class="front-logo-hint">YOUR LOGO</div>
+        <div class="front-logo-box"><span>DEALERSHIP NAME</span></div>
+      </div>
+      <div class="front-badge">
+        <div class="front-badge-dot"></div>
+        REFERRAL REWARDS
+      </div>
+    </div>
+
+    <div class="front-hero">
+      <div class="front-line1">Know someone</div>
+      <div class="front-line2">buying a car?</div>
+    </div>
+
+    <div class="front-bottom">
+      <div class="front-sub">
+        Share your link — when a friend buys, you earn a gift card automatically.
+      </div>
+      <div class="front-reward">
+        <div class="front-reward-amount">$100</div>
+        <div class="front-reward-label">PER REFERRAL</div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

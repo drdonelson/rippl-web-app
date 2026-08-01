@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rippl — Automotive Referral Flyer (8.5")</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,900;1,9..144,900&family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #e5e5e5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 40px;
+    }
+
+    @media print {
+      body { background: none; padding: 0; min-height: unset; }
+      .page { box-shadow: none; }
+    }
+
+    /* 8.5" × 11" at 120dpi = 1020 × 1320px */
+    .page {
+      width: 1020px;
+      min-height: 1320px;
+      background: #0a1f35;
+      display: flex;
+      flex-direction: column;
+      font-family: 'DM Sans', sans-serif;
+      color: #ffffff;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .top-bar { height: 8px; background: #E0622A; flex-shrink: 0; }
+    .bottom-bar { height: 8px; background: #E0622A; flex-shrink: 0; }
+
+    .inner {
+      padding: 60px 80px 52px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 56px;
+    }
+
+    .practice-name {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.5;
+    }
+
+    .badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 999px;
+      padding: 8px 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+    }
+
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #E0622A;
+    }
+
+    /* Hero */
+    .hero { margin-bottom: 48px; }
+
+    .hero-line1 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 96px;
+      font-weight: 900;
+      line-height: 1.0;
+      color: #ffffff;
+    }
+
+    .hero-line2 {
+      font-family: 'Fraunces', serif;
+      font-style: italic;
+      font-weight: 900;
+      font-size: 108px;
+      line-height: 1.0;
+      color: #E0622A;
+    }
+
+    .hero-body {
+      margin-top: 28px;
+      font-size: 22px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.55;
+      max-width: 620px;
+    }
+
+    .hero-body strong { color: #E0622A; font-weight: 700; }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: rgba(255,255,255,0.12);
+      margin: 0 0 52px 0;
+    }
+
+    /* Middle row */
+    .middle {
+      display: flex;
+      gap: 80px;
+      align-items: flex-start;
+      margin-bottom: 48px;
+    }
+
+    .steps-col { flex: 1; }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 28px;
+    }
+
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .step-num {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #E0622A;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      font-weight: 900;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+
+    .step-text {
+      font-size: 21px;
+      font-weight: 500;
+      line-height: 1.4;
+      color: rgba(255,255,255,0.88);
+      padding-top: 5px;
+    }
+
+    /* QR column */
+    .qr-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .qr-img {
+      width: 260px;
+      height: 260px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .qr-img img { width: 248px; height: 248px; }
+
+    .qr-label { font-size: 17px; font-weight: 700; color: #ffffff; text-align: center; }
+    .qr-url { font-size: 14px; color: rgba(255,255,255,0.4); text-align: center; font-weight: 400; }
+
+    /* Reward */
+    .reward-box {
+      background: rgba(224,98,42,0.12);
+      border: 1px solid rgba(224,98,42,0.3);
+      border-radius: 18px;
+      padding: 32px 44px;
+      margin-bottom: 48px;
+      display: flex;
+      align-items: center;
+      gap: 40px;
+    }
+
+    .reward-amount {
+      font-family: 'Fraunces', serif;
+      font-weight: 900;
+      font-size: 88px;
+      color: #E0622A;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .reward-details { flex: 1; }
+
+    .reward-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+
+    .reward-sub {
+      font-size: 17px;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.55;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: auto;
+      padding-top: 28px;
+      border-top: 1px solid rgba(255,255,255,0.12);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-help { font-size: 14px; color: rgba(255,255,255,0.3); }
+    .footer-powered { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; color: rgba(255,255,255,0.2); }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="top-bar"></div>
+    <div class="inner">
+
+      <div class="header">
+        <div class="practice-name">YOUR DEALERSHIP</div>
+        <div class="badge">
+          <div class="badge-dot"></div>
+          REFERRAL REWARDS
+        </div>
+      </div>
+
+      <div class="hero">
+        <div class="hero-line1">Know someone</div>
+        <div class="hero-line2">buying a car?</div>
+        <p class="hero-body">
+          Send them your way — earn a
+          <strong>$100 gift card</strong> automatically when they complete their purchase.
+          No paperwork. No waiting.
+        </p>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="middle">
+        <div class="steps-col">
+          <p class="section-label">HOW IT WORKS</p>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text">Scan the QR code below</div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text">Enter your mobile number</div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-text">Get your personal sharing link</div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-text">Earn $100 when a friend buys a vehicle</div>
+          </div>
+        </div>
+
+        <div class="qr-col">
+          <div class="qr-img">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=https://joinrippl.com/find&color=0a1f35&bgcolor=ffffff&margin=4" alt="QR code" />
+          </div>
+          <div class="qr-label">Scan to get your link</div>
+          <div class="qr-url">joinrippl.com/find</div>
+        </div>
+      </div>
+
+      <div class="reward-box">
+        <div class="reward-amount">$100</div>
+        <div class="reward-details">
+          <div class="reward-title">Gift card, per referral — no limit</div>
+          <div class="reward-sub">
+            Amazon, Visa, Target, or Starbucks — delivered to your inbox
+            the moment your friend's deal closes. Refer as many friends as you want.
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div class="footer-help">Questions? Ask your sales advisor or scan the QR code above.</div>
+        <div class="footer-powered">POWERED BY RIPPL</div>
+      </div>
+
+    </div>
+    <div class="bottom-bar"></div>
+  </div>
+</body>
+</html>

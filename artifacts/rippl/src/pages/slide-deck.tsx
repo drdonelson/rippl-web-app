@@ -1133,60 +1133,110 @@ export default function SlideDeck() {
       {isAuto && <BespokeDeckSection />}
 
       {/* ── Section 2: Referral Cards ── */}
-      <div className="space-y-5">
-        <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-          <ImageIcon className="w-4 h-4 text-slate-400" />
-          Referral Cards &amp; Flyers
-        </h2>
-        <p className="text-sm text-slate-500">
-          Download print-ready PNGs. Send to a local print shop or use Moo.com / Vistaprint.
-        </p>
-
-        <div className="grid grid-cols-2 gap-4">
-          {MARKETING_ASSETS.map(asset => (
-            <div key={asset.file} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide text-center">{asset.label}</p>
-              <div className="rounded-xl overflow-hidden border border-slate-100 bg-slate-50">
-                <img src={`/marketing/${asset.file}`} alt={asset.label} className="w-full h-auto object-contain" loading="lazy" />
-              </div>
-              <a
-                href={`/marketing/${asset.file}`}
-                download={asset.download}
-                className="flex w-full items-center justify-center gap-1.5 bg-[#E0622A] hover:bg-[#c8561f] text-white font-semibold py-2.5 rounded-xl transition-all text-xs"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Download PNG
-              </a>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex items-start gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-          <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-          <p className="text-xs text-slate-500 leading-relaxed">
-            The QR code links to <span className="font-mono text-slate-700">joinrippl.com/find</span> — patients enter their mobile number to get their personal referral link instantly.
+      {isAuto ? (
+        <div className="space-y-5">
+          <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+            <ImageIcon className="w-4 h-4 text-slate-400" />
+            Referral Cards &amp; Flyers
+          </h2>
+          <p className="text-sm text-slate-500">
+            Open each asset in a new tab, then Cmd+P → enable "Background graphics" → Save as PDF or send to a print shop.
           </p>
+
+          <div className="grid grid-cols-1 gap-3">
+            {[
+              {
+                label: "Referral Card (Front &amp; Back)",
+                desc: 'Business card sized — both sides. Print on 3.5"×2" card stock.',
+                href: "/print/referral-card-automotive.html",
+              },
+              {
+                label: "Showroom Flyer — 8.5×11 in",
+                desc: "Letter-size showroom floor flyer. Print on letter paper.",
+                href: "/print/flyer-8.5in-automotive.html",
+              },
+            ].map(asset => (
+              <a
+                key={asset.href}
+                href={asset.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl px-5 py-4 shadow-sm hover:border-[#E0622A]/40 hover:shadow-md transition-all group"
+              >
+                <div>
+                  <p className="text-sm font-bold text-slate-800 group-hover:text-[#E0622A] transition-colors" dangerouslySetInnerHTML={{ __html: asset.label }} />
+                  <p className="text-xs text-slate-500 mt-0.5">{asset.desc}</p>
+                </div>
+                <Download className="w-4 h-4 text-slate-400 group-hover:text-[#E0622A] transition-colors shrink-0" />
+              </a>
+            ))}
+          </div>
+
+          <div className="flex items-start gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+            <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-slate-500 leading-relaxed">
+              The QR code links to <span className="font-mono text-slate-700">joinrippl.com/find</span> — customers enter their mobile number to get their personal referral link instantly.
+            </p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="space-y-5">
+          <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+            <ImageIcon className="w-4 h-4 text-slate-400" />
+            Referral Cards &amp; Flyers
+          </h2>
+          <p className="text-sm text-slate-500">
+            Download print-ready PNGs. Send to a local print shop or use Moo.com / Vistaprint.
+          </p>
+
+          <div className="grid grid-cols-2 gap-4">
+            {MARKETING_ASSETS.map(asset => (
+              <div key={asset.file} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide text-center">{asset.label}</p>
+                <div className="rounded-xl overflow-hidden border border-slate-100 bg-slate-50">
+                  <img src={`/marketing/${asset.file}`} alt={asset.label} className="w-full h-auto object-contain" loading="lazy" />
+                </div>
+                <a
+                  href={`/marketing/${asset.file}`}
+                  download={asset.download}
+                  className="flex w-full items-center justify-center gap-1.5 bg-[#E0622A] hover:bg-[#c8561f] text-white font-semibold py-2.5 rounded-xl transition-all text-xs"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Download PNG
+                </a>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-start gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+            <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-slate-500 leading-relaxed">
+              The QR code links to <span className="font-mono text-slate-700">joinrippl.com/find</span> — patients enter their mobile number to get their personal referral link instantly.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── Section 3: Printable Posters ── */}
       <div className="space-y-5">
         <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
           <ImageIcon className="w-4 h-4 text-slate-400" />
-          Waiting Room Posters
+          {isAuto ? "Showroom Posters" : "Waiting Room Posters"}
         </h2>
         <p className="text-sm text-slate-500">
           Open the poster in a new tab, then Cmd+P → "Background graphics" on → Save as PDF or print directly.
         </p>
 
         <a
-          href="/print/flyer-8.5in.html"
+          href={isAuto ? "/print/flyer-8.5in-automotive.html" : "/print/flyer-8.5in.html"}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl px-5 py-4 shadow-sm hover:border-[#E0622A]/40 hover:shadow-md transition-all group"
         >
           <div>
-            <p className="text-sm font-bold text-slate-800 group-hover:text-[#E0622A] transition-colors">8.5×11 in Waiting Room Flyer</p>
+            <p className="text-sm font-bold text-slate-800 group-hover:text-[#E0622A] transition-colors">
+              {isAuto ? "8.5×11 in Showroom Floor Flyer" : "8.5×11 in Waiting Room Flyer"}
+            </p>
             <p className="text-xs text-slate-500 mt-0.5">Open → Cmd+P → Save as PDF → print on letter paper</p>
           </div>
           <Download className="w-4 h-4 text-slate-400 group-hover:text-[#E0622A] transition-colors shrink-0" />
