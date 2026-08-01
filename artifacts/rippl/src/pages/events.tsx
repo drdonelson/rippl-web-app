@@ -12,6 +12,7 @@ import { useSearch } from "wouter";
 import { useOffice } from "@/contexts/office-context";
 import { usePractice } from "@/contexts/practice-context";
 import { useAuth } from "@/contexts/auth-context";
+import { useVertical } from "@/lib/useVertical";
 import { DEMO_EVENTS, DEMO_REFERRERS, DEMO_EVENTS_AUTO, DEMO_REFERRERS_AUTO, DEMO_EVENTS_SALON, DEMO_REFERRERS_SALON } from "@/lib/demo-data";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -139,6 +140,9 @@ export default function Events() {
   const { isDemo, isLoading: authIsLoading, profile, demoVertical } = useAuth();
   const { selectedOfficeId, offices } = useOffice();
   const { selectedPracticeId } = usePractice();
+  const vertical = useVertical();
+  const isAuto = vertical === "automotive";
+  const isSalon = vertical === "salon";
 
   // Gate queries until auth is fully resolved — prevents API calls from firing
   // before profile loads (when isDemo is still false at first render).
@@ -189,8 +193,8 @@ export default function Events() {
   const [resentEventId, setResentEventId] = useState<string | null>(null);
   const [demoStatuses, setDemoStatuses] = useState<Record<string, string>>({});
 
-  const isAutoDemo = isDemo && demoVertical === "automotive";
-  const isSalonDemo = isDemo && demoVertical === "salon";
+  const isAutoDemo = isAuto;
+  const isSalonDemo = isSalon;
 
   const statusDisplayLabel = (s: string) =>
     isAutoDemo && s === "Exam Completed" ? "Deal Closed" : s;

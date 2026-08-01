@@ -4,6 +4,7 @@
 import PptxGenJS from "pptxgenjs";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/auth-context";
+import { useVertical } from "@/lib/useVertical";
 import {
   Download, Monitor, Info, CheckCircle2, Loader2, ImageIcon,
 } from "lucide-react";
@@ -969,7 +970,8 @@ function BespokeDeckSection() {
 
 export default function SlideDeck() {
   const { profile, isDemo, demoVertical } = useAuth();
-  const isAuto = isDemo && demoVertical === "automotive";
+  const vertical = useVertical();
+  const isAuto = vertical === "automotive";
   const defaultName = isAuto ? "Summit Auto Group" : isDemo ? "Smile Care Dental" : "Hallmark Dental";
   const deckSectionLabel = isAuto ? "Showroom Floor Slide Deck" : "Waiting Room Slide Deck";
   const tvStepLabel = isAuto ? "Display on your showroom floor TV" : "Display on your waiting room TV";

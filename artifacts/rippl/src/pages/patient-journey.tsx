@@ -3,6 +3,7 @@ import { ArrowLeft, ExternalLink, Eye } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 import type { DemoVertical } from "@/contexts/auth-context";
+import { useVertical } from "@/lib/useVertical";
 
 const APP_URL = "https://www.joinrippl.com";
 const DEMO_TOKEN = "demo-claim-preview-token-screenshot";
@@ -551,7 +552,8 @@ function JourneySteps({ steps, footerNote }: { steps: typeof STEPS; footerNote: 
 
 export default function PatientJourney() {
   const { profile, isDemo, demoVertical } = useAuth();
-  const isAuto = isDemo && demoVertical === "automotive";
+  const vertical = useVertical();
+  const isAuto = vertical === "automotive";
 
   if (!isDemo && !profile) {
     return (
