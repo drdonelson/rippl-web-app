@@ -178,7 +178,12 @@ Rippl is a **multi-vertical patient/customer referral rewards platform**. It:
 | Volvo of Cool Springs | Automotive | Onboarding — awaiting Darren SFTP config | Payden Sewell (CMO) |
 | Peydan's salons | Salon | Pre-sales — channel partner agreement pending | Payden Sewell |
 
-**Cox Automotive org structure:** Payden Sewell is CMO of Carlock, which owns Volvo of Cool Springs. Each dealership is a separate "rooftop/door" with its own DriveCentric account and CRM ID under the Cox Automotive umbrella. Darren Sabino is a DriveCentric employee (NOT Carlock staff) who configures the SFTP export on the DriveCentric side for each rooftop. **Two separate SFTP setups (carlock/ and volvo-cool-springs/) are correct and intentional** — one per rooftop/CRM ID.
+**Cox Automotive org structure:** Payden Sewell is CMO of Carlock, which owns Volvo of Cool Springs. Each dealership is a separate "rooftop/door" with its own DriveCentric account and CRM ID under the Cox Automotive umbrella. Darren Sabino is a DriveCentric employee (NOT Carlock staff) who configures the SFTP export on the DriveCentric side for each rooftop. **Two separate SFTP setups are correct and intentional — one per rooftop/CRM ID.**
+
+**Naming reference (do not confuse these):**
+- SFTP directory on droplet: `/home/drivecentric/carlock/` and `/home/drivecentric/volvo-cool-springs/` — set by Darren, cannot change
+- Practice slugs in DB: `carlock` and `volvo-of-cool-springs` — used in enrollment URLs (`/enroll/carlock`, `/enroll/volvo-of-cool-springs`)
+- Enrollment URLs: `https://rippl.onrender.com/enroll/carlock` and `https://rippl.onrender.com/enroll/volvo-of-cool-springs`
 
 ---
 

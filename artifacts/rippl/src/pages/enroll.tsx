@@ -56,6 +56,18 @@ export default function Enroll() {
   const displayName = practice?.white_label_name ?? practice?.name ?? "";
   const rewardValue = practice?.reward_value ?? 35;
 
+  // Detect dark primary colors (e.g. Volvo navy #003057) that are invisible on dark backgrounds.
+  // Use white as the accent on dark sections; keep primaryColor inside white cards.
+  const hex = practice?.primary_color ?? "1e3a5f";
+  const [pr, pg, pb] = [0, 2, 4].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const lum = 0.2126 * (pr <= 0.03928 ? pr / 12.92 : ((pr + 0.055) / 1.055) ** 2.4)
+            + 0.7152 * (pg <= 0.03928 ? pg / 12.92 : ((pg + 0.055) / 1.055) ** 2.4)
+            + 0.0722 * (pb <= 0.03928 ? pb / 12.92 : ((pb + 0.055) / 1.055) ** 2.4);
+  const darkOnDark = lum < 0.12;
+  const accentOnDark       = darkOnDark ? "#ffffff"              : primaryColor;
+  const accentOnDarkSubtle = darkOnDark ? "rgba(255,255,255,0.12)" : `${primaryColor}15`;
+  const accentOnDarkBorder = darkOnDark ? "rgba(255,255,255,0.22)" : `${primaryColor}30`;
+
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm(f => ({ ...f, phone: formatPhone(e.target.value) }));
   };
@@ -187,15 +199,15 @@ export default function Enroll() {
       <div className="max-w-lg mx-auto w-full px-6 pb-8">
         <div
           className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 mb-5 border"
-          style={{ backgroundColor: `${primaryColor}15`, borderColor: `${primaryColor}30` }}
+          style={{ backgroundColor: accentOnDarkSubtle, borderColor: accentOnDarkBorder }}
         >
-          <Gift className="w-3.5 h-3.5" style={{ color: primaryColor }} />
-          <span className="text-xs font-semibold" style={{ color: primaryColor }}>Referral Rewards Program</span>
+          <Gift className="w-3.5 h-3.5" style={{ color: accentOnDark }} />
+          <span className="text-xs font-semibold" style={{ color: accentOnDark }}>Referral Rewards Program</span>
         </div>
 
         <h1 className="text-white text-4xl leading-tight mb-3" style={{ fontFamily: "var(--font-fraunces)", fontWeight: 700 }}>
           Share the experience.{" "}
-          <span style={{ color: primaryColor, fontStyle: "italic", fontWeight: 300 }}>Earn rewards.</span>
+          <span style={{ color: accentOnDark, fontStyle: "italic", fontWeight: 300 }}>Earn rewards.</span>
         </h1>
         <p className="text-white/60 text-sm leading-relaxed mb-8 max-w-sm">
           When a friend you refer takes delivery of their new vehicle at {displayName}, we'll automatically send you a <strong className="text-white/80">${rewardValue} gift card</strong> — no forms, no follow-up.
