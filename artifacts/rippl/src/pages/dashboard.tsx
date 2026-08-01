@@ -193,7 +193,7 @@ export default function Dashboard() {
                 <UserCog className="w-4 h-4 text-primary shrink-0" />
                 Invite your sales team
               </Link>
-              <a href="https://www.joinrippl.com/how-it-works" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 px-4 py-3 bg-card/60 hover:bg-card border border-border rounded-xl text-sm font-medium text-foreground transition-colors">
+              <a href="https://rippl.onrender.com/how-it-works/automotive" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 px-4 py-3 bg-card/60 hover:bg-card border border-border rounded-xl text-sm font-medium text-foreground transition-colors">
                 <ExternalLink className="w-4 h-4 text-primary shrink-0" />
                 How It Works
               </a>

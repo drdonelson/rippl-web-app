@@ -88,6 +88,7 @@ function Router() {
         <Route path="/refer" component={Refer} />
         <Route path="/privacy" component={Privacy} />
         <Route path="/terms" component={Terms} />
+        <Route path="/how-it-works/automotive" component={HowItWorks} />
         <Route path="/how-it-works" component={HowItWorks} />
         <Route path="/sms-opt-in" component={SmsOptIn} />
         <Route path="/sms-consent-form" component={SmsConsentForm} />
