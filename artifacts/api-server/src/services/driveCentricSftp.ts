@@ -186,6 +186,8 @@ function extractPersonName(description: string): string | null {
   if (!d) return null;
   if (/[\/\-–|,]/.test(d)) return null;  // vendor-style separators
   if (/\d/.test(d)) return null;           // contains digits
+  // Reject category labels that would pass the name heuristic (e.g. "Customer Referral")
+  if (/referral|networking|campaign|drive|relationship|internet|showroom/i.test(d)) return null;
   const tokens = d.split(/\s+/);
   if (tokens.length < 2 || tokens.length > 4) return null;
   if (!/^[A-Z]/.test(tokens[0])) return null;  // first word must be capitalised
@@ -316,17 +318,29 @@ export async function pollDriveCentricSftp(
           ));
         if (existing) { result.alreadyProcessed++; continue; }
 
-        // Is this a referral source group?
-        const groupId   = deal["SourceDescriptionGroupId"];
-        const groupName = groupId ? sourceGroups.get(groupId) : undefined;
-        const isReferral = groupName
+        // Is this a referral? Primary: SourceDescriptionGroupId → group name match.
+        // Fallback: some dealers encode the category directly in SourceDescription
+        // (no group configured), so also check the description text itself.
+        const groupId     = deal["SourceDescriptionGroupId"];
+        const groupName   = groupId ? sourceGroups.get(groupId) : undefined;
+        const descLower   = (deal["SourceDescription"] ?? "").toLowerCase();
+
+        const isReferralByGroup = groupName
           ? referralGroups.some(r => groupName.includes(r))
           : false;
+        const isReferralByDesc  = !groupId
+          ? referralGroups.some(r => descLower.includes(r))
+          : false;
 
+        const isReferral = isReferralByGroup || isReferralByDesc;
         if (!isReferral) continue;
         result.referralsDetected++;
 
-        const referrerName = extractPersonName(deal["SourceDescription"] ?? "");
+        // When referral is detected via description keyword (no group), the description
+        // IS the category label — there's no referrer name in it.
+        const referrerName = isReferralByGroup
+          ? extractPersonName(deal["SourceDescription"] ?? "")
+          : null;
         const buyerCid     = deal["BuyerCustomerId"];
         const buyerName    = buyerCid ? (customers.get(buyerCid)?.name ?? "Unknown Customer") : "Unknown Customer";
         const buyerPhone   = buyerCid ? customerPhones.get(buyerCid)?.value : undefined;
@@ -345,7 +359,8 @@ export async function pollDriveCentricSftp(
               `Buyer: ${buyerName} (${buyerPhone ?? "no phone"}).`,
               `Source group: "${groupName ?? "unknown"}".`,
               `Source description: "${deal["SourceDescription"] ?? ""}".`,
-              referrerName ? `Attempted name match: "${referrerName}".` : "No name found in description.",
+              isReferralByDesc ? "Detected via description keyword (no source group configured)." : "",
+              referrerName ? `Attempted name match: "${referrerName}".` : "No referrer name in description.",
             ].join(" "),
             status: "pending",
           });
