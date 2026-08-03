@@ -100,11 +100,16 @@ async function downloadText(
  * Find the latest export batch on the SFTP server.
  * Returns paths to deal, customer, customercontact, and sourcedescriptiongroup CSVs
  * that share the same {storeNum}_{timestamp} batch identifier.
+ *
+ * storeNumFilter: when set, only processes files whose store number prefix matches.
+ * This prevents wrong-store files from being processed if DriveCentric accidentally
+ * deposits multiple stores' files into the same SFTP directory.
  */
 async function findLatestBatch(
   sftp: InstanceType<typeof SftpClient>,
   remotePath: string,
-): Promise<{ deal: string; customer: string | null; contact: string | null; sourceGroup: string } | null> {
+  storeNumFilter?: string,
+): Promise<{ deal: string; customer: string | null; contact: string | null; sourceGroup: string; storeNum: string } | null> {
   type SftpEntry = { name: string; type: string };
   const entries = await sftp.list(remotePath) as SftpEntry[];
   const csvFiles = entries
@@ -112,17 +117,32 @@ async function findLatestBatch(
     .map(f => f.name);
 
   // Sort deal files descending (timestamp is the last segment so lexicographic = chronological)
+  // If storeNumFilter is configured, discard files from any other store number.
   const dealFiles = csvFiles
-    .filter(n => n.includes("_v2_deal_"))
+    .filter(n => {
+      if (!n.includes("_v2_deal_")) return false;
+      if (storeNumFilter && !n.startsWith(`${storeNumFilter}_`)) return false;
+      return true;
+    })
     .sort()
     .reverse();
 
-  if (dealFiles.length === 0) return null;
+  if (dealFiles.length === 0) {
+    if (storeNumFilter) {
+      logger.warn({ remotePath, storeNumFilter }, "[dc-sftp] No deal files found for expected store number — directory may contain wrong-store files");
+    }
+    return null;
+  }
 
   const latestDeal = dealFiles[0];
   const nameParts  = latestDeal.replace(".csv", "").split("_");
   const timestamp  = nameParts[nameParts.length - 1];
   const storeNum   = nameParts[0];
+
+  if (storeNumFilter && storeNum !== storeNumFilter) {
+    logger.error({ storeNum, storeNumFilter, latestDeal }, "[dc-sftp] Store number mismatch — skipping batch to prevent wrong-practice attribution");
+    return null;
+  }
 
   const find = (table: string) => {
     const hit = csvFiles.find(
@@ -149,6 +169,7 @@ async function findLatestBatch(
     customer:    customerPath,
     contact:     contactPath,
     sourceGroup: sourceGroupPath,
+    storeNum,
   };
 }
 
@@ -200,13 +221,17 @@ export async function pollDriveCentricSftp(
 
   const cfg = (practice.integration_config ?? {}) as Record<string, string>;
 
-  const sftpHost     = cfg["sftp_host"] ?? "";
-  const sftpPort     = parseInt(cfg["sftp_port"] ?? "22", 10);
-  const sftpUsername = cfg["sftp_username"] ?? "";
-  const sftpPassword = cfg["sftp_password"];
-  const sftpKey      = cfg["sftp_private_key"];
-  const sftpPath     = cfg["sftp_path"] ?? "/";
-  const groupsRaw    = cfg["referral_source_groups"] ?? "Customer Referral,Referral,Friend,Word of Mouth";
+  const sftpHost       = cfg["sftp_host"] ?? "";
+  const sftpPort       = parseInt(cfg["sftp_port"] ?? "22", 10);
+  const sftpUsername   = cfg["sftp_username"] ?? "";
+  const sftpPassword   = cfg["sftp_password"];
+  const sftpKey        = cfg["sftp_private_key"];
+  const sftpPath       = cfg["sftp_path"] ?? "/";
+  // sftp_store_num: expected DriveCentric store number (e.g. "3364" for Carlock, "3367" for Volvo).
+  // When set, only files whose filename prefix matches are processed — prevents wrong-store
+  // attribution if DriveCentric accidentally deposits multiple stores' files in one directory.
+  const storeNumFilter = cfg["sftp_store_num"] ?? undefined;
+  const groupsRaw      = cfg["referral_source_groups"] ?? "Customer Referral,Referral,Friend,Word of Mouth";
   const referralGroups = groupsRaw.split(",").map((s: string) => s.trim().toLowerCase()).filter(Boolean);
 
   if (!sftpHost || !sftpUsername) {
@@ -222,7 +247,7 @@ export async function pollDriveCentricSftp(
       password: sftpPassword, privateKey: sftpKey,
     });
 
-    const batch = await findLatestBatch(sftp, sftpPath);
+    const batch = await findLatestBatch(sftp, sftpPath, storeNumFilter);
     if (!batch) {
       result.errors.push("No export files found on SFTP server");
       return result;
