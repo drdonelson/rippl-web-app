@@ -1,7 +1,7 @@
 import { db } from "@workspace/db";
 import { referralEventsTable, referrersTable, officesTable, rewardClaimsTable, practicesTable, adminTasksTable } from "@workspace/db/schema";
 import type { Practice } from "@workspace/db/schema";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { sendRewardNotification } from "./notifications";
 import { calculateTier } from "../lib/tierUtils";
@@ -366,7 +366,9 @@ async function runOnboardingSweep(
         continue;
       }
 
-      // Check our referrers table by phone — skip if opted out, already sent, or already scheduled
+      // Check our referrers table by phone — normalize to last 10 digits to handle format differences
+      // (DB may store "(615) 555-1234" while OD API returns "6155551234")
+      const phoneLast10 = phone.replace(/\D/g, "").slice(-10);
       const existing = await db
         .select({
           onboarding_sms_sent:         referrersTable.onboarding_sms_sent,
@@ -375,7 +377,7 @@ async function runOnboardingSweep(
           sms_opt_out_permanent:       referrersTable.sms_opt_out_permanent,
         })
         .from(referrersTable)
-        .where(eq(referrersTable.phone, phone));
+        .where(sql`RIGHT(REGEXP_REPLACE(${referrersTable.phone}, '[^0-9]', '', 'g'), 10) = ${phoneLast10}`);
 
       if (existing.length > 0 && existing[0].sms_opt_out_permanent) {
         logger.info({ patNum, officeId }, "[onboarding-sweep] Skipping onboarding — patient permanently opted out (No SMS Ever)");
@@ -387,13 +389,23 @@ async function runOnboardingSweep(
         await db
           .update(referrersTable)
           .set({ sms_opt_out: false })
-          .where(eq(referrersTable.phone, phone));
+          .where(sql`RIGHT(REGEXP_REPLACE(${referrersTable.phone}, '[^0-9]', '', 'g'), 10) = ${phoneLast10}`);
         continue;
       }
 
-      if (existing.length > 0 && (existing[0].onboarding_sms_sent || existing[0].onboarding_sms_scheduled_at)) {
-        logger.debug({ patNum, officeId }, "[onboarding-sweep] Already onboarded or scheduled — skipping");
-        continue;
+      if (existing.length > 0) {
+        const rec = existing[0];
+        if (rec.onboarding_sms_sent) {
+          logger.debug({ patNum, officeId }, "[onboarding-sweep] Already onboarded — skipping");
+          continue;
+        }
+        if (rec.onboarding_sms_scheduled_at && new Date(rec.onboarding_sms_scheduled_at).getTime() > Date.now()) {
+          // setTimeout is still alive — nothing to do
+          logger.debug({ patNum, officeId }, "[onboarding-sweep] SMS scheduled for future — skipping");
+          continue;
+        }
+        // scheduled_at is in the past (server restarted) or not set — fall through to scheduleOnboardingSms
+        // which will detect the missed window and send immediately
       }
 
       const fullName = `${patient.FName ?? ""} ${patient.LName ?? ""}`.trim() || "Patient";

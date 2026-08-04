@@ -2,7 +2,7 @@ import twilio from "twilio";
 import { SMS_ENABLED } from "../lib/smsEnabled";
 import { db } from "@workspace/db";
 import { referrersTable } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
 
 const TWILIO_ACCOUNT_SID  = process.env.TWILIO_ACCOUNT_SID;
@@ -88,19 +88,53 @@ export async function scheduleOnboardingSms(params: {
   // Normalise phone for lookup and Twilio
   const phoneRaw = newPatientPhone.trim();
   const phone = toE164(phoneRaw) || phoneRaw;
+  // Normalize to last 10 digits so (615) 555-1234 matches +16155551234
+  const phoneLast10 = phone.replace(/\D/g, "").slice(-10);
 
-  // Check if this patient is already a referrer (by phone)
+  // Check if this patient is already a referrer — match on last 10 digits to handle format differences
   const existing = await db
     .select()
     .from(referrersTable)
-    .where(eq(referrersTable.phone, phone));
+    .where(sql`RIGHT(REGEXP_REPLACE(${referrersTable.phone}, '[^0-9]', '', 'g'), 10) = ${phoneLast10}`);
 
   if (existing.length > 0) {
     const referrer = existing[0];
-    if (referrer.onboarding_sms_sent || referrer.onboarding_sms_scheduled_at) {
-      logger.info({ phone, referrerId: referrer.id }, "Onboarding SMS already sent or scheduled — skipping");
+
+    if (referrer.onboarding_sms_sent) {
+      logger.info({ phone, referrerId: referrer.id }, "Onboarding SMS already sent — skipping");
       return { success: true, skipped: true, referrerId: referrer.id, referralCode: referrer.referral_code };
     }
+
+    if (referrer.onboarding_sms_scheduled_at) {
+      const scheduledMs = new Date(referrer.onboarding_sms_scheduled_at).getTime();
+      if (scheduledMs > Date.now()) {
+        // setTimeout is still alive — nothing to do
+        logger.info({ phone, referrerId: referrer.id }, "Onboarding SMS scheduled for future — skipping");
+        return { success: true, skipped: true, referrerId: referrer.id, referralCode: referrer.referral_code };
+      }
+      // scheduled_at is in the past but SMS never sent — server restarted and wiped the setTimeout
+      if (!referrer.sms_opt_out_permanent && !referrer.sms_opt_out) {
+        const firstName = newPatientName.trim().split(/\s+/)[0] ?? "there";
+        logger.info(
+          { phone, referrerId: referrer.id, scheduledAt: referrer.onboarding_sms_scheduled_at },
+          "Onboarding SMS missed after server restart — sending now"
+        );
+        const smsResult = await sendOnboardingSmsNow(firstName, phone, referrer.referral_code);
+        if (smsResult.success) {
+          await db
+            .update(referrersTable)
+            .set({ onboarding_sms_sent: true, onboarding_sms_sent_at: new Date() })
+            .where(eq(referrersTable.id, referrer.id));
+          logger.info({ referrerId: referrer.id, smsSid: smsResult.smsSid }, "Missed onboarding SMS delivered and flag set");
+        } else {
+          logger.error({ referrerId: referrer.id, error: smsResult.error }, "Missed onboarding SMS failed at recovery send");
+        }
+        return { success: smsResult.success, referrerId: referrer.id, referralCode: referrer.referral_code, smsSid: smsResult.smsSid, error: smsResult.error };
+      }
+      // Opted out — treat as already handled
+      return { success: true, skipped: true, referrerId: referrer.id, referralCode: referrer.referral_code };
+    }
+
     // Referrer exists but SMS not yet sent or scheduled — schedule it
     scheduleDelayedSms(referrer.id, newPatientName, phone, referrer.referral_code);
     return { success: true, referrerId: referrer.id, referralCode: referrer.referral_code };
