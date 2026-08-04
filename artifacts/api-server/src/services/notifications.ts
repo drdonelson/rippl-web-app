@@ -113,7 +113,7 @@ export async function sendRewardNotification(
     try {
       await sendEmail({
         to:      referrerEmail,
-        from:    { email: fromEmail.email, name: `${officeName} via Rippl` },
+        from:    { email: fromEmail.email, name: fromEmail.name },
         subject: copy.email_subject,
         html:    buildEmailHtml(referrerName, newPatientName, claimUrl, officeName, rewardValue, copy.referral_trigger),
       });
