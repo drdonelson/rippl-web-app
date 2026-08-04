@@ -11,6 +11,7 @@ const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
 
 const REFERRAL_BASE_URL = (process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://www.joinrippl.com").replace(/\/$/, "");
 const ONBOARDING_DELAY_MS = 2 * 60 * 60 * 1000; // 2 hours
+const RECOVERY_WINDOW_DAYS = 3; // only recover missed SMS scheduled within last 3 days
 
 function getTwilioClient() {
   if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
@@ -112,7 +113,22 @@ export async function scheduleOnboardingSms(params: {
         logger.info({ phone, referrerId: referrer.id }, "Onboarding SMS scheduled for future — skipping");
         return { success: true, skipped: true, referrerId: referrer.id, referralCode: referrer.referral_code };
       }
-      // scheduled_at is in the past but SMS never sent — server restarted and wiped the setTimeout
+
+      const ageDays = (Date.now() - scheduledMs) / 86_400_000;
+      if (ageDays > RECOVERY_WINDOW_DAYS) {
+        // Visit was too long ago — patient won't recall it; close out without sending
+        logger.info(
+          { phone, referrerId: referrer.id, ageDays: Math.round(ageDays) },
+          `Onboarding SMS recovery skipped — scheduled >${RECOVERY_WINDOW_DAYS} days ago, closing out`
+        );
+        await db
+          .update(referrersTable)
+          .set({ onboarding_sms_sent: true, onboarding_sms_sent_at: new Date() })
+          .where(eq(referrersTable.id, referrer.id));
+        return { success: true, skipped: true, referrerId: referrer.id, referralCode: referrer.referral_code };
+      }
+
+      // Within recovery window — scheduled_at is in the past but SMS never sent (server restart wiped setTimeout)
       if (!referrer.sms_opt_out_permanent && !referrer.sms_opt_out) {
         const firstName = newPatientName.trim().split(/\s+/)[0] ?? "there";
         logger.info(
