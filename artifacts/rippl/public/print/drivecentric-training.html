@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rippl — DriveCentric Referral Logging Guide</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,900;1,9..144,900&family=DM+Sans:wght@400;500;600;700;900&family=Geist+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #f3f4f6;
+      font-family: 'DM Sans', sans-serif;
+      color: #0a1f35;
+      padding: 48px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 40px;
+    }
+
+    /* ── Shared card shell ── */
+    .slide {
+      background: #fff;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 860px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      page-break-inside: avoid;
+    }
+
+    /* ── Title slide ── */
+    .slide-title {
+      background: #0a1f35;
+      color: #fff;
+      padding: 56px 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .slide-title .eyebrow {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #E0622A;
+    }
+    .slide-title h1 {
+      font-family: 'Fraunces', serif;
+      font-size: 40px;
+      font-weight: 900;
+      line-height: 1.15;
+    }
+    .slide-title p {
+      font-size: 16px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    /* ── Step slides ── */
+    .slide-header {
+      background: #E0622A;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .step-num {
+      background: #fff;
+      color: #E0622A;
+      font-weight: 900;
+      font-size: 18px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .slide-header h2 {
+      color: #fff;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .slide-body {
+      padding: 36px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* ── DriveCentric form mockup ── */
+    .dc-form {
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 28px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .dc-form-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 12px;
+    }
+    .dc-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .dc-field label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .dc-field .dc-input {
+      background: #fff;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 15px;
+      color: #0a1f35;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .dc-field .dc-input.highlight {
+      border-color: #E0622A;
+      box-shadow: 0 0 0 3px rgba(224,98,42,.15);
+    }
+    .dc-field .dc-input.filled {
+      color: #0a1f35;
+      font-weight: 600;
+    }
+    .dc-field .dc-input.placeholder {
+      color: #94a3b8;
+    }
+    .dc-field .hint {
+      font-size: 12px;
+      color: #E0622A;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dc-field .hint::before { content: "↑"; }
+
+    /* ── Two-column option layouts ── */
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .option-card {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .option-card.primary { border-color: #E0622A; background: #fff8f5; }
+    .option-card.secondary { border-color: #cbd5e1; background: #f8fafc; }
+    .option-card .badge {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 100px;
+      align-self: flex-start;
+    }
+    .option-card.primary .badge { background: #E0622A; color: #fff; }
+    .option-card.secondary .badge { background: #e2e8f0; color: #64748b; }
+    .option-card h3 { font-size: 17px; font-weight: 700; }
+    .option-card p { font-size: 14px; color: #64748b; line-height: 1.5; }
+    .option-card .code-example {
+      font-family: 'Geist Mono', monospace;
+      font-size: 20px;
+      font-weight: 600;
+      color: #E0622A;
+      background: #fff;
+      border: 1.5px dashed #E0622A;
+      border-radius: 8px;
+      padding: 10px 16px;
+      text-align: center;
+    }
+    .option-card .name-example {
+      font-size: 18px;
+      font-weight: 600;
+      color: #0a1f35;
+      background: #fff;
+      border: 1.5px dashed #94a3b8;
+      border-radius: 8px;
+      padding: 10px 16px;
+      text-align: center;
+    }
+
+    /* ── Info callout ── */
+    .callout {
+      background: #fff8f5;
+      border-left: 4px solid #E0622A;
+      border-radius: 0 8px 8px 0;
+      padding: 16px 20px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #0a1f35;
+    }
+    .callout strong { color: #E0622A; }
+
+    /* ── What happens next ── */
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .timeline-item {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      position: relative;
+    }
+    .timeline-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 18px;
+      top: 40px;
+      bottom: -16px;
+      width: 2px;
+      background: #e2e8f0;
+    }
+    .timeline-dot {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #E0622A;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .timeline-content {
+      padding-top: 6px;
+      padding-bottom: 24px;
+    }
+    .timeline-content h4 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .timeline-content p { font-size: 14px; color: #64748b; line-height: 1.5; }
+
+    /* ── FAQ ── */
+    .faq-list { display: flex; flex-direction: column; gap: 16px; }
+    .faq-item { border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 18px 20px; }
+    .faq-item .q { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+    .faq-item .a { font-size: 14px; color: #475569; line-height: 1.55; }
+
+    /* ── Cheat sheet ── */
+    .cheatsheet {
+      background: #0a1f35;
+      color: #fff;
+      border-radius: 12px;
+      padding: 28px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .cheatsheet h3 { font-size: 14px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #E0622A; }
+    .cheat-row { display: flex; gap: 12px; align-items: flex-start; font-size: 15px; }
+    .cheat-row .check { color: #E0622A; font-weight: 900; flex-shrink: 0; }
+
+    /* ── Print ── */
+    @media print {
+      body { background: #fff; padding: 0; }
+      .slide { box-shadow: none; border: 1px solid #e2e8f0; margin-bottom: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TITLE -->
+  <div class="slide slide-title">
+    <div class="eyebrow">Staff Training Guide</div>
+    <h1>Logging Referrals<br>in DriveCentric</h1>
+    <p>How to make sure every referral gets credited — and your customers get their $100.</p>
+  </div>
+
+  <!-- SLIDE 1: When to log a referral -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="step-num">1</div>
+      <h2>Know when a referral is happening</h2>
+    </div>
+    <div class="slide-body">
+      <p style="font-size:15px; line-height:1.6; color:#475569;">
+        A referral happens when a customer buys a vehicle <strong>because a friend, family member, or past customer sent them your way.</strong>
+        At some point during the deal — at the desk, on the phone, or when they first walk in — the buyer will mention who referred them.
+      </p>
+      <div class="callout">
+        <strong>Your job:</strong> Catch that moment. Ask every customer: <em>"Did someone send you our way today?"</em>
+        If yes, note the referrer's name or Rippl code before moving on.
+      </div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot">1</div>
+          <div class="timeline-content">
+            <h4>Buyer walks in (or calls)</h4>
+            <p>Ask: "Did someone refer you to us?" — even if they don't bring it up first.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">2</div>
+          <div class="timeline-content">
+            <h4>Get the referrer's name or code</h4>
+            <p>Either their name ("John Smith sent me") or their Rippl code from their phone or referral card.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">3</div>
+          <div class="timeline-content">
+            <h4>Log it in DriveCentric when creating the deal</h4>
+            <p>Two fields to fill — takes 10 seconds. Shown on the next page.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: The two fields -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="step-num">2</div>
+      <h2>Fill in two fields on the deal</h2>
+    </div>
+    <div class="slide-body">
+      <p style="font-size:15px; line-height:1.6; color:#475569;">
+        On the deal record in DriveCentric, find the <strong>Source</strong> section. Fill in both fields below.
+      </p>
+      <div class="dc-form">
+        <div class="dc-form-title">DriveCentric — Deal Source Section</div>
+
+        <div class="dc-field">
+          <label>Source Group</label>
+          <div class="dc-input filled highlight">Customer Referral</div>
+          <div class="hint">Always select "Customer Referral" from the dropdown</div>
+        </div>
+
+        <div class="dc-field">
+          <label>Source Description</label>
+          <div class="dc-input filled highlight">MIKEX7K2 &nbsp;—or—&nbsp; John Smith</div>
+          <div class="hint">Enter the referrer's Rippl code OR their full name</div>
+        </div>
+      </div>
+      <div class="callout">
+        <strong>That's the entire process.</strong> Once the deal is marked Delivered, Rippl automatically detects it overnight, matches the referrer, and sends them their $100 reward — no further action needed from you.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: Code vs Name -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="step-num">3</div>
+      <h2>Code or name — either works</h2>
+    </div>
+    <div class="slide-body">
+      <div class="options-grid">
+        <div class="option-card primary">
+          <div class="badge">Preferred</div>
+          <h3>Rippl Referral Code</h3>
+          <p>Customer shows you their code from the Rippl text/app, or hands you their referral card.</p>
+          <div class="code-example">MIKEX7K2</div>
+          <p style="font-size:13px; color:#94a3b8;">Type the code exactly as shown. Rippl matches it instantly — no ambiguity.</p>
+        </div>
+        <div class="option-card secondary">
+          <div class="badge">Fallback</div>
+          <h3>Referrer's Full Name</h3>
+          <p>Buyer says "Mike Johnson sent me" but doesn't have a code.</p>
+          <div class="name-example">Mike Johnson</div>
+          <p style="font-size:13px; color:#94a3b8;">Type first and last name. Rippl will attempt to match it. Exact spelling helps.</p>
+        </div>
+      </div>
+      <div class="callout">
+        <strong>Tip:</strong> Encourage referred customers to have their referral code ready before they arrive. It's in the text message they received when they enrolled in Rippl, or on their referral card.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: What Rippl does next -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="step-num">4</div>
+      <h2>What happens after the deal is delivered</h2>
+    </div>
+    <div class="slide-body">
+      <p style="font-size:15px; line-height:1.6; color:#475569;">
+        You don't have to do anything else. Once the deal is marked <strong>Delivered</strong> in DriveCentric, Rippl takes over automatically.
+      </p>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot">✓</div>
+          <div class="timeline-content">
+            <h4>Overnight: Rippl scans delivered deals</h4>
+            <p>Every morning, Rippl pulls the previous day's exported deals and looks for "Customer Referral" source group entries.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">✓</div>
+          <div class="timeline-content">
+            <h4>Referrer is matched and notified</h4>
+            <p>Rippl finds the referrer by their code or name and sends them a text and email: "Great news — your friend just bought a car! Your $100 reward is ready."</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">✓</div>
+          <div class="timeline-content">
+            <h4>Referrer claims their $100 Visa gift card</h4>
+            <p>They click the link in the text, choose their reward, and it's delivered digitally. No action needed from your team.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: FAQ -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="step-num">5</div>
+      <h2>Common questions</h2>
+    </div>
+    <div class="slide-body">
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="q">The buyer doesn't know their referrer's code or full name — just a first name. What do I enter?</div>
+          <div class="a">Enter whatever you have (e.g., "Mike"). Our team will follow up to manually match the referral. It won't be lost — it goes to a review queue. Getting the full name or code is always better, so ask the buyer to check their texts from the person who referred them.</div>
+        </div>
+        <div class="faq-item">
+          <div class="q">What if I forget to log it and the deal is already delivered?</div>
+          <div class="a">Go back into the deal and update the Source Group and Source Description fields. Rippl processes the export daily — as long as the fields are filled in before the next morning's sync, the referral will still be credited.</div>
+        </div>
+        <div class="faq-item">
+          <div class="q">What if the buyer says "I found you on Google" but then mentions a friend referred them too?</div>
+          <div class="a">Log it as a referral. The referral source takes priority — your customer is owed their reward, and it's your team's relationship that made the sale happen.</div>
+        </div>
+        <div class="faq-item">
+          <div class="q">Does the Source Group dropdown already have "Customer Referral" as an option?</div>
+          <div class="a">This depends on your DriveCentric setup. If you don't see it, contact your DriveCentric administrator — they can add it. It only needs to be created once.</div>
+        </div>
+        <div class="faq-item">
+          <div class="q">What does the referrer actually receive?</div>
+          <div class="a">A $100 Visa gift card delivered by email and text — digitally, no physical card needed. They can use it anywhere Visa is accepted.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHEAT SHEET -->
+  <div class="slide">
+    <div class="slide-header" style="background:#0a1f35;">
+      <h2 style="color:#fff;">Quick Reference — Post This at Your Desk</h2>
+    </div>
+    <div class="slide-body" style="padding:0;">
+      <div class="cheatsheet" style="border-radius:0 0 16px 16px;">
+        <h3>When a buyer mentions a referral:</h3>
+        <div class="cheat-row"><div class="check">1</div><div>Ask: "Do you have your referrer's Rippl code, or just their name?"</div></div>
+        <div class="cheat-row"><div class="check">2</div><div>On the deal in DriveCentric → Source Group → select <strong>"Customer Referral"</strong></div></div>
+        <div class="cheat-row"><div class="check">3</div><div>Source Description → type the <strong>code</strong> (e.g., MIKEX7K2) or <strong>full name</strong> (e.g., Mike Johnson)</div></div>
+        <div class="cheat-row"><div class="check">4</div><div>Mark deal Delivered as normal — Rippl handles the rest overnight</div></div>
+        <div style="border-top: 1px solid rgba(255,255,255,.1); padding-top:16px; font-size:13px; color:#94a3b8;">
+          Questions? Contact your Rippl admin or email <strong style="color:#E0622A;">support@joinrippl.com</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
