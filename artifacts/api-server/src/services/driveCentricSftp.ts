@@ -24,7 +24,7 @@ import {
 import { eq, and } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { sendRewardNotification } from "./notifications";
-import { matchReferrerByName } from "../lib/matchReferrer";
+import { matchReferrerByName, matchReferrerByCode } from "../lib/matchReferrer";
 import { calculateTier } from "../lib/tierUtils";
 // @ts-ignore — ssh2-sftp-client ships CJS; ssh2 is externalised in esbuild config
 import SftpClient from "ssh2-sftp-client";
@@ -336,18 +336,28 @@ export async function pollDriveCentricSftp(
         if (!isReferral) continue;
         result.referralsDetected++;
 
-        // When referral is detected via description keyword (no group), the description
-        // IS the category label — there's no referrer name in it.
-        const referrerName = isReferralByGroup
-          ? extractPersonName(deal["SourceDescription"] ?? "")
-          : null;
-        const buyerCid     = deal["BuyerCustomerId"];
-        const buyerName    = buyerCid ? (customers.get(buyerCid)?.name ?? "Unknown Customer") : "Unknown Customer";
-        const buyerPhone   = buyerCid ? customerPhones.get(buyerCid)?.value : undefined;
+        const rawDesc  = deal["SourceDescription"] ?? "";
+        const buyerCid = deal["BuyerCustomerId"];
+        const buyerName  = buyerCid ? (customers.get(buyerCid)?.name ?? "Unknown Customer") : "Unknown Customer";
+        const buyerPhone = buyerCid ? customerPhones.get(buyerCid)?.value : undefined;
 
-        const matchResult = referrerName
-          ? await matchReferrerByName(referrerName, practiceId, buyerPhone)
-          : null;
+        // Three-tier attribution (only attempted when group-based detection fired,
+        // since description-only deals have no referrer info in the description).
+        //   Tier 1: referral code exact lookup  (salesperson entered "MIKEX7K2")
+        //   Tier 2: person name fuzzy match     (salesperson entered "John Smith")
+        //   Tier 3: admin task for manual resolution
+        let matchResult = null;
+        let referrerName: string | null = null;
+
+        if (isReferralByGroup) {
+          matchResult = await matchReferrerByCode(rawDesc, practiceId);
+          if (!matchResult) {
+            referrerName = extractPersonName(rawDesc);
+            if (referrerName) {
+              matchResult = await matchReferrerByName(referrerName, practiceId, buyerPhone);
+            }
+          }
+        }
 
         if (!matchResult) {
           result.unmatched++;
@@ -358,10 +368,10 @@ export async function pollDriveCentricSftp(
               `DriveCentric SFTP — deal ${dealId}.`,
               `Buyer: ${buyerName} (${buyerPhone ?? "no phone"}).`,
               `Source group: "${groupName ?? "unknown"}".`,
-              `Source description: "${deal["SourceDescription"] ?? ""}".`,
+              `Source description: "${rawDesc}".`,
               isReferralByDesc ? "Detected via description keyword (no source group configured)." : "",
-              referrerName ? `Attempted name match: "${referrerName}".` : "No referrer name in description.",
-            ].join(" "),
+              referrerName ? `Attempted name match: "${referrerName}".` : "No referrer name or code in description.",
+            ].filter(Boolean).join(" "),
             status: "pending",
           });
           logger.info({ dealId, practiceId, referrerName }, "[dc-sftp] Unmatched referral — admin task created");
