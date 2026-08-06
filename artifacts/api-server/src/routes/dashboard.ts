@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { referralEventsTable, referrersTable, rewardClaimsTable, practicesTable } from "@workspace/db/schema";
 import { eq, sql, and, inArray, notInArray, or, isNull, ne } from "drizzle-orm";
+import { getAccountBalance } from "../services/tango";
 
 const router: IRouter = Router();
 
@@ -134,6 +135,13 @@ router.get("/", async (req, res) => {
         .limit(10),
     ]);
 
+    // Tango balance — super_admin only, non-blocking
+    let tangoBalance: number | null = null;
+    if (user.role === "super_admin") {
+      const bal = await getAccountBalance().catch(() => null);
+      tangoBalance = bal?.balance ?? null;
+    }
+
     res.json({
       total_referrals: totalReferrals,
       exams_completed: examsCompleted,
@@ -142,6 +150,7 @@ router.get("/", async (req, res) => {
       top_referrers: topReferrers,
       recent_events: recentEvents,
       vertical: practiceVertical,
+      tango_balance: tangoBalance,
     });
   } catch (err) {
     req.log.error({ err, officeId }, "[dashboard] DB query failed");

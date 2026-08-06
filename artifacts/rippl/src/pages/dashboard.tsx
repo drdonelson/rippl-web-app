@@ -28,6 +28,7 @@ interface DashboardStats {
   rewards_issued: number;
   active_referrers: number;
   vertical?: string | null;
+  tango_balance?: number | null;
   top_referrers: { id: string; name: string; total_referrals: number; total_rewards_issued: number }[];
   recent_events: {
     id: string;
@@ -245,6 +246,37 @@ export default function Dashboard() {
           </Link>
         ))}
       </div>
+
+      {/* Tango gift card balance — super_admin only */}
+      {profile?.role === "super_admin" && stats.tango_balance != null && (
+        <div className={`flex items-center gap-5 rounded-2xl px-6 py-5 border ${
+          stats.tango_balance < 500
+            ? "bg-destructive/10 border-destructive/30"
+            : "bg-card/50 border-border"
+        }`}>
+          <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border ${
+            stats.tango_balance < 500
+              ? "bg-destructive/10 border-destructive/20"
+              : "bg-primary/10 border-primary/20"
+          }`}>
+            <Gift className={`w-5 h-5 ${stats.tango_balance < 500 ? "text-destructive" : "text-primary"}`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-semibold ${stats.tango_balance < 500 ? "text-destructive" : "text-muted-foreground"}`}>
+              Tango Gift Card Balance {stats.tango_balance < 500 ? "— Low, top up soon" : ""}
+            </p>
+            <p className="text-xs text-muted-foreground/70 mt-0.5">
+              Funds drawn from this account when patients claim gift card rewards. Top up at app.tangocard.com.
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className={`text-3xl font-black ${stats.tango_balance < 500 ? "text-destructive" : "text-primary"}`} style={{ fontFamily: "Georgia, serif" }}>
+              ${stats.tango_balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+            <p className="text-xs text-muted-foreground">available</p>
+          </div>
+        </div>
+      )}
 
       {/* Staff Incentive Pool balance — shown when pool is enabled */}
       {poolDisplay?.config?.enabled && (
