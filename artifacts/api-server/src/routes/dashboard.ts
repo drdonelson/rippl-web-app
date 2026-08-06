@@ -77,15 +77,12 @@ router.get("/", async (req, res) => {
         .from(referralEventsTable)
         .where(examCondition),
 
-      // 3. Rewards issued (reward_claims is the active table; rewards is legacy/empty)
-      bothFilters
-        ? db.select({ count: sql<number>`count(*)::int` })
-            .from(rewardClaimsTable)
-            .leftJoin(referralEventsTable, eq(rewardClaimsTable.referral_event_id, referralEventsTable.id))
-            .where(and(bothFilters, ne(rewardClaimsTable.status, "voided")))
-        : db.select({ count: sql<number>`count(*)::int` })
-            .from(rewardClaimsTable)
-            .where(ne(rewardClaimsTable.status, "voided")),
+      // 3. Rewards issued — events where patient actually claimed (matches "Reward Sent" tab in Events)
+      db.select({ count: sql<number>`count(*)::int` })
+        .from(referralEventsTable)
+        .where(bothFilters
+          ? and(bothFilters, eq(referralEventsTable.status, "Reward Sent"))
+          : eq(referralEventsTable.status, "Reward Sent")),
 
       // 4. Active referrers (distinct)
       db.select({ count: sql<number>`count(distinct ${referralEventsTable.referrer_id})::int` })
