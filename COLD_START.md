@@ -1,6 +1,6 @@
 # Rippl — Cold Start Document
 
-**Version:** 1.7.0  
+**Version:** 1.8.0  
 **Classification:** Agent Orientation & Operating Doctrine  
 **Scope:** All agents and sessions operating on the Rippl codebase  
 **Authority:** Dr. David Donelson, Principal — Hallmark Dental / david@hallmarkdds.com
@@ -160,7 +160,7 @@ Rippl is a **multi-vertical patient/customer referral rewards platform**. It:
 **Live URL:** https://www.joinrippl.com  
 **GitHub:** https://github.com/drdonelson/rippl-web-app  
 **Hosting:** Render.com (auto-deploys from GitHub on every push)  
-**Current version:** v1.6.0 (July 2026)
+**Current version:** v1.8.0 (August 2026)
 
 ### The Business Model
 
@@ -174,16 +174,19 @@ Rippl is a **multi-vertical patient/customer referral rewards platform**. It:
 | Practice | Vertical | Status | Key Contact |
 |----------|---------|--------|-------------|
 | Hallmark Dental (3 offices) | Dental | Live | Dr. David Donelson |
-| Carlock Automotive | Automotive | Live — awaiting first SFTP file | Payden Sewell (CMO) |
-| Volvo of Cool Springs | Automotive | Onboarding — awaiting Darren SFTP config | Payden Sewell (CMO) |
-| Peydan's salons | Salon | Pre-sales — channel partner agreement pending | Payden Sewell |
+| Carlock Automotive | Automotive | Live — SFTP active, 241 deals scanned 2026-08-07 | Peydan (CMO) |
+| Volvo of Cool Springs | Automotive | Live — SFTP configured; awaiting DriveCentric source group setup + first file | Peydan (CMO) |
+| Peydan's salons | Salon | Pre-sales — channel partner agreement pending | Peydan |
 
-**Cox Automotive org structure:** Payden Sewell is CMO of Carlock, which owns Volvo of Cool Springs. Each dealership is a separate "rooftop/door" with its own DriveCentric account and CRM ID under the Cox Automotive umbrella. Darren Sabino is a DriveCentric employee (NOT Carlock staff) who configures the SFTP export on the DriveCentric side for each rooftop. **Two separate SFTP setups are correct and intentional — one per rooftop/CRM ID.**
+**Cox Automotive org structure:** Peydan (CMO) is the business contact for Carlock Automotive group, which owns Volvo of Cool Springs. Each dealership is a separate "rooftop/door" with its own DriveCentric account and CRM ID under the Cox Automotive umbrella. Darren Sabino is a DriveCentric employee (NOT Carlock staff) who configures the SFTP export on the DriveCentric side for each rooftop. **Two separate SFTP setups are correct and intentional — one per rooftop/CRM ID.**
+
+**Peydan is NOT the salon channel partner** — that is a separate future business arrangement. Peydan is the CMO at the Carlock/Volvo dealership group. All automotive client communication goes through Peydan.
 
 **Naming reference (do not confuse these):**
 - SFTP directory on droplet: `/home/drivecentric/carlock/` and `/home/drivecentric/volvo-cool-springs/` — set by Darren, cannot change
 - Practice slugs in DB: `carlock` and `volvo-of-cool-springs` — used in enrollment URLs (`/enroll/carlock`, `/enroll/volvo-of-cool-springs`)
 - Enrollment URLs: `https://rippl.onrender.com/enroll/carlock` and `https://rippl.onrender.com/enroll/volvo-of-cool-springs`
+- White-label name: **"Carlock Rewards"** — `white_label_name` set on Volvo practice (`d9ad496a-a8e0-4075-9f19-163fee9fe69d`) and Carlock practice; all patient-facing Volvo materials say "Carlock Rewards", not "Rippl"
 
 ---
 
@@ -394,6 +397,47 @@ The planned DriveCentric REST API integration required API credentials that Cox 
 
 ---
 
+### v1.8.0 (August 2026) — DriveCentric Attribution Overhaul + Carlock Rewards White-Label
+
+**Why this was built:**
+
+First real Carlock SFTP file arrived 2026-08-07 — 241 deals scanned, 2 referrals detected, but both failed to create `admin_task` records with `null value in column referrer_id violates not-null constraint`. Simultaneously, analysis of Darren Sabino's sample data revealed that many DriveCentric stores put the category label ("Customer Referral") directly in `SourceDescription` with no `SourceDescriptionGroupId` — the prior code would have missed all of those referrals. The attribution logic was completely rebuilt, the DB constraint fixed, and the Volvo brand was white-labeled as "Carlock Rewards" per Peydan's request.
+
+**What shipped:**
+
+- **`admin_tasks.referrer_id` NOT NULL dropped** — `ALTER TABLE admin_tasks ALTER COLUMN referrer_id DROP NOT NULL` run in Supabase dashboard. Unmatched-referral tasks have no referrer by definition. Drizzle schema already had no `.notNull()` but actual DB column did. Now aligned.
+
+- **Three-tier referral attribution in `driveCentricSftp.ts`:**
+  1. Is it a referral? `isReferralByGroup` (SourceDescriptionGroupId → groupName → matches referralGroups config) OR `isReferralByDesc` (no groupId, SourceDescription itself contains referral keyword — new fallback for stores that skip the group entirely)
+  2. Try `matchReferrerByCode(rawDesc, practiceId)` — exact code lookup (uppercase normalized)
+  3. Try `extractPersonName(rawDesc)` → `matchReferrerByName(name, practiceId, buyerPhone)` — 3-tier fuzzy name match
+  4. No match → create `admin_task` with `task_type='unmatched-referral'`, `referrer_id` null
+
+- **`matchReferrerByCode()` added to `matchReferrer.ts`** — looks up `referral_code` column exactly (normalized uppercase), returns `{ referrer, matchType: "code" }`. `MatchResult` type updated to add `"code"` as a `matchType` variant.
+
+- **`extractPersonName()` blocklist** — rejects strings matching `/referral|networking|campaign|drive|relationship|internet|showroom/i`. Without this, "Customer Referral" passes the 2-capitalized-words heuristic and created false name-match attempts.
+
+- **`findLatestBatch()` storeNumFilter call-site fix** — prior session added the `storeNumFilter` parameter but forgot to pass it at the call site: `findLatestBatch(sftp, sftpPath)` → `findLatestBatch(sftp, sftpPath, storeNumFilter)`. Without this, Carlock's store 3364 files were filtered but Volvo would receive wrong-store files.
+
+- **Volvo of Cool Springs SFTP integration fully configured** — `integration_config` set on Volvo practice: `sftp_host=167.99.15.170`, `sftp_path=/home/drivecentric/volvo-cool-springs/`, `sftp_store_num=3367`, `primary_color=#003057` (Volvo blue). SFTP auth confirmed working (test returned `"No export files found"` = auth OK, no files yet). Volvo outbound IP still needed from Darren for UFW whitelist.
+
+- **Droplet cron updated for both practices** — `/usr/local/bin/rippl-sync.sh` now makes two sequential curl calls: Carlock (`0505e065`) then Volvo (`d9ad496a`).
+
+- **Carlock Rewards white-labeling** — `white_label_name = 'Carlock Rewards'` set on Volvo practice in Supabase. `drivecentric-training.html` fully rebranded: all "Rippl" → "Carlock Rewards", "Powered by Rippl" retained in footer and title slide.
+
+- **Staff training deck** — `artifacts/rippl/public/print/drivecentric-training.html` — 6-slide HTML guide for DriveCentric salespeople: when to log a referral, the two fields, code vs name options, what happens automatically, FAQ, cheat sheet. Served at `https://rippl.onrender.com/print/drivecentric-training.html`.
+
+- **Partnership pitch deck** — `artifacts/rippl/public/print/carlock-rewards-pitch.html` — 10-slide HTML presentation for Peydan meeting: opportunity, customer journey, 3 enrollment channels, DriveCentric integration, staff experience, timeline, ROI, next steps. Served at `https://rippl.onrender.com/print/carlock-rewards-pitch.html`.
+
+- **Enrollment strategy decided** — Three channels for getting Carlock customers into the program:
+  1. **Auto-enroll at delivery** (PRIMARY — to be built): when SFTP processor sees a delivered deal, create referrer record for the buyer and send onboarding SMS automatically. Mirrors Hallmark's R0150 trigger. ~1 week build.
+  2. **QR code at delivery** (SUPPLEMENT — already exists): referral card in delivery paperwork packet; customer self-enrolls.
+  3. **Past customer campaign** (LAUNCH BOOST): one-time export of existing Carlock buyers, import as campaign, send "Join Carlock Rewards" invitation SMS.
+
+- **Darren Sabino email reply (2026-08-07):** Source Description Groups ARE dealer-configurable (his colleague will confirm exact DriveCentric UI navigation). DriveCentric webhook/API IS available but requires executing a DriveCentric API License Agreement — filed for future consideration when volume justifies it.
+
+---
+
 ### v1.7.0 (August 2026) — Full Automotive UI Vertical
 
 **Why this was built:**
@@ -521,10 +565,31 @@ Super_admin (David) could only see Hallmark Dental because the office picker was
 - **Trigger:** `POST /api/sync/drivecentric` — auth via `X-Sync-Secret: rippl-sync-2026` header
 - **Service:** `driveCentricSftp.ts` → `pollDriveCentricSftp(practiceId)` — connects to dealer SFTP, downloads CSV batch
 - **File format:** `{storeNum}_v2_{table}_{from}_{to}_{timestamp}.csv` — tables: Deal, Customer, CustomerContact, SourceDescriptionGroup
-- **Referral trigger:** `Deal.Status = "Delivered"` + person name in `SourceDescription` (2-4 capitalized words, no digits, no `/–|,`)
+- **integration_config keys:** `sftp_host`, `sftp_port`, `sftp_username`, `sftp_private_key`, `sftp_path`, `sftp_store_num`, `referral_source_groups`
+
+#### Three-Tier Referral Attribution (v1.8.0)
+
+Referral detection uses two signals, with a graceful fallback chain:
+
+**Step 1: Is this a referral deal?**
+1. If `SourceDescriptionGroupId` is set → lookup group name in `SourceDescriptionGroup` table → check if it matches any string in `referralGroups` config (`isReferralByGroup`)
+2. If no `SourceDescriptionGroupId` → check `SourceDescription` text itself against `referralGroups` keywords (`isReferralByDesc`) — handles stores that put category label directly in the description field with no group linkage
+
+**Step 2: Who is the referrer? (if referral confirmed)**
+1. `matchReferrerByCode(rawDesc, practiceId)` — exact lookup against `referral_code` column (normalized uppercase). Used when salesperson enters the customer's Carlock Rewards code (e.g., `MIKEX7K2`).
+2. `extractPersonName(rawDesc)` → `matchReferrerByName(name, practiceId, buyerPhone)` — extracts 2-4 capitalized words, rejects category labels via blocklist: `/referral|networking|campaign|drive|relationship|internet|showroom/i`; then runs 3-tier name match (exact → first+last token → phone last-10)
+3. If still no match → create `admin_task` with `task_type='unmatched-referral'`, no `referrer_id` (column is now nullable — migration run 2026-08-07: `ALTER TABLE admin_tasks ALTER COLUMN referrer_id DROP NOT NULL`)
+
+**Key insight from Darren's sample data (2026-08-07):** Many DriveCentric stores put the category label ("Customer Referral") directly in `SourceDescription` with no `SourceDescriptionGroupId`. The `isReferralByDesc` fallback was added specifically to catch these. Without it, all referrals at stores not using groups would be missed.
+
+**Staff training:** Two options for salespeople to log referrals:
+- **Code** — customer provides their Carlock Rewards code from their phone (e.g., `SARAH4K2`). Most reliable.
+- **Name** — customer says "my friend Sarah Johnson sent me." System does fuzzy match.
+
+**Referral code format:** Up to 4 name chars + 4 random base36 chars, all uppercase. Generated in `enroll.ts` → `generateReferralCode()`.
+
 - **Dedup:** `external_proc_num = DealId`; status `"Completed"` (automotive)
-- **integration_config keys:** `sftp_host`, `sftp_port`, `sftp_username`, `sftp_private_key`, `sftp_path`
-- **DriveCentric contact:** Darren Sabino (DriveCentric employee, NOT Carlock staff) — email him for SFTP export config per dealer rooftop
+- **DriveCentric contact:** Darren Sabino (DriveCentric employee, NOT Carlock staff) — email him for SFTP export config per dealer rooftop. Confirmed 2026-08-07: source groups ARE dealer-configurable. Webhook/API available but requires API License Agreement (standby for now).
 - **Cox Automotive umbrella:** Each dealership (Carlock, Volvo of Cool Springs) has its own DriveCentric account + CRM ID. Two SFTP setups = correct, intentional.
 - **REST API standby:** `driveCentric.ts` exists for future direct API — do not delete
 
@@ -532,13 +597,15 @@ Super_admin (David) could only see Hallmark Dental because the office picker was
 
 - **Droplet:** DigitalOcean `167.99.15.170` (Ubuntu 24.04, $4/mo)
 - **SFTP user:** `drivecentric` — SSH key auth only
-- **Carlock path:** `/home/drivecentric/carlock/` — store 3364; configured and active
-- **Volvo path:** `/home/drivecentric/volvo-cool-springs/` — empty; awaiting Darren to configure the Volvo rooftop's DriveCentric export
+- **Carlock path:** `/home/drivecentric/carlock/` — store 3364; active; 241 deals scanned 2026-08-07
+- **Volvo path:** `/home/drivecentric/volvo-cool-springs/` — store 3367; SFTP auth confirmed; awaiting first file from DriveCentric
 - **Firewall:** UFW whitelist by IP — new dealers need Darren's outbound IP added: `ufw allow from <IP> to any port 22`
-- **Daily cron:** `0 6 * * *` → `/usr/local/bin/rippl-sync.sh` → hits sync endpoint
+- **Volvo outbound IP:** Not yet confirmed — needed from Darren before Volvo files can be received
+- **Daily cron:** `0 6 * * *` → `/usr/local/bin/rippl-sync.sh` → hits sync endpoint for BOTH Carlock AND Volvo
+- **Cron script syncs both practices** — Carlock ID `0505e065-4f91-4e79-b52e-cfd035d104b4`, Volvo ID `d9ad496a-a8e0-4075-9f19-163fee9fe69d`
 - **Log:** `/var/log/rippl-sync.log`
 - **David's admin IP:** `173.8.85.193` (whitelisted for SSH to droplet)
-- **Last email to Darren:** 2026-07-15 — told him SFTP is configured and ready for both Carlock and Volvo Cool Springs
+- **Volvo integration_config:** `sftp_host=167.99.15.170`, `sftp_path=/home/drivecentric/volvo-cool-springs/`, `sftp_store_num=3367`, `primary_color=#003057` (Volvo blue) — confirmed set 2026-08-07
 
 ---
 
@@ -630,6 +697,10 @@ cat ~/.ssh/id_ed25519.pub    # paste this at github.com/settings/keys if auth fa
 | Campaigns practice isolation | `getFilteredReferrers()` must receive `practiceId` and include `AND o.practice_id = ${practiceId}` in all SQL branches. Without it, a practice_admin's campaign count includes referrers from every practice in the DB. |
 | Practice name in slide deck | Use `myPractice?.name` from `usePractice()`. Do NOT fetch `/api/offices` and strip the location suffix — that approach is fragile and defaults to "Hallmark Dental" for any other client. |
 | useVertical() requires /mine to work | `useVertical()` reads `myPractice?.vertical`. If `GET /api/practices/mine` returns 403 (route ordering bug), `myPractice` is null, `useVertical()` returns "dental", and all automotive pages show dental content even after correct code is deployed. |
+| admin_tasks.referrer_id is nullable | Migration run 2026-08-07: `ALTER TABLE admin_tasks ALTER COLUMN referrer_id DROP NOT NULL`. Unmatched-referral tasks have no referrer by definition — inserting one without a referrer_id was crashing with a NOT NULL violation. Drizzle schema already had no `.notNull()` but the DB column did. Now aligned. |
+| extractPersonName blocklist | `extractPersonName()` in `driveCentricSftp.ts` rejects strings matching `/referral|networking|campaign|drive|relationship|internet|showroom/i`. Without this, "Customer Referral" passes the 2-capitalized-words heuristic and gets treated as a person name — causing false partial matches against referrers with those letters. |
+| DriveCentric SourceDescription is dual-purpose | Stores either a Carlock Rewards code (e.g., `SARAH4K2`) OR a person's name ("Sarah Johnson"). The code path is tried first via `matchReferrerByCode`. Never assume SourceDescription is always a name. |
+| Carlock Rewards = Volvo of Cool Springs white-label | `white_label_name = 'Carlock Rewards'` on Volvo practice. All patient-facing copy, training materials, and pitch deck use "Carlock Rewards", not "Rippl". Footer always says "Powered by Rippl". |
 
 ### Session Startup Checklist
 
@@ -761,5 +832,5 @@ The work is the argument. The output is the proof. The standard is non-negotiabl
 
 ---
 
-*Last updated: 2026-08-01 — Rippl v1.7.0*  
+*Last updated: 2026-08-07 — Rippl v1.8.0*  
 *Read CLAUDE.md next. Read DESIGN.md before any UI work.*
