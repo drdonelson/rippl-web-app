@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Carlock Rewards — Partnership Proposal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,900;1,9..144,900&family=DM+Sans:wght@400;500;600;700;900&family=Geist+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #f3f4f6;
+      font-family: 'DM Sans', sans-serif;
+      color: #0a1f35;
+      padding: 48px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 40px;
+    }
+
+    .slide {
+      background: #fff;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 900px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      page-break-inside: avoid;
+    }
+
+    /* ── Title slide ── */
+    .slide-title {
+      background: #0a1f35;
+      color: #fff;
+      padding: 72px 72px 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-height: 360px;
+      justify-content: center;
+    }
+    .slide-title .eyebrow {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: #E0622A;
+    }
+    .slide-title h1 {
+      font-family: 'Fraunces', serif;
+      font-size: 52px;
+      font-weight: 900;
+      line-height: 1.08;
+      color: #fff;
+    }
+    .slide-title .subtitle {
+      font-size: 18px;
+      color: #94a3b8;
+      font-weight: 400;
+      margin-top: 4px;
+    }
+    .slide-title .meta {
+      font-size: 12px;
+      color: #475569;
+      margin-top: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .slide-title .meta span { color: #E0622A; font-weight: 700; }
+    .powered {
+      font-size: 11px;
+      color: #475569;
+      margin-top: 4px;
+    }
+
+    /* ── Section header ── */
+    .slide-header {
+      background: linear-gradient(135deg, #0a1f35 0%, #0f2d4a 100%);
+      padding: 32px 48px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .slide-num {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #E0622A;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .slide-header h2 {
+      font-family: 'Fraunces', serif;
+      font-size: 26px;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.2;
+    }
+    .slide-header .tag {
+      margin-left: auto;
+      background: rgba(224,98,42,.18);
+      color: #E0622A;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .slide-body {
+      padding: 40px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    /* ── Stat row ── */
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .stat-card {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 24px 20px;
+      text-align: center;
+    }
+    .stat-card .num {
+      font-family: 'Fraunces', serif;
+      font-size: 42px;
+      font-weight: 900;
+      color: #E0622A;
+      line-height: 1;
+    }
+    .stat-card .unit {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0a1f35;
+      margin-top: 4px;
+    }
+    .stat-card .desc {
+      font-size: 13px;
+      color: #64748b;
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+
+    /* ── Journey timeline ── */
+    .journey {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .journey-step {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      position: relative;
+    }
+    .journey-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 19px;
+      top: 44px;
+      width: 2px;
+      height: calc(100% - 4px);
+      background: #e2e8f0;
+    }
+    .journey-dot {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #0a1f35;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .journey-dot.orange { background: #E0622A; }
+    .journey-content {
+      padding: 8px 0 28px;
+    }
+    .journey-content h4 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0a1f35;
+      margin-bottom: 4px;
+    }
+    .journey-content p {
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    /* ── Channel cards ── */
+    .channel-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .channel-card {
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .channel-card.primary {
+      border-color: #E0622A;
+      background: #fff8f5;
+    }
+    .channel-card .ch-icon {
+      font-size: 28px;
+    }
+    .channel-card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0a1f35;
+      line-height: 1.3;
+    }
+    .channel-card p {
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+    .channel-card .badge {
+      display: inline-block;
+      background: #E0622A;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+    .channel-card .badge.secondary {
+      background: #0a1f35;
+    }
+
+    /* ── Integration visual ── */
+    .dc-demo {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .dc-demo .dc-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+    .dc-field-row {
+      display: flex;
+      gap: 16px;
+      align-items: flex-end;
+    }
+    .dc-field {
+      flex: 1;
+    }
+    .dc-field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+    .dc-input {
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      color: #94a3b8;
+      background: #fff;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .dc-input.filled {
+      border-color: #E0622A;
+      color: #0a1f35;
+      font-weight: 600;
+    }
+    .dc-arrow {
+      font-size: 22px;
+      color: #E0622A;
+      font-weight: 900;
+      padding-bottom: 10px;
+      flex-shrink: 0;
+    }
+    .dc-result {
+      background: #0a1f35;
+      border-radius: 10px;
+      padding: 14px 18px;
+      color: #fff;
+      font-size: 13px;
+      line-height: 1.6;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .dc-result .check { font-size: 20px; }
+    .dc-result strong { color: #E0622A; }
+
+    /* ── Staff list ── */
+    .check-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .check-item {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .check-item .icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #f0fdf4;
+      border: 2px solid #86efac;
+      color: #16a34a;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .check-item .icon.no {
+      background: #fff7ed;
+      border-color: #fed7aa;
+      color: #ea580c;
+    }
+    .check-item p {
+      font-size: 14px;
+      color: #0a1f35;
+      line-height: 1.5;
+      padding-top: 4px;
+    }
+    .check-item p span {
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    /* ── Timeline ── */
+    .timeline-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    .tl-card {
+      border-radius: 12px;
+      background: #f8fafc;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .tl-card .wk {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #E0622A;
+    }
+    .tl-card h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0a1f35;
+      line-height: 1.3;
+    }
+    .tl-card p {
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+    .tl-card.active {
+      background: #0a1f35;
+    }
+    .tl-card.active .wk { color: #E0622A; }
+    .tl-card.active h4 { color: #fff; }
+    .tl-card.active p { color: #94a3b8; }
+
+    /* ── ROI card ── */
+    .roi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .roi-card {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 28px 24px;
+    }
+    .roi-card .roi-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: 10px;
+    }
+    .roi-card .roi-num {
+      font-family: 'Fraunces', serif;
+      font-size: 48px;
+      font-weight: 900;
+      color: #0a1f35;
+      line-height: 1;
+    }
+    .roi-card .roi-num .roi-unit {
+      font-size: 22px;
+      color: #E0622A;
+    }
+    .roi-card .roi-desc {
+      font-size: 13px;
+      color: #64748b;
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+    .roi-highlight {
+      background: #0a1f35;
+      border-radius: 12px;
+      padding: 28px 24px;
+      grid-column: span 2;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .roi-highlight .big {
+      font-family: 'Fraunces', serif;
+      font-size: 64px;
+      font-weight: 900;
+      color: #E0622A;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .roi-highlight .text h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .roi-highlight .text p {
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+
+    /* ── Next steps ── */
+    .next-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .next-item {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 20px 20px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .next-item .n {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #E0622A;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .next-item .content h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0a1f35;
+      margin-bottom: 4px;
+    }
+    .next-item .content p {
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    /* ── Closing slide ── */
+    .slide-close {
+      background: linear-gradient(135deg, #0a1f35 0%, #0f2d4a 100%);
+      padding: 72px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      align-items: center;
+      text-align: center;
+    }
+    .slide-close h2 {
+      font-family: 'Fraunces', serif;
+      font-size: 40px;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.1;
+    }
+    .slide-close p {
+      font-size: 16px;
+      color: #94a3b8;
+      max-width: 480px;
+      line-height: 1.6;
+    }
+    .slide-close .contact {
+      margin-top: 8px;
+      font-size: 15px;
+      color: #fff;
+    }
+    .slide-close .contact a {
+      color: #E0622A;
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .slide-close .powered {
+      margin-top: 20px;
+      font-size: 11px;
+      color: #334155;
+    }
+
+    .highlight-box {
+      background: #fff8f5;
+      border: 1.5px solid #fed7aa;
+      border-radius: 12px;
+      padding: 18px 20px;
+      font-size: 14px;
+      color: #0a1f35;
+      line-height: 1.6;
+    }
+    .highlight-box strong { color: #E0622A; }
+
+    @media print {
+      body { background: #fff; padding: 0; gap: 0; }
+      .slide { border-radius: 0; box-shadow: none; page-break-after: always; max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SLIDE 1: Title -->
+  <div class="slide">
+    <div class="slide-title">
+      <div class="eyebrow">Volvo of Cool Springs &nbsp;×&nbsp; Rippl &nbsp;·&nbsp; August 2026</div>
+      <h1>Carlock Rewards:<br>Referral Marketing,<br>Automated.</h1>
+      <div class="subtitle">Turn every car sale into your next one — automatically.</div>
+      <div class="meta">
+        <span>Confidential</span>
+        &nbsp;·&nbsp; Prepared for Peydan &nbsp;·&nbsp; Carlock Automotive Group
+      </div>
+      <div class="powered">Powered by Rippl</div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: The Opportunity -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-num">1</div>
+      <h2>Your customers are already referring friends. You're just not capturing it.</h2>
+    </div>
+    <div class="slide-body">
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="num">3–5×</div>
+          <div class="unit">Higher close rate</div>
+          <div class="desc">Referred leads close at 3–5× the rate of any other lead source</div>
+        </div>
+        <div class="stat-card">
+          <div class="num">$100</div>
+          <div class="unit">Reward per referral</div>
+          <div class="desc">On a $45K average sale, that's a 0.2% customer acquisition cost</div>
+        </div>
+        <div class="stat-card">
+          <div class="num">450×</div>
+          <div class="unit">Return on reward</div>
+          <div class="desc">Every $100 reward delivered unlocks an avg $45K in new revenue</div>
+        </div>
+      </div>
+      <div class="highlight-box">
+        <strong>The problem:</strong> Without a system, referrals happen by chance and go uncredited — so customers have no reason to do it again. Carlock Rewards creates a visible, rewarded loop that compounds over time.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: Customer Journey -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-num">2</div>
+      <h2>The customer experience — from purchase to payout</h2>
+      <div class="tag">Zero friction</div>
+    </div>
+    <div class="slide-body">
+      <div class="journey">
+        <div class="journey-step">
+          <div class="journey-dot">1</div>
+          <div class="journey-content">
+            <h4>Customer buys a car at Volvo of Cool Springs</h4>
+            <p>The deal is marked Delivered in DriveCentric as normal.</p>
+          </div>
+        </div>
+        <div class="journey-step">
+          <div class="journey-dot orange">2</div>
+          <div class="journey-content">
+            <h4>They're automatically enrolled in Carlock Rewards</h4>
+            <p>Overnight, the system detects the delivery and sends a welcome text: "Congrats on your new car! Refer a friend and earn $100 when they buy."</p>
+          </div>
+        </div>
+        <div class="journey-step">
+          <div class="journey-dot">3</div>
+          <div class="journey-content">
+            <h4>They share their unique code or link</h4>
+            <p>Every customer gets a personal Carlock Rewards code (e.g., SARAH4K2) — they share it by text, in conversation, or on their referral card.</p>
+          </div>
+        </div>
+        <div class="journey-step">
+          <div class="journey-dot orange">4</div>
+          <div class="journey-content">
+            <h4>Their friend visits Volvo and buys</h4>
+            <p>The salesperson logs the referrer's code in the deal — a 10-second step that's already part of the delivery process.</p>
+          </div>
+        </div>
+        <div class="journey-step">
+          <div class="journey-dot">5</div>
+          <div class="journey-content">
+            <h4>The original customer gets a $100 reward — automatically</h4>
+            <p>A text and email arrive: "Your friend just bought a car! Your $100 reward is ready." Redeemable as a Visa gift card, store credit, or charitable donation.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: Enrollment Channels -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-num">3</div>
+      <h2>Three ways to get every customer enrolled</h2>
+    </div>
+    <div class="slide-body">
+      <div class="channel-grid">
+        <div class="channel-card primary">
+          <div class="ch-icon">⚡</div>
+          <span class="badge">Recommended</span>
+          <h3>Auto-Enrollment at Delivery</h3>
+          <p>Every buyer is enrolled automatically the night their deal closes — no staff action required. The system detects the delivered deal from DriveCentric and sends the welcome text.</p>
+          <p style="font-size:12px; color:#E0622A; font-weight:600; margin-top:4px;">100% coverage. Zero effort.</p>
+        </div>
+        <div class="channel-card">
+          <div class="ch-icon">📱</div>
+          <span class="badge secondary">Supplement</span>
+          <h3>QR Code at Delivery</h3>
+          <p>A referral card in the delivery paperwork packet. Customer scans the QR, enters their info, and gets their code on the spot. Great for high-touch delivery moments.</p>
+          <p style="font-size:12px; color:#64748b; font-weight:600; margin-top:4px;">Already printed. Ready to use.</p>
+        </div>
+        <div class="channel-card">
+          <div class="ch-icon">📣</div>
+          <span class="badge secondary">Launch Boost</span>
+          <h3>Past Customer Campaign</h3>
+          <p>One-time outreach to Carlock's existing customer base — invite past buyers to join the program. Seeds the referral network from day one before a single new car sells.</p>
+          <p style="font-size:12px; color:#64748b; font-weight:600; margin-top:4px;">Week 1 priority.</p>
+        </div>
+      </div>
+      <div class="highlight-box">
+        <strong>Our recommendation:</strong> Launch all three simultaneously. Auto-enrollment ensures no future buyer is ever missed. The past customer campaign fills the pipeline immediately. QR cards handle any edge cases.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: DriveCentric Integration -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-num">4</div>
+      <h2>The DriveCentric integration — already built</h2>
+      <div class="tag">Live at Carlock</div>
+    </div>
+    <div class="slide-body">
+      <p style="font-size:15px; color:#475569; line-height:1.6;">
+        Carlock Rewards connects directly to DriveCentric's daily deal export. Staff fills in two fields per referral deal — the system handles everything else overnight.
+      </p>
+      <div class="dc-demo">
+        <div class="dc-label">DriveCentric — Deal Record (referral deal)</div>
+        <div class="dc-field-row">
+          <div class="dc-field">
+            <label>Source Group</label>
+            <div class="dc-input filled">Customer Referral ▾</div>
+          </div>
+          <div class="dc-field">
+            <label>Source Description</label>
+            <div class="dc-input filled">SARAH4K2 &nbsp;—or—&nbsp; Sarah Johnson</div>
+          </div>
+          <div class="dc-arrow">→</div>
+        </div>
+        <div class="dc-result">
+          <div class="check">✓</div>
+          <div>
+            Carlock Rewards detects this deal overnight · Matches referrer <strong>Sarah Johnson</strong> · Sends her reward notification automatically
+          </div>
+        </div>
+      </div>
+      <div class="check-list">
+        <div class="check-item">
+          <div class="icon">✓</div>
+          <p>Works with referral codes <span>— customer gives salesperson their Carlock Rewards code (e.g., SARAH4K2)</span></p>
+        </div>
+        <div class="check-item">
+          <div class="icon">✓</div>
+          <p>Works with names only <span>— customer says "my friend Sarah Johnson sent me"; salesperson types the name</span></p>
+        </div>
+        <div class="check-item">
+          <div class="icon">✓</div>
+          <p>Unmatched referrals go to a review queue <span>— nothing is lost; our team manually resolves ambiguous matches</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: Staff Experience -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-num">5</div>
+      <h2>What this asks of your staff — almost nothing</h2>
+    </div>
+    <div class="slide-body">
+      <div class="check-list">
+        <div class="check-item">
+          <div class="icon no">✗</div>
+          <p>No new software to learn <span>— everything happens inside DriveCentric, which they're already using</span></p>
+        </div>
+        <div class="check-item">
+          <div class="icon no">✗</div>
+          <p>No logins, no dashboards, no reports to run <span>— the admin team sees everything; salespeople just fill in two fields</span></p>
+        </div>
+        <div class="check-item">
+          <div class="icon">✓</div>
+          <p>One question at meet-and-greet <span>— "Did someone refer you to us today?"</span></p>
+        </div>
+        <div class="check-item">
+          <div class="icon">✓</div>
+          <p>Two fields when logging the referral deal <span>— Source Group: Customer Referral · Source Description: code or name</span></p>
+        </div>
+        <div class="check-item">
+          <div class="icon">✓</div>
+          <p>Mark deal Delivered as normal <span>— Carlock Rewards does the rest overnight, every night</span></p>
+        </div>
+      </div>
+      <div class="highlight-box" style="margin-top:4px;">
+        A complete staff training guide is ready: <strong>rippl.onrender.com/print/drivecentric-training.html</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: Timeline -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-num">6</div>
+      <h2>Launch timeline — live in three weeks</h2>
+    </div>
+    <div class="slide-body">
+      <div class="timeline-grid">
+        <div class="tl-card active">
+          <div class="wk">Week 1</div>
+          <h4>Foundation</h4>
+          <p>Source Description Group live in DriveCentric · Past customer campaign sent · Referral cards distributed</p>
+        </div>
+        <div class="tl-card">
+          <div class="wk">Week 1–2</div>
+          <h4>Staff Training</h4>
+          <p>Walk sales team through two-field process · Review training guide · Q&A session</p>
+        </div>
+        <div class="tl-card">
+          <div class="wk">Week 2–3</div>
+          <h4>Auto-Enrollment</h4>
+          <p>Build + deploy automatic buyer enrollment at delivery · Every new customer enrolled same night their deal closes</p>
+        </div>
+        <div class="tl-card">
+          <div class="wk">Week 3+</div>
+          <h4>Fully Live</h4>
+          <p>Referrals tracked automatically · Rewards delivered overnight · Reporting visible in admin dashboard</p>
+        </div>
+      </div>
+      <div class="highlight-box">
+        <strong>One prerequisite before Week 1:</strong> Your DriveCentric administrator creates a Source Description Group called "Customer Referral" for the Volvo of Cool Springs store. Darren Sabino has confirmed these are dealer-configurable.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: Investment & ROI -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-num">7</div>
+      <h2>Investment & return</h2>
+    </div>
+    <div class="slide-body">
+      <div class="roi-grid">
+        <div class="roi-card">
+          <div class="roi-label">Cost per referral</div>
+          <div class="roi-num"><span class="roi-unit">$</span>100</div>
+          <div class="roi-desc">Visa gift card delivered to the referrer automatically. Only paid on verified delivered deals.</div>
+        </div>
+        <div class="roi-card">
+          <div class="roi-label">Platform fee (beta)</div>
+          <div class="roi-num"><span class="roi-unit">$</span>0</div>
+          <div class="roi-desc">60-day free beta period. No platform fee, no setup cost — gift card passthrough only.</div>
+        </div>
+        <div class="roi-highlight">
+          <div class="big">450×</div>
+          <div class="text">
+            <h3>Return on every referral reward</h3>
+            <p>At a $45,000 average transaction value, each $100 reward represents a 0.22% customer acquisition cost — lower than any other channel. And unlike paid ads, referral customers arrive pre-sold, with a 3–5× higher close rate.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: Next Steps -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-num">8</div>
+      <h2>Next steps — four actions to go live</h2>
+    </div>
+    <div class="slide-body">
+      <div class="next-grid">
+        <div class="next-item">
+          <div class="n">1</div>
+          <div class="content">
+            <h4>Create "Customer Referral" Source Group in DriveCentric</h4>
+            <p>Your DriveCentric admin sets this up for the Volvo of Cool Springs store. Takes ~10 minutes. This is the trigger the integration listens for.</p>
+          </div>
+        </div>
+        <div class="next-item">
+          <div class="n">2</div>
+          <div class="content">
+            <h4>Pull existing customer list for launch campaign</h4>
+            <p>Export past buyers (name + phone or email) from DriveCentric. We send a one-time "Join Carlock Rewards" message to seed the referral network.</p>
+          </div>
+        </div>
+        <div class="next-item">
+          <div class="n">3</div>
+          <div class="content">
+            <h4>Schedule staff training session</h4>
+            <p>30-minute walkthrough with the sales team. Training guide is already ready at the link above. We can join via Zoom or in person.</p>
+          </div>
+        </div>
+        <div class="next-item">
+          <div class="n">4</div>
+          <div class="content">
+            <h4>Confirm outbound IP for file transfer</h4>
+            <p>DriveCentric needs to send daily deal files to our server. Darren's team provides the outbound IP — we whitelist it and the integration goes live.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: Closing -->
+  <div class="slide">
+    <div class="slide-close">
+      <h2>Ready to turn every sale<br>into your next one?</h2>
+      <p>Carlock Rewards is built, tested, and already running at Carlock Nissan. Volvo of Cool Springs is next.</p>
+      <div class="contact">
+        Questions? <a href="mailto:david@hallmarkdds.com">david@hallmarkdds.com</a>
+      </div>
+      <div class="powered">Powered by Rippl &nbsp;·&nbsp; joinrippl.com</div>
+    </div>
+  </div>
+
+</body>
+</html>
