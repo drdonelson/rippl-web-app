@@ -109,12 +109,20 @@ function useOverrideHousehold() {
 function useDismissHousehold() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (eventId: string) =>
-      fetch(`${BASE}/api/referrals/${eventId}/dismiss-household`, { method: "PATCH" })
-        .then(r => r.json()) as Promise<ReferralEvent>,
+    mutationFn: async (eventId: string) => {
+      const r = await fetch(`${BASE}/api/referrals/${eventId}/dismiss-household`, { method: "PATCH" });
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        throw new Error(body.error ?? `Dismiss failed (${r.status})`);
+      }
+      return r.json() as Promise<ReferralEvent>;
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/referrals"] });
       qc.invalidateQueries({ queryKey: ["/api/admin-tasks"] });
+    },
+    onError: (err: Error) => {
+      alert(`Could not dismiss: ${err.message}`);
     },
   });
 }
