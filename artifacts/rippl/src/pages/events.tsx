@@ -231,12 +231,15 @@ export default function Events() {
     }
   };
 
+  // Dismissed = voided household duplicate — hidden everywhere except the flagged tab
+  const isDismissed = (e: ReferralEvent) => !!e.household_duplicate && e.claim_status === "voided";
+
   // Tab counts
   const counts = useMemo(() => ({
-    all:            (events ?? []).length,
-    lead:           (events ?? []).filter(e => e.status === "Lead").length,
-    booked:         (events ?? []).filter(e => e.status === "Booked").length,
-    "exam-completed": (events ?? []).filter(e => e.status === "Exam Completed").length,
+    all:            (events ?? []).filter(e => !isDismissed(e)).length,
+    lead:           (events ?? []).filter(e => !isDismissed(e) && e.status === "Lead").length,
+    booked:         (events ?? []).filter(e => !isDismissed(e) && e.status === "Booked").length,
+    "exam-completed": (events ?? []).filter(e => !isDismissed(e) && e.status === "Exam Completed").length,
     "reward-sent":  (events ?? []).filter(e => e.status === "Reward Sent").length,
     // "flagged" = household_duplicate AND not yet confirmed ineligible (no voided claim)
     flagged:        (events ?? []).filter(e => e.household_duplicate && e.claim_status !== "voided").length,
@@ -249,10 +252,10 @@ export default function Events() {
         e.new_patient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (e.referrer_name && e.referrer_name.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesTab =
-        activeTab === "all"            ? true :
-        activeTab === "lead"           ? e.status === "Lead" :
-        activeTab === "booked"         ? e.status === "Booked" :
-        activeTab === "exam-completed" ? e.status === "Exam Completed" :
+        activeTab === "all"            ? !isDismissed(e) :
+        activeTab === "lead"           ? (!isDismissed(e) && e.status === "Lead") :
+        activeTab === "booked"         ? (!isDismissed(e) && e.status === "Booked") :
+        activeTab === "exam-completed" ? (!isDismissed(e) && e.status === "Exam Completed") :
         activeTab === "reward-sent"    ? e.status === "Reward Sent" :
         activeTab === "flagged"        ? (!!e.household_duplicate && e.claim_status !== "voided") :
         true;
