@@ -309,6 +309,43 @@ router.patch("/:id/override-household", async (req, res) => {
   res.json({ ...updatedEvent, referrer_name: referrer?.name ?? null });
 });
 
+router.patch("/:id/dismiss-household", async (req, res) => {
+  const { id } = req.params;
+
+  const [event] = await db.select().from(referralEventsTable).where(eq(referralEventsTable.id, id));
+  if (!event) { res.status(404).json({ error: "Referral event not found" }); return; }
+  if (!event.household_duplicate) { res.status(400).json({ error: "This event is not flagged as a household duplicate" }); return; }
+
+  // Void the existing claim, or insert a voided placeholder if none exists
+  const [existingClaim] = await db.select().from(rewardClaimsTable).where(eq(rewardClaimsTable.referral_event_id, id));
+  if (existingClaim) {
+    await db.update(rewardClaimsTable).set({ status: "voided" }).where(eq(rewardClaimsTable.id, existingClaim.id));
+  } else {
+    await db.insert(rewardClaimsTable).values({
+      claim_token:       crypto.randomUUID(),
+      referral_event_id: id,
+      referrer_id:       event.referrer_id,
+      practice_id:       event.practice_id,
+      reward_value:      0,
+      status:            "voided",
+    });
+  }
+
+  // Close the admin task
+  await db.update(adminTasksTable)
+    .set({ status: "completed", completed: true })
+    .where(and(
+      eq(adminTasksTable.referral_event_id, id),
+      eq(adminTasksTable.task_type, "household-duplicate-review"),
+      eq(adminTasksTable.status, "pending")
+    ));
+
+  const [referrer] = await db.select().from(referrersTable).where(eq(referrersTable.id, event.referrer_id));
+
+  req.log.info({ eventId: id }, "Household duplicate dismissed — no reward issued");
+  res.json({ ...event, referrer_name: referrer?.name ?? null });
+});
+
 router.post("/:id/resend-notification", async (req, res) => {
   const { id } = req.params;
 

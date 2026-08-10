@@ -106,6 +106,19 @@ function useOverrideHousehold() {
   });
 }
 
+function useDismissHousehold() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (eventId: string) =>
+      fetch(`${BASE}/api/referrals/${eventId}/dismiss-household`, { method: "PATCH" })
+        .then(r => r.json()) as Promise<ReferralEvent>,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/referrals"] });
+      qc.invalidateQueries({ queryKey: ["/api/admin-tasks"] });
+    },
+  });
+}
+
 function useResendNotification() {
   return useMutation({
     mutationFn: (eventId: string) =>
@@ -189,6 +202,7 @@ export default function Events() {
   });
 
   const overrideHousehold = useOverrideHousehold();
+  const dismissHousehold = useDismissHousehold();
   const resendNotification = useResendNotification();
   const [resentEventId, setResentEventId] = useState<string | null>(null);
   const [demoStatuses, setDemoStatuses] = useState<Record<string, string>>({});
@@ -496,14 +510,23 @@ export default function Events() {
                             No reward issued
                           </span>
                         ) : (
-                          <button
-                            onClick={() => handleOverrideAndReward(event)}
-                            disabled={overrideHousehold.isPending}
-                            className="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg text-sm font-semibold border border-amber-500/30 transition-all flex items-center gap-2 ml-auto disabled:opacity-50"
-                          >
-                            <ShieldCheck className="w-4 h-4" />
-                            Override &amp; Reward
-                          </button>
+                          <div className="flex items-center gap-2 ml-auto">
+                            <button
+                              onClick={() => dismissHousehold.mutate(event.id)}
+                              disabled={dismissHousehold.isPending}
+                              className="px-4 py-2 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 rounded-lg text-sm font-semibold border border-slate-500/30 transition-all flex items-center gap-2 disabled:opacity-50"
+                            >
+                              Dismiss
+                            </button>
+                            <button
+                              onClick={() => handleOverrideAndReward(event)}
+                              disabled={overrideHousehold.isPending}
+                              className="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg text-sm font-semibold border border-amber-500/30 transition-all flex items-center gap-2 disabled:opacity-50"
+                            >
+                              <ShieldCheck className="w-4 h-4" />
+                              Override &amp; Reward
+                            </button>
+                          </div>
                         )
                       ) : effectiveStatus === "Exam Completed" ? (
                         <div className="flex flex-col items-end gap-1.5 ml-auto">
