@@ -20,7 +20,14 @@ const PUBLIC_APP_URL = "https://www.joinrippl.com";
 
 type Phase = "loading" | "invalid" | "expired" | "already_claimed" | "selecting" | "confirming" | "success";
 
-type RewardType = "gift-card" | "local-partner" | "in-house-credit" | "charity";
+type RewardType = "gift-card" | "local-partner" | "in-house-credit" | "charity" | `custom:${string}`;
+
+interface CustomReward {
+  id: string;
+  label: string;
+  description: string;
+  value: number;
+}
 
 const GIFT_CARD_BRANDS = ["Amazon", "Visa Prepaid", "Target", "Starbucks"] as const;
 
@@ -62,6 +69,8 @@ interface ClaimData {
     show_powered_by_rippl: boolean | null;
     in_house_credit_label: string | null;
     in_house_credit_value: number | null;
+    integration_config?: { custom_rewards?: CustomReward[] } | null;
+    custom_rewards?: CustomReward[] | null;
   } | null;
 }
 
@@ -74,6 +83,7 @@ interface ClaimResult {
   admin_task_created: boolean;
   gift_card_brand: string | null;
   referral_code: string;
+  custom_reward_label: string | null;
 }
 
 function formatDate(iso: string | null | undefined): string {
@@ -375,6 +385,16 @@ export default function Claim() {
   const showPoweredBy = practice?.show_powered_by_rippl !== false;
   const creditLabel = practice?.in_house_credit_label ?? "$100 Dental Account Credit";
   const creditValue = practice?.in_house_credit_value ?? 100;
+  // Custom rewards from integration_config
+  const customRewards: CustomReward[] = (
+    practice?.integration_config?.custom_rewards ??
+    practice?.custom_rewards ??
+    []
+  );
+  const isCustomSelected = selected?.startsWith("custom:") ?? false;
+  const selectedCustomReward = isCustomSelected
+    ? customRewards.find(r => `custom:${r.id}` === selected) ?? null
+    : null;
 
   // ── Success ───────────────────────────────────────────────────────────────
   if (phase === "success" && result) {
@@ -432,6 +452,13 @@ export default function Claim() {
                   Your {creditLabel} will be applied to your account within 24 hours. You'll see it at your next appointment.
                 </p>
               </>
+            ) : result.reward_type?.startsWith("custom:") ? (
+              <>
+                <p className="text-slate-900 font-semibold mb-1">🎉 {result.custom_reward_label ?? "Reward"} confirmed!</p>
+                <p className="text-slate-500 text-sm">
+                  Your reward has been recorded. The team will be in touch within 24 hours to arrange fulfillment.
+                </p>
+              </>
             ) : (
               <>
                 <p className="text-slate-900 font-semibold mb-1">❤️ Donation confirmed!</p>
@@ -480,13 +507,20 @@ export default function Claim() {
 
   // ── Confirmation ──────────────────────────────────────────────────────────
   if (phase === "confirming" && selected) {
-    const labels: Record<RewardType, { icon: string; name: string; value: string; detail: string }> = {
+    const baseLabels: Record<string, { icon: string; name: string; value: string; detail: string }> = {
       "gift-card":       { icon: "🎁", name: `${brand} Gift Card`, value: `$${rewardValue}`, detail: "Delivered to your email" },
       "local-partner":   { icon: "🏪", name: localPartner?.business_name ?? "Local Partner", value: `$${rewardValue}`, detail: "Show PIN in store to redeem" },
       "in-house-credit": { icon: "🦷", name: creditLabel, value: `$${creditValue}`, detail: "Applied within 24 hours" },
       "charity":         { icon: "❤️", name: "Charitable Donation", value: `$${rewardValue}`, detail: "Confirmation email sent to you" },
     };
-    const lbl = labels[selected];
+    const lbl = isCustomSelected && selectedCustomReward
+      ? {
+          icon: "🎉",
+          name: selectedCustomReward.label,
+          value: selectedCustomReward.value > 0 ? `$${selectedCustomReward.value} value` : "Complimentary",
+          detail: "The team will contact you within 24 hours",
+        }
+      : (baseLabels[selected] ?? { icon: "🎁", name: selected, value: `$${rewardValue}`, detail: "" });
 
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -678,6 +712,27 @@ export default function Claim() {
             detail="We'll make a donation and send you a confirmation email"
             accentColor={accentColor}
           />
+
+          {/* Custom rewards — rendered from practice integration_config */}
+          {customRewards.map((cr) => {
+            const customKey: RewardType = `custom:${cr.id}`;
+            const icon = cr.id === "merch_credit" ? "🛍️"
+              : cr.id === "service_credit" ? "🔧"
+              : cr.id === "detail_package" ? "✨"
+              : "🎉";
+            return (
+              <RewardCard
+                key={cr.id}
+                isSelected={selected === customKey}
+                onSelect={() => setSelected(customKey)}
+                icon={icon}
+                title={cr.label}
+                subtitle={cr.value > 0 ? `$${cr.value} value` : "Complimentary"}
+                detail={cr.description}
+                accentColor={accentColor}
+              />
+            );
+          })}
         </div>
 
         {/* Proceed button */}
@@ -698,6 +753,7 @@ export default function Claim() {
                   selected === "gift-card" ? `${brand} Gift Card` :
                   selected === "local-partner" ? localPartner?.business_name ?? "Local Partner" :
                   selected === "in-house-credit" ? creditLabel :
+                  isCustomSelected && selectedCustomReward ? selectedCustomReward.label :
                   "Charity Donation"
                 } →
               </button>

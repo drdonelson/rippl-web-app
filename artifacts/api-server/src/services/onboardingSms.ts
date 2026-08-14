@@ -51,10 +51,11 @@ export interface OnboardingResult {
 export async function sendOnboardingSmsNow(
   firstName: string,
   phone: string,
-  referralCode: string
+  referralCode: string,
+  customBody?: string
 ): Promise<{ success: boolean; smsSid?: string; error?: string }> {
   const shareUrl = `${REFERRAL_BASE_URL}/refer?ref=${referralCode}`;
-  const body = `Hi ${firstName} — welcome to Hallmark Dental! Share your referral link and earn a reward when friends become patients: ${shareUrl} Reply STOP to opt out.`;
+  const body = customBody ?? `Hi ${firstName} — welcome to Hallmark Dental! Share your referral link and earn a reward when friends become patients: ${shareUrl} Reply STOP to opt out.`;
 
   try {
     if (!SMS_ENABLED) {
@@ -186,6 +187,21 @@ export async function scheduleOnboardingSms(params: {
   scheduleDelayedSms(newReferrer.id, newPatientName, phone, finalCode);
 
   return { success: true, referrerId: newReferrer.id, referralCode: finalCode };
+}
+
+/**
+ * Send an automotive-specific onboarding SMS immediately after deal delivery.
+ * Used by the DriveCentric SFTP processor for auto-enrollment at delivery.
+ */
+export async function sendAutomotiveOnboardingSms(params: {
+  firstName: string;
+  phone: string;
+  referralCode: string;
+  brandName: string;
+}): Promise<{ success: boolean; smsSid?: string; error?: string }> {
+  const shareUrl = `${REFERRAL_BASE_URL}/refer?ref=${params.referralCode}`;
+  const body = `Congrats on your new vehicle! Share your ${params.brandName} rewards link — when a friend buys a car, you earn $100: ${shareUrl} Reply STOP to opt out.`;
+  return sendOnboardingSmsNow(params.firstName, params.phone, params.referralCode, body);
 }
 
 function scheduleDelayedSms(

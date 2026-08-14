@@ -237,6 +237,14 @@ export default function Refer() {
   const [submitted, setSubmitted]     = useState(false);
   const [formError, setFormError]     = useState("");
 
+  // Automotive pre-referral capture state
+  const [preFirstName, setPreFirstName] = useState("");
+  const [preLastName,  setPreLastName]  = useState("");
+  const [prePhone,     setPrePhone]     = useState("");
+  const [preSubmitting, setPreSubmitting] = useState(false);
+  const [preSubmitted,  setPreSubmitted]  = useState(false);
+  const [preError,      setPreError]      = useState("");
+
   useEffect(() => {
     let code = refCode;
     if (!code) {
@@ -268,6 +276,42 @@ export default function Refer() {
       .catch(() => setInfoLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handlePreReferralSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPreError("");
+    if (!preFirstName.trim() || !preLastName.trim() || !prePhone.trim()) {
+      setPreError("Please fill in all fields.");
+      return;
+    }
+    const code = refCode || referrerInfo?.referral_code || "";
+    if (!code) {
+      setPreError("No referral code found. Please use the original link.");
+      return;
+    }
+    setPreSubmitting(true);
+    try {
+      const res = await fetch(buildApiUrl("/api/referral/pre-referral"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          referral_code: code,
+          first_name: preFirstName.trim(),
+          last_name:  preLastName.trim(),
+          phone:      prePhone.trim(),
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as { error?: string }).error || "Server error");
+      }
+      setPreSubmitted(true);
+    } catch (err) {
+      setPreError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setPreSubmitting(false);
+    }
+  };
 
   const handleBookOffice = (officeKey: string) => {
     const office = getOffice(officeKey);
@@ -466,6 +510,102 @@ export default function Refer() {
                 {content.ctaLabel}
                 <ArrowRight className="w-4 h-4" />
               </button>
+            )}
+          </div>
+        )}
+
+        {/* ── Automotive pre-referral capture ───────────────────────────────── */}
+        {vertical === "automotive" && (
+          <div className="bg-white border border-[#0a1f35]/20 rounded-3xl p-7 shadow-md mb-8">
+            {preSubmitted ? (
+              <div className="text-center py-4">
+                <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 className="w-8 h-8 text-[#E0622A]" />
+                </div>
+                <h3 className="text-lg font-bold text-[#0a1f35] mb-2">You're on our radar!</h3>
+                <p className="text-slate-600 text-sm leading-relaxed max-w-sm mx-auto">
+                  Perfect! When you buy your new car,{" "}
+                  <span className="font-semibold text-[#0a1f35]">
+                    {referrerName ?? "your friend"}
+                  </span>{" "}
+                  will automatically earn their reward. No need to mention it at the dealership.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-9 h-9 rounded-xl bg-[#0a1f35] flex items-center justify-center flex-shrink-0">
+                    <Star className="w-4 h-4 text-[#E0622A] fill-[#E0622A]" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-[#0a1f35] leading-tight">
+                      Claim Your Spot
+                    </h2>
+                    <p className="text-slate-400 text-xs mt-0.5">Optional — takes 10 seconds</p>
+                  </div>
+                </div>
+                <p className="text-slate-500 text-sm leading-relaxed mb-5">
+                  Coming to see us? Let us know so your friend gets credit automatically — no need to mention the referral at the dealership.
+                </p>
+                <form onSubmit={handlePreReferralSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">First Name *</label>
+                      <input
+                        value={preFirstName}
+                        onChange={e => setPreFirstName(e.target.value)}
+                        placeholder="Jane"
+                        autoComplete="given-name"
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-[#E0622A] focus:ring-1 focus:ring-[#E0622A]/30 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Last Name *</label>
+                      <input
+                        value={preLastName}
+                        onChange={e => setPreLastName(e.target.value)}
+                        placeholder="Doe"
+                        autoComplete="family-name"
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-[#E0622A] focus:ring-1 focus:ring-[#E0622A]/30 transition-colors"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1.5">Phone Number *</label>
+                    <input
+                      type="tel"
+                      value={prePhone}
+                      onChange={e => setPrePhone(e.target.value)}
+                      placeholder="(615) 555-0100"
+                      autoComplete="tel"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-[#E0622A] focus:ring-1 focus:ring-[#E0622A]/30 transition-colors"
+                    />
+                  </div>
+                  {preError && <p className="text-red-600 text-sm">{preError}</p>}
+                  <button
+                    type="submit"
+                    disabled={preSubmitting}
+                    className={cn(
+                      "w-full py-4 rounded-2xl font-bold text-white text-sm transition-all shadow-md shadow-[#E0622A]/15",
+                      preSubmitting
+                        ? "bg-[#E0622A]/50 cursor-not-allowed"
+                        : "bg-[#E0622A] hover:bg-[#C9551E] active:bg-[#C9551E]",
+                    )}
+                  >
+                    {preSubmitting ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Saving…
+                      </span>
+                    ) : (
+                      `I'm Visiting ${practiceName}`
+                    )}
+                  </button>
+                  <p className="text-center text-xs text-slate-400">
+                    This is optional — your friend still gets credit if you mention their name to the salesperson.
+                  </p>
+                </form>
+              </>
             )}
           </div>
         )}

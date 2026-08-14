@@ -40,7 +40,7 @@ router.get("/by-token/:token", async (req, res) => {
       referrer:    { id: "demo", name: "Sarah Johnson", tier: "starter", total_referrals: 1, reward_value: 35, referral_code: "SARAHJ" },
       referral:    { id: "demo", new_patient_name: "James Wilson", office: "Hallmark Dental – Brentwood", office_id: null, office_logo_url: null },
       localPartner: null,
-      practice:    { name: "Hallmark Dental", vertical: "dental", white_label_name: null, white_label_logo_url: null, white_label_primary_color: null, show_powered_by_rippl: true, in_house_credit_label: "$100 Dental Account Credit", in_house_credit_value: 100 },
+      practice:    { name: "Hallmark Dental", vertical: "dental", white_label_name: null, white_label_logo_url: null, white_label_primary_color: null, show_powered_by_rippl: true, in_house_credit_label: "$100 Dental Account Credit", in_house_credit_value: 100, custom_rewards: null },
     });
     return;
   }
@@ -101,6 +101,7 @@ router.get("/by-token/:token", async (req, res) => {
           show_powered_by_rippl:   practicesTable.show_powered_by_rippl,
           in_house_credit_label:   practicesTable.in_house_credit_label,
           in_house_credit_value:   practicesTable.in_house_credit_value,
+          integration_config:      practicesTable.integration_config,
         })
         .from(practicesTable).where(eq(practicesTable.id, practiceId)).limit(1)
         .then(r => r[0] ?? null)
@@ -133,8 +134,9 @@ router.post("/", async (req, res) => {
     return;
   }
 
+  const isCustomReward = reward_type.startsWith("custom:");
   const validTypes = ["gift-card", "local-partner", "in-house-credit", "charity"];
-  if (!validTypes.includes(reward_type)) {
+  if (!isCustomReward && !validTypes.includes(reward_type)) {
     res.status(400).json({ error: `Invalid reward_type` });
     return;
   }
@@ -177,6 +179,21 @@ router.post("/", async (req, res) => {
   let pinCode: string | null = null;
   let tangoOrderId: string | null = null;
   let adminTaskCreated = false;
+
+  // For custom rewards, look up the reward option from the practice's integration_config
+  let customRewardLabel: string | null = null;
+  let customRewardDescription: string | null = null;
+  let customRewardValue: number = rewardValue;
+  if (isCustomReward) {
+    const customRewardId = reward_type.slice("custom:".length);
+    const practiceForCustom = practiceForClaim;
+    const cfg = practiceForCustom?.integration_config as Record<string, unknown> | null;
+    const customRewards = (cfg?.custom_rewards ?? []) as Array<{ id: string; label: string; description: string; value: number }>;
+    const found = customRewards.find(r => r.id === customRewardId);
+    customRewardLabel = found?.label ?? customRewardId;
+    customRewardDescription = found?.description ?? "";
+    customRewardValue = found?.value ?? rewardValue;
+  }
 
   // Helper: only include referral_event_id when it's non-null (column has NOT NULL constraint)
   const maybeEventId = claim.referral_event_id
@@ -241,6 +258,24 @@ router.post("/", async (req, res) => {
         status:      "pending",
       });
       adminTaskCreated = true;
+    } else if (isCustomReward) {
+      await db.insert(adminTasksTable).values({
+        task_type:   "custom-reward",
+        referrer_id: claim.referrer_id!,
+        practice_id: claim.practice_id ?? undefined,
+        ...maybeEventId,
+        amount:      customRewardValue > 0 ? customRewardValue : null,
+        notes:       [
+          `Fulfill custom reward: ${customRewardLabel}.`,
+          customRewardDescription ? customRewardDescription : null,
+          `Referrer: ${referrer.name}.`,
+          referrer.phone ? `Phone: ${referrer.phone}.` : null,
+          referrer.email ? `Email: ${referrer.email}.` : null,
+          `Claim ID: ${claim.id}.`,
+        ].filter(Boolean).join(" "),
+        status:      "pending",
+      });
+      adminTaskCreated = true;
     }
   } else {
     // ── Demo claims: generate a fake PIN for local-partner so the UI renders ─
@@ -279,14 +314,15 @@ router.post("/", async (req, res) => {
   req.log.info({ referrerId: referrer.id, reward_type, rewardValue, isDemo }, "Reward claimed");
 
   res.status(200).json({
-    success:            true,
+    success:             true,
     reward_type,
-    reward_value:       reward_type === "in-house-credit" ? 100 : rewardValue,
-    pin_code:           pinCode,
-    tango_order_id:     tangoOrderId,
-    admin_task_created: adminTaskCreated,
-    gift_card_brand:    reward_type === "gift-card" ? (gift_card_brand ?? "Amazon") : null,
-    referral_code:      referrer.referral_code,
+    reward_value:        reward_type === "in-house-credit" ? 100 : isCustomReward ? customRewardValue : rewardValue,
+    pin_code:            pinCode,
+    tango_order_id:      tangoOrderId,
+    admin_task_created:  adminTaskCreated,
+    gift_card_brand:     reward_type === "gift-card" ? (gift_card_brand ?? "Amazon") : null,
+    referral_code:       referrer.referral_code,
+    custom_reward_label: isCustomReward ? customRewardLabel : null,
   });
 
   // ── Demo reset: restore claim to "pending" after 60 s ─────────────────────

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { referrersTable, referralLeadsTable, practicesTable } from "@workspace/db/schema";
+import { referrersTable, referralLeadsTable, practicesTable, preReferralsTable } from "@workspace/db/schema";
 import { officesTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 
@@ -150,6 +150,58 @@ router.post("/leads", async (req, res) => {
   }).returning();
 
   res.status(201).json({ success: true, id: lead.id });
+});
+
+// ── Pre-referral capture (automotive) ────────────────────────────────────────
+// Public — no auth. Called when a referred person fills out the "Claim Your
+// Spot" form on the /refer page after clicking an automotive referral link.
+// Their phone is stored so it can be matched to their DriveCentric deal when
+// it closes (via SFTP export). matchReferrerByPhone in driveCentricSftp.ts
+// will query this table using: phone = buyerPhone AND practice_id = practiceId
+// AND matched = 'no', then mark matched = 'yes' after creating the referral event.
+router.post("/pre-referral", async (req, res) => {
+  const { referral_code, first_name, last_name, phone } = req.body as Record<string, string | undefined>;
+
+  if (!referral_code || !first_name || !last_name || !phone) {
+    res.status(400).json({ error: "Missing required fields: referral_code, first_name, last_name, phone" });
+    return;
+  }
+
+  const code = referral_code.trim().toUpperCase();
+
+  // Look up referrer to verify code is valid and get practice_id
+  const [referrer] = await db
+    .select({ id: referrersTable.id, practice_id: referrersTable.practice_id })
+    .from(referrersTable)
+    .where(eq(referrersTable.referral_code, code))
+    .limit(1);
+
+  if (!referrer) {
+    res.status(404).json({ error: "Referral code not found" });
+    return;
+  }
+
+  if (!referrer.practice_id) {
+    res.status(422).json({ error: "Referrer is not associated with a practice" });
+    return;
+  }
+
+  // Normalize phone to last 10 digits (strip non-digits)
+  const phoneDigits = phone.replace(/\D/g, "").slice(-10);
+  if (phoneDigits.length < 10) {
+    res.status(400).json({ error: "Phone number must be at least 10 digits" });
+    return;
+  }
+
+  await db.insert(preReferralsTable).values({
+    referral_code: code,
+    practice_id:   referrer.practice_id,
+    first_name:    first_name.trim(),
+    last_name:     last_name.trim(),
+    phone:         phoneDigits,
+  });
+
+  res.json({ success: true });
 });
 
 export default router;

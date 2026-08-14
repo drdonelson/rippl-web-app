@@ -557,6 +557,18 @@ export const DEMO_ADMIN_TASKS_AUTO = [
   },
   {
     id: "auto-task-3",
+    task_type: "custom-reward",
+    amount: 100,
+    notes: "Fulfill custom reward: Merchandise Credit. Spend $100 on Volvo accessories and merchandise. Referrer: Olivia Marsh. Phone: 615-555-0192. Email: olivia.marsh@gmail.com. Claim ID: demo-claim-auto.",
+    status: "pending",
+    referral_event_id: "auto-e4",
+    created_at: d(1),
+    referrer_name: "Olivia Marsh",
+    referrer_email: "olivia.marsh@gmail.com",
+    new_patient_name: "Brandon Scott",
+  },
+  {
+    id: "auto-task-4",
     task_type: "unmatched-referral",
     amount: null,
     notes: "New customer said they were referred by 'a friend who bought here' — no name given",

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   CheckSquare, Loader2, AlertTriangle, CheckCircle2, Clock,
-  Building2, Heart, Wand2, UserSearch, ChevronDown, X, Gift,
+  Building2, Heart, Wand2, UserSearch, ChevronDown, X, Gift, Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
@@ -94,6 +94,13 @@ function taskLabel(task_type: string): { icon: React.ReactNode; label: string; c
       icon: <AlertTriangle className="w-4 h-4" />,
       label: "Missed Reward",
       color: "text-red-700 bg-red-50 border-red-200",
+    };
+  }
+  if (task_type === "custom-reward") {
+    return {
+      icon: <Star className="w-4 h-4" />,
+      label: "Custom Reward",
+      color: "text-indigo-700 bg-indigo-50 border-indigo-200",
     };
   }
   return {
@@ -373,6 +380,7 @@ export default function AdminTasksPage() {
             {tasks.map((task) => {
               const { icon, label, color } = taskLabel(task.task_type);
               const isUnmatched    = task.task_type === "unmatched-referral";
+              const isCustomReward = task.task_type === "custom-reward";
               const isRewardTask   = task.task_type === "reward-pending";
               const isProcessing   = completing === task.id || mutation.isPending || rewardMutation.isPending;
 
@@ -399,6 +407,10 @@ export default function AdminTasksPage() {
                     {isUnmatched ? (
                       <p className="text-xs text-amber-700 leading-snug line-clamp-2" title={task.notes ?? ""}>
                         {task.notes ?? "No details"}
+                      </p>
+                    ) : isCustomReward ? (
+                      <p className="text-xs text-indigo-700 leading-snug line-clamp-2" title={task.notes ?? ""}>
+                        {task.notes ?? "Custom reward — contact referrer to arrange fulfillment."}
                       </p>
                     ) : (
                       <p className="text-sm text-foreground truncate">

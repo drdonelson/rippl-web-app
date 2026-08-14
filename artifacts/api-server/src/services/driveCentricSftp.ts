@@ -20,11 +20,13 @@ import {
   rewardClaimsTable,
   adminTasksTable,
   practicesTable,
+  preReferralsTable,
 } from "@workspace/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { sendRewardNotification } from "./notifications";
 import { matchReferrerByName, matchReferrerByCode } from "../lib/matchReferrer";
+import { sendAutomotiveOnboardingSms } from "./onboardingSms";
 import { calculateTier } from "../lib/tierUtils";
 // @ts-ignore — ssh2-sftp-client ships CJS; ssh2 is externalised in esbuild config
 import SftpClient from "ssh2-sftp-client";
@@ -200,17 +202,24 @@ export interface DriveCentricSftpResult {
   practiceId: string;
   dealsScanned: number;
   deliveredDeals: number;
+  enrolledBuyers: number;
   referralsDetected: number;
   alreadyProcessed: number;
   unmatched: number;
   errors: string[];
 }
 
+function generateReferralCode(name: string): string {
+  const clean = name.replace(/\s+/g, "").toUpperCase().slice(0, 4);
+  const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `${clean}${rand}`;
+}
+
 export async function pollDriveCentricSftp(
   practiceId: string,
 ): Promise<DriveCentricSftpResult> {
   const result: DriveCentricSftpResult = {
-    practiceId, dealsScanned: 0, deliveredDeals: 0,
+    practiceId, dealsScanned: 0, deliveredDeals: 0, enrolledBuyers: 0,
     referralsDetected: 0, alreadyProcessed: 0, unmatched: 0, errors: [],
   };
 
@@ -306,8 +315,45 @@ export async function pollDriveCentricSftp(
       result.deliveredDeals++;
 
       const dealId = deal["DealId"];
+      const buyerCid   = deal["BuyerCustomerId"];
+      const buyerName  = buyerCid ? (customers.get(buyerCid)?.name ?? "Unknown Customer") : "Unknown Customer";
+      const buyerPhone = buyerCid ? customerPhones.get(buyerCid)?.value : undefined;
 
       try {
+        // Auto-enroll buyer as a Carlock Rewards member if not already enrolled
+        if (buyerName !== "Unknown Customer" && buyerPhone) {
+          const phoneLast10 = buyerPhone.replace(/\D/g, "").slice(-10);
+          const [existingReferrer] = await db
+            .select({ id: referrersTable.id })
+            .from(referrersTable)
+            .where(and(
+              eq(referrersTable.practice_id, practiceId),
+              sql`RIGHT(REGEXP_REPLACE(${referrersTable.phone}, '[^0-9]', '', 'g'), 10) = ${phoneLast10}`,
+            ));
+
+          if (!existingReferrer) {
+            const referralCode = generateReferralCode(buyerName);
+            await db.insert(referrersTable).values({
+              practice_id:   practiceId,
+              patient_id:    `dc-${dealId}`,
+              name:          buyerName,
+              phone:         phoneLast10,
+              referral_code: referralCode,
+              sms_opt_out:   false,
+              reward_value:  practice.reward_value ?? 100,
+              tier:          "starter",
+            });
+            result.enrolledBuyers++;
+
+            const firstName = buyerName.split(/\s+/)[0] ?? "there";
+            const brandName = (practice as any).white_label_name ?? practice.name;
+            sendAutomotiveOnboardingSms({ firstName, phone: phoneLast10, referralCode, brandName })
+              .catch(err => logger.warn({ err, dealId }, "[dc-sftp] Onboarding SMS failed — referrer still enrolled"));
+
+            logger.info({ dealId, buyerName, referralCode }, "[dc-sftp] Buyer auto-enrolled");
+          }
+        }
+
         // Dedup
         const [existing] = await db
           .select({ id: referralEventsTable.id })
@@ -337,9 +383,6 @@ export async function pollDriveCentricSftp(
         result.referralsDetected++;
 
         const rawDesc  = deal["SourceDescription"] ?? "";
-        const buyerCid = deal["BuyerCustomerId"];
-        const buyerName  = buyerCid ? (customers.get(buyerCid)?.name ?? "Unknown Customer") : "Unknown Customer";
-        const buyerPhone = buyerCid ? customerPhones.get(buyerCid)?.value : undefined;
 
         // Three-tier attribution (only attempted when group-based detection fired,
         // since description-only deals have no referrer info in the description).
@@ -355,6 +398,29 @@ export async function pollDriveCentricSftp(
             referrerName = extractPersonName(rawDesc);
             if (referrerName) {
               matchResult = await matchReferrerByName(referrerName, practiceId, buyerPhone);
+            }
+          }
+        }
+
+        // Tier 0: pre-referral link click — buyer clicked referral link before visiting
+        if (!matchResult && buyerPhone) {
+          const phoneLast10 = buyerPhone.replace(/\D/g, "").slice(-10);
+          const [preReferralRow] = await db
+            .select({ id: preReferralsTable.id, referral_code: preReferralsTable.referral_code })
+            .from(preReferralsTable)
+            .where(and(
+              eq(preReferralsTable.practice_id, practiceId),
+              eq(preReferralsTable.phone, phoneLast10),
+              eq(preReferralsTable.matched, "no"),
+            ));
+
+          if (preReferralRow) {
+            matchResult = await matchReferrerByCode(preReferralRow.referral_code, practiceId);
+            if (matchResult) {
+              await db.update(preReferralsTable)
+                .set({ matched: "yes" })
+                .where(eq(preReferralsTable.id, preReferralRow.id));
+              logger.info({ dealId, referralCode: preReferralRow.referral_code }, "[dc-sftp] Matched via pre-referral link click");
             }
           }
         }
