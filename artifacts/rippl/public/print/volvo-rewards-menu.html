@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Carlock Rewards — Your Reward Options</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,300&family=DM+Sans:wght@400;500;600;700&family=Geist+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #f3f4f6;
+      font-family: 'DM Sans', sans-serif;
+      color: #0a1f35;
+      padding: 48px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      background: #0a1f35;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 860px;
+      padding: 64px 72px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 320px; height: 320px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(224,98,42,.18) 0%, transparent 70%);
+    }
+    .hero .eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: #E0622A;
+    }
+    .hero h1 {
+      font-family: 'Fraunces', serif;
+      font-size: 48px;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.08;
+    }
+    .hero h1 span { color: #E0622A; }
+    .hero p {
+      font-size: 17px;
+      color: #94a3b8;
+      max-width: 520px;
+      line-height: 1.6;
+      margin-top: 4px;
+    }
+    .hero .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(224,98,42,.15);
+      border: 1px solid rgba(224,98,42,.3);
+      color: #E0622A;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 100px;
+      margin-top: 8px;
+      width: fit-content;
+    }
+
+    /* ── Reward cards grid ── */
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      width: 100%;
+      max-width: 860px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,.07);
+      display: flex;
+      flex-direction: column;
+    }
+    .card-accent {
+      height: 6px;
+    }
+    .card-body {
+      padding: 32px 32px 28px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .card-icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      margin-bottom: 4px;
+    }
+    .card-tag {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    .card h2 {
+      font-family: 'Fraunces', serif;
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1.1;
+      color: #0a1f35;
+    }
+    .card .amount {
+      font-family: 'Geist Mono', monospace;
+      font-size: 38px;
+      font-weight: 600;
+      line-height: 1;
+      margin: 4px 0;
+    }
+    .card p {
+      font-size: 14px;
+      color: #64748b;
+      line-height: 1.6;
+      flex: 1;
+    }
+    .card .how {
+      font-size: 12px;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card .how::before {
+      content: '→';
+    }
+
+    /* Card color themes */
+    .theme-orange .card-accent { background: linear-gradient(90deg, #E0622A, #F5A623); }
+    .theme-orange .card-icon { background: rgba(224,98,42,.1); }
+    .theme-orange .card-tag { color: #E0622A; }
+    .theme-orange .amount { color: #E0622A; }
+
+    .theme-navy .card-accent { background: linear-gradient(90deg, #0a1f35, #1e3a5f); }
+    .theme-navy .card-icon { background: rgba(10,31,53,.08); }
+    .theme-navy .card-tag { color: #0a1f35; }
+    .theme-navy .amount { color: #0a1f35; }
+
+    .theme-blue .card-accent { background: linear-gradient(90deg, #003057, #0057a8); }
+    .theme-blue .card-icon { background: rgba(0,48,87,.08); }
+    .theme-blue .card-tag { color: #003057; }
+    .theme-blue .amount { color: #003057; }
+
+    .theme-teal .card-accent { background: linear-gradient(90deg, #0f766e, #14b8a6); }
+    .theme-teal .card-icon { background: rgba(15,118,110,.08); }
+    .theme-teal .card-tag { color: #0f766e; }
+    .theme-teal .amount { color: #0f766e; }
+
+    /* ── How it works strip ── */
+    .how-strip {
+      background: #fff;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 860px;
+      padding: 40px 48px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.07);
+    }
+    .how-strip h3 {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: 28px;
+    }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      position: relative;
+    }
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 20px; left: calc(12.5% + 20px); right: calc(12.5% + 20px);
+      height: 2px;
+      background: linear-gradient(90deg, #E0622A, #F5A623);
+    }
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      text-align: center;
+      padding: 0 12px;
+    }
+    .step-num {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: #0a1f35;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      z-index: 1;
+    }
+    .step-num.active { background: #E0622A; }
+    .step-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0a1f35;
+      line-height: 1.3;
+    }
+    .step-sub {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      font-size: 12px;
+      color: #94a3b8;
+      text-align: center;
+      padding-bottom: 16px;
+    }
+    .footer strong { color: #0a1f35; }
+
+    @media print {
+      body { background: #fff; padding: 0; gap: 24px; }
+      .hero, .cards, .card, .how-strip { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="eyebrow">Carlock Rewards Program</div>
+    <h1>Your Reward.<br>Your <span>Choice.</span></h1>
+    <p>Thank you for referring a friend to Carlock. When they purchase a vehicle, you choose how you want to be rewarded — four options, all yours.</p>
+    <div class="badge">🎉 Earned by referral · Redeemed online · No expiration</div>
+  </div>
+
+  <!-- Reward cards -->
+  <div class="cards">
+
+    <!-- Gift Card -->
+    <div class="card theme-orange">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-icon">🎁</div>
+        <div class="card-tag">Gift Card</div>
+        <h2>Amazon<br>Gift Card</h2>
+        <div class="amount">$100</div>
+        <p>A $100 Amazon gift card delivered instantly to your email. Shop anything, anytime — millions of items at your fingertips.</p>
+        <div class="how">Delivered by email within minutes of redemption</div>
+      </div>
+    </div>
+
+    <!-- Merchandise Credit -->
+    <div class="card theme-blue">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-icon">🏷️</div>
+        <div class="card-tag">Showroom Credit</div>
+        <h2>Volvo<br>Merchandise Credit</h2>
+        <div class="amount">$150</div>
+        <p>$150 in credit toward Volvo branded merchandise, accessories, or lifestyle items available in our showroom. More value, right here.</p>
+        <div class="how">Applied at the showroom — staff will assist</div>
+      </div>
+    </div>
+
+    <!-- Service Credit -->
+    <div class="card theme-navy">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-icon">🔧</div>
+        <div class="card-tag">Service Credit</div>
+        <h2>Service<br>Department Credit</h2>
+        <div class="amount">$100</div>
+        <p>$100 credit toward any service or maintenance visit at Volvo of Cool Springs. Oil changes, tire rotations, inspections — whatever you need.</p>
+        <div class="how">Applied at your next service appointment</div>
+      </div>
+    </div>
+
+    <!-- Detail Package -->
+    <div class="card theme-teal">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-icon">✨</div>
+        <div class="card-tag">Detail Package</div>
+        <h2>Interior &amp; Exterior<br>Detail</h2>
+        <div class="amount">$75</div>
+        <p>A full interior and exterior detail on your vehicle — hand wash, vacuum, wipe-down, and protection treatment. Your car, showroom-ready.</p>
+        <div class="how">Schedule with the service team at your convenience</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- How it works -->
+  <div class="how-strip">
+    <h3>How Carlock Rewards Works</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num active">1</div>
+        <div class="step-label">Share Your Link</div>
+        <div class="step-sub">Send your personal referral link to a friend</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-label">They Visit &amp; Buy</div>
+        <div class="step-sub">Your friend purchases a vehicle at Carlock</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-label">We Notify You</div>
+        <div class="step-sub">You receive a text with your reward link</div>
+      </div>
+      <div class="step">
+        <div class="step-num active">4</div>
+        <div class="step-label">Choose &amp; Claim</div>
+        <div class="step-sub">Pick your reward above — done</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <strong>Carlock Rewards</strong> · Volvo of Cool Springs · Powered by Rippl
+  </div>
+
+</body>
+</html>
