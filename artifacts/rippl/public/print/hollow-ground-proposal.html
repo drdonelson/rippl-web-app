@@ -43,7 +43,7 @@
       content: '';
       position: absolute;
       bottom: -60px; right: -60px;
-      width: 280px; height: 280px;
+      width: 300px; height: 300px;
       border-radius: 50%;
       background: radial-gradient(circle, rgba(224,98,42,.2) 0%, transparent 70%);
     }
@@ -98,12 +98,11 @@
     }
     .slide-body { padding: 40px 48px; }
 
-    /* ── What Hollow Ground Gets ── */
+    /* ── Feature grid ── */
     .feature-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 20px;
-      margin-top: 8px;
     }
     .feature {
       background: #f8fafc;
@@ -113,148 +112,221 @@
       flex-direction: column;
       gap: 10px;
     }
-    .feature .icon {
-      font-size: 24px;
+    .feature .icon { font-size: 24px; }
+    .feature h4 { font-size: 14px; font-weight: 700; }
+    .feature p { font-size: 13px; color: #64748b; line-height: 1.5; }
+
+    /* ── Tier table ── */
+    .tier-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
-    .feature h4 {
-      font-size: 14px;
+    .tier-row {
+      display: grid;
+      grid-template-columns: 220px 1fr 1fr 1fr;
+      align-items: center;
+      gap: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid #e2e8f0;
+    }
+    .tier-row.active { border-color: #E0622A; }
+    .tier-label {
+      background: #f8fafc;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .tier-row.active .tier-label { background: rgba(224,98,42,.06); }
+    .tier-label .tier-name {
+      font-size: 13px;
       font-weight: 700;
       color: #0a1f35;
     }
-    .feature p {
-      font-size: 13px;
-      color: #64748b;
-      line-height: 1.5;
+    .tier-label .tier-sub {
+      font-size: 12px;
+      color: #94a3b8;
     }
-
-    /* ── Rev share options ── */
-    .options {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 20px;
-      margin-top: 8px;
-    }
-    .option {
-      border-radius: 14px;
-      border: 2px solid #e2e8f0;
-      padding: 28px 24px;
+    .tier-row.active .tier-label .tier-name { color: #E0622A; }
+    .tier-cell {
+      padding: 20px 24px;
+      border-left: 1px solid #e2e8f0;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      position: relative;
+      gap: 2px;
     }
-    .option.recommended {
-      border-color: #E0622A;
-      background: rgba(224,98,42,.03);
-    }
-    .option .rec-badge {
-      position: absolute;
-      top: -12px; left: 50%;
-      transform: translateX(-50%);
-      background: #E0622A;
-      color: #fff;
+    .tier-cell .tc-label {
       font-size: 10px;
       font-weight: 700;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-      padding: 4px 12px;
-      border-radius: 100px;
-      white-space: nowrap;
-    }
-    .option .model-name {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: .14em;
+      letter-spacing: .12em;
       text-transform: uppercase;
       color: #94a3b8;
     }
-    .option h3 {
-      font-family: 'Fraunces', serif;
-      font-size: 22px;
-      font-weight: 900;
-      color: #0a1f35;
-      line-height: 1.1;
-    }
-    .option .pricing {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      padding: 14px 0;
-      border-top: 1px solid #e2e8f0;
-      border-bottom: 1px solid #e2e8f0;
-      margin: 4px 0;
-    }
-    .option .price-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      font-size: 13px;
-    }
-    .option .price-row .label { color: #64748b; }
-    .option .price-row .val {
+    .tier-cell .tc-val {
       font-family: 'Geist Mono', monospace;
+      font-size: 18px;
       font-weight: 600;
       color: #0a1f35;
-      font-size: 14px;
     }
-    .option .price-row .val.orange { color: #E0622A; }
-    .option .pros-cons { display: flex; flex-direction: column; gap: 5px; margin-top: 4px; }
-    .option .pro, .option .con {
-      font-size: 12px;
-      display: flex;
-      align-items: flex-start;
-      gap: 6px;
-      line-height: 1.4;
+    .tier-row.active .tc-val { color: #E0622A; }
+    .tier-note {
+      background: rgba(224,98,42,.07);
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 13px;
+      color: #0a1f35;
+      line-height: 1.6;
+      border-left: 3px solid #E0622A;
     }
-    .option .pro { color: #0f766e; }
-    .option .con { color: #94a3b8; }
 
-    /* ── Example math table ── */
+    /* ── Math table ── */
+    .math-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
     .math-box {
       background: #f8fafc;
       border-radius: 14px;
-      padding: 28px 32px;
-      margin-top: 8px;
+      padding: 28px;
     }
     .math-box h4 {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       letter-spacing: .14em;
       text-transform: uppercase;
       color: #94a3b8;
       margin-bottom: 16px;
     }
-    .math-table { width: 100%; border-collapse: collapse; }
-    .math-table th {
-      text-align: left;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-      color: #94a3b8;
-      padding: 8px 12px;
-      border-bottom: 1px solid #e2e8f0;
-    }
-    .math-table td {
-      padding: 10px 12px;
+    .math-box .scenario {
       font-size: 13px;
-      color: #0a1f35;
-      border-bottom: 1px solid #f1f5f9;
+      color: #64748b;
+      margin-bottom: 16px;
+      font-style: italic;
     }
-    .math-table td:not(:first-child) {
+    .math-table { width: 100%; border-collapse: collapse; }
+    .math-table td {
+      padding: 9px 0;
+      font-size: 13px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #0a1f35;
+    }
+    .math-table td:last-child {
+      text-align: right;
       font-family: 'Geist Mono', monospace;
       font-size: 13px;
     }
     .math-table tr.total td {
       font-weight: 700;
-      font-size: 14px;
-      border-top: 2px solid #e2e8f0;
+      font-size: 15px;
       border-bottom: none;
+      border-top: 2px solid #e2e8f0;
+      padding-top: 12px;
+      color: #E0622A;
     }
-    .math-table tr.total td:not(:first-child) { color: #E0622A; }
+    .math-table tr.sub td { color: #64748b; font-size: 12px; }
 
-    /* ── What Rippl needs ── */
-    .checklist { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+    /* ── Invoice flow ── */
+    .invoice-flow {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .invoice-party {
+      border-radius: 14px;
+      overflow: hidden;
+      border: 2px solid #e2e8f0;
+    }
+    .invoice-party-header {
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .invoice-party-header.david { background: #0a1f35; }
+    .invoice-party-header.peydan { background: #1e3a5f; }
+    .invoice-party-header.tango { background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+    .invoice-party-header .party-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .invoice-party-header.tango .party-name { color: #0a1f35; }
+    .invoice-party-header .party-role {
+      font-size: 12px;
+      color: #64748b;
+      margin-left: auto;
+    }
+    .invoice-party-header.david .party-role,
+    .invoice-party-header.peydan .party-role { color: #94a3b8; }
+    .invoice-rows { padding: 0 24px; }
+    .invoice-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      padding: 12px 0;
+      border-bottom: 1px solid #f1f5f9;
+      align-items: start;
+    }
+    .invoice-row:last-child { border-bottom: none; }
+    .invoice-row .ir-label { font-size: 13px; color: #0a1f35; font-weight: 600; }
+    .invoice-row .ir-desc { font-size: 12px; color: #64748b; margin-top: 2px; line-height: 1.4; }
+    .invoice-row .ir-val {
+      font-family: 'Geist Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #E0622A;
+      white-space: nowrap;
+      text-align: right;
+    }
+    .arrow-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 8px;
+      color: #94a3b8;
+      font-size: 13px;
+    }
+    .arrow-row::before, .arrow-row::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e2e8f0;
+    }
+    .terms-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-top: 8px;
+    }
+    .term-box {
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+    .term-box .tb-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+    .term-box .tb-val {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0a1f35;
+    }
+    .term-box .tb-sub {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    /* ── Checklist ── */
+    .checklist { display: flex; flex-direction: column; gap: 12px; }
     .check-item {
       display: flex;
       align-items: flex-start;
@@ -273,21 +345,20 @@
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
-    .check-item .text h4 { font-size: 14px; font-weight: 700; color: #0a1f35; }
+    .check-item .text h4 { font-size: 14px; font-weight: 700; }
     .check-item .text p { font-size: 13px; color: #64748b; margin-top: 2px; line-height: 1.4; }
 
     /* ── Next steps ── */
-    .next-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; }
+    .next-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .next-step {
       border-left: 3px solid #E0622A;
       padding: 14px 18px;
       background: #f8fafc;
       border-radius: 0 10px 10px 0;
     }
-    .next-step h4 { font-size: 14px; font-weight: 700; color: #0a1f35; }
+    .next-step h4 { font-size: 14px; font-weight: 700; }
     .next-step p { font-size: 13px; color: #64748b; margin-top: 3px; line-height: 1.4; }
 
-    /* ── Footer ── */
     .doc-footer {
       font-size: 12px;
       color: #94a3b8;
@@ -303,43 +374,43 @@
 </head>
 <body>
 
-  <!-- Title -->
+  <!-- 1. Title -->
   <div class="slide">
     <div class="title-slide">
       <div class="eyebrow">Confidential · Channel Partner Proposal</div>
       <h1>Hollow Ground<br><em>powered by</em> Rippl</h1>
-      <p class="subtitle">A white-label referral rewards platform — built for salons, sold under your brand, run entirely by Rippl.</p>
+      <p class="subtitle">A white-label referral rewards platform — built and operated by Rippl, sold under your brand, your pricing, your client relationships.</p>
       <div class="meta">Prepared for <span>Peydan</span> · August 2026 · David Donelson, Rippl</div>
     </div>
   </div>
 
-  <!-- What Hollow Ground Gets -->
+  <!-- 2. What You Get -->
   <div class="slide">
     <div class="slide-header">
-      <h2>What the Partnership Looks Like</h2>
-      <p>Everything Rippl built — your name on it</p>
+      <h2>What Hollow Ground Gets</h2>
+      <p>Everything Rippl built — your name on it, your clients, your revenue</p>
     </div>
     <div class="slide-body">
       <div class="feature-grid">
         <div class="feature">
           <div class="icon">🏷️</div>
           <h4>Your Brand, Everywhere</h4>
-          <p>Every client's reward page, SMS, and dashboard shows "Hollow Ground" — not Rippl. Logo, colors, name — all yours. "Powered by Rippl" appears in footer.</p>
+          <p>Every reward page, notification SMS, and dashboard shows "Hollow Ground." Logo, colors, name — all yours. "Powered by Rippl" appears in footer.</p>
         </div>
         <div class="feature">
           <div class="icon">💻</div>
-          <h4>Full Admin Dashboard</h4>
-          <p>Each salon client gets their own login to view referral events, manage rewards, and track performance. You get a partner view of all your clients.</p>
+          <h4>You Own the Client</h4>
+          <p>You sign your clients, set your price, and manage those relationships. Rippl is invisible infrastructure. Your clients never deal with David.</p>
         </div>
         <div class="feature">
           <div class="icon">⚙️</div>
           <h4>Vagaro Integration</h4>
-          <p>Already built. When a new client completes a service and filled a "referred by" field — Rippl auto-detects it and fires the reward. No staff action needed.</p>
+          <p>Already built. When a salon's new client completes a service and named their referrer — Rippl auto-detects it and fires the reward. Zero staff action.</p>
         </div>
         <div class="feature">
           <div class="icon">🎁</div>
           <h4>Reward Fulfillment</h4>
-          <p>Gift cards delivered automatically via Tango Card. Custom rewards (credit, treatments) create admin tasks for manual fulfillment. Nothing falls through.</p>
+          <p>Gift cards delivered automatically via Tango. Custom rewards (credits, treatments) create tasks for manual fulfillment. Nothing falls through the cracks.</p>
         </div>
         <div class="feature">
           <div class="icon">📱</div>
@@ -347,175 +418,255 @@
           <p>Referrers notified by text and email the moment their referral is confirmed. Claim page opens on their phone. Done in 3 taps.</p>
         </div>
         <div class="feature">
-          <div class="icon">🤝</div>
-          <h4>Rippl Handles the Tech</h4>
-          <p>You sell and support your clients. Rippl handles uptime, integrations, and infrastructure. No engineering team needed on your side.</p>
+          <div class="icon">📊</div>
+          <h4>Partner Dashboard</h4>
+          <p>One login to see all your Hollow Ground clients — referral counts, reward status, active members. Your book of business in one view.</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Revenue Share Options -->
+  <!-- 3. Pricing Model -->
   <div class="slide">
     <div class="slide-header">
-      <h2>Revenue Share Options</h2>
-      <p>Three models — pick the one that fits how you want to run the business</p>
+      <h2>The Pricing Model</h2>
+      <p>One structure — you earn a lower rate as you grow the book</p>
     </div>
     <div class="slide-body">
-      <div class="options">
+      <div class="tier-wrap">
 
-        <!-- Model A -->
-        <div class="option">
-          <div class="model-name">Model A</div>
-          <h3>Pure Wholesale</h3>
-          <div class="pricing">
-            <div class="price-row">
-              <span class="label">You pay Rippl</span>
-              <span class="val">$50/office/mo</span>
-            </div>
-            <div class="price-row">
-              <span class="label">Gift cards</span>
-              <span class="val">At cost</span>
-            </div>
-            <div class="price-row">
-              <span class="label">Per-referral fee</span>
-              <span class="val">$0</span>
-            </div>
-            <div class="price-row">
-              <span class="label">You charge clients</span>
-              <span class="val orange">Your price</span>
-            </div>
+        <div class="tier-row active">
+          <div class="tier-label">
+            <div class="tier-name">Starter · 1–5 offices</div>
+            <div class="tier-sub">Where you are today</div>
           </div>
-          <div class="pros-cons">
-            <div class="pro">✓ Simple — flat, predictable</div>
-            <div class="pro">✓ Your margin scales with retail price</div>
-            <div class="con">– David earns same regardless of volume</div>
+          <div class="tier-cell">
+            <div class="tc-label">Monthly</div>
+            <div class="tc-val">$60/office</div>
+          </div>
+          <div class="tier-cell">
+            <div class="tc-label">Per referral</div>
+            <div class="tc-val">$12</div>
+          </div>
+          <div class="tier-cell">
+            <div class="tc-label">Gift cards</div>
+            <div class="tc-val">At cost</div>
           </div>
         </div>
 
-        <!-- Model B -->
-        <div class="option">
-          <div class="model-name">Model B</div>
-          <h3>Per-Referral Only</h3>
-          <div class="pricing">
-            <div class="price-row">
-              <span class="label">Monthly platform fee</span>
-              <span class="val">$0</span>
-            </div>
-            <div class="price-row">
-              <span class="label">Gift cards</span>
-              <span class="val">At cost</span>
-            </div>
-            <div class="price-row">
-              <span class="label">You pay Rippl</span>
-              <span class="val">$15/referral</span>
-            </div>
-            <div class="price-row">
-              <span class="label">You charge clients</span>
-              <span class="val orange">Your price</span>
-            </div>
+        <div class="tier-row">
+          <div class="tier-label">
+            <div class="tier-name">Growth · 6–15 offices</div>
+            <div class="tier-sub">Rate drops automatically</div>
           </div>
-          <div class="pros-cons">
-            <div class="pro">✓ No cost when volume is low</div>
-            <div class="pro">✓ Pure value-aligned pricing</div>
-            <div class="con">– Unpredictable for both parties</div>
+          <div class="tier-cell">
+            <div class="tc-label">Monthly</div>
+            <div class="tc-val">$45/office</div>
+          </div>
+          <div class="tier-cell">
+            <div class="tc-label">Per referral</div>
+            <div class="tc-val">$12</div>
+          </div>
+          <div class="tier-cell">
+            <div class="tc-label">Gift cards</div>
+            <div class="tc-val">At cost</div>
           </div>
         </div>
 
-        <!-- Model C — Recommended -->
-        <div class="option recommended">
-          <div class="rec-badge">Recommended</div>
-          <div class="model-name">Model C</div>
-          <h3>Hybrid</h3>
-          <div class="pricing">
-            <div class="price-row">
-              <span class="label">You pay Rippl</span>
-              <span class="val">$35/office/mo</span>
-            </div>
-            <div class="price-row">
-              <span class="label">Gift cards</span>
-              <span class="val">At cost</span>
-            </div>
-            <div class="price-row">
-              <span class="label">Per-referral fee</span>
-              <span class="val">$12/referral</span>
-            </div>
-            <div class="price-row">
-              <span class="label">You charge clients</span>
-              <span class="val orange">~$99/office/mo</span>
-            </div>
+        <div class="tier-row">
+          <div class="tier-label">
+            <div class="tier-name">Scale · 16+ offices</div>
+            <div class="tier-sub">Full channel partner rate</div>
           </div>
-          <div class="pros-cons">
-            <div class="pro">✓ Predictable floor for Rippl</div>
-            <div class="pro">✓ Your margin: ~$64/office + upside</div>
-            <div class="pro">✓ Both sides win on volume</div>
+          <div class="tier-cell">
+            <div class="tc-label">Monthly</div>
+            <div class="tc-val">$30/office</div>
+          </div>
+          <div class="tier-cell">
+            <div class="tc-label">Per referral</div>
+            <div class="tc-val">$12</div>
+          </div>
+          <div class="tier-cell">
+            <div class="tc-label">Gift cards</div>
+            <div class="tc-val">At cost</div>
           </div>
         </div>
 
+        <div class="tier-note">
+          <strong>You set your own retail price.</strong> Rippl has no visibility into what you charge your clients. Most channel partners price at $99–149/office/month, keeping a $40–90 margin per office on top of what they pay Rippl. The per-referral fee and Tango costs are passed through on your invoice from Rippl — you can bundle these into your client pricing however you like.
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Example Math -->
+  <!-- 4. The Math -->
   <div class="slide">
     <div class="slide-header">
-      <h2>The Numbers — Model C at Scale</h2>
-      <p>Example: 10 salon clients, averaging 8 referrals per salon per month</p>
+      <h2>What the Numbers Look Like</h2>
+      <p>Two scenarios — where you start and where you're headed</p>
     </div>
     <div class="slide-body">
-      <div class="math-box">
-        <h4>Monthly breakdown — 10 offices, 80 referrals</h4>
-        <table class="math-table">
-          <thead>
+      <div class="math-grid">
+
+        <div class="math-box">
+          <h4>Today · Starter Tier</h4>
+          <div class="scenario">4 salon clients, avg 6 referrals each/month</div>
+          <table class="math-table">
             <tr>
-              <th>Item</th>
-              <th>Peydan pays Rippl</th>
-              <th>Peydan charges clients</th>
-              <th>Peydan keeps</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Platform fee (10 offices)</td>
-              <td>$350</td>
-              <td>$990</td>
-              <td>$640</td>
+              <td>Platform (4 × $60)</td>
+              <td>$240</td>
             </tr>
             <tr>
-              <td>Per-referral fee (80 refs)</td>
-              <td>$960</td>
-              <td>—</td>
-              <td>—</td>
+              <td>Referrals (24 × $12)</td>
+              <td>$288</td>
             </tr>
             <tr>
-              <td>Gift cards — Tango (80 refs × ~$35)</td>
-              <td>$2,800</td>
-              <td>$2,800</td>
-              <td>$0</td>
+              <td>Tango (24 × ~$35)</td>
+              <td>$840</td>
             </tr>
             <tr class="total">
-              <td>Total</td>
-              <td>$4,110 to Rippl</td>
-              <td>$3,790 from clients</td>
-              <td>$640/mo net</td>
+              <td>Peydan pays Rippl</td>
+              <td>$1,368</td>
             </tr>
-          </tbody>
-        </table>
-      </div>
-      <div style="margin-top: 20px; padding: 16px 20px; background: rgba(224,98,42,.07); border-radius: 10px; border-left: 3px solid #E0622A;">
-        <p style="font-size: 13px; color: #0a1f35; line-height: 1.6;">
-          <strong>Rippl earns:</strong> $350 platform + $960 referral = <strong>$1,310/month</strong> from Peydan's 10 clients — vs $990–1,490/month per single direct dental client. Channel partner model creates volume leverage.<br><br>
-          <strong>Peydan earns:</strong> $640/month net platform margin — plus any per-referral markup he applies to clients. At 20 clients this doubles. At 50 it becomes a real business.
-        </p>
+            <tr class="sub">
+              <td>Peydan charges clients (4 × $99 + $840 Tango)</td>
+              <td>$1,236</td>
+            </tr>
+            <tr class="sub">
+              <td>Peydan net margin</td>
+              <td>−$132*</td>
+            </tr>
+          </table>
+          <p style="font-size:11px;color:#94a3b8;margin-top:12px;">*Peydan prices Tango at cost to clients. Platform margin = $156/mo. Net depends on his retail price.</p>
+        </div>
+
+        <div class="math-box">
+          <h4>Growth Tier · 10 Clients</h4>
+          <div class="scenario">10 salon clients, avg 8 referrals each/month</div>
+          <table class="math-table">
+            <tr>
+              <td>Platform (10 × $45)</td>
+              <td>$450</td>
+            </tr>
+            <tr>
+              <td>Referrals (80 × $12)</td>
+              <td>$960</td>
+            </tr>
+            <tr>
+              <td>Tango (80 × ~$35)</td>
+              <td>$2,800</td>
+            </tr>
+            <tr class="total">
+              <td>Peydan pays Rippl</td>
+              <td>$4,210</td>
+            </tr>
+            <tr class="sub">
+              <td>Peydan charges clients (10 × $99 + $2,800 Tango)</td>
+              <td>$3,790</td>
+            </tr>
+            <tr class="sub">
+              <td>Peydan platform margin</td>
+              <td>$540/mo</td>
+            </tr>
+          </table>
+          <p style="font-size:11px;color:#94a3b8;margin-top:12px;">David earns $1,410/mo at 10 clients. At 20 clients (Scale tier): ~$2,360/mo to David.</p>
+        </div>
+
       </div>
     </div>
   </div>
 
-  <!-- What Rippl Needs -->
+  <!-- 5. How Invoicing Works -->
+  <div class="slide">
+    <div class="slide-header">
+      <h2>How Invoicing Works</h2>
+      <p>Simple monthly cycle — one invoice between David and Peydan, separate from what Peydan bills his clients</p>
+    </div>
+    <div class="slide-body">
+      <div class="invoice-flow">
+
+        <div class="invoice-party">
+          <div class="invoice-party-header david">
+            <div class="party-name">David (Rippl) → invoices → Peydan (Hollow Ground)</div>
+            <div class="party-role">By the 5th of each month</div>
+          </div>
+          <div class="invoice-rows">
+            <div class="invoice-row">
+              <div>
+                <div class="ir-label">Active offices × monthly rate</div>
+                <div class="ir-desc">Count of live Hollow Ground clients that month × applicable tier rate. Tier determined by total office count.</div>
+              </div>
+              <div class="ir-val">e.g. 4 × $60 = $240</div>
+            </div>
+            <div class="invoice-row">
+              <div>
+                <div class="ir-label">Confirmed referrals × $12</div>
+                <div class="ir-desc">Pulled directly from Rippl dashboard — referral events with status "Completed" in the prior calendar month, across all Hollow Ground clients.</div>
+              </div>
+              <div class="ir-val">e.g. 24 × $12 = $288</div>
+            </div>
+            <div class="invoice-row">
+              <div>
+                <div class="ir-label">Tango gift card costs — at cost, zero markup</div>
+                <div class="ir-desc">Exact amount charged by Tango Card for gift cards redeemed that month. David pulls from Tango account and passes through dollar-for-dollar. Receipts provided.</div>
+              </div>
+              <div class="ir-val">e.g. 18 × $35 = $630</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="arrow-row">Peydan bills his clients separately — his own pricing, his own schedule, his relationship</div>
+
+        <div class="invoice-party">
+          <div class="invoice-party-header peydan">
+            <div class="party-name">Peydan (Hollow Ground) → invoices → his salon clients</div>
+            <div class="party-role">Peydan's own terms</div>
+          </div>
+          <div class="invoice-rows">
+            <div class="invoice-row">
+              <div>
+                <div class="ir-label">Monthly platform fee</div>
+                <div class="ir-desc">Whatever Peydan charges — $99, $129, $149/mo. Rippl has no visibility into this. Peydan sets his own margin.</div>
+              </div>
+              <div class="ir-val">Peydan's price</div>
+            </div>
+            <div class="invoice-row">
+              <div>
+                <div class="ir-label">Gift card costs</div>
+                <div class="ir-desc">Peydan can bundle into monthly fee or pass through at cost. Most partners pass Tango at cost to keep pricing simple.</div>
+              </div>
+              <div class="ir-val">Peydan's choice</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="terms-row">
+          <div class="term-box">
+            <div class="tb-label">Payment terms</div>
+            <div class="tb-val">Net 15</div>
+            <div class="tb-sub">Peydan pays David within 15 days of invoice</div>
+          </div>
+          <div class="term-box">
+            <div class="tb-label">Invoice format</div>
+            <div class="tb-val">PDF + dashboard export</div>
+            <div class="tb-sub">Rippl dashboard shows referral counts per client for verification</div>
+          </div>
+          <div class="term-box">
+            <div class="tb-label">Tango receipts</div>
+            <div class="tb-val">Included</div>
+            <div class="tb-sub">Tango cost documented — no markup, ever</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. What Rippl Needs -->
   <div class="slide">
     <div class="slide-header">
       <h2>What Rippl Needs to Set You Up</h2>
-      <p>One-time assets to build the Hollow Ground white-label environment</p>
+      <p>One-time assets to build the Hollow Ground environment</p>
     </div>
     <div class="slide-body">
       <div class="checklist">
@@ -523,42 +674,42 @@
           <div class="num">1</div>
           <div class="text">
             <h4>Logo File</h4>
-            <p>SVG preferred, high-res PNG accepted. Will appear on every client's claim page, reward emails, and dashboard header. Transparent background ideal.</p>
+            <p>SVG preferred, high-res PNG accepted. Appears on every client's claim page, reward emails, and dashboard. Transparent background ideal.</p>
           </div>
         </div>
         <div class="check-item">
           <div class="num">2</div>
           <div class="text">
             <h4>Brand Colors</h4>
-            <p>Primary hex color code (used for buttons, accents, header). Secondary if applicable. Will be applied across all client-facing pages under Hollow Ground.</p>
+            <p>Primary hex color code for buttons, accents, and headers. Applied across all client-facing pages under Hollow Ground branding.</p>
           </div>
         </div>
         <div class="check-item">
           <div class="num">3</div>
           <div class="text">
             <h4>Exact Company Name</h4>
-            <p>How it should appear in the product — "Hollow Ground", "Hollow Ground Hair", or another variation. This becomes the white-label display name everywhere.</p>
+            <p>How it appears in the product — "Hollow Ground", "Hollow Ground Hair", or another variation. This is the display name everywhere.</p>
           </div>
         </div>
         <div class="check-item">
           <div class="num">4</div>
           <div class="text">
             <h4>First Client's Vagaro Credentials</h4>
-            <p>Business ID, API key, and API secret for the first salon you want to onboard. Rippl will configure the Vagaro webhook and test end-to-end before launch.</p>
+            <p>Business ID, API key, and API secret for the first salon to onboard. Rippl configures the Vagaro webhook and runs a full end-to-end test before launch.</p>
           </div>
         </div>
         <div class="check-item">
           <div class="num">5</div>
           <div class="text">
-            <h4>Partner Dashboard Login Email</h4>
-            <p>The email address Peydan will use to log into Rippl admin and see all Hollow Ground clients in one view. (Partner admin role — small build, ~2–3 hrs.)</p>
+            <h4>Your Partner Dashboard Email</h4>
+            <p>The email you'll use to log into Rippl admin and see all Hollow Ground clients in one view.</p>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Next Steps -->
+  <!-- 7. Next Steps -->
   <div class="slide">
     <div class="slide-header">
       <h2>Next Steps</h2>
@@ -567,20 +718,20 @@
     <div class="slide-body">
       <div class="next-steps">
         <div class="next-step">
-          <h4>1. Agree on rev share model</h4>
-          <p>Pick A, B, or C — or propose a hybrid. Once agreed, David drafts the channel partner agreement for signature.</p>
+          <h4>1. Agree on pricing tier</h4>
+          <p>Confirm the tiered model works. Rippl drafts channel partner agreement covering commercial terms, white-label license, IP, data, and termination.</p>
         </div>
         <div class="next-step">
           <h4>2. Sign channel partner agreement</h4>
-          <p>Short form covering: commercial terms, white-label license, IP protection, data/privacy, termination. Attorney review recommended.</p>
+          <p>Short-form agreement. Both parties sign. Protects Peydan's white-label rights and Rippl's IP. Attorney review recommended.</p>
         </div>
         <div class="next-step">
-          <h4>3. Send brand assets to David</h4>
+          <h4>3. Send brand assets</h4>
           <p>Logo, colors, company name. Rippl builds the Hollow Ground white-label environment — typically 1–2 days once assets are in hand.</p>
         </div>
         <div class="next-step">
           <h4>4. Onboard first client together</h4>
-          <p>Provide Vagaro credentials for client #1. Rippl configures, tests end-to-end, and you both confirm before going live with that client.</p>
+          <p>Vagaro credentials for client #1. Rippl configures, tests end-to-end, confirms with Peydan before going live.</p>
         </div>
       </div>
     </div>
