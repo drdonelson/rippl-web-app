@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rippl — LinkedIn Banner (1128×191)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,900;1,9..144,300&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 16px;
+      font-family: 'DM Sans', sans-serif;
+      padding: 40px;
+    }
+
+    .label {
+      font-size: 12px;
+      color: #64748b;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    /* ── The actual banner ── */
+    .banner {
+      width: 1128px;
+      height: 191px;
+      background: #0a1f35;
+      display: flex;
+      align-items: center;
+      padding: 0 64px;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    /* Ripple rings — decorative, right side */
+    .ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(224,98,42,.18);
+      right: -60px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .ring-1 { width: 220px; height: 220px; border-color: rgba(224,98,42,.22); }
+    .ring-2 { width: 340px; height: 340px; border-color: rgba(224,98,42,.14); }
+    .ring-3 { width: 460px; height: 460px; border-color: rgba(224,98,42,.09); }
+    .ring-4 { width: 580px; height: 580px; border-color: rgba(224,98,42,.05); }
+
+    /* Orange glow source */
+    .glow {
+      position: absolute;
+      right: 80px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(224,98,42,.35) 0%, transparent 70%);
+    }
+
+    /* Left: wordmark + tagline */
+    .left {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 1;
+    }
+
+    .wordmark {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 58px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -1px;
+      color: #fff;
+    }
+    .wordmark span { color: #E0622A; }
+
+    .tagline {
+      font-size: 16px;
+      font-weight: 500;
+      color: #94a3b8;
+      letter-spacing: .01em;
+    }
+
+    /* Divider */
+    .divider {
+      width: 1px;
+      height: 64px;
+      background: rgba(255,255,255,.12);
+      margin: 0 56px;
+      z-index: 1;
+      flex-shrink: 0;
+    }
+
+    /* Right: value props */
+    .props {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 1;
+    }
+    .prop {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+    .prop .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #E0622A;
+      flex-shrink: 0;
+    }
+
+    /* URL — bottom right */
+    .url {
+      position: absolute;
+      bottom: 18px;
+      right: 64px;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,.3);
+      letter-spacing: .06em;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="label">LinkedIn Banner — screenshot at 1128 × 191 px</div>
+
+  <div class="banner">
+    <!-- Decorative rings -->
+    <div class="ring ring-1"></div>
+    <div class="ring ring-2"></div>
+    <div class="ring ring-3"></div>
+    <div class="ring ring-4"></div>
+    <div class="glow"></div>
+
+    <!-- Left: brand -->
+    <div class="left">
+      <div class="wordmark">rip<span>pl</span></div>
+      <div class="tagline">Referral rewards, on autopilot.</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Right: value props -->
+    <div class="props">
+      <div class="prop"><div class="dot"></div>Automated referral detection</div>
+      <div class="prop"><div class="dot"></div>Gift cards delivered instantly</div>
+      <div class="prop"><div class="dot"></div>Dental · Salon · Automotive</div>
+    </div>
+
+    <div class="url">joinrippl.com</div>
+  </div>
+
+  <div class="label">Open in browser → screenshot or print-to-PDF at 100% zoom, crop to 1128 × 191</div>
+
+</body>
+</html>
