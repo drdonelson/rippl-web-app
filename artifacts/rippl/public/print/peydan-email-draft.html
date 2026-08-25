@@ -55,24 +55,18 @@
     }
     .meta-row span { color: #0a1f35; font-weight: 600; }
     .body {
-      padding: 36px 36px 40px;
+      padding: 36px 36px 12px;
       font-size: 15px;
       color: #1e293b;
-      line-height: 1.75;
+      line-height: 1.8;
       white-space: pre-wrap;
       user-select: text;
     }
     .body strong { font-weight: 700; color: #0a1f35; }
-    .body ul {
-      margin: 6px 0 6px 20px;
-    }
-    .body li {
-      margin-bottom: 4px;
-    }
     .copy-btn {
       display: block;
       width: calc(100% - 72px);
-      margin: 0 36px 28px;
+      margin: 24px 36px 28px;
       padding: 12px;
       background: #0a1f35;
       color: #fff;
@@ -91,7 +85,7 @@
   <div class="card">
     <div class="card-header">
       <div class="label">Email Draft</div>
-      <div class="subject">Two things for Tuesday + a quick asset request</div>
+      <div class="subject">Carlock Rewards + Hollow Ground Agreement</div>
     </div>
     <div class="meta">
       <div class="meta-row">To: <span>Peydan</span></div>
@@ -99,34 +93,46 @@
     </div>
     <div class="body" id="emailBody">Hey Peydan,
 
-Looking forward to Tuesday. Two things I want to cover — wanted to give you a heads-up so we're prepared:
+Great meeting today — a lot of good momentum. Two things to button up before we're fully live on both fronts.
 
-<strong>1. Volvo Carlock Rewards — reward options</strong>
+<strong>1. Carlock Rewards — reward options, need your input</strong>
 
-I put together the reward menu for Volvo customers. Proposed options:
+Based on our conversation, here's where I landed on the reward menu. I need you to confirm a couple of things so I can update the system:
 
-  • $100 Amazon gift card (delivered instantly by email)
-  • $150 Volvo merchandise credit (redeemable on the showroom floor)
-  • $100 service department credit (any maintenance visit)
-  • $75 interior &amp; exterior detail package
+Current lineup:
+  • $100 Amazon gift card (auto-delivered by email — no staff action needed)
+  • $150 Volvo boutique/accessory credit
+  • $100 service department credit
 
-Want to confirm these make sense operationally for your team before we finalize and turn them on.
+Pending your confirmation:
+  • Charity donation — you mentioned the Humane Society. Can you send me the exact organization name and the dollar amount you want to set for that option? I'll replace the detail package with it.
 
-<strong>2. Hollow Ground — white-label partnership opportunity</strong>
+Also — you mentioned you wanted different wording on the boutique/accessory credit. What should the label and description say? Right now it reads "Volvo Merchandise Credit — $150 credit toward Volvo branded merchandise in the showroom." Let me know what you'd prefer and I'll update it.
 
-You mentioned you have salon clients. I put together a channel partner proposal for you to offer Rippl under the Hollow Ground brand. Your clients see "Hollow Ground," you set your own pricing, Rippl handles all the technology. I have three rev share models to walk through — a lot of upside here if the salon book is real.
+Once I have those two things I can finalize the reward menu and it's done.
 
-<strong>One quick ask before Tuesday:</strong>
+<strong>2. Hollow Ground — partnership agreement attached</strong>
 
-If you want to move forward on Hollow Ground, it would help to have your brand assets in hand so I can show you what it actually looks like built out. Can you send:
+I put together a simple channel partner agreement. It covers the terms we discussed:
 
+  • Tiered platform fee: $60/office/mo for 1–5 clients, $45 for 6–15, $30 for 16+
+  • $12 per confirmed referral
+  • Gift cards always at Tango cost (passed through with receipts)
+  • You set your own pricing with clients — Rippl has no visibility into that
+  • I invoice you by the 5th of each month, net 15
+  • Either party can exit with 30 days notice
+
+Agreement link: https://rippl.onrender.com/print/hollow-ground-agreement.html
+
+Take a look and let me know if anything needs to change. It's intentionally simple — we're neighbors, not adversaries.
+
+When you're ready to move forward on Matthew & Company, I'll need:
   • Hollow Ground logo (SVG or high-res PNG, transparent background)
-  • Primary brand color (hex code, or just describe it and I'll match)
-  • Exact name as it should appear in the product
+  • Brand color (hex code or just describe it)
+  • Exact business name as it should appear in the product
+  • Matthew's Vagaro credentials (Business ID, API key, API secret)
 
-No rush if it's easier to bring Tuesday — just wanted to give us a head start.
-
-See you then.
+Once I have those I can have him live within a day or two.
 
 David</div>
     <button class="copy-btn" id="copyBtn" onclick="copyEmail()">Copy Email Text</button>
@@ -135,7 +141,6 @@ David</div>
   <script>
     function copyEmail() {
       const body = document.getElementById('emailBody');
-      // Get plain text version
       const text = body.innerText;
       navigator.clipboard.writeText(text).then(() => {
         const btn = document.getElementById('copyBtn');
