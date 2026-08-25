@@ -36,6 +36,7 @@ export function PracticeProvider({ children }: { children: React.ReactNode }) {
   const { profile, session, isLoading: authLoading } = useAuth();
   const isSuperAdmin = profile?.role === "super_admin";
   const isPracticeAdmin = profile?.role === "practice_admin";
+  const isChannelPartner = profile?.role === "channel_partner";
   const [practices, setPractices] = useState<Practice[]>([]);
   const [myPractice, setMyPractice] = useState<Practice | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -60,6 +61,23 @@ export function PracticeProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setIsLoading(false));
   }, [authLoading, isSuperAdmin]);
 
+  // channel_partner: load their own client practices
+  useEffect(() => {
+    if (authLoading || !isChannelPartner || !session?.access_token) return;
+
+    setIsLoading(true);
+    fetch(`${BASE}/api/practices/my-clients`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.ok ? r.json() : [])
+      .then((data: unknown) => {
+        const list = Array.isArray(data) ? (data as Practice[]) : [];
+        setPractices(list);
+      })
+      .catch(() => setPractices([]))
+      .finally(() => setIsLoading(false));
+  }, [authLoading, isChannelPartner, session?.access_token]);
+
   // practice_admin (and any role with a practice_id): load own practice for vertical-aware pages
   useEffect(() => {
     if (authLoading || !profile?.practice_id || !session?.access_token) return;
@@ -74,13 +92,14 @@ export function PracticeProvider({ children }: { children: React.ReactNode }) {
       .catch(() => {});
   }, [authLoading, profile?.practice_id, session?.access_token]);
 
-  // For super_admin, also set myPractice from the selected practice
+  // For super_admin and channel_partner, set myPractice from the selected practice
   useEffect(() => {
-    if (isSuperAdmin && practices.length > 0 && selectedPracticeId) {
-      const found = practices.find(p => p.id === selectedPracticeId) ?? null;
-      if (found) setMyPractice(found);
+    if ((isSuperAdmin || isChannelPartner) && practices.length > 0) {
+      const found = (selectedPracticeId ? practices.find(p => p.id === selectedPracticeId) : null) ?? practices[0] ?? null;
+      setMyPractice(found);
+      if (found && !selectedPracticeId) setSelectedPracticeIdState(found.id);
     }
-  }, [isSuperAdmin, practices, selectedPracticeId]);
+  }, [isSuperAdmin, isChannelPartner, practices, selectedPracticeId]);
 
   const setSelectedPracticeId = (id: string | null) => {
     setSelectedPracticeIdState(id);

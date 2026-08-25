@@ -54,7 +54,8 @@ const DcSignup       = lazy(() => import("@/pages/dc-signup"));
 const BillingSetup   = lazy(() => import("@/pages/billing-setup"));
 const Pricing        = lazy(() => import("@/pages/pricing"));
 const Specialists    = lazy(() => import("@/pages/specialists"));
-const Enroll         = lazy(() => import("@/pages/enroll"));
+const Enroll              = lazy(() => import("@/pages/enroll"));
+const ChannelPartnerClients = lazy(() => import("@/pages/channel-partner-clients"));
 const NotFound       = lazy(() => import("@/pages/not-found"));
 
 const queryClient = new QueryClient({
@@ -129,6 +130,7 @@ function Router() {
                   <Route path="/offices"          component={Offices}        />
                   <Route path="/analytics"        component={Analytics}      />
                   <Route path="/practice-admin"   component={PracticeAdmin}  />
+                  <Route path="/clients"          component={ChannelPartnerClients} />
                   <Route path="/patient-journey" component={PatientJourney} />
                   <Route path="/playbook"       component={Playbook}       />
                   <Route path="/slide-deck"     component={SlideDeck}      />

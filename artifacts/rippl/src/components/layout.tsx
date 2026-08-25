@@ -5,7 +5,7 @@ import {
   LayoutDashboard, CalendarDays, Users,
   ChevronDown, MapPin, LogOut, AlertTriangle, Menu, X,
   Store, CheckSquare, Building2, TrendingUp, ExternalLink,
-  GraduationCap, Megaphone, BookOpen, Route, MonitorPlay,
+  GraduationCap, Megaphone, BookOpen, Route, MonitorPlay, Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useOffice } from "@/contexts/office-context";
@@ -19,15 +19,17 @@ type NavItem = {
   label: string;
   icon: React.ElementType;
   external?: boolean;
-  minRole?: "practice_admin" | "super_admin";
+  minRole?: "practice_admin" | "super_admin" | "channel_partner";
   skipForDemo?: boolean;
+  channelPartnerOnly?: boolean;
 };
 
 type NavSection = {
   label?: string;
-  minRole?: "practice_admin" | "super_admin";
+  minRole?: "practice_admin" | "super_admin" | "channel_partner";
   demoVisible?: boolean;
   demoOnly?: boolean;
+  channelPartnerOnly?: boolean;
   items: NavItem[];
 };
 
@@ -46,6 +48,14 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/campaigns",   label: "Campaigns",      icon: Megaphone,   minRole: "practice_admin" },
       { href: "/admin-tasks", label: "Admin Tasks",    icon: CheckSquare, skipForDemo: true         },
       { href: "/offices",     label: "Offices & Team", icon: Building2,   minRole: "practice_admin" },
+    ],
+  },
+  {
+    label: "My Clients",
+    minRole: "channel_partner",
+    channelPartnerOnly: true,
+    items: [
+      { href: "/clients", label: "Client Salons", icon: Briefcase, minRole: "channel_partner", channelPartnerOnly: true },
     ],
   },
   {
@@ -94,18 +104,23 @@ const TAB_BAR_ITEMS = NAV_SECTIONS[0].items;
 function roleLevel(role: UserRole | undefined): number {
   if (role === "super_admin") return 3;
   if (role === "practice_admin") return 2;
+  if (role === "channel_partner") return 2;
   if (role?.startsWith("staff_")) return 1;
   return 0;
 }
 
 function getSections(role: UserRole | undefined, isDemo = false): NavSection[] {
   const level = roleLevel(role);
+  const isChannelPartner = role === "channel_partner";
   return NAV_SECTIONS
     .filter((s) => {
       if (s.demoOnly && !isDemo) return false;
+      if (s.channelPartnerOnly && !isChannelPartner) return false;
+      if (isChannelPartner && !s.channelPartnerOnly && s.minRole && s.minRole !== "channel_partner") return false;
       if (isDemo && s.demoVisible) return true;
-      if (!s.minRole) return true;
-      if (s.minRole === "practice_admin") return level >= 2;
+      if (!s.minRole) return !isChannelPartner || s.channelPartnerOnly !== false;
+      if (s.minRole === "channel_partner") return isChannelPartner || level >= 3;
+      if (s.minRole === "practice_admin") return level >= 2 && !isChannelPartner;
       if (s.minRole === "super_admin") return level >= 3;
       return false;
     })
@@ -113,9 +128,12 @@ function getSections(role: UserRole | undefined, isDemo = false): NavSection[] {
       ...s,
       items: s.items.filter((item) => {
         if (isDemo && item.skipForDemo) return false;
+        if (item.channelPartnerOnly && !isChannelPartner) return false;
+        if (isChannelPartner && !item.channelPartnerOnly && item.minRole && item.minRole !== "channel_partner") return false;
         if (isDemo && !item.minRole) return true;
-        if (!item.minRole) return true;
-        if (item.minRole === "practice_admin") return level >= 2;
+        if (!item.minRole && !item.channelPartnerOnly) return true;
+        if (item.minRole === "channel_partner") return isChannelPartner || level >= 3;
+        if (item.minRole === "practice_admin") return level >= 2 && !isChannelPartner;
         if (item.minRole === "super_admin") return level >= 3;
         return false;
       }),

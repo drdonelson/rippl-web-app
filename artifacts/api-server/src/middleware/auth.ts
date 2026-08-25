@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import type { UserProfile } from "@workspace/db/schema";
 
 export type StaffRole = "staff_brentwood" | "staff_lewisburg" | "staff_greenbrier" | "staff_all";
-export type UserRole = "super_admin" | "practice_admin" | "demo" | StaffRole;
+export type UserRole = "super_admin" | "practice_admin" | "channel_partner" | "demo" | StaffRole;
 
 export interface AuthUser {
   id: string;
@@ -132,6 +132,15 @@ export function requirePracticeAdmin(req: Request, res: Response, next: NextFunc
   const role = req.authUser?.role;
   if (role !== "super_admin" && role !== "practice_admin") {
     res.status(403).json({ error: "Practice admin access required" });
+    return;
+  }
+  next();
+}
+
+export function requireChannelPartner(req: Request, res: Response, next: NextFunction) {
+  const role = req.authUser?.role;
+  if (role !== "super_admin" && role !== "channel_partner") {
+    res.status(403).json({ error: "Channel partner access required" });
     return;
   }
   next();

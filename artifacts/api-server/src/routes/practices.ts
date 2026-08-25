@@ -1,8 +1,8 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { practicesTable, officesTable } from "@workspace/db/schema";
-import { eq, sql } from "drizzle-orm";
-import { requireAuth, requireSuperAdmin } from "../middleware/auth";
+import { eq, sql, and } from "drizzle-orm";
+import { requireAuth, requireSuperAdmin, requireChannelPartner } from "../middleware/auth";
 import { invalidatePracticeCache } from "../lib/practiceConfig";
 
 const router: IRouter = Router();
@@ -56,15 +56,49 @@ router.get("/mine", requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/practices/:id — single practice (super_admin only)
-router.get("/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+// GET /api/practices/my-clients — returns all practices owned by the calling channel_partner
+// MUST be before /:id
+router.get("/my-clients", requireAuth, requireChannelPartner, async (req, res) => {
+  const caller = req.authUser!;
+  try {
+    const practices = await db.execute(sql`
+      SELECT
+        p.*,
+        COUNT(o.id)::int AS office_count
+      FROM practices p
+      LEFT JOIN offices o ON o.practice_id = p.id
+      WHERE p.channel_partner_id = ${caller.id}
+      GROUP BY p.id
+      ORDER BY p.created_at DESC
+    `);
+    res.json(practices.rows);
+  } catch (err) {
+    req.log.error({ err }, "[practices/my-clients] GET failed");
+    res.status(500).json({ error: "Failed to load clients" });
+  }
+});
+
+// GET /api/practices/:id — single practice (super_admin or channel_partner who owns it)
+router.get("/:id", requireAuth, async (req, res) => {
+  const caller = req.authUser!;
   const { id } = req.params;
+
+  if (caller.role !== "super_admin" && caller.role !== "channel_partner") {
+    res.status(403).json({ error: "Access denied" });
+    return;
+  }
+
   try {
     const [practice] = await db
       .select()
       .from(practicesTable)
       .where(eq(practicesTable.id, id));
     if (!practice) { res.status(404).json({ error: "Practice not found" }); return; }
+
+    if (caller.role === "channel_partner" && practice.channel_partner_id !== caller.id) {
+      res.status(403).json({ error: "Access denied" });
+      return;
+    }
 
     const offices = await db
       .select()
@@ -84,6 +118,7 @@ router.post("/", requireAuth, requireSuperAdmin, async (req, res) => {
     name, slug, vertical, plan, monthly_fee, per_referral_fee,
     reward_value, twilio_phone_number, sendgrid_from_email,
     sendgrid_from_name, tango_email_template_id, primary_color,
+    channel_partner_id,
   } = req.body as Record<string, string | number | undefined>;
 
   if (!name || !slug) {
@@ -109,6 +144,7 @@ router.post("/", requireAuth, requireSuperAdmin, async (req, res) => {
         sendgrid_from_name:      sendgrid_from_name ? String(sendgrid_from_name) : null,
         tango_email_template_id: tango_email_template_id ? String(tango_email_template_id) : null,
         primary_color:           primary_color ? String(primary_color).replace("#", "") : "E0622A",
+        channel_partner_id:      channel_partner_id ? String(channel_partner_id) : null,
       })
       .returning();
 
@@ -125,8 +161,30 @@ router.post("/", requireAuth, requireSuperAdmin, async (req, res) => {
 });
 
 // PATCH /api/practices/:id — update practice config
-router.patch("/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+// super_admin: can update anything on any practice
+// channel_partner: can update branding/rewards fields only on their own practices
+router.patch("/:id", requireAuth, async (req, res) => {
+  const caller = req.authUser!;
   const { id } = req.params;
+
+  if (caller.role !== "super_admin" && caller.role !== "channel_partner") {
+    res.status(403).json({ error: "Access denied" });
+    return;
+  }
+
+  // channel_partner: verify ownership before allowing edit
+  if (caller.role === "channel_partner") {
+    const [existing] = await db
+      .select({ channel_partner_id: practicesTable.channel_partner_id })
+      .from(practicesTable)
+      .where(eq(practicesTable.id, id));
+    if (!existing || existing.channel_partner_id !== caller.id) {
+      res.status(403).json({ error: "Access denied" });
+      return;
+    }
+  }
+
+  const body = req.body as Record<string, string | number | boolean | undefined | null>;
   const {
     name, status, plan, monthly_fee, per_referral_fee,
     reward_value, twilio_phone_number, sendgrid_from_email,
@@ -134,23 +192,30 @@ router.patch("/:id", requireAuth, requireSuperAdmin, async (req, res) => {
     vertical, integration_config,
     white_label_name, white_label_logo_url, white_label_primary_color, show_powered_by_rippl,
     in_house_credit_label, in_house_credit_value,
-  } = req.body as Record<string, string | number | boolean | undefined | null>;
+  } = body;
 
   const updates: Partial<typeof practicesTable.$inferInsert> = {};
-  if (name                      !== undefined) updates.name                      = String(name);
-  if (status                    !== undefined) updates.status                    = String(status);
-  if (plan                      !== undefined) updates.plan                      = String(plan);
-  if (vertical                  !== undefined) updates.vertical                  = String(vertical);
-  if (monthly_fee               !== undefined) updates.monthly_fee               = Number(monthly_fee);
-  if (per_referral_fee          !== undefined) updates.per_referral_fee          = Number(per_referral_fee);
-  if (reward_value              !== undefined) updates.reward_value              = Number(reward_value);
-  if (twilio_phone_number       !== undefined) updates.twilio_phone_number       = twilio_phone_number ? String(twilio_phone_number) : null;
-  if (sendgrid_from_email       !== undefined) updates.sendgrid_from_email       = sendgrid_from_email ? String(sendgrid_from_email) : null;
-  if (sendgrid_from_name        !== undefined) updates.sendgrid_from_name        = sendgrid_from_name ? String(sendgrid_from_name) : null;
-  if (tango_email_template_id   !== undefined) updates.tango_email_template_id   = tango_email_template_id ? String(tango_email_template_id) : null;
-  if (primary_color             !== undefined) updates.primary_color             = primary_color ? String(primary_color).replace("#", "") : "E0622A";
+
+  // super_admin-only fields
+  if (caller.role === "super_admin") {
+    if (name                      !== undefined) updates.name                      = String(name);
+    if (status                    !== undefined) updates.status                    = String(status);
+    if (plan                      !== undefined) updates.plan                      = String(plan);
+    if (vertical                  !== undefined) updates.vertical                  = String(vertical);
+    if (monthly_fee               !== undefined) updates.monthly_fee               = Number(monthly_fee);
+    if (per_referral_fee          !== undefined) updates.per_referral_fee          = Number(per_referral_fee);
+    if (reward_value              !== undefined) updates.reward_value              = Number(reward_value);
+    if (twilio_phone_number       !== undefined) updates.twilio_phone_number       = twilio_phone_number ? String(twilio_phone_number) : null;
+    if (sendgrid_from_email       !== undefined) updates.sendgrid_from_email       = sendgrid_from_email ? String(sendgrid_from_email) : null;
+    if (sendgrid_from_name        !== undefined) updates.sendgrid_from_name        = sendgrid_from_name ? String(sendgrid_from_name) : null;
+    if (tango_email_template_id   !== undefined) updates.tango_email_template_id   = tango_email_template_id ? String(tango_email_template_id) : null;
+    if (primary_color             !== undefined) updates.primary_color             = primary_color ? String(primary_color).replace("#", "") : "E0622A";
+    if (body.logo_url             !== undefined) updates.logo_url                  = body.logo_url ? String(body.logo_url) : null;
+    if (body.channel_partner_id   !== undefined) updates.channel_partner_id        = body.channel_partner_id ? String(body.channel_partner_id) : null;
+  }
+
+  // Fields editable by channel_partner too
   if (integration_config        !== undefined) updates.integration_config        = integration_config as Record<string, string>;
-  if ((req.body as Record<string, unknown>).logo_url !== undefined) updates.logo_url = (req.body as Record<string, unknown>).logo_url ? String((req.body as Record<string, unknown>).logo_url) : null;
   if (white_label_name          !== undefined) updates.white_label_name          = white_label_name ? String(white_label_name) : null;
   if (white_label_logo_url      !== undefined) updates.white_label_logo_url      = white_label_logo_url ? String(white_label_logo_url) : null;
   if (white_label_primary_color !== undefined) updates.white_label_primary_color = white_label_primary_color ? String(white_label_primary_color).replace("#", "") : null;

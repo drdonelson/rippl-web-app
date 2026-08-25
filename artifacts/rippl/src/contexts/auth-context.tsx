@@ -6,7 +6,7 @@ import { setAuthTokenGetter } from "@workspace/api-client-react";
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
 export type StaffRole = "staff_brentwood" | "staff_lewisburg" | "staff_greenbrier";
-export type UserRole = "super_admin" | "practice_admin" | "demo" | StaffRole;
+export type UserRole = "super_admin" | "practice_admin" | "channel_partner" | "demo" | StaffRole;
 export type DemoVertical = "dental" | "automotive" | "salon";
 
 export function staffOfficeLabel(role: UserRole): string | null {
