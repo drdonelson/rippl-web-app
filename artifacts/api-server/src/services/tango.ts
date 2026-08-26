@@ -1,4 +1,5 @@
 import { logger } from "../lib/logger";
+import { sendEmail } from "../lib/email";
 
 const TANGO_BASE_URL        = "https://api.tangocard.com/raas/v2";
 const TANGO_PLATFORM_NAME   = process.env.TANGO_PLATFORM_NAME?.trim();
@@ -99,6 +100,31 @@ export async function sendAmazonRewardLink(
     const message = err instanceof Error ? err.message : String(err);
     logger.error({ err, externalRefId }, "Tango request threw");
     return { success: false, error: message };
+  }
+}
+
+const LOW_BALANCE_THRESHOLD = 500; // dollars
+let lastBalanceAlertSent = 0;     // epoch ms — rate-limits to once per 24 hours
+
+export async function checkAndAlertTangoBalance(): Promise<void> {
+  const now = Date.now();
+  if (now - lastBalanceAlertSent < 86_400_000) return; // already alerted within 24 hours
+
+  const bal = await getAccountBalance();
+  if (!bal || bal.balance >= LOW_BALANCE_THRESHOLD) return;
+
+  lastBalanceAlertSent = now;
+  const alertEmail = process.env.ALERT_EMAIL || "david@hallmarkdds.com";
+  try {
+    await sendEmail({
+      to:      alertEmail,
+      from:    { email: "hello@joinrippl.com", name: "Rippl" },
+      subject: `⚠️ Tango balance low — $${bal.balance.toFixed(2)} remaining`,
+      html:    `<p>Your Tango gift card account balance has dropped to <strong>$${bal.balance.toFixed(2)}</strong>.</p><p>At $35–$100 per reward, you have roughly ${Math.floor(bal.balance / 35)}–${Math.floor(bal.balance / 100)} gift cards remaining before claims fall to admin tasks. Top up at <a href="https://app.tangocard.com">app.tangocard.com</a>.</p>`,
+    });
+    logger.warn({ balance: bal.balance, alertSentTo: alertEmail }, "Tango low balance alert sent");
+  } catch (err) {
+    logger.error({ err }, "Failed to send Tango low balance alert email");
   }
 }
 

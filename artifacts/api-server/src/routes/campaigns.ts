@@ -9,6 +9,7 @@ import twilio from "twilio";
 import { SMS_ENABLED } from "../lib/smsEnabled";
 import { sendEmail } from "../lib/email";
 import { logger } from "../lib/logger";
+import { getPracticeConfig } from "../lib/practiceConfig";
 
 const router: IRouter = Router();
 
@@ -171,12 +172,12 @@ async function getFilteredReferrers(filter: AudienceFilter, practiceId: string |
 
 // ── Template rendering ────────────────────────────────────────────────────────
 
-function renderTemplate(template: string, referrer: ReferrerRow): string {
+function renderTemplate(template: string, referrer: ReferrerRow, practiceName?: string): string {
   const firstName   = referrer.name?.split(" ")[0] ?? "there";
   const tierName    = TIER_NAMES[referrer.tier ?? "starter"] ?? "Influencer";
   const referralLink = `${APP_URL}/refer?code=${referrer.referral_code}`;
   const rewardValue = `$${referrer.reward_value ?? 35}`;
-  const officeName  = referrer.office_name ?? "Hallmark Dental";
+  const officeName  = referrer.office_name ?? practiceName ?? "your practice";
 
   return template
     .replace(/\{\{first_name\}\}/g,    firstName)
@@ -318,6 +319,10 @@ router.post("/send", async (req, res) => {
     try {
       const referrers = await getFilteredReferrers(filter as AudienceFilter, senderPracticeId);
 
+      const practiceConfig = senderPracticeId ? await getPracticeConfig(senderPracticeId) : null;
+      const practiceName = practiceConfig?.white_label_name ?? practiceConfig?.name ?? undefined;
+      const practiceFromName = practiceName ? `Rippl by ${practiceName}` : "Rippl";
+
       // Set up clients
       const twilioClient = channel === "sms"
         ? twilio(TWILIO_ACCOUNT_SID!, TWILIO_AUTH_TOKEN!)
@@ -331,7 +336,7 @@ router.post("/send", async (req, res) => {
         if (i > 0 && i % 10 === 0) await sleep(1000);
 
         const referrer = referrers[i];
-        const message  = renderTemplate(message_template.trim(), referrer);
+        const message  = renderTemplate(message_template.trim(), referrer, practiceName);
 
         try {
           if (channel === "sms") {
@@ -357,7 +362,7 @@ router.post("/send", async (req, res) => {
             const { text: emailText, html: emailHtml } = buildEmailPayload(message);
             await sendEmail({
               to:      referrer.email,
-              from:    { email: FROM_EMAIL, name: "Rippl by Hallmark Dental" },
+              from:    { email: FROM_EMAIL, name: practiceFromName },
               subject: name.trim(),
               text:    emailText,
               html:    emailHtml,
@@ -430,6 +435,12 @@ router.post("/test-send", async (req, res) => {
     const patient   = referrers[0] ?? null;
 
     // If no real patient, synthesise a placeholder referrer
+    const previewPractice = req.authUser!.practice_id
+      ? await getPracticeConfig(req.authUser!.practice_id).catch(() => null)
+      : null;
+    const previewPracticeName = previewPractice?.white_label_name ?? previewPractice?.name ?? undefined;
+    const previewFromName = previewPracticeName ? `Rippl by ${previewPracticeName}` : "Rippl";
+
     const referrerData: ReferrerRow = patient ?? {
       id:                  "test",
       name:                "Sarah Johnson",
@@ -440,10 +451,10 @@ router.post("/test-send", async (req, res) => {
       reward_value:        35,
       office_id:           null,
       onboarding_sms_sent: false,
-      office_name:         "Hallmark Dental",
+      office_name:         null,
     };
 
-    const renderedMessage = renderTemplate(message_template.trim(), referrerData);
+    const renderedMessage = renderTemplate(message_template.trim(), referrerData, previewPracticeName);
     const { text: emailText, html: emailBodyHtml } = buildEmailPayload(renderedMessage);
 
     const testBannerHtml = `<div style="background:#0d9488;color:#fff;padding:8px 16px;border-radius:6px 6px 0 0;font-size:12px;font-weight:600;letter-spacing:.05em;font-family:system-ui,sans-serif;max-width:600px;margin:0 auto">
@@ -457,7 +468,7 @@ router.post("/test-send", async (req, res) => {
 
     await sendEmail({
       to:      recipientEmail,
-      from:    { email: FROM_EMAIL, name: "Rippl by Hallmark Dental" },
+      from:    { email: FROM_EMAIL, name: previewFromName },
       subject: `[TEST] Campaign Preview — ${referrerData.name.split(" ")[0]}'s data`,
       text:    emailText,
       html:    testHtml,

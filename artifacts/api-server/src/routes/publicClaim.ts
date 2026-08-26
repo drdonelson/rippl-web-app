@@ -208,16 +208,17 @@ router.post("/", async (req, res) => {
 
       if (referrerEmail) {
         const nameParts = referrer.name?.trim().split(" ") ?? ["Valued", "Patient"];
-        tangoResult = await sendAmazonRewardLink(
-          {
-            email:     referrerEmail,
-            firstName: nameParts[0] ?? "Valued",
-            lastName:  nameParts.slice(1).join(" ") || "Patient",
-          },
-          rewardValue,
-          claim.id,
-          tangoTemplateId,
-        );
+        const tangoRecipient = {
+          email:     referrerEmail,
+          firstName: nameParts[0] ?? "Valued",
+          lastName:  nameParts.slice(1).join(" ") || "Patient",
+        };
+        tangoResult = await sendAmazonRewardLink(tangoRecipient, rewardValue, claim.id, tangoTemplateId);
+        // One retry after 3 seconds if transient failure
+        if (!tangoResult.success) {
+          await new Promise(r => setTimeout(r, 3000));
+          tangoResult = await sendAmazonRewardLink(tangoRecipient, rewardValue, claim.id, tangoTemplateId);
+        }
       }
 
       if (tangoResult?.success && tangoResult.orderId) {

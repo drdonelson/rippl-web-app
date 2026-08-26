@@ -1,6 +1,6 @@
 # Rippl — Cold Start Document
 
-**Version:** 1.8.0  
+**Version:** 1.9.0  
 **Classification:** Agent Orientation & Operating Doctrine  
 **Scope:** All agents and sessions operating on the Rippl codebase  
 **Authority:** Dr. David Donelson, Principal — Hallmark Dental / david@hallmarkdds.com
@@ -160,7 +160,7 @@ Rippl is a **multi-vertical patient/customer referral rewards platform**. It:
 **Live URL:** https://www.joinrippl.com  
 **GitHub:** https://github.com/drdonelson/rippl-web-app  
 **Hosting:** Render.com (auto-deploys from GitHub on every push)  
-**Current version:** v1.8.0 (August 2026)
+**Current version:** v1.9.0 (August 2026)
 
 ### The Business Model
 
@@ -175,7 +175,7 @@ Rippl is a **multi-vertical patient/customer referral rewards platform**. It:
 |----------|---------|--------|-------------|
 | Hallmark Dental (3 offices) | Dental | Live | Dr. David Donelson |
 | Carlock Automotive | Automotive | Live — SFTP active, 241 deals scanned 2026-08-07 | Peydan (CMO) |
-| Volvo of Cool Springs | Automotive | Live — SFTP configured; awaiting DriveCentric source group setup + first file | Peydan (CMO) |
+| Volvo of Cool Springs | Automotive | Live — "Carlock Rewards" lead source configured in DriveCentric (Showroom → Carlock Rewards); auto-enrollment active; pre-referral capture live; awaiting first SFTP file | Peydan (CMO) |
 | Peydan's salons | Salon | Pre-sales — channel partner agreement pending | Peydan |
 
 **Cox Automotive org structure:** Peydan (CMO) is the business contact for Carlock Automotive group, which owns Volvo of Cool Springs. Each dealership is a separate "rooftop/door" with its own DriveCentric account and CRM ID under the Cox Automotive umbrella. Darren Sabino is a DriveCentric employee (NOT Carlock staff) who configures the SFTP export on the DriveCentric side for each rooftop. **Two separate SFTP setups are correct and intentional — one per rooftop/CRM ID.**
@@ -241,12 +241,14 @@ rippl-web-app/
 | `practices` | Multi-tenant practice records (vertical, white-label, integration config) |
 | `campaigns` | Bulk SMS/email campaigns |
 | `local_partners` | Local business reward partners |
+| `pre_referrals` | Contact info for referred people who clicked a referral link before visiting (automotive); matched to closed deals by buyer phone to auto-attribute referrer |
 
 **`admin_tasks` task_type values:**
 - `gift-card` — Tango failed; manual fulfillment required
 - `apply-credit` — dental credit redemption chosen by patient
 - `charity` — charity donation redemption chosen
 - `unmatched-referral` — Vagaro/DriveCentric referral where name didn't match a known referrer; resolved via "Match Referrer" UI
+- `custom-reward` — non-Tango reward selected by referrer (e.g., merch credit, service credit, detail package); fulfillment instructions in `notes` field
 
 **Note:** `admin_tasks` has BOTH a `completed` (boolean) AND a `status` (text) column — handle both in any query.
 
@@ -438,6 +440,41 @@ First real Carlock SFTP file arrived 2026-08-07 — 241 deals scanned, 2 referra
 
 ---
 
+### v1.9.0 (August 2026) — Auto-Enrollment, Custom Rewards, Pre-Referral Capture + DriveCentric Lead Source
+
+**Why this was built:**
+
+Live working session with Peydan (CMO) on 2026-08-14 revealed a critical constraint: DriveCentric's Source Description field is a predefined dropdown — salespeople cannot type referrer codes or names. Three features were built simultaneously to close the attribution gap:
+1. **Auto-enrollment at delivery** — every buyer auto-enrolled overnight; zero staff action required
+2. **Pre-referral capture** — referred people submit contact info at link click; phone matched to SFTP deal at close time (Tier 0 attribution)
+3. **Custom rewards** — non-Tango reward options (merch credit, service credit, detail package) as alternatives to gift cards
+
+Additionally, a "Carlock Rewards" Lead Source was configured in DriveCentric under Showroom — the correct salesperson workflow is Type=Showroom, Source=Carlock Rewards (one dropdown selection). Training deck completely rewritten to reflect this.
+
+**What shipped:**
+
+- **"Carlock Rewards" Lead Source added in DriveCentric** — Store Settings → Lead Sources → +Add source: Type=Showroom, Name=Carlock Rewards. Now appears in deal Edit Source modal. Source Description Group still exists in the backend for SFTP export `SourceDescriptionGroupId`. `referral_source_groups` in Volvo `integration_config` updated to `"Carlock Rewards"` to match new SourceDescription value.
+
+- **Training deck completely rewritten** (`artifacts/rippl/public/print/drivecentric-training.html`) — Slide 2 now shows a single dropdown selection (Showroom → Carlock Rewards) instead of two free-text fields. Slide 3 explains two attribution paths: pre-referral link click (automatic) vs Customer Note (manual assist). Slide 4 adds auto-enrollment of new buyers as Step 2 in the overnight timeline.
+
+- **Auto-enrollment at delivery** (`driveCentricSftp.ts`) — for each delivered deal, buyer phone (last 10 digits) is checked against existing referrers. If new, a referrer record is created with a generated code and an automotive onboarding SMS is fired. `result.enrolledBuyers` counter added. New `sendAutomotiveOnboardingSms()` function in `onboardingSms.ts` with custom body mentioning vehicle purchase and $100 referral reward. SMS suppressed while `SMS_ENABLED=false`.
+
+- **Four-tier attribution** (replaces three-tier from v1.8.0) — Tier 0 (pre-referral link click) added before existing Tier 1 (code), Tier 2 (name), Tier 3 (unmatched admin task). See DriveCentric section below for full details.
+
+- **`pre_referrals` table** — captures contact info for referred people who clicked a referral link before visiting. Fields: `id, referral_code, practice_id, first_name, last_name, phone (last-10-digits), created_at, matched`. Indexes on phone, referral_code, (practice_id, matched). Migration: `supabase/migrations/20260814_pre_referrals.sql`. Drizzle schema: `lib/db/src/schema/pre_referrals.ts`. Exported from `lib/db/src/schema/index.ts`.
+
+- **`POST /api/referral/pre-referral`** — public endpoint (no auth). Validates referral code exists, normalizes phone to last 10 digits, inserts into `pre_referrals`. Called from the automotive `/refer` page form.
+
+- **Automotive `/refer` page form** (`refer.tsx`) — when `vertical === "automotive"`, shows an optional "Claim Your Spot" contact form below the referrer intro. Captures first name, last name, phone. On submit, POSTs to `/api/referral/pre-referral`. Shows success confirmation with referrer's first name.
+
+- **Custom rewards** — `integration_config.custom_rewards` array per practice: `[{ id, label, description, value }]`. Volvo/Carlock configured with: Merchandise Credit ($100), Service Credit ($100), Detail Package ($50). Claim page renders custom reward cards below standard options. Selecting creates `admin_task` with `task_type='custom-reward'` — structured notes include label, description, referrer name/phone/email, claim ID. Admin tasks page shows indigo badge with Star icon for custom-reward type.
+
+- **Custom rewards in `publicClaim.ts`** — `reward_type.startsWith("custom:")` detected; custom reward ID looked up from `integration_config.custom_rewards`; `admin_task` inserted with structured notes; `practice_id` included on task; `integration_config` added to the GET by-token practice select query.
+
+- **Demo data updated** — `demo-data.ts` includes a demo custom-reward admin task (Olivia Marsh, Merchandise Credit, $100) for the automotive demo.
+
+---
+
 ### v1.7.0 (August 2026) — Full Automotive UI Vertical
 
 **Why this was built:**
@@ -567,26 +604,27 @@ Super_admin (David) could only see Hallmark Dental because the office picker was
 - **File format:** `{storeNum}_v2_{table}_{from}_{to}_{timestamp}.csv` — tables: Deal, Customer, CustomerContact, SourceDescriptionGroup
 - **integration_config keys:** `sftp_host`, `sftp_port`, `sftp_username`, `sftp_private_key`, `sftp_path`, `sftp_store_num`, `referral_source_groups`
 
-#### Three-Tier Referral Attribution (v1.8.0)
+#### Four-Tier Referral Attribution (v1.9.0)
 
-Referral detection uses two signals, with a graceful fallback chain:
+**Critical discovery (2026-08-14):** DriveCentric's Source Description field is a predefined dropdown — salespeople cannot type referrer codes or names. A dedicated "Carlock Rewards" lead source was created under Showroom. Salesperson workflow: Edit Source → Type = Showroom → Source = Carlock Rewards (one selection). This means attribution must come from other signals.
+
+Referral detection uses two signals to determine IS IT A REFERRAL, then a 4-tier chain to find WHO referred them:
 
 **Step 1: Is this a referral deal?**
 1. If `SourceDescriptionGroupId` is set → lookup group name in `SourceDescriptionGroup` table → check if it matches any string in `referralGroups` config (`isReferralByGroup`)
-2. If no `SourceDescriptionGroupId` → check `SourceDescription` text itself against `referralGroups` keywords (`isReferralByDesc`) — handles stores that put category label directly in the description field with no group linkage
+2. If no `SourceDescriptionGroupId` → check `SourceDescription` text itself against `referralGroups` keywords (`isReferralByDesc`) — handles stores that put "Carlock Rewards" (the lead source name) directly in description with no group
 
-**Step 2: Who is the referrer? (if referral confirmed)**
-1. `matchReferrerByCode(rawDesc, practiceId)` — exact lookup against `referral_code` column (normalized uppercase). Used when salesperson enters the customer's Carlock Rewards code (e.g., `MIKEX7K2`).
-2. `extractPersonName(rawDesc)` → `matchReferrerByName(name, practiceId, buyerPhone)` — extracts 2-4 capitalized words, rejects category labels via blocklist: `/referral|networking|campaign|drive|relationship|internet|showroom/i`; then runs 3-tier name match (exact → first+last token → phone last-10)
-3. If still no match → create `admin_task` with `task_type='unmatched-referral'`, no `referrer_id` (column is now nullable — migration run 2026-08-07: `ALTER TABLE admin_tasks ALTER COLUMN referrer_id DROP NOT NULL`)
+**Step 2: Who is the referrer? (if referral confirmed) — 4-tier chain**
+1. **Tier 0 — Pre-referral link click:** Look up `pre_referrals` table by buyer phone (last 10 digits) + practice_id + matched='no'. If found, call `matchReferrerByCode(preReferralRow.referral_code)` and mark row `matched='yes'`. This fires when the referred person submitted their contact info on the `/refer` page before visiting.
+2. **Tier 1 — Code match:** `matchReferrerByCode(rawDesc, practiceId)` — exact lookup against `referral_code` column. Fires if a code somehow appears in SourceDescription.
+3. **Tier 2 — Name fuzzy match:** `extractPersonName(rawDesc)` → `matchReferrerByName(name, practiceId, buyerPhone)`. Blocklist: `/referral|networking|campaign|drive|relationship|internet|showroom/i` prevents "Carlock Rewards" from being treated as a person name.
+4. **Tier 3 — Unmatched:** Create `admin_task` with `task_type='unmatched-referral'`, null `referrer_id` (column nullable since migration 2026-08-07)
 
-**Key insight from Darren's sample data (2026-08-07):** Many DriveCentric stores put the category label ("Customer Referral") directly in `SourceDescription` with no `SourceDescriptionGroupId`. The `isReferralByDesc` fallback was added specifically to catch these. Without it, all referrals at stores not using groups would be missed.
+**Key insight from Darren's sample data (2026-08-07):** Many DriveCentric stores put the category label ("Customer Referral") directly in `SourceDescription` with no `SourceDescriptionGroupId`. The `isReferralByDesc` fallback was added specifically to catch these.
 
-**Staff training:** Two options for salespeople to log referrals:
-- **Code** — customer provides their Carlock Rewards code from their phone (e.g., `SARAH4K2`). Most reliable.
-- **Name** — customer says "my friend Sarah Johnson sent me." System does fuzzy match.
+**Staff training (v1.9.0):** Salesperson selects Type=Showroom, Source=Carlock Rewards in DriveCentric — one predefined dropdown selection, no free text. If they know the referrer's name, they add a Customer Note on the deal. Auto-enrollment + pre-referral capture handle attribution automatically.
 
-**Referral code format:** Up to 4 name chars + 4 random base36 chars, all uppercase. Generated in `enroll.ts` → `generateReferralCode()`.
+**Referral code format:** Up to 4 name chars + 4 random base36 chars, all uppercase. Generated in `enroll.ts` → `generateReferralCode()`. Also used in `driveCentricSftp.ts` → local `generateReferralCode()` for auto-enrollment.
 
 - **Dedup:** `external_proc_num = DealId`; status `"Completed"` (automotive)
 - **DriveCentric contact:** Darren Sabino (DriveCentric employee, NOT Carlock staff) — email him for SFTP export config per dealer rooftop. Confirmed 2026-08-07: source groups ARE dealer-configurable. Webhook/API available but requires API License Agreement (standby for now).
@@ -701,6 +739,10 @@ cat ~/.ssh/id_ed25519.pub    # paste this at github.com/settings/keys if auth fa
 | extractPersonName blocklist | `extractPersonName()` in `driveCentricSftp.ts` rejects strings matching `/referral|networking|campaign|drive|relationship|internet|showroom/i`. Without this, "Customer Referral" passes the 2-capitalized-words heuristic and gets treated as a person name — causing false partial matches against referrers with those letters. |
 | DriveCentric SourceDescription is dual-purpose | Stores either a Carlock Rewards code (e.g., `SARAH4K2`) OR a person's name ("Sarah Johnson"). The code path is tried first via `matchReferrerByCode`. Never assume SourceDescription is always a name. |
 | Carlock Rewards = Volvo of Cool Springs white-label | `white_label_name = 'Carlock Rewards'` on Volvo practice. All patient-facing copy, training materials, and pitch deck use "Carlock Rewards", not "Rippl". Footer always says "Powered by Rippl". |
+| DriveCentric Source is predefined dropdown (NOT free text) | Salespeople cannot type referrer codes or names in the Source field. "Carlock Rewards" is a Lead Source added under Showroom (2026-08-14). Salesperson workflow: Type=Showroom → Source=Carlock Rewards. Attribution comes from pre-referral capture (Tier 0) and auto-enrollment — not source field text. |
+| pre_referrals table (v1.9.0) | New table migrated 2026-08-14. Stores contact info for people who clicked an automotive referral link before visiting. Schema: `lib/db/src/schema/pre_referrals.ts`. Migration: `supabase/migrations/20260814_pre_referrals.sql`. RLS enabled; service role key bypasses. Phone stored as last-10-digits normalized. |
+| Custom rewards via integration_config (v1.9.0) | `integration_config.custom_rewards` array per practice: `[{ id, label, description, value }]`. Selecting on claim page creates `admin_task` with `task_type='custom-reward'` instead of calling Tango. Volvo/Carlock has merch credit, service credit, detail package. |
+| Automotive onboarding SMS fires at SFTP processing time | Unlike dental (2-hour delay), automotive onboarding SMS fires when the SFTP nightly job runs. `sendAutomotiveOnboardingSms()` in `onboardingSms.ts`. Still suppressed globally while `SMS_ENABLED=false`. |
 
 ### Session Startup Checklist
 
@@ -832,5 +874,5 @@ The work is the argument. The output is the proof. The standard is non-negotiabl
 
 ---
 
-*Last updated: 2026-08-07 — Rippl v1.8.0*  
+*Last updated: 2026-08-14 — Rippl v1.9.0*  
 *Read CLAUDE.md next. Read DESIGN.md before any UI work.*

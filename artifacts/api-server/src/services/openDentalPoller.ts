@@ -8,6 +8,7 @@ import { calculateTier } from "../lib/tierUtils";
 import { scheduleOnboardingSms } from "./onboardingSms";
 import { checkHouseholdDuplicate } from "./householdDuplicate";
 import { chargeReferralCompletion } from "./billingService";
+import { checkAndAlertTangoBalance } from "./tango";
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const OPEN_DENTAL_URL = process.env.OPEN_DENTAL_URL;
@@ -968,6 +969,7 @@ export function startOpenDentalPoller(): void {
     syncAllOffices().catch((err) => {
       logger.error({ err }, "Open Dental poll error");
     });
+    checkAndAlertTangoBalance().catch(() => {}); // non-blocking, rate-limited to once/day
   }, POLL_INTERVAL_MS);
 
   pollerTimer.unref();

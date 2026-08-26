@@ -1,9 +1,10 @@
 import twilio from "twilio";
 import { SMS_ENABLED } from "../lib/smsEnabled";
 import { db } from "@workspace/db";
-import { referrersTable } from "@workspace/db/schema";
+import { referrersTable, referralEventsTable } from "@workspace/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import { getPracticeConfig } from "../lib/practiceConfig";
 
 const TWILIO_ACCOUNT_SID  = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH_TOKEN   = process.env.TWILIO_AUTH_TOKEN;
@@ -52,10 +53,12 @@ export async function sendOnboardingSmsNow(
   firstName: string,
   phone: string,
   referralCode: string,
+  practiceName?: string,
   customBody?: string
 ): Promise<{ success: boolean; smsSid?: string; error?: string }> {
   const shareUrl = `${REFERRAL_BASE_URL}/refer?ref=${referralCode}`;
-  const body = customBody ?? `Hi ${firstName} — welcome to Hallmark Dental! Share your referral link and earn a reward when friends become patients: ${shareUrl} Reply STOP to opt out.`;
+  const name = practiceName ?? "your dental office";
+  const body = customBody ?? `Hi ${firstName} — thanks for visiting ${name}! Share your referral link and earn a reward when friends become patients: ${shareUrl} Reply STOP to opt out.`;
 
   try {
     if (!SMS_ENABLED) {
@@ -86,6 +89,17 @@ export async function scheduleOnboardingSms(params: {
   referralEventId: string;
 }): Promise<OnboardingResult> {
   const { newPatientName, newPatientPhone, referralEventId } = params;
+
+  // Look up practice name so the SMS says the real practice name, not "Hallmark Dental"
+  let practiceName: string | undefined;
+  try {
+    const [evt] = await db.select({ practice_id: referralEventsTable.practice_id })
+      .from(referralEventsTable).where(eq(referralEventsTable.id, referralEventId)).limit(1);
+    if (evt?.practice_id) {
+      const practice = await getPracticeConfig(evt.practice_id);
+      practiceName = practice?.white_label_name ?? practice?.name ?? undefined;
+    }
+  } catch { /* non-fatal — falls back to generic copy */ }
 
   // Normalise phone for lookup and Twilio
   const phoneRaw = newPatientPhone.trim();
@@ -136,7 +150,7 @@ export async function scheduleOnboardingSms(params: {
           { phone, referrerId: referrer.id, scheduledAt: referrer.onboarding_sms_scheduled_at },
           "Onboarding SMS missed after server restart — sending now"
         );
-        const smsResult = await sendOnboardingSmsNow(firstName, phone, referrer.referral_code);
+        const smsResult = await sendOnboardingSmsNow(firstName, phone, referrer.referral_code, practiceName);
         if (smsResult.success) {
           await db
             .update(referrersTable)
@@ -153,7 +167,7 @@ export async function scheduleOnboardingSms(params: {
     }
 
     // Referrer exists but SMS not yet sent or scheduled — schedule it
-    scheduleDelayedSms(referrer.id, newPatientName, phone, referrer.referral_code);
+    scheduleDelayedSms(referrer.id, newPatientName, phone, referrer.referral_code, practiceName);
     return { success: true, referrerId: referrer.id, referralCode: referrer.referral_code };
   }
 
@@ -184,7 +198,7 @@ export async function scheduleOnboardingSms(params: {
   logger.info({ referrerId: newReferrer.id, referralCode: finalCode }, "New referrer created from exam completion");
 
   // Schedule the 2-hour delayed SMS
-  scheduleDelayedSms(newReferrer.id, newPatientName, phone, finalCode);
+  scheduleDelayedSms(newReferrer.id, newPatientName, phone, finalCode, practiceName);
 
   return { success: true, referrerId: newReferrer.id, referralCode: finalCode };
 }
@@ -208,7 +222,8 @@ function scheduleDelayedSms(
   referrerId: string,
   fullName: string,
   phone: string,
-  referralCode: string
+  referralCode: string,
+  practiceName?: string
 ): void {
   const firstName = fullName.trim().split(/\s+/)[0] ?? "there";
 
@@ -257,7 +272,7 @@ function scheduleDelayedSms(
       return;
     }
 
-    const result = await sendOnboardingSmsNow(firstName, phone, referralCode);
+    const result = await sendOnboardingSmsNow(firstName, phone, referralCode, practiceName);
 
     if (result.success) {
       await db

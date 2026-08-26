@@ -10,18 +10,22 @@ export interface LaunchEmailParams {
   fullName: string;
   email: string;
   referralCode: string;
+  practiceName?: string;
+  fromEmail?: string;
+  fromName?: string;
 }
 
 export async function sendLaunchEmail(params: LaunchEmailParams): Promise<{ success: boolean; error?: string }> {
-  const { firstName, fullName, email, referralCode } = params;
+  const { firstName, fullName, email, referralCode, practiceName, fromEmail, fromName } = params;
   const referralUrl = `${REFERRAL_BASE_URL}/refer?ref=${referralCode}`;
+  const practiceDisplay = practiceName ?? "your dental office";
 
   try {
     await sendEmail({
       to:      email,
-      from:    { email: FROM_EMAIL, name: "Hallmark Dental" },
+      from:    { email: fromEmail ?? FROM_EMAIL, name: fromName ?? practiceName ?? "Rippl" },
       subject: `A thank you waiting for you, ${firstName} 🦷`,
-      html:    buildLaunchEmailHtml(firstName, fullName, referralUrl, referralCode),
+      html:    buildLaunchEmailHtml(firstName, fullName, referralUrl, referralCode, practiceDisplay),
     });
     logger.info({ to: email, referralCode }, "Launch email sent");
     return { success: true };
@@ -45,7 +49,8 @@ function buildLaunchEmailHtml(
   firstName: string,
   _fullName: string,
   referralUrl: string,
-  _referralCode: string
+  _referralCode: string,
+  practiceName = "your dental office"
 ): string {
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
@@ -68,7 +73,7 @@ function buildLaunchEmailHtml(
           <tr>
             <td align="center" style="padding:36px 40px 28px;background-color:#0a1628;border-bottom:1px solid #1e3a5f;">
               <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:32px;font-weight:700;color:#0d9488;letter-spacing:2px;line-height:1;">Rippl</p>
-              <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#64748b;">Hallmark Dental</p>
+              <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#64748b;">${practiceName}</p>
             </td>
           </tr>
 
@@ -77,7 +82,7 @@ function buildLaunchEmailHtml(
             <td style="padding:40px 40px 8px;">
               <p style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:26px;font-weight:700;color:#ffffff;line-height:1.3;">Introducing a new way to say thank you</p>
               <p style="margin:0 0 20px;font-family:Arial,Helvetica,sans-serif;font-size:16px;color:#94a3b8;line-height:1.75;">
-                Hi <strong style="color:#ffffff;">${esc(firstName)}</strong> &#8212; at Hallmark Dental, our best patients come from people like you.
+                Hi <strong style="color:#ffffff;">${esc(firstName)}</strong> &#8212; at ${practiceName}, our best patients come from people like you.
               </p>
               <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#94a3b8;line-height:1.75;">
                 We just launched <strong style="color:#0d9488;">Rippl</strong> &#8212; our new referral reward program. When you refer a friend or family member and they come in for a visit, we send you a thank you gift. No forms, no waiting. It happens automatically.
@@ -204,8 +209,8 @@ function buildLaunchEmailHtml(
           <tr>
             <td align="center" style="padding:24px 40px 32px;background-color:#0a1628;">
               <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#475569;line-height:1.8;">
-                Sent with <span style="color:#0d9488;font-weight:700;">Rippl</span> by Hallmark Dental<br/>
-                You&#39;re receiving this because you&#39;re a valued patient of Hallmark Dental.<br/>
+                Sent with <span style="color:#0d9488;font-weight:700;">Rippl</span> by ${practiceName}<br/>
+                You&#39;re receiving this because you&#39;re a valued patient of ${practiceName}.<br/>
                 This is a one-time program announcement.
               </p>
             </td>

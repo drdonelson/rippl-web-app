@@ -31,6 +31,12 @@ export const practicesTable = pgTable("practices", {
   in_house_credit_label: text("in_house_credit_label").default("$100 Dental Account Credit"),
   in_house_credit_value: integer("in_house_credit_value").default(100),
 
+  // Per-practice tier reward overrides (null = use platform defaults: 35/50/75/100)
+  tier_reward_starter:       integer("tier_reward_starter"),
+  tier_reward_rippler:       integer("tier_reward_rippler"),
+  tier_reward_super_rippler: integer("tier_reward_super_rippler"),
+  tier_reward_legend:        integer("tier_reward_legend"),
+
   // Channel partner — reseller who owns this practice's client relationship
   channel_partner_id: text("channel_partner_id"),
 
