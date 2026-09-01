@@ -192,6 +192,7 @@ router.patch("/:id", requireAuth, async (req, res) => {
     vertical, integration_config,
     white_label_name, white_label_logo_url, white_label_primary_color, show_powered_by_rippl,
     in_house_credit_label, in_house_credit_value,
+    tier_reward_starter, tier_reward_rippler, tier_reward_super_rippler, tier_reward_legend,
   } = body;
 
   const updates: Partial<typeof practicesTable.$inferInsert> = {};
@@ -212,6 +213,10 @@ router.patch("/:id", requireAuth, async (req, res) => {
     if (primary_color             !== undefined) updates.primary_color             = primary_color ? String(primary_color).replace("#", "") : "E0622A";
     if (body.logo_url             !== undefined) updates.logo_url                  = body.logo_url ? String(body.logo_url) : null;
     if (body.channel_partner_id   !== undefined) updates.channel_partner_id        = body.channel_partner_id ? String(body.channel_partner_id) : null;
+    if (tier_reward_starter       !== undefined) updates.tier_reward_starter       = tier_reward_starter ? Number(tier_reward_starter) : null;
+    if (tier_reward_rippler       !== undefined) updates.tier_reward_rippler       = tier_reward_rippler ? Number(tier_reward_rippler) : null;
+    if (tier_reward_super_rippler !== undefined) updates.tier_reward_super_rippler = tier_reward_super_rippler ? Number(tier_reward_super_rippler) : null;
+    if (tier_reward_legend        !== undefined) updates.tier_reward_legend        = tier_reward_legend ? Number(tier_reward_legend) : null;
   }
 
   // Fields editable by channel_partner too

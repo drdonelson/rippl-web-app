@@ -31,6 +31,10 @@ interface Practice {
   billing_status: string | null;
   stripe_customer_id: string | null;
   stripe_payment_method_id: string | null;
+  tier_reward_starter: number | null;
+  tier_reward_rippler: number | null;
+  tier_reward_super_rippler: number | null;
+  tier_reward_legend: number | null;
   created_at: string;
   office_count?: number;
 }
@@ -329,6 +333,10 @@ interface PracticeFormData {
   tango_email_template_id: string;
   primary_color: string;
   status: string;
+  tier_reward_starter: string;
+  tier_reward_rippler: string;
+  tier_reward_super_rippler: string;
+  tier_reward_legend: string;
 }
 
 const EMPTY_FORM: PracticeFormData = {
@@ -345,6 +353,10 @@ const EMPTY_FORM: PracticeFormData = {
   tango_email_template_id: "",
   primary_color: "E0622A",
   status: "active",
+  tier_reward_starter: "",
+  tier_reward_rippler: "",
+  tier_reward_super_rippler: "",
+  tier_reward_legend: "",
 };
 
 // ── API helpers ───────────────────────────────────────────────────────────────
@@ -386,8 +398,12 @@ function updatePractice(id: string, data: Partial<PracticeFormData>): Promise<Pr
       twilio_phone_number:     data.twilio_phone_number ?? null,
       sendgrid_from_email:     data.sendgrid_from_email ?? null,
       sendgrid_from_name:      data.sendgrid_from_name ?? null,
-      tango_email_template_id: data.tango_email_template_id ?? null,
-      primary_color:           data.primary_color || null,
+      tango_email_template_id:   data.tango_email_template_id ?? null,
+      primary_color:             data.primary_color || null,
+      tier_reward_starter:       data.tier_reward_starter !== undefined ? (data.tier_reward_starter || null) : undefined,
+      tier_reward_rippler:       data.tier_reward_rippler !== undefined ? (data.tier_reward_rippler || null) : undefined,
+      tier_reward_super_rippler: data.tier_reward_super_rippler !== undefined ? (data.tier_reward_super_rippler || null) : undefined,
+      tier_reward_legend:        data.tier_reward_legend !== undefined ? (data.tier_reward_legend || null) : undefined,
     }),
   });
 }
@@ -561,6 +577,18 @@ function PracticeForm({
             </div>
           </section>
 
+          {/* Tier Rewards */}
+          <section>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Tier Rewards</h3>
+            <p className="text-xs text-muted-foreground mb-4">Leave blank to use platform defaults (35 / 50 / 75 / 100)</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {field("Influencer ($)", "tier_reward_starter",       { type: "number", placeholder: "35" })}
+              {field("Amplifier ($)",  "tier_reward_rippler",       { type: "number", placeholder: "50" })}
+              {field("Ambassador ($)", "tier_reward_super_rippler", { type: "number", placeholder: "75" })}
+              {field("Legend ($)",     "tier_reward_legend",        { type: "number", placeholder: "100" })}
+            </div>
+          </section>
+
           {/* Integrations */}
           <section>
             <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Integrations</h3>
@@ -710,6 +738,10 @@ export default function PracticeAdminPage() {
       tango_email_template_id: p.tango_email_template_id ?? "",
       primary_color:           p.primary_color ?? "E0622A",
       status:                  p.status ?? "active",
+      tier_reward_starter:       p.tier_reward_starter != null ? String(p.tier_reward_starter) : "",
+      tier_reward_rippler:       p.tier_reward_rippler != null ? String(p.tier_reward_rippler) : "",
+      tier_reward_super_rippler: p.tier_reward_super_rippler != null ? String(p.tier_reward_super_rippler) : "",
+      tier_reward_legend:        p.tier_reward_legend != null ? String(p.tier_reward_legend) : "",
     };
   }
 
