@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Building2, Upload, X, Loader2, ImageIcon, CheckCircle2,
   ToggleLeft, ToggleRight, Wifi, WifiOff, Users, DollarSign,
+  Pencil, Plus, AlertTriangle,
 } from "lucide-react";
 import { customFetch } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
@@ -17,6 +18,208 @@ interface Office {
   logo_url: string | null;
   active: boolean;
   last_poll_at: string | null;
+}
+
+interface OfficeConfig {
+  id: string;
+  name: string;
+  location_code: string;
+  customer_key: string | null;
+  od_url: string | null;
+  active: boolean;
+  practice_id: string | null;
+}
+
+interface PracticeOption { id: string; name: string; }
+
+// ── Office edit drawer ─────────────────────────────────────────────────────────
+
+function OfficeEditDrawer({ officeId, onClose }: { officeId: string; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [form, setForm] = useState<{ name: string; customer_key: string; od_url: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const { data: config } = useQuery<OfficeConfig>({
+    queryKey: [`/api/offices/${officeId}/config`],
+    queryFn: () => customFetch<OfficeConfig>(`${BASE}/api/offices/${officeId}/config`),
+  });
+
+  React.useEffect(() => {
+    if (config && !form) {
+      setForm({ name: config.name, customer_key: config.customer_key ?? "", od_url: config.od_url ?? "" });
+    }
+  }, [config, form]);
+
+  const patchMut = useMutation({
+    mutationFn: (body: object) =>
+      customFetch(`${BASE}/api/offices/${officeId}`, { method: "PATCH", body: JSON.stringify(body) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/offices/managed"] });
+      setSaved(true);
+      setTimeout(onClose, 900);
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
+  const inp = "w-full px-3 py-2 rounded-xl bg-muted/30 border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all font-mono";
+
+  return (
+    <div className="fixed inset-0 z-50 flex">
+      <div className="flex-1 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="w-full max-w-sm bg-background border-l border-border flex flex-col overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-border sticky top-0 bg-background z-10">
+          <h2 className="text-lg font-semibold text-foreground">Edit Office</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="flex-1 px-6 py-6 space-y-5">
+          {!form ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (<>
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Office Name</label>
+              <input value={form.name} onChange={e => setForm(f => f && { ...f, name: e.target.value })}
+                className={inp.replace("font-mono", "")} placeholder="Brentwood" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">OD Customer Key</label>
+              <input value={form.customer_key} onChange={e => setForm(f => f && { ...f, customer_key: e.target.value })}
+                className={inp} placeholder="XXXXXXXXXXXXXXXX" />
+              <p className="text-xs text-muted-foreground mt-1">16-character key from Open Dental eConnector. Leave blank for non-dental.</p>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">OD Server URL</label>
+              <input value={form.od_url} onChange={e => setForm(f => f && { ...f, od_url: e.target.value })}
+                className={inp} placeholder="https://od.practice.com" />
+            </div>
+            {error && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+                <AlertTriangle className="w-4 h-4 shrink-0" />{error}
+              </div>
+            )}
+          </>)}
+        </div>
+        <div className="px-6 py-4 border-t border-border sticky bottom-0 bg-background flex gap-3">
+          <button
+            disabled={!form || patchMut.isPending || saved}
+            onClick={() => form && patchMut.mutate({ name: form.name, customer_key: form.customer_key || null, od_url: form.od_url || null })}
+            className={cn("flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all",
+              saved ? "bg-green-500/20 text-green-600 border border-green-500/30"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50")}
+          >
+            {saved ? <><CheckCircle2 className="w-4 h-4" /> Saved</> : patchMut.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : "Save Changes"}
+          </button>
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors">Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Office create drawer ───────────────────────────────────────────────────────
+
+function OfficeCreateDrawer({ onClose }: { onClose: () => void }) {
+  const qc = useQueryClient();
+  const [form, setForm] = useState({ practice_id: "", name: "", location_code: "", customer_key: "", od_url: "" });
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const { data: practices = [] } = useQuery<PracticeOption[]>({
+    queryKey: ["/api/practices"],
+    queryFn: () => customFetch<PracticeOption[]>(`${BASE}/api/practices`),
+  });
+
+  const createMut = useMutation({
+    mutationFn: () => customFetch(`${BASE}/api/offices`, { method: "POST", body: JSON.stringify({
+      practice_id:  form.practice_id,
+      name:         form.name,
+      location_code: form.location_code,
+      customer_key: form.customer_key || null,
+      od_url:       form.od_url || null,
+    }) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/offices/managed"] });
+      setSaved(true);
+      setTimeout(onClose, 900);
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
+  function submit() {
+    if (!form.practice_id) { setError("Select a practice"); return; }
+    if (!form.name.trim()) { setError("Office name is required"); return; }
+    if (!form.location_code.trim()) { setError("Location code is required"); return; }
+    setError(null);
+    createMut.mutate();
+  }
+
+  const inp = "w-full px-3 py-2 rounded-xl bg-muted/30 border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all";
+
+  return (
+    <div className="fixed inset-0 z-50 flex">
+      <div className="flex-1 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="w-full max-w-sm bg-background border-l border-border flex flex-col overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-border sticky top-0 bg-background z-10">
+          <h2 className="text-lg font-semibold text-foreground">New Office</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="flex-1 px-6 py-6 space-y-5">
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Practice <span className="text-destructive">*</span></label>
+            <select value={form.practice_id} onChange={e => setForm(f => ({ ...f, practice_id: e.target.value }))}
+              className={inp}>
+              <option value="">Select a practice…</option>
+              {practices.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Office Name <span className="text-destructive">*</span></label>
+            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className={inp} placeholder="Brentwood" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Location Code <span className="text-destructive">*</span></label>
+            <input value={form.location_code}
+              onChange={e => setForm(f => ({ ...f, location_code: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "") }))}
+              className={inp} placeholder="brentwood" />
+            <p className="text-xs text-muted-foreground mt-1">Lowercase, no spaces. Sets staff role: staff_{"{"}location_code{"}"}</p>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">OD Customer Key</label>
+            <input value={form.customer_key} onChange={e => setForm(f => ({ ...f, customer_key: e.target.value }))}
+              className={`${inp} font-mono text-xs tracking-widest`} placeholder="XXXXXXXXXXXXXXXX" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">OD Server URL</label>
+            <input value={form.od_url} onChange={e => setForm(f => ({ ...f, od_url: e.target.value }))}
+              className={`${inp} font-mono text-xs`} placeholder="https://od.practice.com" />
+          </div>
+          {error && (
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+              <AlertTriangle className="w-4 h-4 shrink-0" />{error}
+            </div>
+          )}
+        </div>
+        <div className="px-6 py-4 border-t border-border sticky bottom-0 bg-background flex gap-3">
+          <button
+            disabled={createMut.isPending || saved}
+            onClick={submit}
+            className={cn("flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all",
+              saved ? "bg-green-500/20 text-green-600 border border-green-500/30"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50")}
+          >
+            {saved ? <><CheckCircle2 className="w-4 h-4" /> Created</> : createMut.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</> : "Create Office"}
+          </button>
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors">Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 interface PoolConfig {
@@ -352,6 +555,8 @@ type Tab = "locations" | "team";
 export default function OfficesPage() {
   const { profile, isDemo, demoVertical } = useAuth();
   const [tab, setTab] = useState<Tab>("locations");
+  const [editingOfficeId, setEditingOfficeId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
 
   const demoOffices = demoVertical === "automotive" ? DEMO_OFFICES_AUTO : demoVertical === "salon" ? DEMO_OFFICES_SALON : DEMO_OFFICES;
 
@@ -401,7 +606,17 @@ export default function OfficesPage() {
           </div>
         ) : error ? (
           <p className="text-destructive text-sm">Failed to load offices.</p>
-        ) : (
+        ) : (<>
+          {isSuperAdmin && (
+            <div className="flex justify-end">
+              <button
+                onClick={() => setCreating(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+              >
+                <Plus className="w-4 h-4" /> New Office
+              </button>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {offices.length === 0 ? (
               <div className="col-span-full flex flex-col items-center justify-center py-24 gap-4 rounded-2xl border border-dashed border-border bg-muted/10">
@@ -410,11 +625,22 @@ export default function OfficesPage() {
               </div>
             ) : (
               offices.map(office => (
-                <OfficeLogoCard key={office.id} office={office} isSuperAdmin={isSuperAdmin} />
+                <div key={office.id} className="relative group">
+                  {isSuperAdmin && (
+                    <button
+                      onClick={() => setEditingOfficeId(office.id)}
+                      className="absolute top-4 right-4 z-10 w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 opacity-0 group-hover:opacity-100 transition-all"
+                      title="Edit office"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <OfficeLogoCard office={office} isSuperAdmin={isSuperAdmin} />
+                </div>
               ))
             )}
           </div>
-        )
+        </>)
       )}
 
       {/* Team tab */}
@@ -425,6 +651,13 @@ export default function OfficesPage() {
           )}
           <StaffPanel />
         </div>
+      )}
+
+      {editingOfficeId && (
+        <OfficeEditDrawer officeId={editingOfficeId} onClose={() => setEditingOfficeId(null)} />
+      )}
+      {creating && (
+        <OfficeCreateDrawer onClose={() => setCreating(false)} />
       )}
     </div>
   );

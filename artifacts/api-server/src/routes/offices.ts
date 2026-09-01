@@ -96,18 +96,61 @@ router.post("/test-od", requireAuth, requireSuperAdmin, async (req, res) => {
   }
 });
 
-// PATCH /api/offices/:id — update active status (super_admin only)
+// GET /api/offices/:id/config — full office config for super_admin (includes sensitive fields)
+router.get("/:id/config", requireAuth, requireSuperAdmin, async (req, res) => {
+  const { id } = req.params;
+  const [office] = await db.select().from(officesTable).where(eq(officesTable.id, id));
+  if (!office) { res.status(404).json({ error: "Office not found" }); return; }
+  res.json(office);
+});
+
+// POST /api/offices — create a standalone office for an existing practice (super_admin only)
+router.post("/", requireAuth, requireSuperAdmin, async (req, res) => {
+  const { practice_id, name, location_code, customer_key, od_url } = req.body as Record<string, string>;
+  if (!practice_id || !name || !location_code) {
+    res.status(400).json({ error: "practice_id, name, and location_code are required" });
+    return;
+  }
+  const [practice] = await db.select({ id: practicesTable.id }).from(practicesTable).where(eq(practicesTable.id, practice_id));
+  if (!practice) { res.status(404).json({ error: "Practice not found" }); return; }
+  try {
+    const [office] = await db.insert(officesTable).values({
+      practice_id,
+      name,
+      location_code,
+      customer_key: customer_key || null,
+      od_url:       od_url || null,
+      active:       true,
+      agreement_accepted_at: new Date(),
+    }).returning(safeColumns);
+    res.status(201).json(office);
+  } catch (err) {
+    console.error("[offices/create]", err);
+    res.status(500).json({ error: "Failed to create office" });
+  }
+});
+
+// PATCH /api/offices/:id — update office fields (super_admin only)
 router.patch("/:id", requireAuth, requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
-  const { active } = req.body as { active?: boolean };
-  if (typeof active !== "boolean") {
-    res.status(400).json({ error: "active (boolean) is required" });
+  const { active, name, customer_key, od_url } = req.body as {
+    active?: boolean; name?: string; customer_key?: string | null; od_url?: string | null;
+  };
+
+  const updates: Partial<typeof officesTable.$inferInsert> = {};
+  if (typeof active === "boolean")   updates.active       = active;
+  if (name         !== undefined)    updates.name         = name;
+  if (customer_key !== undefined)    updates.customer_key = customer_key || null;
+  if (od_url       !== undefined)    updates.od_url       = od_url || null;
+
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ error: "No fields to update" });
     return;
   }
   try {
     const [office] = await db
       .update(officesTable)
-      .set({ active })
+      .set(updates)
       .where(eq(officesTable.id, id))
       .returning(safeColumns);
     if (!office) { res.status(404).json({ error: "Office not found" }); return; }
