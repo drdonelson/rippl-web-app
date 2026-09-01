@@ -2,7 +2,7 @@ import twilio from "twilio";
 import { SMS_ENABLED } from "../lib/smsEnabled";
 import { db } from "@workspace/db";
 import { referrersTable, referralEventsTable } from "@workspace/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and, lt, isNotNull, gte } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { getPracticeConfig } from "../lib/practiceConfig";
 
@@ -284,4 +284,70 @@ function scheduleDelayedSms(
       logger.error({ referrerId, error: result.error }, "Onboarding SMS failed at send time");
     }
   }, ONBOARDING_DELAY_MS);
+}
+
+/**
+ * Startup recovery: send any onboarding SMSes that were scheduled but never delivered
+ * because the server restarted before the 2-hour setTimeout fired.
+ * Called once on server startup; non-fatal.
+ */
+export async function recoverMissedOnboardingSms(): Promise<void> {
+  const now        = new Date();
+  const cutoff     = new Date(now.getTime() - RECOVERY_WINDOW_DAYS * 86_400_000);
+
+  const missed = await db
+    .select()
+    .from(referrersTable)
+    .where(
+      and(
+        isNotNull(referrersTable.onboarding_sms_scheduled_at),
+        lt(referrersTable.onboarding_sms_scheduled_at, now),
+        gte(referrersTable.onboarding_sms_scheduled_at, cutoff),
+        eq(referrersTable.onboarding_sms_sent, false),
+      ),
+    );
+
+  if (missed.length === 0) return;
+
+  logger.info({ count: missed.length }, "[startup] Recovering missed onboarding SMSes");
+
+  for (const referrer of missed) {
+    if (referrer.sms_opt_out_permanent || referrer.sms_opt_out) {
+      await db
+        .update(referrersTable)
+        .set({ onboarding_sms_sent: true, onboarding_sms_sent_at: new Date() })
+        .where(eq(referrersTable.id, referrer.id));
+      continue;
+    }
+
+    // Look up practice from most recent referral event
+    let practiceName: string | undefined;
+    try {
+      const [latestEvent] = await db
+        .select({ practice_id: referralEventsTable.practice_id })
+        .from(referralEventsTable)
+        .where(eq(referralEventsTable.referrer_id, referrer.id))
+        .limit(1);
+      if (latestEvent?.practice_id) {
+        const practice = await getPracticeConfig(latestEvent.practice_id);
+        practiceName = practice?.white_label_name ?? practice?.name ?? undefined;
+      }
+    } catch { /* non-fatal */ }
+
+    const firstName = referrer.name.trim().split(/\s+/)[0] ?? "there";
+    const phone     = toE164(referrer.phone) || referrer.phone;
+
+    const result = await sendOnboardingSmsNow(firstName, phone, referrer.referral_code, practiceName);
+
+    await db
+      .update(referrersTable)
+      .set({ onboarding_sms_sent: true, onboarding_sms_sent_at: new Date() })
+      .where(eq(referrersTable.id, referrer.id));
+
+    if (result.success) {
+      logger.info({ referrerId: referrer.id, smsSid: result.smsSid }, "[startup] Recovered missed onboarding SMS");
+    } else {
+      logger.error({ referrerId: referrer.id, error: result.error }, "[startup] Missed onboarding SMS failed at recovery");
+    }
+  }
 }

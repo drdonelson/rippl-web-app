@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { startOpenDentalPoller } from "./services/openDentalPoller";
 import { pollDriveCentricSftp } from "./services/driveCentricSftp";
+import { recoverMissedOnboardingSms } from "./services/onboardingSms";
 import { db } from "@workspace/db";
 import { practicesTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
@@ -68,6 +69,11 @@ app.listen(port, (err) => {
   // Seed required user profiles (non-fatal if it fails)
   seedDefaultProfiles().catch(err => {
     logger.error({ err }, "[startup] seedDefaultProfiles threw unexpectedly");
+  });
+
+  // Recover any onboarding SMSes that were scheduled but missed due to a server restart
+  recoverMissedOnboardingSms().catch(err => {
+    logger.error({ err }, "[startup] recoverMissedOnboardingSms threw unexpectedly");
   });
 
   // Start background polling services
