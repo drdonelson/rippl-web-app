@@ -9,6 +9,7 @@ import { scheduleOnboardingSms } from "./onboardingSms";
 import { checkHouseholdDuplicate } from "./householdDuplicate";
 import { chargeReferralCompletion } from "./billingService";
 import { checkAndAlertTangoBalance } from "./tango";
+import { getPracticeConfig } from "../lib/practiceConfig";
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const OPEN_DENTAL_URL = process.env.OPEN_DENTAL_URL;
@@ -779,7 +780,8 @@ export async function syncOpenDental(options?: {
 
       // ── Update referrer tier ──────────────────────────────────────────────
       // Hoisted so newTierData is always defined for the claim + notification blocks below
-      let newTierData = calculateTier((referrer.total_referrals ?? 0) + 1);
+      const practiceConfig = await getPracticeConfig(office?.practice_id ?? null).catch(() => null);
+      let newTierData = calculateTier((referrer.total_referrals ?? 0) + 1, practiceConfig);
       try {
         const [current] = await db
           .select({ total_referrals: referrersTable.total_referrals, tier: referrersTable.tier })
@@ -789,7 +791,7 @@ export async function syncOpenDental(options?: {
 
         const newTotal = (current?.total_referrals ?? 0) + 1;
         const oldTier  = current?.tier ?? "starter";
-        newTierData    = calculateTier(newTotal);
+        newTierData    = calculateTier(newTotal, practiceConfig);
 
         await db
           .update(referrersTable)

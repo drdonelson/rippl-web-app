@@ -461,7 +461,7 @@ export async function pollDriveCentricSftp(
 
         if (!newEvent) continue;
 
-        const tierData = calculateTier(referrer.total_referrals + 1);
+        const tierData = calculateTier(referrer.total_referrals + 1, practice);
 
         await db.update(referrersTable).set({
           total_referrals:  referrer.total_referrals + 1,

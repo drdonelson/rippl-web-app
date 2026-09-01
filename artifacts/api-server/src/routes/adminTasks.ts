@@ -238,7 +238,7 @@ router.post("/:id/process-reward", async (req, res) => {
     if (!practice) { res.status(404).json({ error: "Practice not found" }); return; }
     if (!event)    { res.status(404).json({ error: "Referral event not found" }); return; }
 
-    const tierData = calculateTier(referrer.total_referrals + 1);
+    const tierData = calculateTier(referrer.total_referrals + 1, practice);
 
     // Update referrer totals + tier
     await db.update(referrersTable).set({
@@ -332,7 +332,7 @@ router.post("/:id/match-referrer", async (req, res) => {
     if (!referrer) { res.status(404).json({ error: "Referrer not found" }); return; }
     if (!practice) { res.status(404).json({ error: "Practice not found" }); return; }
 
-    const tierData = calculateTier(referrer.total_referrals + 1);
+    const tierData = calculateTier(referrer.total_referrals + 1, practice);
 
     // Create referral_event
     const [newEvent] = await db.insert(referralEventsTable).values({

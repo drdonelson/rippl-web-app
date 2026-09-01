@@ -225,7 +225,7 @@ export async function pollDriveCentric(
 
       chargeReferralCompletion(newEvent.id).catch(err => logger.error({ err }, "[billing] DC charge error"));
 
-      const tierData = calculateTier(referrer.total_referrals + 1);
+      const tierData = calculateTier(referrer.total_referrals + 1, practice);
 
       // Update referrer totals + tier
       await db

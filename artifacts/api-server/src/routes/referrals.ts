@@ -13,6 +13,7 @@ import { scheduleOnboardingSms } from "../services/onboardingSms";
 import { checkHouseholdDuplicate } from "../services/householdDuplicate";
 import { calculateTier } from "../lib/tierUtils";
 import { chargeReferralCompletion } from "../services/billingService";
+import { getPracticeConfig } from "../lib/practiceConfig";
 
 const router: IRouter = Router();
 
@@ -169,10 +170,11 @@ router.patch("/:id/status", async (req, res) => {
     chargeReferralCompletion(id).catch(err => req.log.error({ err }, "[billing] Manual charge error"));
 
     if (referrer) {
+      const practiceConfig = await getPracticeConfig(event.practice_id ?? null).catch(() => null);
       try {
         const newTotal    = (referrer.total_referrals ?? 0) + 1;
         const oldTier     = referrer.tier ?? "starter";
-        const newTierData = calculateTier(newTotal);
+        const newTierData = calculateTier(newTotal, practiceConfig);
 
         await db
           .update(referrersTable)
@@ -218,7 +220,7 @@ router.patch("/:id/status", async (req, res) => {
           claim_token:       claimToken,
           referral_event_id: id,
           referrer_id:       referrer.id,
-          reward_value:      (calculateTier((referrer.total_referrals ?? 0) + 1)).rewardValue,
+          reward_value:      calculateTier((referrer.total_referrals ?? 0) + 1, practiceConfig).rewardValue,
           status:            "pending",
         });
       } catch (claimErr) {
@@ -248,7 +250,7 @@ router.patch("/:id/status", async (req, res) => {
         event.new_patient_name,
         claimToken,
         event.office ?? "Hallmark Dental",
-        (calculateTier((referrer.total_referrals ?? 0) + 1)).rewardValue,
+        calculateTier((referrer.total_referrals ?? 0) + 1, practiceConfig).rewardValue,
         event.practice_id ?? undefined,
       ).then((result) => {
         req.log.info({ result }, "Reward notification result");

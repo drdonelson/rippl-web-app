@@ -156,7 +156,7 @@ router.post("/vagaro", async (req, res) => {
 
   chargeReferralCompletion(newEvent.id).catch(err => logger.error({ err }, "[billing] Vagaro charge error"));
 
-  const tierData = calculateTier(referrer.total_referrals + 1);
+  const tierData = calculateTier(referrer.total_referrals + 1, practice);
 
   await db
     .update(referrersTable)
