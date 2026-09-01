@@ -11,9 +11,10 @@ import twilio from "twilio";
 import { SMS_ENABLED } from "../lib/smsEnabled";
 import { sendEmail } from "../lib/email";
 import { db } from "@workspace/db";
-import { referrersTable, referralLinkDeliveriesTable } from "@workspace/db/schema";
+import { referrersTable, referralLinkDeliveriesTable, referralEventsTable } from "@workspace/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import { getPracticeConfig, resolveFromEmail } from "../lib/practiceConfig";
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -65,10 +66,10 @@ function buildReferralUrl(code: string): string {
   return `${APP_URL}/refer?ref=${encodeURIComponent(code)}`;
 }
 
-function buildSmsBody(referrerName: string, referralUrl: string, custom?: string): string {
+function buildSmsBody(referrerName: string, referralUrl: string, practiceName: string, custom?: string): string {
   if (custom) return custom;
   const first = referrerName.split(" ")[0];
-  return `Hi ${first} — thanks for being a Hallmark Dental patient! If you know someone looking for a great dentist, share your personal link and we'll take great care of them: ${referralUrl}`;
+  return `Hi ${first} — thanks for visiting ${practiceName}! If you know someone who could use us, share your personal referral link and earn a reward when they become a patient: ${referralUrl} Reply STOP to opt out.`;
 }
 
 function escHtml(s: string): string {
@@ -80,15 +81,15 @@ function escHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function buildEmailHtml(referrerName: string, referralUrl: string): string {
+function buildEmailHtml(referrerName: string, referralUrl: string, practiceName: string): string {
   const firstName = escHtml(referrerName.split(" ")[0]);
   const safeUrl   = escHtml(referralUrl);
   const font      = "system-ui,-apple-system,sans-serif";
 
   // mailto link so the patient can forward their referral link to a friend
-  const shareSubject = encodeURIComponent("I think you'd love my dentist");
+  const shareSubject = encodeURIComponent(`I think you'd love ${practiceName}`);
   const shareBody    = encodeURIComponent(
-    `Hey! I've been going to Hallmark Dental and wanted to share my referral link with you. Book your first visit here: ${referralUrl} — they're great and it only takes a minute to book online.`,
+    `Hey! I've been going to ${practiceName} and wanted to share my referral link with you. Book your first visit here: ${referralUrl} — they're great and it only takes a minute to book online.`,
   );
   const safeMailto = escHtml(`mailto:?subject=${shareSubject}&body=${shareBody}`);
 
@@ -111,7 +112,7 @@ function buildEmailHtml(referrerName: string, referralUrl: string): string {
           <tr>
             <td align="center" style="padding:32px 40px 24px;background-color:#060e1a;border-bottom:1px solid #1e3352;">
               <p style="margin:0;font-family:${font};font-size:28px;font-weight:700;color:#2dd4bf;letter-spacing:2px;line-height:1;">Rippl</p>
-              <p style="margin:6px 0 0;font-family:${font};font-size:11px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#64748b;">Hallmark Dental</p>
+              <p style="margin:6px 0 0;font-family:${font};font-size:11px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#64748b;">${escHtml(practiceName)}</p>
             </td>
           </tr>
 
@@ -123,7 +124,7 @@ function buildEmailHtml(referrerName: string, referralUrl: string): string {
               </p>
               <p style="margin:0;font-family:${font};font-size:16px;color:#94a3b8;line-height:1.7;">
                 Hi <span style="color:#f8fafc;font-weight:700;">${firstName}</span> &#8212;<br/>
-                Thanks for being a Hallmark Dental patient. Share your link with friends and family and earn rewards when they complete their first visit.
+                Thanks for being a ${escHtml(practiceName)} patient. Share your link with friends and family and earn rewards when they complete their first visit.
               </p>
             </td>
           </tr>
@@ -170,7 +171,7 @@ function buildEmailHtml(referrerName: string, referralUrl: string): string {
           <tr>
             <td align="center" style="padding:24px 40px 28px;background-color:#060e1a;">
               <p style="margin:0;font-family:${font};font-size:12px;color:#475569;line-height:1.7;">
-                Sent with <span style="color:#2dd4bf;font-weight:700;">Rippl</span> by Hallmark Dental<br/>
+                Sent with <span style="color:#2dd4bf;font-weight:700;">Rippl</span> by ${escHtml(practiceName)}<br/>
                 You&#39;re receiving this because you&#39;re enrolled in our referral program.
               </p>
             </td>
@@ -242,6 +243,17 @@ export async function sendReferralLinkToPatient(
 
   if (!referrer) throw new Error(`Referrer not found: ${referrerId}`);
 
+  // Look up practice from the referrer's most recent referral event
+  const [latestEvent] = await db
+    .select({ practice_id: referralEventsTable.practice_id })
+    .from(referralEventsTable)
+    .where(eq(referralEventsTable.referrer_id, referrerId))
+    .orderBy(desc(referralEventsTable.created_at))
+    .limit(1);
+  const practice = latestEvent?.practice_id ? await getPracticeConfig(latestEvent.practice_id) : null;
+  const practiceName = practice?.white_label_name ?? practice?.name ?? "your practice";
+  const fromEmail = resolveFromEmail(practice);
+
   // Cooldown guard for auto-sends
   if (respectCooldown) {
     const withinWindow = await isWithinCooldown(referrerId);
@@ -258,7 +270,7 @@ export async function sendReferralLinkToPatient(
 
   // ── SMS ──────────────────────────────────────────────────────────────────
   if (channels.includes("sms")) {
-    const smsBody = buildSmsBody(referrer.name, referralUrl, customMessage);
+    const smsBody = buildSmsBody(referrer.name, referralUrl, practiceName, customMessage);
 
     const [logRow] = await db.insert(referralLinkDeliveriesTable).values({
       referrer_id: referrerId,
@@ -317,9 +329,9 @@ export async function sendReferralLinkToPatient(
       try {
         await sendEmail({
           to:      email,
-          from:    { email: FROM_EMAIL, name: "Hallmark Dental via Rippl" },
+          from:    { email: fromEmail.email, name: fromEmail.name },
           subject: "Your personal referral link is ready 🔗",
-          html:    buildEmailHtml(referrer.name, referralUrl),
+          html:    buildEmailHtml(referrer.name, referralUrl, practiceName),
         });
         await db.update(referralLinkDeliveriesTable)
           .set({ status: "sent", provider_message_id: "brevo", sent_at: new Date() })
