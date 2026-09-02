@@ -34,10 +34,13 @@ const Waitlist    = lazy(() => import("@/pages/waitlist"));
 const Join        = lazy(() => import("@/pages/join"));
 const JoinDental  = lazy(() => import("@/pages/join-dental"));
 const IconExport  = lazy(() => import("@/pages/icon-export"));
-const CardPrint   = lazy(() => import("@/pages/card-print"));
-const CardBack    = lazy(() => import("@/pages/card-back"));
-const PosterPrint = lazy(() => import("@/pages/poster-print"));
-const Poster5x7   = lazy(() => import("@/pages/poster-5x7"));
+const CardPrint        = lazy(() => import("@/pages/card-print"));
+const CardBack         = lazy(() => import("@/pages/card-back"));
+const PosterPrint      = lazy(() => import("@/pages/poster-print"));
+const Poster5x7        = lazy(() => import("@/pages/poster-5x7"));
+const CardPrintAuto    = lazy(() => import("@/pages/card-print-auto"));
+const PosterPrintAuto  = lazy(() => import("@/pages/poster-print-auto"));
+const Poster5x7Auto    = lazy(() => import("@/pages/poster-5x7-auto"));
 const Privacy    = lazy(() => import("@/pages/privacy"));
 const Terms      = lazy(() => import("@/pages/terms"));
 const HowItWorks = lazy(() => import("@/pages/how-it-works"));
@@ -113,6 +116,9 @@ function Router() {
         <Route path="/card-back" component={CardBack} />
         <Route path="/poster-print" component={PosterPrint} />
         <Route path="/poster-5x7" component={Poster5x7} />
+        <Route path="/card-print-auto" component={CardPrintAuto} />
+        <Route path="/poster-print-auto" component={PosterPrintAuto} />
+        <Route path="/poster-5x7-auto" component={Poster5x7Auto} />
 
         {/* Protected internal app routes with sidebar */}
         <Route>
