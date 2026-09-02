@@ -16,6 +16,9 @@ import type {
   UseQueryResult,
 } from "@tanstack/react-query";
 
+// queryKey is always injected by the get*QueryOptions helpers, so callers only need to pass `enabled` etc.
+type PartialQueryOptions<TData, TError, TSelectData = TData> = Partial<UseQueryOptions<TData, TError, TSelectData>>;
+
 import type {
   CreateReferralInput,
   CreateReferrerInput,
@@ -64,7 +67,7 @@ export const getHealthCheckQueryOptions = <
   TData = Awaited<ReturnType<typeof healthCheck>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: PartialQueryOptions<
     Awaited<ReturnType<typeof healthCheck>>,
     TError,
     TData
@@ -99,7 +102,7 @@ export function useHealthCheck<
   TData = Awaited<ReturnType<typeof healthCheck>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: PartialQueryOptions<
     Awaited<ReturnType<typeof healthCheck>>,
     TError,
     TData
@@ -139,7 +142,7 @@ export const getGetReferrersQueryOptions = <
   TData = Awaited<ReturnType<typeof getReferrers>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: PartialQueryOptions<
     Awaited<ReturnType<typeof getReferrers>>,
     TError,
     TData
@@ -174,7 +177,7 @@ export function useGetReferrers<
   TData = Awaited<ReturnType<typeof getReferrers>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: PartialQueryOptions<
     Awaited<ReturnType<typeof getReferrers>>,
     TError,
     TData
@@ -303,7 +306,7 @@ export const getGetReferrerQrQueryOptions = <
 >(
   id: string,
   options?: {
-    query?: UseQueryOptions<
+    query?: PartialQueryOptions<
       Awaited<ReturnType<typeof getReferrerQr>>,
       TError,
       TData
@@ -346,7 +349,7 @@ export function useGetReferrerQr<
 >(
   id: string,
   options?: {
-    query?: UseQueryOptions<
+    query?: PartialQueryOptions<
       Awaited<ReturnType<typeof getReferrerQr>>,
       TError,
       TData
@@ -387,7 +390,7 @@ export const getGetReferralEventsQueryOptions = <
   TData = Awaited<ReturnType<typeof getReferralEvents>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: PartialQueryOptions<
     Awaited<ReturnType<typeof getReferralEvents>>,
     TError,
     TData
@@ -422,7 +425,7 @@ export function useGetReferralEvents<
   TData = Awaited<ReturnType<typeof getReferralEvents>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: PartialQueryOptions<
     Awaited<ReturnType<typeof getReferralEvents>>,
     TError,
     TData
@@ -639,7 +642,7 @@ export const getGetReferralByTokenQueryOptions = <
 >(
   token: string,
   options?: {
-    query?: UseQueryOptions<
+    query?: PartialQueryOptions<
       Awaited<ReturnType<typeof getReferralByToken>>,
       TError,
       TData
@@ -683,7 +686,7 @@ export function useGetReferralByToken<
 >(
   token: string,
   options?: {
-    query?: UseQueryOptions<
+    query?: PartialQueryOptions<
       Awaited<ReturnType<typeof getReferralByToken>>,
       TError,
       TData
@@ -810,7 +813,7 @@ export const getGetDashboardQueryOptions = <
   TData = Awaited<ReturnType<typeof getDashboard>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: PartialQueryOptions<
     Awaited<ReturnType<typeof getDashboard>>,
     TError,
     TData
@@ -845,7 +848,7 @@ export function useGetDashboard<
   TData = Awaited<ReturnType<typeof getDashboard>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: PartialQueryOptions<
     Awaited<ReturnType<typeof getDashboard>>,
     TError,
     TData

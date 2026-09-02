@@ -28,7 +28,8 @@ router.get("/config-check", async (_req, res) => {
     res.json({ ok: false, error: `Key must start with sk_test_ or sk_live_`, key_prefix: keyPrefix }); return;
   }
   try {
-    const acct = await getStripe().accounts.retrieve();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const acct = await (getStripe().accounts as any).retrieve();
     res.json({ ok: true, account_id: acct.id, charges_enabled: acct.charges_enabled, key_prefix: keyPrefix });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -230,7 +231,7 @@ router.post("/charge-month", requireAuth, requireSuperAdmin, async (req, res) =>
 
 // GET /api/billing/status/:practiceId — super_admin only
 router.get("/status/:practiceId", requireAuth, requireSuperAdmin, async (req, res) => {
-  const { practiceId } = req.params;
+  const practiceId = String(req.params.practiceId);
   const [row] = await db
     .select({
       id:                       practicesTable.id,

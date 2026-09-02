@@ -315,7 +315,7 @@ export default function Pricing() {
               },
               {
                 q: "What does the customer receive?",
-                a: `A $${VERTICALS[0].reward} reward delivered by SMS and email. They choose from a digital gift card (200+ brands), a donation to charity in their name, or an in-house service credit if you offer one.`,
+                a: `A $${DENTAL_PLANS[0].reward} reward delivered by SMS and email. They choose from a digital gift card (200+ brands), a donation to charity in their name, or an in-house service credit if you offer one.`,
               },
               {
                 q: "Do I need to change my software or workflow?",

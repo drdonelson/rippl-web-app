@@ -487,7 +487,7 @@ const STEPS = [
   },
 ];
 
-function JourneySteps({ steps, footerNote }: { steps: typeof STEPS; footerNote: string }) {
+function JourneySteps({ steps, footerNote }: { steps: typeof STEPS | typeof STEPS_AUTO; footerNote: string }) {
   return (
     <>
       <div className="space-y-4">

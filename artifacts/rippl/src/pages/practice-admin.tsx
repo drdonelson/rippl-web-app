@@ -609,7 +609,7 @@ function PracticeForm({
           )}
 
           {/* Stripe billing — only shown when editing an existing practice */}
-          {isEdit && <BillingPanel practice={initial as Practice & { id: string }} onBillingError={onBillingError} />}
+          {isEdit && <BillingPanel practice={initial as unknown as Practice & { id: string }} onBillingError={onBillingError} />}
 
           {/* Vagaro integration — only for salon practices */}
           {isEdit && form.vertical === "hair_salon" && <VagaroPanel practiceId={initial.id!} />}

@@ -508,10 +508,10 @@ export default function Onboard() {
         {/* Tabs */}
         <div className="flex gap-0.5 p-1 bg-white border border-slate-200 rounded-xl mb-6 shadow-sm">
           {([
-            { key: "practice", label: "New Practice", icon: Building2 },
-            { key: "staff",    label: "Staff Accounts", icon: UserPlus },
-            { key: "leads",    label: "Waitlist", icon: Users, badge: leads.length },
-          ] as const).map(({ key, label, icon: Icon, badge }) => (
+            { key: "practice" as const, label: "New Practice", icon: Building2 },
+            { key: "staff"    as const, label: "Staff Accounts", icon: UserPlus },
+            { key: "leads"    as const, label: "Waitlist", icon: Users, badge: leads.length as number | undefined },
+          ]).map(({ key, label, icon: Icon, badge }) => (
             <button
               key={key}
               onClick={() => setActiveTab(key)}

@@ -81,7 +81,7 @@ router.get("/my-clients", requireAuth, requireChannelPartner, async (req, res) =
 // GET /api/practices/:id — single practice (super_admin or channel_partner who owns it)
 router.get("/:id", requireAuth, async (req, res) => {
   const caller = req.authUser!;
-  const { id } = req.params;
+  const id = String(req.params.id);
 
   if (caller.role !== "super_admin" && caller.role !== "channel_partner") {
     res.status(403).json({ error: "Access denied" });
@@ -165,7 +165,7 @@ router.post("/", requireAuth, requireSuperAdmin, async (req, res) => {
 // channel_partner: can update branding/rewards fields only on their own practices
 router.patch("/:id", requireAuth, async (req, res) => {
   const caller = req.authUser!;
-  const { id } = req.params;
+  const id = String(req.params.id);
 
   if (caller.role !== "super_admin" && caller.role !== "channel_partner") {
     res.status(403).json({ error: "Access denied" });
@@ -220,7 +220,7 @@ router.patch("/:id", requireAuth, async (req, res) => {
   }
 
   // Fields editable by channel_partner too
-  if (integration_config        !== undefined) updates.integration_config        = integration_config as Record<string, string>;
+  if (integration_config        !== undefined) updates.integration_config        = integration_config as unknown as Record<string, string>;
   if (white_label_name          !== undefined) updates.white_label_name          = white_label_name ? String(white_label_name) : null;
   if (white_label_logo_url      !== undefined) updates.white_label_logo_url      = white_label_logo_url ? String(white_label_logo_url) : null;
   if (white_label_primary_color !== undefined) updates.white_label_primary_color = white_label_primary_color ? String(white_label_primary_color).replace("#", "") : null;

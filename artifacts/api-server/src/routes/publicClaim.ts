@@ -108,7 +108,7 @@ router.get("/by-token/:token", async (req, res) => {
       : Promise.resolve(null),
   ]);
 
-  [localPartner, { logo_url: officeLogo } = { logo_url: null }] = officeData as [typeof localPartner, { logo_url: string | null } | null];
+  [localPartner, { logo_url: officeLogo } = { logo_url: null }] = officeData as unknown as [typeof localPartner, { logo_url: string | null }];
 
   res.json({
     claim,

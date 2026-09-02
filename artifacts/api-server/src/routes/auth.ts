@@ -277,7 +277,7 @@ router.get("/staff-accounts", requireAuth, requirePracticeAdmin, async (req, res
 // DELETE /api/auth/staff-accounts/:id — remove a staff account
 // practice_admin: can only delete staff belonging to their office
 router.delete("/staff-accounts/:id", requireAuth, requirePracticeAdmin, async (req, res) => {
-  const { id } = req.params;
+  const id = String(req.params.id);
   const caller = req.authUser!;
   if (!id) { res.status(400).json({ error: "Missing id" }); return; }
 

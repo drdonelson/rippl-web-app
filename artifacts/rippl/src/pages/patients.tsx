@@ -1057,7 +1057,7 @@ export default function Patients() {
                           <tr key={referrer.id} className={cn("hover:bg-muted/10 transition-colors group", anyOptOut && "opacity-60")}>
                             <td className="px-4 py-2.5 overflow-hidden">
                               <div className="flex items-center gap-2.5 min-w-0">
-                                {n >= 1 ? <Star className="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" title="Active referrer" />
+                                {n >= 1 ? <Star className="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" aria-label="Active referrer" />
                                   : onboarded ? <span className="w-2 h-2 rounded-full bg-primary shrink-0 inline-block" title="Contacted" />
                                   : <span className="w-2 h-2 rounded-full bg-muted-foreground/30 shrink-0 inline-block" title="Not contacted" />}
                                 <span className="font-semibold text-foreground text-sm leading-tight truncate">{referrer.name}</span>

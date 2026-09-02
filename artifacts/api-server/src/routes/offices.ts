@@ -98,7 +98,7 @@ router.post("/test-od", requireAuth, requireSuperAdmin, async (req, res) => {
 
 // GET /api/offices/:id/config — full office config for super_admin (includes sensitive fields)
 router.get("/:id/config", requireAuth, requireSuperAdmin, async (req, res) => {
-  const { id } = req.params;
+  const id = String(req.params.id);
   const [office] = await db.select().from(officesTable).where(eq(officesTable.id, id));
   if (!office) { res.status(404).json({ error: "Office not found" }); return; }
   res.json(office);
@@ -132,7 +132,7 @@ router.post("/", requireAuth, requireSuperAdmin, async (req, res) => {
 
 // PATCH /api/offices/:id — update office fields (super_admin only)
 router.patch("/:id", requireAuth, requireSuperAdmin, async (req, res) => {
-  const { id } = req.params;
+  const id = String(req.params.id);
   const { active, name, customer_key, od_url } = req.body as {
     active?: boolean; name?: string; customer_key?: string | null; od_url?: string | null;
   };
@@ -164,7 +164,7 @@ router.patch("/:id", requireAuth, requireSuperAdmin, async (req, res) => {
 // POST /api/offices/:id/logo — upload a logo and save the public URL
 // Accepts JSON: { filename: string, mimeType: string, data: string (base64) }
 router.post("/:id/logo", requireAuth, requirePracticeAdmin, async (req, res) => {
-  const { id } = req.params;
+  const id = String(req.params.id);
   const caller = req.authUser!;
   const { filename, mimeType, data } = req.body;
 
@@ -219,7 +219,7 @@ router.post("/:id/logo", requireAuth, requirePracticeAdmin, async (req, res) => 
 
 // DELETE /api/offices/:id/logo — remove a logo
 router.delete("/:id/logo", requireAuth, requirePracticeAdmin, async (req, res) => {
-  const { id } = req.params;
+  const id = String(req.params.id);
   const caller = req.authUser!;
 
   try {
@@ -240,7 +240,7 @@ router.delete("/:id/logo", requireAuth, requirePracticeAdmin, async (req, res) =
 
 // DELETE /api/offices/:id — remove an office (super_admin only)
 router.delete("/:id", requireAuth, requireSuperAdmin, async (req, res) => {
-  const { id } = req.params;
+  const id = String(req.params.id);
   try {
     const result = await db.delete(officesTable).where(eq(officesTable.id, id)).returning({ id: officesTable.id });
     if (result.length === 0) {

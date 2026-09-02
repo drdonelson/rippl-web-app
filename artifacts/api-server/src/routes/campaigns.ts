@@ -121,7 +121,7 @@ async function getFilteredReferrers(filter: AudienceFilter, practiceId: string |
         )
       ORDER BY r.name
     `);
-    return rows as ReferrerRow[];
+    return rows as unknown as ReferrerRow[];
   }
 
   // Office filters: resolve location_code → office id first
@@ -140,7 +140,7 @@ async function getFilteredReferrers(filter: AudienceFilter, practiceId: string |
         AND o.location_code = ${locationCode}
       ORDER BY r.name
     `);
-    return rows as ReferrerRow[];
+    return rows as unknown as ReferrerRow[];
   }
 
   // Build raw SQL condition using the table alias `r` to avoid Drizzle/alias conflicts
@@ -167,7 +167,7 @@ async function getFilteredReferrers(filter: AudienceFilter, practiceId: string |
     ${extraWhere}
     ORDER BY r.name
   `);
-  return rows as ReferrerRow[];
+  return rows as unknown as ReferrerRow[];
 }
 
 // ── Template rendering ────────────────────────────────────────────────────────
