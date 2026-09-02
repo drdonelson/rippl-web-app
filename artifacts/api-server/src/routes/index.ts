@@ -25,6 +25,7 @@ import smsOptInRouter from "./smsOptIn";
 import staffPoolRouter from "./staffPool";
 import billingRouter from "./billing";
 import enrollRouter from "./enroll";
+import analyticsRouter from "./analytics";
 import { requireAuth } from "../middleware/auth";
 
 const router: IRouter = Router();
@@ -54,6 +55,7 @@ router.use("/referrers", requireAuth, referrersRouter);
 router.use("/referrals", requireAuth, referralsRouter);
 router.use("/rewards", requireAuth, rewardsRouter);
 router.use("/dashboard", requireAuth, dashboardRouter);
+router.use("/analytics", requireAuth, analyticsRouter);
 router.use("/sync", syncRouter);
 router.use("/admin-tasks", requireAuth, adminTasksRouter);
 router.use("/campaigns",   requireAuth, campaignsRouter);
