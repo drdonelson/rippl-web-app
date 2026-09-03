@@ -55,3 +55,7 @@ Thumbs.db
 .local/
 .replit.nix
 .gstack/
+
+# Supabase local dev — temp files contain secrets, never commit
+supabase/.temp/
+supabase/.branches/
