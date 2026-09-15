@@ -151,14 +151,17 @@ export async function scheduleOnboardingSms(params: {
           "Onboarding SMS missed after server restart — sending now"
         );
         const smsResult = await sendOnboardingSmsNow(firstName, phone, referrer.referral_code, practiceName);
+        // Always mark sent regardless of outcome — a failed recovery send means the number is
+        // permanently invalid (e.g. Twilio 21211). Leaving onboarding_sms_sent=false causes the
+        // poller to retry every 5 minutes indefinitely, tanking the Twilio health score.
+        await db
+          .update(referrersTable)
+          .set({ onboarding_sms_sent: true, onboarding_sms_sent_at: new Date() })
+          .where(eq(referrersTable.id, referrer.id));
         if (smsResult.success) {
-          await db
-            .update(referrersTable)
-            .set({ onboarding_sms_sent: true, onboarding_sms_sent_at: new Date() })
-            .where(eq(referrersTable.id, referrer.id));
           logger.info({ referrerId: referrer.id, smsSid: smsResult.smsSid }, "Missed onboarding SMS delivered and flag set");
         } else {
-          logger.error({ referrerId: referrer.id, error: smsResult.error }, "Missed onboarding SMS failed at recovery send");
+          logger.error({ referrerId: referrer.id, error: smsResult.error }, "Missed onboarding SMS failed at recovery — marked sent to prevent infinite retry");
         }
         return { success: smsResult.success, referrerId: referrer.id, referralCode: referrer.referral_code, smsSid: smsResult.smsSid, error: smsResult.error };
       }
