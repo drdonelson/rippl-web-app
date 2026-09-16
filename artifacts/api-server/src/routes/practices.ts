@@ -207,6 +207,8 @@ router.patch("/:id", requireAuth, async (req, res) => {
     if (per_referral_fee          !== undefined) updates.per_referral_fee          = Number(per_referral_fee);
     if (reward_value              !== undefined) updates.reward_value              = Number(reward_value);
     if (twilio_phone_number       !== undefined) updates.twilio_phone_number       = twilio_phone_number ? String(twilio_phone_number) : null;
+    if (body.twilio_account_sid   !== undefined) updates.twilio_account_sid        = body.twilio_account_sid ? String(body.twilio_account_sid) : null;
+    if (body.twilio_auth_token    !== undefined) updates.twilio_auth_token         = body.twilio_auth_token ? String(body.twilio_auth_token) : null;
     if (sendgrid_from_email       !== undefined) updates.sendgrid_from_email       = sendgrid_from_email ? String(sendgrid_from_email) : null;
     if (sendgrid_from_name        !== undefined) updates.sendgrid_from_name        = sendgrid_from_name ? String(sendgrid_from_name) : null;
     if (tango_email_template_id   !== undefined) updates.tango_email_template_id   = tango_email_template_id ? String(tango_email_template_id) : null;

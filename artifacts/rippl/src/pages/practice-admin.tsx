@@ -24,6 +24,8 @@ interface Practice {
   per_referral_fee: number;
   reward_value: number;
   twilio_phone_number: string | null;
+  twilio_account_sid: string | null;
+  twilio_auth_token: string | null;
   sendgrid_from_email: string | null;
   sendgrid_from_name: string | null;
   tango_email_template_id: string | null;
@@ -328,6 +330,8 @@ interface PracticeFormData {
   per_referral_fee: string;
   reward_value: string;
   twilio_phone_number: string;
+  twilio_account_sid: string;
+  twilio_auth_token: string;
   sendgrid_from_email: string;
   sendgrid_from_name: string;
   tango_email_template_id: string;
@@ -348,6 +352,8 @@ const EMPTY_FORM: PracticeFormData = {
   per_referral_fee: "20",
   reward_value: "35",
   twilio_phone_number: "",
+  twilio_account_sid: "",
+  twilio_auth_token: "",
   sendgrid_from_email: "",
   sendgrid_from_name: "",
   tango_email_template_id: "",
@@ -377,6 +383,8 @@ function createPractice(data: PracticeFormData): Promise<Practice> {
       per_referral_fee:        Number(data.per_referral_fee),
       reward_value:            Number(data.reward_value),
       twilio_phone_number:     data.twilio_phone_number || null,
+      twilio_account_sid:      data.twilio_account_sid || null,
+      twilio_auth_token:       data.twilio_auth_token || null,
       sendgrid_from_email:     data.sendgrid_from_email || null,
       sendgrid_from_name:      data.sendgrid_from_name || null,
       tango_email_template_id: data.tango_email_template_id || null,
@@ -396,6 +404,8 @@ function updatePractice(id: string, data: Partial<PracticeFormData>): Promise<Pr
       per_referral_fee:        data.per_referral_fee !== undefined ? Number(data.per_referral_fee) : undefined,
       reward_value:            data.reward_value !== undefined ? Number(data.reward_value) : undefined,
       twilio_phone_number:     data.twilio_phone_number ?? null,
+      twilio_account_sid:      data.twilio_account_sid ?? undefined,
+      twilio_auth_token:       data.twilio_auth_token ?? undefined,
       sendgrid_from_email:     data.sendgrid_from_email ?? null,
       sendgrid_from_name:      data.sendgrid_from_name ?? null,
       tango_email_template_id:   data.tango_email_template_id ?? null,
@@ -594,6 +604,8 @@ function PracticeForm({
             <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Integrations</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {field("Twilio Phone Number", "twilio_phone_number", { placeholder: "+16158824095", hint: "Leave blank to use global env var." })}
+              {field("Twilio Account SID", "twilio_account_sid", { placeholder: "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", hint: "Leave blank to use global credentials." })}
+              {field("Twilio Auth Token", "twilio_auth_token", { type: "password", placeholder: "••••••••••••••••••••••••••••••••", hint: "Leave blank to use global credentials." })}
               {field("SendGrid From Email", "sendgrid_from_email", { placeholder: "hello@example.com" })}
               {field("SendGrid From Name", "sendgrid_from_name", { placeholder: "Hallmark Dental", wide: true })}
               {field("Tango Template ID", "tango_email_template_id", { placeholder: "E813474", hint: "Tango Card email template ID for reward emails." })}
@@ -733,6 +745,8 @@ export default function PracticeAdminPage() {
       per_referral_fee:        String(p.per_referral_fee ?? 20),
       reward_value:            String(p.reward_value ?? 35),
       twilio_phone_number:     p.twilio_phone_number ?? "",
+      twilio_account_sid:      p.twilio_account_sid ?? "",
+      twilio_auth_token:       p.twilio_auth_token ?? "",
       sendgrid_from_email:     p.sendgrid_from_email ?? "",
       sendgrid_from_name:      p.sendgrid_from_name ?? "",
       tango_email_template_id: p.tango_email_template_id ?? "",

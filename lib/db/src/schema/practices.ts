@@ -11,6 +11,8 @@ export const practicesTable = pgTable("practices", {
   per_referral_fee:        integer("per_referral_fee").default(20),   // dollars
   reward_value:            integer("reward_value").default(35),       // default gift card dollar amount
   twilio_phone_number:     text("twilio_phone_number"),
+  twilio_account_sid:      text("twilio_account_sid"),
+  twilio_auth_token:       text("twilio_auth_token"),
   sendgrid_from_email:     text("sendgrid_from_email"),
   sendgrid_from_name:      text("sendgrid_from_name"),
   tango_email_template_id: text("tango_email_template_id"),

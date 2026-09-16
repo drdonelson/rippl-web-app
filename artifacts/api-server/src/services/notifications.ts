@@ -1,14 +1,10 @@
-import twilio from "twilio";
 import { SMS_ENABLED } from "../lib/smsEnabled";
 import { sendEmail } from "../lib/email";
 import { logger } from "../lib/logger";
-import { getPracticeConfig, resolveTwilioPhone, resolveFromEmail } from "../lib/practiceConfig";
+import { getPracticeConfig, resolveTwilioPhone, resolveTwilioClient, resolveFromEmail } from "../lib/practiceConfig";
 import type { Practice } from "@workspace/db/schema";
 
 const APP_URL = (process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://www.joinrippl.com").replace(/\/$/, "");
-const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
-const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
-const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
 
 // ── Vertical-aware notification copy ─────────────────────────────────────────
 
@@ -56,14 +52,6 @@ function toE164(phone: string | null | undefined): string {
   return phone; // pass through as-is; Twilio will return a clear error
 }
 
-function getTwilioClient() {
-  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
-    throw new Error("Twilio credentials not configured (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)");
-  }
-  return twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
-}
-
-
 export async function sendRewardNotification(
   referrerName: string,
   referrerPhone: string,
@@ -93,7 +81,7 @@ export async function sendRewardNotification(
   } else {
     try {
       if (!fromPhone) throw new Error("TWILIO_PHONE_NUMBER not set");
-      const client = getTwilioClient();
+      const client = resolveTwilioClient(practice);
       const msg = await client.messages.create({
         body: smsBody,
         from: fromPhone,

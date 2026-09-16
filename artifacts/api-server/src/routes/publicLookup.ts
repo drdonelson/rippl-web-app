@@ -1,10 +1,10 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import twilio from "twilio";
 import { db } from "@workspace/db";
 import { referrersTable, practicesTable } from "@workspace/db/schema";
 import { sql, eq, and } from "drizzle-orm";
 import rateLimit from "express-rate-limit";
 import { SMS_ENABLED } from "../lib/smsEnabled";
+import { resolveTwilioClient, resolveTwilioPhone } from "../lib/practiceConfig";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -16,9 +16,6 @@ const lookupLimiter = rateLimit({
 });
 
 const REFERRAL_BASE_URL = (process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://joinrippl.com").replace(/\/$/, "");
-const TWILIO_ACCOUNT_SID  = process.env.TWILIO_ACCOUNT_SID;
-const TWILIO_AUTH_TOKEN   = process.env.TWILIO_AUTH_TOKEN;
-const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
 
 function normalizePhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");
@@ -98,9 +95,9 @@ router.post("/send-invitation", inviteLimiter, async (req: Request, res: Respons
     return;
   }
 
-  // Look up practice
+  // Look up practice (full select so resolveTwilioClient/Phone can use per-practice credentials)
   const [practice] = await db
-    .select({ id: practicesTable.id, name: practicesTable.name, white_label_name: practicesTable.white_label_name, status: practicesTable.status })
+    .select()
     .from(practicesTable)
     .where(eq(practicesTable.slug, practiceSlug))
     .limit(1);
@@ -139,15 +136,16 @@ router.post("/send-invitation", inviteLimiter, async (req: Request, res: Respons
     return;
   }
 
-  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
-    logger.error("Twilio credentials not configured for kiosk invite");
+  const fromPhone = resolveTwilioPhone(practice);
+  if (!fromPhone) {
+    logger.error("Twilio phone not configured for kiosk invite");
     res.status(500).json({ error: "SMS not configured. Please contact support." });
     return;
   }
 
   try {
-    const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
-    await client.messages.create({ body, from: TWILIO_PHONE_NUMBER, to: `+1${friendNorm}` });
+    const client = resolveTwilioClient(practice);
+    await client.messages.create({ body, from: fromPhone, to: `+1${friendNorm}` });
     logger.info({ referralCode: referral_code, to: `+1${friendNorm}` }, "Kiosk invitation sent");
     res.json({ success: true, referrerName: referrerFirst });
   } catch (err) {

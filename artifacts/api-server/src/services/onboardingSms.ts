@@ -1,25 +1,14 @@
-import twilio from "twilio";
 import { SMS_ENABLED } from "../lib/smsEnabled";
 import { db } from "@workspace/db";
 import { referrersTable, referralEventsTable } from "@workspace/db/schema";
+import type { Practice } from "@workspace/db/schema";
 import { eq, sql, and, lt, isNotNull, gte } from "drizzle-orm";
 import { logger } from "../lib/logger";
-import { getPracticeConfig } from "../lib/practiceConfig";
-
-const TWILIO_ACCOUNT_SID  = process.env.TWILIO_ACCOUNT_SID;
-const TWILIO_AUTH_TOKEN   = process.env.TWILIO_AUTH_TOKEN;
-const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
+import { getPracticeConfig, resolveTwilioPhone, resolveTwilioClient } from "../lib/practiceConfig";
 
 const REFERRAL_BASE_URL = (process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://www.joinrippl.com").replace(/\/$/, "");
 const ONBOARDING_DELAY_MS = 2 * 60 * 60 * 1000; // 2 hours
 const RECOVERY_WINDOW_DAYS = 3; // only recover missed SMS scheduled within last 3 days
-
-function getTwilioClient() {
-  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
-    throw new Error("Twilio credentials not configured");
-  }
-  return twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
-}
 
 function toE164(phone: string | null | undefined): string {
   if (!phone) return "";
@@ -54,7 +43,8 @@ export async function sendOnboardingSmsNow(
   phone: string,
   referralCode: string,
   practiceName?: string,
-  customBody?: string
+  customBody?: string,
+  practice?: Practice | null
 ): Promise<{ success: boolean; smsSid?: string; error?: string }> {
   const shareUrl = `${REFERRAL_BASE_URL}/refer?ref=${referralCode}`;
   const name = practiceName ?? "your dental office";
@@ -65,9 +55,10 @@ export async function sendOnboardingSmsNow(
       logger.info({ to: phone, referralCode, body }, "[SMS-SUPPRESSED] Onboarding SMS not sent (SMS_ENABLED=false)");
       return { success: true, smsSid: "suppressed" };
     }
-    if (!TWILIO_PHONE_NUMBER) throw new Error("TWILIO_PHONE_NUMBER not set");
-    const client = getTwilioClient();
-    const msg = await client.messages.create({ body, from: TWILIO_PHONE_NUMBER, to: toE164(phone) });
+    const fromPhone = resolveTwilioPhone(practice ?? null);
+    if (!fromPhone) throw new Error("TWILIO_PHONE_NUMBER not set");
+    const client = resolveTwilioClient(practice ?? null);
+    const msg = await client.messages.create({ body, from: fromPhone, to: toE164(phone) });
     logger.info({ sid: msg.sid, to: phone, referralCode }, "Onboarding SMS sent");
     return { success: true, smsSid: msg.sid };
   } catch (err) {
@@ -90,13 +81,14 @@ export async function scheduleOnboardingSms(params: {
 }): Promise<OnboardingResult> {
   const { newPatientName, newPatientPhone, referralEventId } = params;
 
-  // Look up practice name so the SMS says the real practice name, not "Hallmark Dental"
+  // Look up practice so the SMS uses the right name + Twilio credentials
+  let practice: Practice | null = null;
   let practiceName: string | undefined;
   try {
     const [evt] = await db.select({ practice_id: referralEventsTable.practice_id })
       .from(referralEventsTable).where(eq(referralEventsTable.id, referralEventId)).limit(1);
     if (evt?.practice_id) {
-      const practice = await getPracticeConfig(evt.practice_id);
+      practice = await getPracticeConfig(evt.practice_id);
       practiceName = practice?.white_label_name ?? practice?.name ?? undefined;
     }
   } catch { /* non-fatal — falls back to generic copy */ }
@@ -150,7 +142,7 @@ export async function scheduleOnboardingSms(params: {
           { phone, referrerId: referrer.id, scheduledAt: referrer.onboarding_sms_scheduled_at },
           "Onboarding SMS missed after server restart — sending now"
         );
-        const smsResult = await sendOnboardingSmsNow(firstName, phone, referrer.referral_code, practiceName);
+        const smsResult = await sendOnboardingSmsNow(firstName, phone, referrer.referral_code, practiceName, undefined, practice);
         // Always mark sent regardless of outcome — a failed recovery send means the number is
         // permanently invalid (e.g. Twilio 21211). Leaving onboarding_sms_sent=false causes the
         // poller to retry every 5 minutes indefinitely, tanking the Twilio health score.
@@ -170,7 +162,7 @@ export async function scheduleOnboardingSms(params: {
     }
 
     // Referrer exists but SMS not yet sent or scheduled — schedule it
-    scheduleDelayedSms(referrer.id, newPatientName, phone, referrer.referral_code, practiceName);
+    scheduleDelayedSms(referrer.id, newPatientName, phone, referrer.referral_code, practiceName, practice);
     return { success: true, referrerId: referrer.id, referralCode: referrer.referral_code };
   }
 
@@ -201,7 +193,7 @@ export async function scheduleOnboardingSms(params: {
   logger.info({ referrerId: newReferrer.id, referralCode: finalCode }, "New referrer created from exam completion");
 
   // Schedule the 2-hour delayed SMS
-  scheduleDelayedSms(newReferrer.id, newPatientName, phone, finalCode, practiceName);
+  scheduleDelayedSms(newReferrer.id, newPatientName, phone, finalCode, practiceName, practice);
 
   return { success: true, referrerId: newReferrer.id, referralCode: finalCode };
 }
@@ -215,10 +207,11 @@ export async function sendAutomotiveOnboardingSms(params: {
   phone: string;
   referralCode: string;
   brandName: string;
+  practice?: Practice | null;
 }): Promise<{ success: boolean; smsSid?: string; error?: string }> {
   const shareUrl = `${REFERRAL_BASE_URL}/refer?ref=${params.referralCode}`;
   const body = `Congrats on your new vehicle! Share your ${params.brandName} rewards link — when a friend buys a car, you earn $100: ${shareUrl} Reply STOP to opt out.`;
-  return sendOnboardingSmsNow(params.firstName, params.phone, params.referralCode, body);
+  return sendOnboardingSmsNow(params.firstName, params.phone, params.referralCode, undefined, body, params.practice ?? null);
 }
 
 function scheduleDelayedSms(
@@ -226,7 +219,8 @@ function scheduleDelayedSms(
   fullName: string,
   phone: string,
   referralCode: string,
-  practiceName?: string
+  practiceName?: string,
+  practice?: Practice | null
 ): void {
   const firstName = fullName.trim().split(/\s+/)[0] ?? "there";
 
@@ -275,7 +269,7 @@ function scheduleDelayedSms(
       return;
     }
 
-    const result = await sendOnboardingSmsNow(firstName, phone, referralCode, practiceName);
+    const result = await sendOnboardingSmsNow(firstName, phone, referralCode, practiceName, undefined, practice ?? null);
 
     if (result.success) {
       await db
@@ -325,6 +319,7 @@ export async function recoverMissedOnboardingSms(): Promise<void> {
 
     // Look up practice from most recent referral event
     let practiceName: string | undefined;
+    let practice: Practice | null = null;
     try {
       const [latestEvent] = await db
         .select({ practice_id: referralEventsTable.practice_id })
@@ -332,7 +327,7 @@ export async function recoverMissedOnboardingSms(): Promise<void> {
         .where(eq(referralEventsTable.referrer_id, referrer.id))
         .limit(1);
       if (latestEvent?.practice_id) {
-        const practice = await getPracticeConfig(latestEvent.practice_id);
+        practice = await getPracticeConfig(latestEvent.practice_id);
         practiceName = practice?.white_label_name ?? practice?.name ?? undefined;
       }
     } catch { /* non-fatal */ }
@@ -340,7 +335,7 @@ export async function recoverMissedOnboardingSms(): Promise<void> {
     const firstName = referrer.name.trim().split(/\s+/)[0] ?? "there";
     const phone     = toE164(referrer.phone) || referrer.phone;
 
-    const result = await sendOnboardingSmsNow(firstName, phone, referrer.referral_code, practiceName);
+    const result = await sendOnboardingSmsNow(firstName, phone, referrer.referral_code, practiceName, undefined, practice);
 
     await db
       .update(referrersTable)

@@ -1,3 +1,4 @@
+import twilio from "twilio";
 import { db } from "@workspace/db";
 import { practicesTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
@@ -29,6 +30,16 @@ export function invalidatePracticeCache(practiceId: string) {
 /** Resolve the Twilio from-number for a practice, falling back to the global env var. */
 export function resolveTwilioPhone(practice: Practice | null): string {
   return practice?.twilio_phone_number ?? process.env.TWILIO_PHONE_NUMBER ?? "";
+}
+
+/** Resolve a Twilio client for a practice, falling back to global env vars. */
+export function resolveTwilioClient(practice: Practice | null): ReturnType<typeof twilio> {
+  const sid   = practice?.twilio_account_sid ?? process.env.TWILIO_ACCOUNT_SID;
+  const token = practice?.twilio_auth_token  ?? process.env.TWILIO_AUTH_TOKEN;
+  if (!sid || !token) {
+    throw new Error("Twilio credentials not configured (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)");
+  }
+  return twilio(sid, token);
 }
 
 /** Resolve the from-email for a practice, falling back to the global env var. */

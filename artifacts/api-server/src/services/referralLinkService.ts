@@ -7,22 +7,17 @@
  * which can be called from appointment-completion logic in the Open Dental poller.
  */
 
-import twilio from "twilio";
 import { SMS_ENABLED } from "../lib/smsEnabled";
 import { sendEmail } from "../lib/email";
 import { db } from "@workspace/db";
 import { referrersTable, referralLinkDeliveriesTable, referralEventsTable } from "@workspace/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { logger } from "../lib/logger";
-import { getPracticeConfig, resolveFromEmail } from "../lib/practiceConfig";
+import { getPracticeConfig, resolveFromEmail, resolveTwilioPhone, resolveTwilioClient } from "../lib/practiceConfig";
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
 const APP_URL               = (process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://www.joinrippl.com").replace(/\/$/, "");
-const TWILIO_ACCOUNT_SID    = process.env.TWILIO_ACCOUNT_SID;
-const TWILIO_AUTH_TOKEN     = process.env.TWILIO_AUTH_TOKEN;
-const TWILIO_PHONE_NUMBER   = process.env.TWILIO_PHONE_NUMBER;
-const FROM_EMAIL            = process.env.SENDGRID_FROM_EMAIL || "hello@joinrippl.com";
 
 // Auto-send cooldown — do not auto-send to the same patient more often than this.
 // Manual sends are always allowed regardless of cooldown.
@@ -53,14 +48,6 @@ export interface SendReferralLinkResult {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function getTwilioClient() {
-  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
-    throw new Error("Twilio credentials not configured");
-  }
-  return twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
-}
-
 
 function buildReferralUrl(code: string): string {
   return `${APP_URL}/refer?ref=${encodeURIComponent(code)}`;
@@ -289,11 +276,12 @@ export async function sendReferralLinkToPatient(
           .where(eq(referralLinkDeliveriesTable.id, logRow.id));
         result.sms = { status: "sent", provider_message_id: "suppressed" };
       } else {
-        if (!TWILIO_PHONE_NUMBER) throw new Error("TWILIO_PHONE_NUMBER not set");
-        const client = getTwilioClient();
+        const fromPhone = resolveTwilioPhone(practice);
+        if (!fromPhone) throw new Error("TWILIO_PHONE_NUMBER not set");
+        const client = resolveTwilioClient(practice);
         const msg = await client.messages.create({
           body: smsBody,
-          from: TWILIO_PHONE_NUMBER,
+          from: fromPhone,
           to: referrer.phone,
         });
         await db.update(referralLinkDeliveriesTable)
