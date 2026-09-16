@@ -544,6 +544,32 @@ export default function Patients() {
     setOfficeImportPhase(key, { state: "idle" });
   };
 
+  const handleResendEnrollmentSms = async (referrerId: string, referrerName: string) => {
+    setActionMenuId(null);
+    const firstName = referrerName.split(" ")[0];
+    if (isDemo) {
+      await new Promise(r => setTimeout(r, 700));
+      toast.success(`Demo: enrollment SMS resent to ${firstName}.`);
+      return;
+    }
+    try {
+      await customFetch(`${BASE}/api/referrers/${referrerId}/send-link`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channels: ["sms"] }),
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/referrers"] });
+      toast.success(`Enrollment SMS resent to ${firstName}.`);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        const serverMsg = (err.data as { error?: string } | null)?.error;
+        toast.error(serverMsg ?? err.message);
+      } else {
+        toast.error("Network error. Try again.");
+      }
+    }
+  };
+
   // ── Today's Activity computed values ───────────────────────────────────────
   const todayStart = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
   const todayEnd   = useMemo(() => { const d = new Date(); d.setHours(23, 59, 59, 999); return d; }, []);
@@ -1092,11 +1118,17 @@ export default function Patients() {
                                   </button>
                                   {menuOpen && (
                                     <div onMouseDown={e => e.stopPropagation()}
-                                      className="absolute right-0 top-full mt-1 z-30 bg-popover border border-border rounded-xl shadow-xl py-1" style={{ minWidth: "148px" }}>
+                                      className="absolute right-0 top-full mt-1 z-30 bg-popover border border-border rounded-xl shadow-xl py-1" style={{ minWidth: "168px" }}>
                                       <button onClick={() => { setActionMenuId(null); setQrModalReferrerId(referrer.id); }}
                                         className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors">
                                         <QrCode className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" /> Get QR Code
                                       </button>
+                                      {!onboarded && (
+                                        <button onClick={() => handleResendEnrollmentSms(referrer.id, referrer.name)}
+                                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors">
+                                          <Send className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" /> Resend Enrollment
+                                        </button>
+                                      )}
                                       <button onClick={() => { setActionMenuId(null); navigate(`/events?referrer=${encodeURIComponent(referrer.name)}`); }}
                                         className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors">
                                         <ExternalLink className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" /> View Events

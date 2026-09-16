@@ -30,7 +30,7 @@ const inviteLimiter = rateLimit({
   max: 5,
   keyGenerator: (req) => {
     const { myPhone } = req.body as { myPhone?: string };
-    return normalizePhone(myPhone ?? "") || req.ip ?? "unknown";
+    return normalizePhone(myPhone ?? "") || (req.ip ?? "unknown");
   },
   message: { error: "Too many invitations sent. Please try again later." },
 });

@@ -6,6 +6,7 @@ import {
   ChevronDown, MapPin, LogOut, AlertTriangle, Menu, X,
   Store, CheckSquare, Building2, TrendingUp, ExternalLink,
   GraduationCap, Megaphone, BookOpen, Route, MonitorPlay, Briefcase,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useOffice } from "@/contexts/office-context";
@@ -347,8 +348,15 @@ function SidebarContent({
         ))}
       </nav>
 
-      {/* Bottom: user info + logout */}
+      {/* Bottom: support email + user info + logout */}
       <div className="p-4 mt-auto border-t border-border shrink-0">
+        <a
+          href="mailto:hello@joinrippl.com"
+          className="flex items-center gap-2 px-2 py-1 mb-1 rounded-lg text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Mail className="w-3.5 h-3.5 shrink-0" />
+          hello@joinrippl.com
+        </a>
         <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl group">
           <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 text-xs font-bold text-primary uppercase">
             {(profile?.full_name ?? user?.email ?? "?")[0]}
