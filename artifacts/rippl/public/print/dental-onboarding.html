@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rippl — Dental Practice Onboarding</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      padding: 40px 20px 60px;
+    }
+
+    .page {
+      max-width: 780px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #0a1f35;
+      border-radius: 20px;
+      padding: 28px 36px;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, #E0622A, #c9551e);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-icon svg { width: 22px; height: 22px; fill: white; }
+    .logo-text { font-size: 22px; font-weight: 700; color: white; letter-spacing: -.5px; }
+    .logo-text span { color: #E0622A; }
+    .header-label {
+      text-align: right;
+    }
+    .header-label .eyebrow {
+      font-size: 10px; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; color: #E0622A; margin-bottom: 4px;
+    }
+    .header-label .title {
+      font-family: 'Fraunces', serif;
+      font-size: 18px; font-weight: 700; color: white;
+    }
+
+    /* ── Offer Banner ── */
+    .offer-banner {
+      background: linear-gradient(135deg, #E0622A 0%, #c9551e 100%);
+      border-radius: 16px;
+      padding: 22px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .offer-left .offer-tag {
+      font-size: 10px; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; color: rgba(255,255,255,.7); margin-bottom: 6px;
+    }
+    .offer-left .offer-headline {
+      font-family: 'Fraunces', serif;
+      font-size: 22px; font-weight: 900; color: white; line-height: 1.2;
+    }
+    .offer-left .offer-sub {
+      font-size: 13px; color: rgba(255,255,255,.85); margin-top: 6px;
+    }
+    .offer-right {
+      text-align: center;
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 12px;
+      padding: 14px 24px;
+      shrink: 0;
+      white-space: nowrap;
+    }
+    .offer-right .savings { font-size: 28px; font-weight: 900; color: white; font-family: 'Fraunces', serif; }
+    .offer-right .savings-label { font-size: 11px; color: rgba(255,255,255,.8); font-weight: 600; margin-top: 2px; }
+
+    /* ── Section header ── */
+    .section-label {
+      font-size: 10px; font-weight: 700; letter-spacing: .14em;
+      text-transform: uppercase; color: #94a3b8; margin-bottom: 16px;
+    }
+
+    /* ── Pricing ── */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .plan-card {
+      background: white;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 28px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .plan-card.highlight {
+      border-color: #E0622A;
+      box-shadow: 0 0 0 3px rgba(224,98,42,.1);
+    }
+    .plan-badge {
+      position: absolute;
+      top: -11px; left: 24px;
+      background: #E0622A;
+      color: white;
+      font-size: 10px; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 99px;
+    }
+    .plan-name {
+      font-size: 13px; font-weight: 700; color: #64748b;
+      text-transform: uppercase; letter-spacing: .08em;
+    }
+    .plan-price-row { display: flex; align-items: baseline; gap: 6px; }
+    .plan-monthly {
+      font-family: 'Fraunces', serif;
+      font-size: 36px; font-weight: 900; color: #0a1f35;
+    }
+    .plan-monthly-label { font-size: 13px; color: #94a3b8; font-weight: 500; }
+    .plan-per-ref {
+      font-size: 14px; font-weight: 700; color: #E0622A;
+      background: rgba(224,98,42,.08);
+      border: 1px solid rgba(224,98,42,.2);
+      border-radius: 8px;
+      padding: 6px 12px;
+      display: inline-block;
+    }
+    .plan-desc { font-size: 13px; color: #64748b; line-height: 1.6; }
+    .plan-features { display: flex; flex-direction: column; gap: 8px; }
+    .plan-feature {
+      display: flex; align-items: flex-start; gap: 9px;
+      font-size: 13px; color: #334155;
+    }
+    .check {
+      width: 18px; height: 18px;
+      background: rgba(224,98,42,.1);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      shrink: 0; flex-shrink: 0; margin-top: 1px;
+      font-size: 10px; color: #E0622A; font-weight: 900;
+    }
+
+    .onboarding-fee-note {
+      margin-top: 12px;
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #64748b;
+    }
+    .onboarding-fee-note strong { color: #0a1f35; }
+    .onboarding-fee-note .strike { text-decoration: line-through; color: #94a3b8; }
+
+    /* ── What we need ── */
+    .needs-card {
+      background: white;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 28px 32px;
+    }
+    .needs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .need-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .need-num {
+      width: 26px; height: 26px;
+      background: #0a1f35;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800; color: white;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .need-text strong { display: block; font-size: 13px; font-weight: 700; color: #0a1f35; }
+    .need-text span { font-size: 12px; color: #64748b; line-height: 1.5; }
+
+    /* ── Timeline ── */
+    .timeline-card {
+      background: #0a1f35;
+      border-radius: 18px;
+      padding: 28px 32px;
+    }
+    .timeline-card .section-label { color: rgba(255,255,255,.4); }
+    .timeline-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      position: relative;
+    }
+    .timeline-steps::before {
+      content: '';
+      position: absolute;
+      top: 18px; left: 36px; right: 36px;
+      height: 1px;
+      background: rgba(255,255,255,.15);
+    }
+    .timeline-step { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+    .step-dot {
+      width: 36px; height: 36px;
+      background: rgba(224,98,42,.2);
+      border: 2px solid #E0622A;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800; color: #E0622A;
+      position: relative; z-index: 1;
+    }
+    .step-label { font-size: 12px; font-weight: 600; color: white; line-height: 1.4; }
+    .step-time { font-size: 11px; color: rgba(255,255,255,.4); }
+
+    /* ── Footer CTA ── */
+    .footer-cta {
+      background: white;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .footer-cta-text strong { display: block; font-size: 16px; font-weight: 700; color: #0a1f35; margin-bottom: 4px; }
+    .footer-cta-text span { font-size: 13px; color: #64748b; }
+    .footer-contact { display: flex; flex-direction: column; gap: 4px; text-align: right; }
+    .footer-contact a { font-size: 13px; font-weight: 600; color: #E0622A; text-decoration: none; }
+    .footer-contact a:hover { text-decoration: underline; }
+    .footer-contact span { font-size: 12px; color: #94a3b8; }
+
+    @media (max-width: 600px) {
+      .pricing-grid, .needs-grid, .timeline-steps { grid-template-columns: 1fr; }
+      .header { flex-direction: column; gap: 16px; text-align: center; }
+      .header-label { text-align: center; }
+      .offer-banner { flex-direction: column; text-align: center; }
+      .footer-cta { flex-direction: column; text-align: center; }
+      .footer-contact { text-align: center; }
+      .timeline-steps::before { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C9 2 6.5 4 6.5 7c0 2 1 3.5 2 5 .7 1 1.5 2.5 1.5 4h4c0-1.5.8-3 1.5-4 1-1.5 2-3 2-5 0-3-2.5-5-5.5-5zm-1.5 18h3a1 1 0 01-3 0z"/>
+        </svg>
+      </div>
+      <div class="logo-text">rip<span>pl</span></div>
+    </div>
+    <div class="header-label">
+      <div class="eyebrow">Dental Practice</div>
+      <div class="title">Onboarding Guide & Pricing</div>
+    </div>
+  </div>
+
+  <!-- Limited-time offer -->
+  <div class="offer-banner">
+    <div class="offer-left">
+      <div class="offer-tag">Limited-Time Offer — Expires September 30, 2026</div>
+      <div class="offer-headline">Waived onboarding fee<br />for early sign-ups</div>
+      <div class="offer-sub">Sign up before September 30th and we waive the $199 setup fee entirely. No code needed — just let us know you're ready.</div>
+    </div>
+    <div class="offer-right">
+      <div class="savings">$199</div>
+      <div class="savings-label">saved at sign-up</div>
+    </div>
+  </div>
+
+  <!-- Pricing -->
+  <div>
+    <div class="section-label">Choose your plan</div>
+    <div class="pricing-grid">
+
+      <!-- Per Referral -->
+      <div class="plan-card">
+        <div>
+          <div class="plan-name">Per Referral</div>
+          <div class="plan-price-row">
+            <div class="plan-monthly">$0</div>
+            <div class="plan-monthly-label">/ month</div>
+          </div>
+        </div>
+        <div class="plan-per-ref">$55 per confirmed referral</div>
+        <div class="plan-desc">No monthly commitment. Pay only when a verified new-patient referral completes their first appointment.</div>
+        <div class="plan-features">
+          <div class="plan-feature"><div class="check">✓</div>Automatic referral detection</div>
+          <div class="plan-feature"><div class="check">✓</div>SMS + email reward notifications</div>
+          <div class="plan-feature"><div class="check">✓</div>Digital gift cards via Tango</div>
+          <div class="plan-feature"><div class="check">✓</div>Full dashboard access</div>
+          <div class="plan-feature"><div class="check">✓</div>Zero staff work required</div>
+        </div>
+        <div class="onboarding-fee-note">
+          One-time setup: <span class="strike">$199</span> <strong>$0 if signed up by Sept 30</strong>
+        </div>
+      </div>
+
+      <!-- Growth -->
+      <div class="plan-card highlight">
+        <div class="plan-badge">Most Popular</div>
+        <div>
+          <div class="plan-name">Growth</div>
+          <div class="plan-price-row">
+            <div class="plan-monthly">$149</div>
+            <div class="plan-monthly-label">/ month</div>
+          </div>
+        </div>
+        <div class="plan-per-ref">$35 per confirmed referral</div>
+        <div class="plan-desc">Best for practices generating 5+ referrals per month. Lower per-referral cost at scale.</div>
+        <div class="plan-features">
+          <div class="plan-feature"><div class="check">✓</div>Everything in Per Referral</div>
+          <div class="plan-feature"><div class="check">✓</div>Priority support</div>
+          <div class="plan-feature"><div class="check">✓</div>Custom reward branding</div>
+          <div class="plan-feature"><div class="check">✓</div>Staff incentive pool</div>
+          <div class="plan-feature"><div class="check">✓</div>Multi-office support</div>
+        </div>
+        <div class="onboarding-fee-note">
+          One-time setup: <span class="strike">$199</span> <strong>$0 if signed up by Sept 30</strong>
+        </div>
+      </div>
+
+    </div>
+    <p style="font-size:12px;color:#94a3b8;margin-top:12px;text-align:center;">
+      Gift card rewards passed through at Tango cost — no markup. $35 default gift card included in both plans.
+    </p>
+  </div>
+
+  <!-- What we need -->
+  <div class="needs-card">
+    <div class="section-label">What we need from you to go live</div>
+    <div class="needs-grid">
+      <div class="need-item">
+        <div class="need-num">1</div>
+        <div class="need-text">
+          <strong>Open Dental credentials</strong>
+          <span>eConnector URL, Customer Key, and Developer Key. Your front desk or IT contact can pull these from Open Dental → Setup → eConnector.</span>
+        </div>
+      </div>
+      <div class="need-item">
+        <div class="need-num">2</div>
+        <div class="need-text">
+          <strong>Practice logo</strong>
+          <span>PNG or SVG, transparent background preferred. Used on the patient-facing reward claim page.</span>
+        </div>
+      </div>
+      <div class="need-item">
+        <div class="need-num">3</div>
+        <div class="need-text">
+          <strong>Staff email addresses</strong>
+          <span>Anyone who needs dashboard access. We'll send login invites directly — takes 2 minutes.</span>
+        </div>
+      </div>
+      <div class="need-item">
+        <div class="need-num">4</div>
+        <div class="need-text">
+          <strong>Billing contact</strong>
+          <span>Email for monthly invoices. Referral fees billed by the 5th of the following month, Net 15.</span>
+        </div>
+      </div>
+      <div class="need-item">
+        <div class="need-num">5</div>
+        <div class="need-text">
+          <strong>Primary color (optional)</strong>
+          <span>Hex code or a screenshot of your brand color. We match your branding on patient-facing pages.</span>
+        </div>
+      </div>
+      <div class="need-item">
+        <div class="need-num">6</div>
+        <div class="need-text">
+          <strong>That's it</strong>
+          <span>No software to install. No staff training required. Rippl connects to your existing Open Dental setup in the background.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline -->
+  <div class="timeline-card">
+    <div class="section-label">You can be live in 48 hours</div>
+    <div class="timeline-steps">
+      <div class="timeline-step">
+        <div class="step-dot">1</div>
+        <div class="step-label">You send credentials</div>
+        <div class="step-time">Day 1</div>
+      </div>
+      <div class="timeline-step">
+        <div class="step-dot">2</div>
+        <div class="step-label">We connect & test</div>
+        <div class="step-time">Day 1–2</div>
+      </div>
+      <div class="timeline-step">
+        <div class="step-dot">3</div>
+        <div class="step-label">Dashboard ready, staff invited</div>
+        <div class="step-time">Day 2</div>
+      </div>
+      <div class="timeline-step">
+        <div class="step-dot">4</div>
+        <div class="step-label">First referral detected automatically</div>
+        <div class="step-time">Day 2–3</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer CTA -->
+  <div class="footer-cta">
+    <div class="footer-cta-text">
+      <strong>Ready to get started?</strong>
+      <span>Reach out and we'll have you live before the end of the week.</span>
+    </div>
+    <div class="footer-contact">
+      <a href="mailto:david@hallmarkdds.com">david@hallmarkdds.com</a>
+      <a href="tel:+16153813540">(615) 381-3540</a>
+      <span>joinrippl.com</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
