@@ -59,6 +59,7 @@ const Pricing        = lazy(() => import("@/pages/pricing"));
 const Specialists    = lazy(() => import("@/pages/specialists"));
 const Enroll              = lazy(() => import("@/pages/enroll"));
 const ChannelPartnerClients = lazy(() => import("@/pages/channel-partner-clients"));
+const SendInvite     = lazy(() => import("@/pages/send-invite"));
 const NotFound       = lazy(() => import("@/pages/not-found"));
 
 const queryClient = new QueryClient({
@@ -103,6 +104,7 @@ function Router() {
         {/* Onboarding — no sidebar, auth-protected inside component */}
         <Route path="/onboard" component={Onboard} />
 
+        <Route path="/send/:slug" component={SendInvite} />
         <Route path="/find" component={Find} />
         <Route path="/blinq-bg" component={BlinqBg} />
         <Route path="/join/dental" component={JoinDental} />
