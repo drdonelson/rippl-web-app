@@ -16,10 +16,11 @@ import pino from "pino";
 
 const router: IRouter = Router();
 
-// Token used for the demo claim preview link in the admin sidebar.
-// Claims made with this token skip all real side-effects and auto-reset
+// Tokens used for the demo claim preview link in the admin sidebar.
+// Claims made with these tokens skip all real side-effects and auto-reset
 // to "pending" after 60 seconds so the next demo visitor can use it.
-const DEMO_TOKEN = "demo-claim-preview-token-screenshot";
+const DEMO_TOKEN      = "demo-claim-preview-token-screenshot";
+const DEMO_TOKEN_AUTO = "demo-claim-preview-token-auto";
 const demoLog = pino({ name: "demo-claim" });
 
 // ── GET /api/claim/by-token/:token ────────────────────────────────────────────
@@ -33,7 +34,7 @@ router.get("/by-token/:token", async (req, res) => {
     return;
   }
 
-  // Demo token: return fake data so the Patient Journey preview works without a real DB record
+  // Demo tokens: return fake data so the Patient Journey preview works without a real DB record
   if (token === DEMO_TOKEN) {
     res.json({
       claim:       { id: "demo", reward_value: 35, expires_at: null, claimed_at: null, status: "pending" },
@@ -41,6 +42,16 @@ router.get("/by-token/:token", async (req, res) => {
       referral:    { id: "demo", new_patient_name: "James Wilson", office: "Hallmark Dental – Brentwood", office_id: null, office_logo_url: null },
       localPartner: null,
       practice:    { name: "Hallmark Dental", vertical: "dental", white_label_name: null, white_label_logo_url: null, white_label_primary_color: null, show_powered_by_rippl: true, in_house_credit_label: "$100 Dental Account Credit", in_house_credit_value: 100, custom_rewards: null },
+    });
+    return;
+  }
+  if (token === DEMO_TOKEN_AUTO) {
+    res.json({
+      claim:       { id: "demo-auto", reward_value: 100, expires_at: null, claimed_at: null, status: "pending" },
+      referrer:    { id: "demo-auto", name: "Carlos Mendez", tier: "starter", total_referrals: 1, reward_value: 100, referral_code: "CARLOSM" },
+      referral:    { id: "demo-auto", new_patient_name: "Marcus Thompson", office: "Volvo of Cool Springs", office_id: null, office_logo_url: null },
+      localPartner: null,
+      practice:    { name: "Volvo of Cool Springs", vertical: "automotive", white_label_name: "Carlock Rewards", white_label_logo_url: null, white_label_primary_color: null, show_powered_by_rippl: true, in_house_credit_label: null, in_house_credit_value: null, custom_rewards: null },
     });
     return;
   }
@@ -134,6 +145,24 @@ router.post("/", async (req, res) => {
     return;
   }
 
+  // Demo tokens: return fake success immediately — no DB side-effects
+  if (token === DEMO_TOKEN || token === DEMO_TOKEN_AUTO) {
+    const pinCode = reward_type === "local-partner" ? String(Math.floor(1000 + Math.random() * 9000)) : null;
+    req.log.info({ reward_type, token }, "[demo-claim] skipping real side-effects");
+    res.status(200).json({
+      success:             true,
+      reward_type,
+      reward_value:        token === DEMO_TOKEN_AUTO ? 100 : 35,
+      pin_code:            pinCode,
+      tango_order_id:      null,
+      admin_task_created:  false,
+      gift_card_brand:     reward_type === "gift-card" ? (gift_card_brand ?? "Amazon") : null,
+      referral_code:       token === DEMO_TOKEN_AUTO ? "CARLOSM" : "SARAHJ",
+      custom_reward_label: null,
+    });
+    return;
+  }
+
   const isCustomReward = reward_type.startsWith("custom:");
   const validTypes = ["gift-card", "local-partner", "in-house-credit", "charity"];
   if (!isCustomReward && !validTypes.includes(reward_type)) {
@@ -175,7 +204,7 @@ router.post("/", async (req, res) => {
   const tangoTemplateId = resolveTangoTemplate(practiceForClaim);
 
   const rewardValue    = claim.reward_value;
-  const isDemo         = token === DEMO_TOKEN;
+  const isDemo         = token === DEMO_TOKEN || token === DEMO_TOKEN_AUTO;
   let pinCode: string | null = null;
   let tangoOrderId: string | null = null;
   let adminTaskCreated = false;

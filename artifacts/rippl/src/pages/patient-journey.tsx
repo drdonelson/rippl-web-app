@@ -6,7 +6,8 @@ import type { DemoVertical } from "@/contexts/auth-context";
 import { useVertical } from "@/lib/useVertical";
 
 const APP_URL = "https://www.joinrippl.com";
-const DEMO_TOKEN = "demo-claim-preview-token-screenshot";
+const DEMO_TOKEN      = "demo-claim-preview-token-screenshot";
+const DEMO_TOKEN_AUTO = "demo-claim-preview-token-auto";
 
 function StepNum({ n }: { n: number }) {
   return (
@@ -398,7 +399,7 @@ const STEPS_AUTO = [
     timing: "When they click the link in the SMS or email",
     description:
       "The reward experience. The customer's reward amount animates in, they pick gift card or charity, and it's fulfilled instantly. No login, no forms, no waiting.",
-    href: `${APP_URL}/claim?token=${DEMO_TOKEN}`,
+    href: `${APP_URL}/claim?token=${DEMO_TOKEN_AUTO}`,
     linkLabel: "Preview Claim Page",
     emoji: "🎁",
   },

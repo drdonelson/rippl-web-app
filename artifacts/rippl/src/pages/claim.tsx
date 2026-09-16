@@ -308,10 +308,12 @@ export default function Claim() {
   const handleShare = useCallback(() => {
     const code = result?.referral_code ?? claimData?.referrer.referral_code ?? "";
     const url  = `${PUBLIC_APP_URL}/refer?ref=${code}`;
-    const subject = encodeURIComponent("I think you'd love my dentist");
-    const body    = encodeURIComponent(
-      `Hey! I've been going to Hallmark Dental and wanted to share my referral link with you. Book your first visit here: ${url} — they're great and it only takes a minute to book online.`,
-    );
+    const subject = isAutomotive
+      ? encodeURIComponent(`I think you'd love ${brandName}`)
+      : encodeURIComponent("I think you'd love my dentist");
+    const body = isAutomotive
+      ? encodeURIComponent(`Hey! I've been a customer at ${brandName} and wanted to share my referral link. When you buy a car there, use this link: ${url}`)
+      : encodeURIComponent(`Hey! I've been going to ${brandName} and wanted to share my referral link with you. Book your first visit here: ${url} — they're great and it only takes a minute to book online.`);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   }, [result, claimData]);
 
@@ -383,8 +385,11 @@ export default function Claim() {
   const brandName   = practice?.white_label_name ?? practice?.name ?? "Rippl";
   const brandLogoUrl = practice?.white_label_logo_url ?? referral?.office_logo_url ?? null;
   const showPoweredBy = practice?.show_powered_by_rippl !== false;
-  const creditLabel = practice?.in_house_credit_label ?? "$100 Dental Account Credit";
-  const creditValue = practice?.in_house_credit_value ?? 100;
+  const creditLabel    = practice?.in_house_credit_label ?? "$100 Dental Account Credit";
+  const creditValue    = practice?.in_house_credit_value ?? 100;
+  const showCredit     = practice?.in_house_credit_value != null;
+  const isAutomotive   = practice?.vertical === "automotive";
+  const referralAction = isAutomotive ? "purchased their vehicle" : "completed their visit";
   // Custom rewards from integration_config
   const customRewards: CustomReward[] = (
     practice?.integration_config?.custom_rewards ??
@@ -420,7 +425,7 @@ export default function Claim() {
             <CheckCircle2 className="w-10 h-10 text-white" />
           </motion.div>
           <h2 className="text-3xl font-bold text-white mb-1">Reward Claimed!</h2>
-          <p className="text-white/80 text-base">Thank you for being a loyal patient, {firstName}.</p>
+          <p className="text-white/80 text-base">Thank you for being a loyal {isAutomotive ? "customer" : "patient"}, {firstName}.</p>
         </div>
 
         {/* White card */}
@@ -625,24 +630,26 @@ export default function Claim() {
       {/* White card pulls up */}
       <div className="bg-white rounded-t-3xl -mt-12 flex-1 px-5 pt-6 pb-10">
         <p className="text-slate-400 text-xs uppercase tracking-wider font-semibold mb-4 text-center">
-          {referral?.new_patient_name ?? "A friend"} just completed their visit — pick your reward:
+          {referral?.new_patient_name ?? "A friend"} just {referralAction} — pick your reward:
         </p>
 
         {/* Reward cards */}
         <div className="space-y-3 mb-6">
 
-          {/* In-house credit — shown first */}
-          <RewardCard
-            isSelected={selected === "in-house-credit"}
-            onSelect={() => setSelected("in-house-credit")}
-            badge="Most Valuable"
-            badgeColor="amber"
-            icon="🦷"
-            title={creditLabel}
-            subtitle={`Applied to your account within 24 hours`}
-            detail={`Worth the most — use it toward any future treatment`}
-            accentColor={accentColor}
-          />
+          {/* In-house credit — dental practices only */}
+          {showCredit && (
+            <RewardCard
+              isSelected={selected === "in-house-credit"}
+              onSelect={() => setSelected("in-house-credit")}
+              badge="Most Valuable"
+              badgeColor="amber"
+              icon="🦷"
+              title={creditLabel}
+              subtitle={`Applied to your account within 24 hours`}
+              detail={`Worth the most — use it toward any future treatment`}
+              accentColor={accentColor}
+            />
+          )}
 
           {/* Gift card */}
           <RewardCard
