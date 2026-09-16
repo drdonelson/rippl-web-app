@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
+import { useSearch } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Building2, Upload, X, Loader2, ImageIcon, CheckCircle2,
@@ -554,8 +555,13 @@ type Tab = "locations" | "team";
 
 export default function OfficesPage() {
   const { profile, isDemo, demoVertical } = useAuth();
-  const initialTab = new URLSearchParams(window.location.search).get("tab") as Tab | null;
-  const [tab, setTab] = useState<Tab>(initialTab === "team" ? "team" : "locations");
+  const search = useSearch();
+  const [tab, setTab] = useState<Tab>(() => new URLSearchParams(search).get("tab") === "team" ? "team" : "locations");
+
+  useEffect(() => {
+    const t = new URLSearchParams(search).get("tab");
+    if (t === "team" || t === "locations") setTab(t);
+  }, [search]);
   const [editingOfficeId, setEditingOfficeId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
