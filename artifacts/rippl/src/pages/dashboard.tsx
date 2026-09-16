@@ -299,7 +299,7 @@ export default function Dashboard() {
           </div>
           {(isPracticeAdmin || isDemo) && (
             <Link
-              href="/offices"
+              href="/offices?tab=team"
               className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
             >
               Manage <ArrowRight className="w-3.5 h-3.5" />

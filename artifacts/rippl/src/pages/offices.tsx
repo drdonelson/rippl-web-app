@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Building2, Upload, X, Loader2, ImageIcon, CheckCircle2,
@@ -554,7 +554,8 @@ type Tab = "locations" | "team";
 
 export default function OfficesPage() {
   const { profile, isDemo, demoVertical } = useAuth();
-  const [tab, setTab] = useState<Tab>("locations");
+  const initialTab = new URLSearchParams(window.location.search).get("tab") as Tab | null;
+  const [tab, setTab] = useState<Tab>(initialTab === "team" ? "team" : "locations");
   const [editingOfficeId, setEditingOfficeId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
