@@ -347,7 +347,7 @@ export async function pollDriveCentricSftp(
 
             const firstName = buyerName.split(/\s+/)[0] ?? "there";
             const brandName = (practice as any).white_label_name ?? practice.name;
-            sendAutomotiveOnboardingSms({ firstName, phone: phoneLast10, referralCode, brandName })
+            sendAutomotiveOnboardingSms({ firstName, phone: phoneLast10, referralCode, brandName, practice })
               .catch(err => logger.warn({ err, dealId }, "[dc-sftp] Onboarding SMS failed — referrer still enrolled"));
 
             logger.info({ dealId, buyerName, referralCode }, "[dc-sftp] Buyer auto-enrolled");
