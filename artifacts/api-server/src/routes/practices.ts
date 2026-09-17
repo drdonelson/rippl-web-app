@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { practicesTable, officesTable } from "@workspace/db/schema";
-import { eq, sql, and } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { requireAuth, requireSuperAdmin, requireChannelPartner } from "../middleware/auth";
 import { invalidatePracticeCache } from "../lib/practiceConfig";
 
@@ -75,6 +75,58 @@ router.get("/my-clients", requireAuth, requireChannelPartner, async (req, res) =
   } catch (err) {
     req.log.error({ err }, "[practices/my-clients] GET failed");
     res.status(500).json({ error: "Failed to load clients" });
+  }
+});
+
+// POST /api/practices/onboard-client — channel_partner self-service adds a new salon client
+// MUST be before /:id
+router.post("/onboard-client", requireAuth, requireChannelPartner, async (req, res) => {
+  const caller = req.authUser!;
+  const { name, white_label_name, reward_value } = req.body as Record<string, string | number | undefined>;
+
+  if (!name || !String(name).trim()) {
+    res.status(400).json({ error: "name is required" });
+    return;
+  }
+
+  const nameStr = String(name).trim();
+  const base = nameStr.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const suffix = Math.random().toString(36).substring(2, 6);
+  const slugStr = `${base}-${suffix}`;
+  const locationCode = slugStr.replace(/-[a-z0-9]{4}$/, "").slice(0, 20) || base.slice(0, 20);
+
+  try {
+    const [practice] = await db
+      .insert(practicesTable)
+      .values({
+        name:              nameStr,
+        slug:              slugStr,
+        vertical:          "salon",
+        plan:              "per_referral",
+        per_referral_fee:  20,
+        reward_value:      reward_value ? Number(reward_value) : 35,
+        white_label_name:  white_label_name ? String(white_label_name).trim() : nameStr,
+        primary_color:     "0d9488",
+        channel_partner_id: caller.id,
+      })
+      .returning();
+
+    // Create a default office for this salon
+    await db.insert(officesTable).values({
+      practice_id:   practice.id,
+      name:          nameStr,
+      location_code: locationCode,
+    });
+
+    res.status(201).json(practice);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("unique") || msg.includes("duplicate")) {
+      res.status(409).json({ error: "A practice with that name already exists — try a slightly different name" });
+      return;
+    }
+    req.log.error({ err }, "[practices/onboard-client] POST failed");
+    res.status(500).json({ error: "Failed to create client" });
   }
 });
 

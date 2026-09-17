@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { referralEventsTable, referrersTable, rewardClaimsTable, practicesTable } from "@workspace/db/schema";
-import { eq, sql, and, gte, lte, notInArray, isNull, or } from "drizzle-orm";
+import { eq, sql, and, gte, lte, notInArray, isNull, or, inArray } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -19,10 +19,26 @@ router.get("/", async (req, res) => {
 
   const rawOfficeId = typeof req.query.office_id === "string" && req.query.office_id !== "all"
     ? req.query.office_id : null;
-  const officeId   = user.role !== "super_admin" && user.office_id ? user.office_id : rawOfficeId;
-  const practiceId = user.role !== "super_admin"
-    ? user.practice_id
-    : (typeof req.query.practice_id === "string" ? req.query.practice_id : null);
+  const officeId = user.role !== "super_admin" && user.office_id ? user.office_id : rawOfficeId;
+
+  // channel_partner: resolve owned practices
+  let channelPartnerPracticeIds: string[] | null = null;
+  if (user.role === "channel_partner") {
+    const owned = await db
+      .select({ id: practicesTable.id })
+      .from(practicesTable)
+      .where(eq(practicesTable.channel_partner_id, user.id));
+    channelPartnerPracticeIds = owned.map(p => p.id);
+  }
+
+  const practiceId = user.role === "super_admin"
+    ? (typeof req.query.practice_id === "string" ? req.query.practice_id : null)
+    : user.role === "channel_partner"
+    ? (() => {
+        const rp = typeof req.query.practice_id === "string" ? req.query.practice_id : null;
+        return rp && channelPartnerPracticeIds?.includes(rp) ? rp : null;
+      })()
+    : user.practice_id;
 
   const startDate = typeof req.query.start_date === "string" ? req.query.start_date : null;
   const endDate   = typeof req.query.end_date   === "string" ? req.query.end_date   : null;
@@ -42,9 +58,13 @@ router.get("/", async (req, res) => {
       }
     }
 
-    const officeFilter   = officeId   ? eq(referralEventsTable.office_id,   officeId)   : undefined;
-    const practiceFilter = practiceId ? eq(referralEventsTable.practice_id, practiceId) : undefined;
-    const dtFilter       = dateFilter(referralEventsTable.created_at, startDate, endDate);
+    const officeFilter   = officeId ? eq(referralEventsTable.office_id, officeId) : undefined;
+    const practiceFilter = practiceId
+      ? eq(referralEventsTable.practice_id, practiceId)
+      : (channelPartnerPracticeIds && channelPartnerPracticeIds.length > 0)
+      ? inArray(referralEventsTable.practice_id, channelPartnerPracticeIds)
+      : undefined;
+    const dtFilter = dateFilter(referralEventsTable.created_at, startDate, endDate);
 
     const parts = [officeFilter, practiceFilter, dtFilter, demoExclusionFilter].filter(Boolean);
     const where = parts.length === 0
@@ -165,17 +185,34 @@ router.get("/export", async (req, res) => {
 
   const rawOfficeId = typeof req.query.office_id === "string" && req.query.office_id !== "all"
     ? req.query.office_id : null;
-  const officeId   = user.role !== "super_admin" && user.office_id ? user.office_id : rawOfficeId;
-  const practiceId = user.role !== "super_admin"
-    ? user.practice_id
-    : (typeof req.query.practice_id === "string" ? req.query.practice_id : null);
+  const officeId = user.role !== "super_admin" && user.office_id ? user.office_id : rawOfficeId;
+
+  let exportChannelPartnerPracticeIds: string[] | null = null;
+  if (user.role === "channel_partner") {
+    const owned = await db.select({ id: practicesTable.id }).from(practicesTable)
+      .where(eq(practicesTable.channel_partner_id, user.id));
+    exportChannelPartnerPracticeIds = owned.map(p => p.id);
+  }
+
+  const practiceId = user.role === "super_admin"
+    ? (typeof req.query.practice_id === "string" ? req.query.practice_id : null)
+    : user.role === "channel_partner"
+    ? (() => {
+        const rp = typeof req.query.practice_id === "string" ? req.query.practice_id : null;
+        return rp && exportChannelPartnerPracticeIds?.includes(rp) ? rp : null;
+      })()
+    : user.practice_id;
   const startDate = typeof req.query.start_date === "string" ? req.query.start_date : null;
   const endDate   = typeof req.query.end_date   === "string" ? req.query.end_date   : null;
 
   try {
-    const officeFilter   = officeId   ? eq(referralEventsTable.office_id,   officeId)   : undefined;
-    const practiceFilter = practiceId ? eq(referralEventsTable.practice_id, practiceId) : undefined;
-    const dtFilter       = dateFilter(referralEventsTable.created_at, startDate, endDate);
+    const officeFilter   = officeId ? eq(referralEventsTable.office_id, officeId) : undefined;
+    const practiceFilter = practiceId
+      ? eq(referralEventsTable.practice_id, practiceId)
+      : (exportChannelPartnerPracticeIds && exportChannelPartnerPracticeIds.length > 0)
+      ? inArray(referralEventsTable.practice_id, exportChannelPartnerPracticeIds)
+      : undefined;
+    const dtFilter = dateFilter(referralEventsTable.created_at, startDate, endDate);
 
     const parts = [officeFilter, practiceFilter, dtFilter].filter(Boolean);
     const where = parts.length === 0

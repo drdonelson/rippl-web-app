@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Building2, Loader2, AlertTriangle, Pencil, CheckCircle2, X,
-  ChevronRight, Scissors, ExternalLink,
+  ChevronRight, Scissors, Car, ExternalLink, Plus, ArrowRight,
 } from "lucide-react";
 import { customFetch } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
+import { usePractice } from "@/contexts/practice-context";
+import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -39,6 +41,13 @@ interface ClientPractice {
 
 async function fetchClients(): Promise<ClientPractice[]> {
   return customFetch<ClientPractice[]>(`${BASE}/api/practices/my-clients`);
+}
+
+async function onboardClient(body: { name: string; white_label_name?: string; reward_value?: number }): Promise<ClientPractice> {
+  return customFetch<ClientPractice>(`${BASE}/api/practices/onboard-client`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 // ── Reward editor ─────────────────────────────────────────────────────────────
@@ -279,9 +288,11 @@ function EditDrawer({ practice, onClose }: EditDrawerProps) {
 function ClientCard({
   practice,
   onEdit,
+  onManage,
 }: {
   practice: ClientPractice;
   onEdit: () => void;
+  onManage: () => void;
 }) {
   const rewardCount = Array.isArray(
     (practice.integration_config as Record<string, unknown> | null)?.custom_rewards
@@ -289,11 +300,13 @@ function ClientCard({
     ? ((practice.integration_config as Record<string, unknown>).custom_rewards as CustomReward[]).length
     : 0;
 
+  const VerticalIcon = practice.vertical === "automotive" ? Car : Scissors;
+
   return (
     <div className="border border-border rounded-2xl bg-card p-5 flex items-center gap-4">
       {/* Icon */}
       <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-        <Scissors className="w-5 h-5 text-primary" />
+        <VerticalIcon className="w-5 h-5 text-primary" />
       </div>
 
       {/* Info */}
@@ -308,6 +321,9 @@ function ClientCard({
           )}>
             {practice.status}
           </span>
+          <span className="text-xs px-2 py-0.5 rounded-full border font-medium bg-muted text-muted-foreground border-border capitalize">
+            {practice.vertical ?? "salon"}
+          </span>
         </div>
         <p className="text-xs text-muted-foreground mt-0.5">
           {practice.white_label_name ? `"${practice.white_label_name}"` : "No brand name set"}
@@ -321,14 +337,127 @@ function ClientCard({
         )}
       </div>
 
-      {/* Edit button */}
-      <button
-        onClick={onEdit}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors shrink-0"
-      >
-        <Pencil className="w-3.5 h-3.5" />
-        Configure
-      </button>
+      {/* Actions */}
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          onClick={onEdit}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+          Configure
+        </button>
+        <button
+          onClick={onManage}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+        >
+          Manage
+          <ArrowRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Add Salon Client modal ────────────────────────────────────────────────────
+
+function AddSalonModal({ onClose }: { onClose: () => void }) {
+  const qc = useQueryClient();
+  const [name, setName] = useState("");
+  const [wlName, setWlName] = useState("");
+  const [rewardValue, setRewardValue] = useState(35);
+  const [error, setError] = useState("");
+
+  const mut = useMutation({
+    mutationFn: () =>
+      onboardClient({
+        name: name.trim(),
+        white_label_name: wlName.trim() || undefined,
+        reward_value: rewardValue,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/practices/my-clients"] });
+      onClose();
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : "Failed to add client";
+      setError(msg);
+    },
+  });
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) { setError("Salon name is required"); return; }
+    setError("");
+    mut.mutate();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-background border border-border rounded-2xl shadow-xl w-full max-w-md mx-4">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <h2 className="text-lg font-display font-bold text-foreground">Add Salon Client</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1 rounded">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={submit} className="px-6 py-5 space-y-4">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground block mb-1">Salon Name <span className="text-destructive">*</span></label>
+            <input
+              autoFocus
+              className="w-full text-sm border border-border rounded-xl px-3 py-2 bg-background"
+              placeholder="e.g. Hollow Ground Nashville"
+              value={name}
+              onChange={e => { setName(e.target.value); setError(""); }}
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-muted-foreground block mb-1">Program Name <span className="text-muted-foreground font-normal">(optional)</span></label>
+            <input
+              className="w-full text-sm border border-border rounded-xl px-3 py-2 bg-background"
+              placeholder="e.g. Hollow Ground Rewards — defaults to salon name"
+              value={wlName}
+              onChange={e => setWlName(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground mt-1">Shown on the rewards page and in SMS messages.</p>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-muted-foreground block mb-1">Reward Value ($)</label>
+            <input
+              type="number"
+              min={5}
+              max={500}
+              className="w-32 text-sm border border-border rounded-xl px-3 py-2 bg-background"
+              value={rewardValue}
+              onChange={e => setRewardValue(Number(e.target.value))}
+            />
+          </div>
+
+          {error && (
+            <div className="flex items-center gap-2 text-destructive text-sm">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              {error}
+            </div>
+          )}
+        </form>
+
+        <div className="px-6 py-4 border-t border-border flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted transition-colors">
+            Cancel
+          </button>
+          <button
+            onClick={submit as unknown as React.MouseEventHandler}
+            disabled={mut.isPending || !name.trim()}
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
+          >
+            {mut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+            Add Client
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -337,13 +466,21 @@ function ClientCard({
 
 export default function ChannelPartnerClientsPage() {
   const { profile, isLoading: authLoading } = useAuth();
+  const { setSelectedPracticeId } = usePractice();
+  const [, navigate] = useLocation();
   const [editing, setEditing] = useState<ClientPractice | null>(null);
+  const [addingClient, setAddingClient] = useState(false);
 
   const { data: clients, isLoading, isError } = useQuery<ClientPractice[]>({
     queryKey: ["/api/practices/my-clients"],
     queryFn: fetchClients,
     enabled: !authLoading && (profile?.role === "channel_partner" || profile?.role === "super_admin"),
   });
+
+  function handleManage(practice: ClientPractice) {
+    setSelectedPracticeId(practice.id);
+    navigate("/patients");
+  }
 
   if (profile?.role !== "channel_partner" && profile?.role !== "super_admin") {
     return (
@@ -354,16 +491,30 @@ export default function ChannelPartnerClientsPage() {
     );
   }
 
+  const hasSalonClients = clients?.some(c => c.vertical === "salon" || !c.vertical);
+
   return (
     <>
       {editing && <EditDrawer practice={editing} onClose={() => setEditing(null)} />}
+      {addingClient && <AddSalonModal onClose={() => setAddingClient(false)} />}
 
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-display font-bold text-foreground">Client Salons</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage branding and reward options for each of your salon clients.
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-display font-bold text-foreground">My Clients</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage branding, rewards, and clients for each account you represent.
+            </p>
+          </div>
+          {profile?.role === "channel_partner" && (
+            <button
+              onClick={() => setAddingClient(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              Add Salon Client
+            </button>
+          )}
         </div>
 
         {isLoading && (
@@ -385,7 +536,7 @@ export default function ChannelPartnerClientsPage() {
             <Building2 className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
             <p className="text-sm font-medium text-muted-foreground">No clients yet</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Clients will appear here once they're set up by your Rippl account manager.
+              Add a salon client above, or contact your Rippl account manager to get started.
             </p>
           </div>
         )}
@@ -393,9 +544,21 @@ export default function ChannelPartnerClientsPage() {
         {!isLoading && clients && clients.length > 0 && (
           <div className="space-y-3">
             {clients.map(c => (
-              <ClientCard key={c.id} practice={c} onEdit={() => setEditing(c)} />
+              <ClientCard
+                key={c.id}
+                practice={c}
+                onEdit={() => setEditing(c)}
+                onManage={() => handleManage(c)}
+              />
             ))}
           </div>
+        )}
+
+        {/* Helpful note when they only have automotive clients (no self-service add needed for those) */}
+        {!isLoading && hasSalonClients === false && (clients?.length ?? 0) > 0 && (
+          <p className="text-xs text-muted-foreground text-center">
+            To add new automotive locations, contact your Rippl account manager.
+          </p>
         )}
       </div>
     </>

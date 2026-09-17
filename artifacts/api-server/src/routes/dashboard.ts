@@ -14,9 +14,24 @@ router.get("/", async (req, res) => {
   const officeId = user.role !== "super_admin" && user.office_id
     ? user.office_id
     : rawOfficeId;
-  const practiceId = user.role !== "super_admin"
-    ? user.practice_id
-    : (typeof req.query.practice_id === "string" ? req.query.practice_id : null);
+  // channel_partner: resolve practice_id from their owned practices
+  let channelPartnerPracticeIds: string[] | null = null;
+  if (user.role === "channel_partner") {
+    const owned = await db
+      .select({ id: practicesTable.id })
+      .from(practicesTable)
+      .where(eq(practicesTable.channel_partner_id, user.id));
+    channelPartnerPracticeIds = owned.map(p => p.id);
+  }
+
+  const practiceId = user.role === "super_admin"
+    ? (typeof req.query.practice_id === "string" ? req.query.practice_id : null)
+    : user.role === "channel_partner"
+    ? (() => {
+        const req_pid = typeof req.query.practice_id === "string" ? req.query.practice_id : null;
+        return req_pid && channelPartnerPracticeIds?.includes(req_pid) ? req_pid : null;
+      })()
+    : user.practice_id;
 
   try {
     // For super_admin viewing all data, exclude demo practices so they don't pollute real stats
@@ -35,7 +50,11 @@ router.get("/", async (req, res) => {
     }
 
     const officeFilter   = officeId   ? eq(referralEventsTable.office_id,   officeId)   : undefined;
-    const practiceFilter = practiceId ? eq(referralEventsTable.practice_id, practiceId) : undefined;
+    const practiceFilter = practiceId
+      ? eq(referralEventsTable.practice_id, practiceId)
+      : (channelPartnerPracticeIds && channelPartnerPracticeIds.length > 0)
+      ? inArray(referralEventsTable.practice_id, channelPartnerPracticeIds)
+      : undefined;
 
     const filterParts = [officeFilter, practiceFilter, demoExclusionFilter].filter(Boolean);
     const bothFilters = filterParts.length === 0

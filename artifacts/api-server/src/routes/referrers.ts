@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { referrersTable, referralLinkDeliveriesTable } from "@workspace/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { referrersTable, referralLinkDeliveriesTable, practicesTable } from "@workspace/db/schema";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import {
   CreateReferrerBody,
   GetReferrerQrParams,
@@ -27,6 +27,41 @@ router.get("/", async (req, res) => {
   const effectiveOfficeId = user.role !== "super_admin" && user.office_id
     ? user.office_id
     : rawOfficeId;
+
+  // channel_partner: scope to their owned practices only
+  if (user.role === "channel_partner") {
+    try {
+      const owned = await db
+        .select({ id: practicesTable.id })
+        .from(practicesTable)
+        .where(eq(practicesTable.channel_partner_id, user.id));
+
+      if (owned.length === 0) { res.json([]); return; }
+
+      const ownedIds = owned.map(p => p.id);
+      const reqPracticeId = typeof req.query.practice_id === "string" ? req.query.practice_id : null;
+      const effectivePracticeId = reqPracticeId && ownedIds.includes(reqPracticeId) ? reqPracticeId : null;
+
+      const cpConditions = [
+        effectivePracticeId
+          ? eq(referrersTable.practice_id, effectivePracticeId)
+          : inArray(referrersTable.practice_id, ownedIds),
+        effectiveOfficeId ? eq(referrersTable.office_id, effectiveOfficeId) : undefined,
+      ].filter(Boolean) as ReturnType<typeof eq>[];
+
+      const referrers = await db
+        .select()
+        .from(referrersTable)
+        .where(and(...cpConditions))
+        .orderBy(referrersTable.created_at);
+      res.json(referrers);
+    } catch (err) {
+      logger.error({ err }, "GET /api/referrers (channel_partner) failed");
+      res.status(500).json({ error: "Failed to load referrers" });
+    }
+    return;
+  }
+
   const practiceId = user.role !== "super_admin"
     ? user.practice_id
     : (typeof req.query.practice_id === "string" ? req.query.practice_id : null);
