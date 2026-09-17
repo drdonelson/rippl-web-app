@@ -564,7 +564,7 @@ export default function PatientJourney() {
     );
   }
 
-  const journeyTitle = isAuto ? "Customer Journey" : "Patient Journey";
+  const journeyTitle = isAuto ? "Client Journey" : "Patient Journey";
   const journeySubtitle = isAuto
     ? "Every touchpoint a customer sees — in the exact order it happens."
     : "Every touchpoint a patient sees — in the exact order it happens.";

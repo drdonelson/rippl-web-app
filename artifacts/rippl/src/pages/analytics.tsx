@@ -330,7 +330,7 @@ function AnalyticsView({
         <div className="rounded-2xl border border-border bg-card/30 overflow-hidden">
           <div className="px-6 py-4 border-b border-border">
             <h2 className="text-sm font-semibold text-foreground">
-              {isAuto ? "Top Customers" : "Top Referrers"}
+              {isAuto ? "Top Clients" : "Top Referrers"}
             </h2>
           </div>
           {top_referrers.length === 0 ? (

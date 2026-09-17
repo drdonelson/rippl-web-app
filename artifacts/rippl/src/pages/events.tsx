@@ -425,7 +425,7 @@ export default function Events() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-muted/30 text-muted-foreground text-xs uppercase tracking-wider">
-                {thBtn("new_patient_name", isAutoDemo ? "New Customer" : "New Patient")}
+                {thBtn("new_patient_name", isAutoDemo ? "New Client" : "New Patient")}
                 {thBtn("referrer_name", "Referrer")}
                 <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-muted-foreground">Source</th>
                 {thBtn("date", "Date")}
@@ -619,7 +619,7 @@ export default function Events() {
           className="space-y-4"
         >
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">{isAutoDemo ? "New Customer Name" : "New Patient Name"}</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">{isAutoDemo ? "New Client Name" : "New Patient Name"}</label>
             <input
               {...logRegister("new_patient_name")}
               placeholder="e.g. Jane Smith"

@@ -236,12 +236,12 @@ function SidebarContent({
   const effectiveVertical = isDemo ? demoVertical : (profile?.vertical ?? "dental");
   const isAuto = effectiveVertical === "automotive";
   const isSalon = effectiveVertical === "salon";
-  const patientNavLabel = isAuto ? "Customers" : isSalon ? "Clients" : "Patients";
+  const patientNavLabel = isAuto ? "Clients" : isSalon ? "Clients" : "Patients";
   const sections = getSections(profile?.role, isDemo).map(s => ({
     ...s,
     items: s.items.map(item => {
       if (item.href === "/patients") return { ...item, label: patientNavLabel };
-      if (item.href === "/patient-journey" && isAuto) return { ...item, label: "Customer Journey" };
+      if (item.href === "/patient-journey" && isAuto) return { ...item, label: "Client Journey" };
       return item;
     }),
   }));

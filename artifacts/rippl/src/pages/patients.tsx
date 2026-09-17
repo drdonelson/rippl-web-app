@@ -310,6 +310,28 @@ export default function Patients() {
   const [tierFilter, setTierFilter] = useState<string>("all");
   const [advisorFilter, setAdvisorFilter] = useState<string>("all");
   const [advisorModalReferrer, setAdvisorModalReferrer] = useState<{ id: string; name: string; advisor: string | null } | null>(null);
+
+  // ── Advisor chip (automotive only) — sticky "who's using this tablet" ────────
+  const [activeAdvisor, setActiveAdvisor] = useState<string>(() => {
+    try { return localStorage.getItem("rippl_active_advisor") ?? ""; } catch { return ""; }
+  });
+  const [advisorChipOpen, setAdvisorChipOpen] = useState(false);
+  const [advisorChipInput, setAdvisorChipInput] = useState("");
+  const advisorChipRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!advisorChipOpen) return;
+    const close = (e: MouseEvent) => {
+      if (advisorChipRef.current && !advisorChipRef.current.contains(e.target as Node)) setAdvisorChipOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [advisorChipOpen]);
+  const setActiveAdvisorAndPersist = (name: string) => {
+    setActiveAdvisor(name);
+    try { if (name) localStorage.setItem("rippl_active_advisor", name); else localStorage.removeItem("rippl_active_advisor"); } catch {}
+    setAdvisorChipOpen(false);
+    setAdvisorChipInput("");
+  };
   const [advisorInput, setAdvisorInput] = useState("");
   const [advisorSaving, setAdvisorSaving] = useState(false);
   const MOBILE_ROW_LIMIT = 50;
@@ -712,18 +734,81 @@ export default function Patients() {
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">{isAuto ? "Customers" : isSalon ? "Clients" : "Patients"}</h1>
+          <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">{isAuto ? "Clients" : isSalon ? "Clients" : "Patients"}</h1>
           <p className="text-muted-foreground mt-1.5">Manage referrers and track today's outreach.</p>
         </div>
-        <button onClick={openAddModal}
-          className="self-start sm:self-auto px-4 sm:px-5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-semibold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all flex items-center gap-1.5 text-sm">
-          <Plus className="w-4 h-4" /> {isAuto ? "Add Customer" : isSalon ? "Add Client" : "Add Patient"}
-        </button>
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          {/* Advisor chip — automotive only, sticky "who's using this tablet" */}
+          {isAuto && (
+            <div className="relative" ref={advisorChipRef}>
+              <button
+                onClick={() => { setAdvisorChipOpen(v => !v); setAdvisorChipInput(""); }}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-semibold transition-all",
+                  activeAdvisor
+                    ? "bg-primary/10 border-primary/30 text-primary hover:bg-primary/20"
+                    : "bg-card border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
+                )}
+              >
+                <Users className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="max-w-[140px] truncate">{activeAdvisor || "Select Advisor"}</span>
+                <ChevronDown className="w-3 h-3 flex-shrink-0 opacity-60" />
+              </button>
+              {advisorChipOpen && (
+                <div className="absolute right-0 top-full mt-1.5 z-40 bg-popover border border-border rounded-xl shadow-xl py-1.5" style={{ minWidth: "200px" }}>
+                  <div className="px-2 pb-1.5">
+                    <input
+                      autoFocus
+                      type="text"
+                      placeholder="Search or add advisor…"
+                      value={advisorChipInput}
+                      onChange={e => setAdvisorChipInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter" && advisorChipInput.trim()) setActiveAdvisorAndPersist(advisorChipInput.trim()); }}
+                      className="w-full px-2.5 py-1.5 text-xs bg-background border border-border rounded-lg focus:outline-none focus:border-primary transition-all"
+                    />
+                  </div>
+                  <div className="max-h-48 overflow-y-auto">
+                    {advisors
+                      .filter(a => !advisorChipInput || a.toLowerCase().includes(advisorChipInput.toLowerCase()))
+                      .map(a => (
+                        <button key={a} onClick={() => setActiveAdvisorAndPersist(a)}
+                          className={cn("w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors text-left",
+                            activeAdvisor === a && "bg-primary/10 text-primary font-semibold")}>
+                          <Users className="w-3.5 h-3.5 flex-shrink-0 opacity-50" />
+                          {a}
+                          {activeAdvisor === a && <Check className="w-3 h-3 ml-auto text-primary" />}
+                        </button>
+                      ))}
+                    {advisorChipInput.trim() && !advisors.includes(advisorChipInput.trim()) && (
+                      <button onClick={() => setActiveAdvisorAndPersist(advisorChipInput.trim())}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-muted transition-colors text-left font-semibold">
+                        <Plus className="w-3.5 h-3.5 flex-shrink-0" /> Add "{advisorChipInput.trim()}"
+                      </button>
+                    )}
+                    {advisors.length === 0 && !advisorChipInput && (
+                      <p className="px-3 py-2 text-xs text-muted-foreground">No advisors yet — type a name above</p>
+                    )}
+                    {activeAdvisor && (
+                      <button onClick={() => setActiveAdvisorAndPersist("")}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted transition-colors text-left border-t border-border mt-1 pt-2">
+                        <X className="w-3.5 h-3.5 flex-shrink-0" /> Clear selection
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <button onClick={openAddModal}
+            className="px-4 sm:px-5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-semibold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all flex items-center gap-1.5 text-sm">
+            <Plus className="w-4 h-4" /> {isAuto ? "Add Client" : isSalon ? "Add Client" : "Add Patient"}
+          </button>
+        </div>
       </div>
 
       {/* ── Tab bar ──────────────────────────────────────────────────────── */}
       <div className="flex items-center border-b border-border gap-0">
-        {([ ["today", "Today's Activity"], ["patients", isAuto ? "Active Customers" : isSalon ? "Active Clients" : "Active Patients"] ] as [ActiveTab, string][]).map(([key, label]) => (
+        {([ ["today", "Today's Activity"], ["patients", isAuto ? "Active Clients" : isSalon ? "Active Clients" : "Active Patients"] ] as [ActiveTab, string][]).map(([key, label]) => (
           <button key={key} onClick={() => setActiveTab(key)}
             className={cn(
               "px-5 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-all whitespace-nowrap",
@@ -1025,7 +1110,7 @@ export default function Patients() {
           ) : filteredReferrers.length === 0 ? (
             <div className="bg-card border border-border rounded-2xl p-16 text-center">
               <QrCode className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-              <h3 className="text-xl font-display font-semibold text-foreground mb-2">{isAuto ? "No customers found" : isSalon ? "No clients found" : "No patients found"}</h3>
+              <h3 className="text-xl font-display font-semibold text-foreground mb-2">{isAuto ? "No clients found" : isSalon ? "No clients found" : "No patients found"}</h3>
               <p className="text-muted-foreground mb-6">No referrers match the current filters.</p>
               <button onClick={() => { setPatientFilter("all"); setTierFilter("all"); setAdvisorFilter("all"); setSearchTerm(""); }}
                 className="px-6 py-3 bg-secondary hover:bg-muted text-foreground rounded-xl font-semibold transition-all inline-flex items-center gap-2">
@@ -1180,7 +1265,7 @@ export default function Patients() {
                                         className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors">
                                         <ExternalLink className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" /> View Events
                                       </button>
-                                      <button onClick={() => { setActionMenuId(null); const adv = (referrer as AnyReferrer).advisor as string | null; setAdvisorInput(adv ?? ""); setAdvisorModalReferrer({ id: referrer.id, name: referrer.name, advisor: adv }); }}
+                                      <button onClick={() => { setActionMenuId(null); const adv = (referrer as AnyReferrer).advisor as string | null; setAdvisorInput(adv ?? (isAuto ? activeAdvisor : "")); setAdvisorModalReferrer({ id: referrer.id, name: referrer.name, advisor: adv }); }}
                                         className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors">
                                         <Users className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" /> Set Advisor
                                       </button>
