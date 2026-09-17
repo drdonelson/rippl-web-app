@@ -24,6 +24,8 @@ export const referrersTable = pgTable("referrers", {
   sms_opt_out: boolean("sms_opt_out").default(false),
   sms_opt_out_permanent: boolean("sms_opt_out_permanent").default(false),
   opt_out_reason: text("opt_out_reason"),
+  // Advisor / sales rep — which staff member "owns" this referrer
+  advisor: text("advisor"),
   // Timestamps for Today's Activity view
   onboarding_sms_scheduled_at: timestamp("onboarding_sms_scheduled_at"), // when the 2-hour delay was queued
   onboarding_sms_sent_at: timestamp("onboarding_sms_sent_at"),           // when the SMS actually fired

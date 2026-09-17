@@ -333,4 +333,29 @@ router.patch("/:id/opt-out", async (req, res) => {
   }
 });
 
+// PATCH /:id — update mutable referrer fields (advisor, etc.)
+router.patch("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { advisor } = req.body as { advisor?: string | null };
+    const updates: Record<string, string | null> = {};
+    if (advisor !== undefined) updates.advisor = advisor?.trim() || null;
+    if (Object.keys(updates).length === 0) {
+      res.status(400).json({ error: "No fields to update" });
+      return;
+    }
+    const [updated] = await db
+      .update(referrersTable)
+      .set(updates)
+      .where(eq(referrersTable.id, id))
+      .returning();
+    if (!updated) { res.status(404).json({ error: "Referrer not found" }); return; }
+    res.json(updated);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error({ err }, "PATCH /api/referrers/:id failed");
+    res.status(500).json({ error: message });
+  }
+});
+
 export default router;

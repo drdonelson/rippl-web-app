@@ -308,6 +308,10 @@ export default function Patients() {
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [patientFilter, setPatientFilter] = useState<PatientFilter>("all");
   const [tierFilter, setTierFilter] = useState<string>("all");
+  const [advisorFilter, setAdvisorFilter] = useState<string>("all");
+  const [advisorModalReferrer, setAdvisorModalReferrer] = useState<{ id: string; name: string; advisor: string | null } | null>(null);
+  const [advisorInput, setAdvisorInput] = useState("");
+  const [advisorSaving, setAdvisorSaving] = useState(false);
   const MOBILE_ROW_LIMIT = 50;
   const [showAllMobile, setShowAllMobile] = useState(false);
 
@@ -570,6 +574,26 @@ export default function Patients() {
     }
   };
 
+  const handleSaveAdvisor = async () => {
+    if (!advisorModalReferrer) return;
+    setAdvisorSaving(true);
+    const advisor = advisorInput.trim() || null;
+    try {
+      await customFetch(`${BASE}/api/referrers/${advisorModalReferrer.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ advisor }),
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/referrers"] });
+      toast.success(advisor ? `Advisor set to ${advisor}.` : "Advisor removed.");
+      setAdvisorModalReferrer(null);
+    } catch {
+      toast.error("Failed to save advisor. Please try again.");
+    } finally {
+      setAdvisorSaving(false);
+    }
+  };
+
   // ── Today's Activity computed values ───────────────────────────────────────
   const todayStart = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
   const todayEnd   = useMemo(() => { const d = new Date(); d.setHours(23, 59, 59, 999); return d; }, []);
@@ -608,6 +632,15 @@ export default function Patients() {
   }, [referrers, weekAgo, todayStart]);
 
   // ── Active Patients computed values ────────────────────────────────────────
+  const advisors = useMemo(() => {
+    const names = new Set<string>();
+    for (const r of (referrers ?? [])) {
+      const a = (r as AnyReferrer).advisor as string | null;
+      if (a) names.add(a);
+    }
+    return Array.from(names).sort();
+  }, [referrers]);
+
   const filteredReferrers = useMemo(() => {
     const term = searchTerm.toLowerCase();
     return (referrers ?? []).filter(r => {
@@ -622,6 +655,7 @@ export default function Patients() {
       if (patientFilter === "active" && r.total_referrals <= 0) return false;
       if (patientFilter === "opted_out" && !(r as AnyReferrer).sms_opt_out && !(r as AnyReferrer).sms_opt_out_permanent) return false;
       if (tierFilter !== "all" && (r as AnyReferrer).tier !== tierFilter) return false;
+      if (advisorFilter !== "all" && (r as AnyReferrer).advisor !== advisorFilter) return false;
       return (
         r.name.toLowerCase().includes(term) ||
         (r.email && r.email.toLowerCase().includes(term)) ||
@@ -629,7 +663,7 @@ export default function Patients() {
         r.patient_id.toLowerCase().includes(term)
       );
     });
-  }, [referrers, searchTerm, selectedOfficeId, selectedPracticeId, patientFilter, tierFilter]);
+  }, [referrers, searchTerm, selectedOfficeId, selectedPracticeId, patientFilter, tierFilter, advisorFilter]);
 
   const sortedReferrers = useMemo(() => {
     const dir = sortDir === "asc" ? 1 : -1;
@@ -949,6 +983,14 @@ export default function Patients() {
                 <option value="super_rippler">Ambassador</option>
                 <option value="rippl_legend">Legend</option>
               </select>
+              {/* Advisor filter — only shown when at least one advisor is assigned */}
+              {advisors.length > 0 && (
+                <select value={advisorFilter} onChange={e => setAdvisorFilter(e.target.value)}
+                  className="px-3 py-2 bg-card border border-border rounded-xl text-xs font-semibold text-foreground focus:outline-none focus:border-primary transition-all">
+                  <option value="all">All Advisors</option>
+                  {advisors.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+              )}
               {/* View toggle */}
               <div className="flex items-center p-0.5 bg-muted border border-border rounded-lg" style={{ height: "36px" }}>
                 <button onClick={() => setView("list")} title="List view"
@@ -985,7 +1027,7 @@ export default function Patients() {
               <QrCode className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
               <h3 className="text-xl font-display font-semibold text-foreground mb-2">{isAuto ? "No customers found" : isSalon ? "No clients found" : "No patients found"}</h3>
               <p className="text-muted-foreground mb-6">No referrers match the current filters.</p>
-              <button onClick={() => { setPatientFilter("all"); setTierFilter("all"); setSearchTerm(""); }}
+              <button onClick={() => { setPatientFilter("all"); setTierFilter("all"); setAdvisorFilter("all"); setSearchTerm(""); }}
                 className="px-6 py-3 bg-secondary hover:bg-muted text-foreground rounded-xl font-semibold transition-all inline-flex items-center gap-2">
                 Clear Filters
               </button>
@@ -1086,7 +1128,12 @@ export default function Patients() {
                                 {n >= 1 ? <Star className="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" aria-label="Active referrer" />
                                   : onboarded ? <span className="w-2 h-2 rounded-full bg-primary shrink-0 inline-block" title="Contacted" />
                                   : <span className="w-2 h-2 rounded-full bg-muted-foreground/30 shrink-0 inline-block" title="Not contacted" />}
-                                <span className="font-semibold text-foreground text-sm leading-tight truncate">{referrer.name}</span>
+                                <div className="min-w-0">
+                                  <span className="font-semibold text-foreground text-sm leading-tight truncate block">{referrer.name}</span>
+                                  {!!((referrer as AnyReferrer).advisor) && (
+                                    <span className="text-[11px] text-muted-foreground truncate block">{(referrer as AnyReferrer).advisor as string}</span>
+                                  )}
+                                </div>
                               </div>
                             </td>
                             <td className="px-3 py-2.5 overflow-hidden"><span className="text-xs text-muted-foreground truncate block">{officeLabel}</span></td>
@@ -1132,6 +1179,10 @@ export default function Patients() {
                                       <button onClick={() => { setActionMenuId(null); navigate(`/events?referrer=${encodeURIComponent(referrer.name)}`); }}
                                         className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors">
                                         <ExternalLink className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" /> View Events
+                                      </button>
+                                      <button onClick={() => { setActionMenuId(null); const adv = (referrer as AnyReferrer).advisor as string | null; setAdvisorInput(adv ?? ""); setAdvisorModalReferrer({ id: referrer.id, name: referrer.name, advisor: adv }); }}
+                                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors">
+                                        <Users className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" /> Set Advisor
                                       </button>
                                     </div>
                                   )}
@@ -1450,6 +1501,37 @@ export default function Patients() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Advisor modal */}
+      <Modal isOpen={!!advisorModalReferrer} onClose={() => setAdvisorModalReferrer(null)} title="Set Advisor"
+        description={`Assign a sales rep or advisor to ${advisorModalReferrer?.name ?? "this patient"}.`}>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Advisor Name</label>
+            <input
+              type="text"
+              value={advisorInput}
+              onChange={e => setAdvisorInput(e.target.value)}
+              placeholder="e.g. John Smith"
+              className="w-full px-4 py-2.5 bg-background border border-border rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-foreground"
+              onKeyDown={e => { if (e.key === "Enter" && !advisorSaving) handleSaveAdvisor(); }}
+            />
+          </div>
+          <div className="flex gap-3 pt-2">
+            {advisorInput.trim() && (
+              <button type="button" onClick={() => setAdvisorInput("")}
+                className="px-4 py-2.5 bg-secondary hover:bg-muted text-foreground rounded-xl text-sm font-semibold transition-colors">
+                Clear
+              </button>
+            )}
+            <button type="button" onClick={handleSaveAdvisor} disabled={advisorSaving}
+              className="flex-1 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+              {advisorSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+              {advisorInput.trim() ? "Save Advisor" : "Remove Advisor"}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
