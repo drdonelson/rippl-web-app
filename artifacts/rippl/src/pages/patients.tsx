@@ -1505,7 +1505,7 @@ export default function Patients() {
 
       {/* Advisor modal */}
       <Modal isOpen={!!advisorModalReferrer} onClose={() => setAdvisorModalReferrer(null)} title="Set Advisor"
-        description={`Assign a sales rep or advisor to ${advisorModalReferrer?.name ?? "this patient"}.`}>
+        description={`Assign a sales rep or advisor to ${advisorModalReferrer?.name || "this patient"}.`}>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">Advisor Name</label>
