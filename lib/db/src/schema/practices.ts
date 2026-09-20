@@ -42,10 +42,17 @@ export const practicesTable = pgTable("practices", {
   // Channel partner — reseller who owns this practice's client relationship
   channel_partner_id: text("channel_partner_id"),
 
+  // Agreement
+  agreement_accepted_at: timestamp("agreement_accepted_at"),
+
   // Stripe billing
   stripe_customer_id:        text("stripe_customer_id"),
   stripe_payment_method_id:  text("stripe_payment_method_id"),
   billing_status:            text("billing_status").default("pending"), // pending | active | failed | exempt
+
+  // Gift card pass-through threshold billing
+  gift_card_balance_cents:   integer("gift_card_balance_cents").default(0).notNull(),
+  gift_card_threshold_cents: integer("gift_card_threshold_cents").default(10000).notNull(),
 
   created_at: timestamp("created_at").notNull().defaultNow(),
 });

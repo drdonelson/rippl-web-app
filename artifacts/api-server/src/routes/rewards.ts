@@ -13,6 +13,7 @@ import {
 import { eq, sql, and } from "drizzle-orm";
 import { CreateRewardBody } from "@workspace/api-zod";
 import { sendAmazonRewardLink } from "../services/tango";
+import { chargeGiftCardThreshold } from "../services/billingService";
 
 const router: IRouter = Router();
 
@@ -141,6 +142,10 @@ router.post("/claim", async (req, res) => {
       if (tangoResult.success && tangoResult.orderId) {
         tangoOrderId = tangoResult.orderId;
         req.log.info({ orderId: tangoResult.orderId, brand }, "Tango gift card sent");
+        if (referrer.practice_id) {
+          chargeGiftCardThreshold(referrer.practice_id, rewardValue * 100)
+            .catch(err => req.log.error({ err }, "[billing] gift card threshold charge failed"));
+        }
       } else {
         await db.insert(adminTasksTable).values({
           task_type:         "gift-card",
@@ -301,6 +306,10 @@ router.post("/", async (req, res) => {
           .where(eq(rewardsTable.id, reward.id));
         reward.fulfilled      = true;
         reward.tango_order_id = tangoResult.orderId;
+        if (referrer.practice_id) {
+          chargeGiftCardThreshold(referrer.practice_id, 50 * 100)
+            .catch(err => req.log.error({ err }, "[billing] gift card threshold charge failed"));
+        }
       } else {
         await db.insert(adminTasksTable).values({
           task_type:         "amazon-gift-card",

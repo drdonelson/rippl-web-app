@@ -821,10 +821,15 @@ export default function Onboard() {
                     className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#E0622A] focus:ring-[#E0622A]/30 shrink-0"
                   />
                   <span className="text-sm text-slate-700 leading-relaxed">
-                    This practice agrees to Rippl's pricing. Choose your plan after setup:
-                    {" "}<span className="font-semibold text-slate-900">Growth — $249/month + $12 per completed referral.</span>
-                    {" "}<span className="font-semibold text-slate-900">Pay-As-You-Go — $0/month + $35 per completed referral.</span>
-                    {" "}Billing begins when the first referral is detected.
+                    By checking this box, the practice agrees to the{" "}
+                    <span className="font-semibold text-slate-900">Rippl Referral Program Terms</span>:
+                    <ul className="mt-2 space-y-1 list-none pl-0">
+                      <li className="flex gap-2"><span className="text-[#E0622A] shrink-0">·</span><span><span className="font-semibold text-slate-900">Platform fee:</span> $35 per completed referral, charged to card on file when each referral is confirmed.</span></li>
+                      <li className="flex gap-2"><span className="text-[#E0622A] shrink-0">·</span><span><span className="font-semibold text-slate-900">Gift card pass-through:</span> Gift card rewards are charged at cost (no markup). Card is automatically charged when cumulative gift card spend reaches $100.</span></li>
+                      <li className="flex gap-2"><span className="text-[#E0622A] shrink-0">·</span><span><span className="font-semibold text-slate-900">Card on file required</span> before the first reward can be delivered. Billing is set up immediately after practice creation.</span></li>
+                      <li className="flex gap-2"><span className="text-[#E0622A] shrink-0">·</span><span><span className="font-semibold text-slate-900">Cancellation:</span> Cancel any time with 30 days written notice. No refunds on gift cards already delivered.</span></li>
+                    </ul>
+                    <span className="block mt-2 text-xs text-slate-500">BD America · hello@joinrippl.com · By proceeding you confirm you have authority to bind this practice to these terms.</span>
                   </span>
                 </label>
               </div>

@@ -11,6 +11,7 @@ import {
 } from "@workspace/db/schema";
 import { eq, sql, and } from "drizzle-orm";
 import { sendAmazonRewardLink } from "../services/tango";
+import { chargeGiftCardThreshold } from "../services/billingService";
 import { getPracticeConfig, resolveTangoTemplate } from "../lib/practiceConfig";
 import pino from "pino";
 
@@ -252,6 +253,10 @@ router.post("/", async (req, res) => {
 
       if (tangoResult?.success && tangoResult.orderId) {
         tangoOrderId = tangoResult.orderId;
+        if (claim.practice_id) {
+          chargeGiftCardThreshold(claim.practice_id, rewardValue * 100)
+            .catch(err => req.log.error({ err }, "[billing] gift card threshold charge failed"));
+        }
       } else {
         const failReason = !referrerEmail
           ? `No email on file for referrer.`
