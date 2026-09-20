@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import Stripe from "stripe";
 import { db } from "@workspace/db";
 import { userProfilesTable, officesTable, practicesTable } from "@workspace/db/schema";
 import { eq, like, or } from "drizzle-orm";
@@ -7,6 +8,15 @@ import { supabaseAdmin } from "../lib/supabase";
 import { getProfileHandler, requireAuth, requireSuperAdmin, requirePracticeAdmin } from "../middleware/auth";
 
 const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "hello@joinrippl.com";
+const APP_URL    = process.env.APP_URL || "https://app.joinrippl.com";
+
+let _stripe: Stripe | null = null;
+function getStripe(): Stripe | null {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) return null;
+  if (!_stripe) _stripe = new Stripe(key, { apiVersion: "2026-05-27.dahlia" });
+  return _stripe;
+}
 
 const router: IRouter = Router();
 
@@ -20,6 +30,8 @@ router.get("/profile", getProfileHandler);
 //         white_label_name?, white_label_logo_url?, white_label_primary_color?,
 //         show_powered_by_rippl?,
 //         in_house_credit_label?, in_house_credit_value?,
+//         per_referral_fee?, reward_value?, gift_card_threshold?,  ← pricing (dollars)
+//         twilio_phone_number?,
 //         practice_id? }
 // If practice_id is provided the office is linked to an existing practice.
 router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
@@ -31,6 +43,8 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
     white_label_name, white_label_logo_url, white_label_primary_color,
     show_powered_by_rippl,
     in_house_credit_label, in_house_credit_value,
+    per_referral_fee, reward_value, gift_card_threshold,
+    twilio_phone_number,
     practice_id: bodyPracticeId,
   } = req.body;
 
@@ -71,6 +85,11 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
         show_powered_by_rippl:   show_powered_by_rippl !== undefined ? Boolean(show_powered_by_rippl) : true,
         in_house_credit_label:   in_house_credit_label ?? (isDental ? "$100 Dental Account Credit" : "$100 Account Credit"),
         in_house_credit_value:   in_house_credit_value !== undefined ? Number(in_house_credit_value) : 100,
+        per_referral_fee:          per_referral_fee !== undefined ? Number(per_referral_fee) : 35,
+        reward_value:              reward_value !== undefined ? Number(reward_value) : 35,
+        gift_card_threshold_cents: gift_card_threshold !== undefined ? Number(gift_card_threshold) * 100 : 10000,
+        twilio_phone_number:       twilio_phone_number ? String(twilio_phone_number) : null,
+        agreement_accepted_at:     new Date(),
       }).returning();
       practiceId = newPractice.id;
       createdPracticeId = practiceId;
@@ -127,7 +146,34 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
       console.warn("[onboard] Welcome email failed (non-fatal):", emailErr);
     }
 
-    res.status(201).json({ success: true, office_id: office.id, practice_id: practiceId });
+    // 6. Auto-create Stripe customer + card setup session (non-fatal)
+    let billing_setup_url: string | undefined;
+    try {
+      const stripe = getStripe();
+      if (stripe && createdPracticeId) {
+        const customer = await stripe.customers.create({
+          name:  practice_name,
+          email: email,
+          metadata: { practice_id: createdPracticeId },
+        });
+        await db.update(practicesTable)
+          .set({ stripe_customer_id: customer.id })
+          .where(eq(practicesTable.id, createdPracticeId));
+
+        const session = await stripe.checkout.sessions.create({
+          mode:                 "setup",
+          customer:             customer.id,
+          payment_method_types: ["card"],
+          success_url: `${APP_URL}/practice-admin?billing=success`,
+          cancel_url:  `${APP_URL}/onboard`,
+        });
+        billing_setup_url = session.url ?? undefined;
+      }
+    } catch (stripeErr) {
+      console.warn("[onboard] Stripe setup session failed (non-fatal):", stripeErr);
+    }
+
+    res.status(201).json({ success: true, office_id: office.id, practice_id: practiceId, billing_setup_url });
   } catch (err) {
     console.error("[onboard] Error:", err);
     if (userId)           await supabaseAdmin.auth.admin.deleteUser(userId).catch(() => {});

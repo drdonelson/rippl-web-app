@@ -133,10 +133,11 @@ function PasswordField({
 // ── Practice success panel ────────────────────────────────────────────────────
 
 function PracticeSuccessPanel({
-  practiceName, email, newOfficeId,
+  practiceName, email, newOfficeId, billingSetupUrl,
   onAddStaff, onAddAnother,
 }: {
   practiceName: string; email: string; newOfficeId: string | null;
+  billingSetupUrl: string | null;
   onAddStaff: (officeId: string) => void; onAddAnother: () => void;
 }) {
   return (
@@ -156,6 +157,32 @@ function PracticeSuccessPanel({
           <span className="text-xs font-semibold text-slate-700 font-mono">{email}</span>
         </div>
       </div>
+
+      {/* Billing setup link */}
+      {billingSetupUrl && (
+        <div className="bg-white border border-amber-200 rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <p className="text-sm font-semibold text-slate-800">Card setup required</p>
+          </div>
+          <p className="text-xs text-slate-500 mb-3">
+            Send this Stripe link to the practice so they can add a card on file. Rewards won't deliver until billing is active.
+          </p>
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5">
+            <code className="text-xs text-slate-600 flex-1 truncate font-mono">{billingSetupUrl}</code>
+            <CopyButton value={billingSetupUrl} />
+            <a
+              href={billingSetupUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 p-1.5 rounded-md text-slate-400 hover:text-[#E0622A] hover:bg-orange-50 transition-all"
+              title="Open in new tab"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Next steps */}
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
@@ -226,6 +253,9 @@ export default function Onboard() {
     show_powered_by_rippl: true,
     // In-house credit
     in_house_credit_label: "", in_house_credit_value: "",
+    // Pricing & Twilio
+    per_referral_fee: "35", reward_value: "35", gift_card_threshold: "100",
+    twilio_phone_number: "",
   });
   const [whiteLabelExpanded, setWhiteLabelExpanded] = useState(false);
   const [agreementChecked, setAgreementChecked] = useState(false);
@@ -235,6 +265,7 @@ export default function Onboard() {
   const [practiceSuccessEmail, setPracticeSuccessEmail] = useState<string | null>(null);
   const [practiceSuccessName, setPracticeSuccessName] = useState<string | null>(null);
   const [newOfficeId, setNewOfficeId] = useState<string | null>(null);
+  const [billingSetupUrl, setBillingSetupUrl] = useState<string | null>(null);
   const [odTestResult, setOdTestResult] = useState<OdTestResult>(null);
   const [odTesting, setOdTesting] = useState(false);
 
@@ -370,6 +401,10 @@ export default function Onboard() {
       show_powered_by_rippl: pf.show_powered_by_rippl,
       in_house_credit_label: pf.in_house_credit_label || undefined,
       in_house_credit_value: pf.in_house_credit_value ? parseInt(pf.in_house_credit_value, 10) : undefined,
+      per_referral_fee:       pf.per_referral_fee ? parseInt(pf.per_referral_fee, 10) : undefined,
+      reward_value:           pf.reward_value ? parseInt(pf.reward_value, 10) : undefined,
+      gift_card_threshold:    pf.gift_card_threshold ? parseInt(pf.gift_card_threshold, 10) : undefined,
+      twilio_phone_number:    pf.twilio_phone_number || undefined,
     };
 
     try {
@@ -384,6 +419,7 @@ export default function Onboard() {
         setPracticeSuccessEmail(pf.email);
         setPracticeSuccessName(pf.practice_name);
         setNewOfficeId(data.office_id ?? null);
+        setBillingSetupUrl(data.billing_setup_url ?? null);
         fetchOffices();
       }
     } catch {
@@ -411,8 +447,11 @@ export default function Onboard() {
       white_label_enabled: false, white_label_name: "", white_label_logo_url: "",
       white_label_primary_color: "", show_powered_by_rippl: true,
       in_house_credit_label: "", in_house_credit_value: "",
+      per_referral_fee: "35", reward_value: "35", gift_card_threshold: "100",
+      twilio_phone_number: "",
     });
     setAgreementChecked(false);
+    setBillingSetupUrl(null);
     setOdTestResult(null);
     setWhiteLabelExpanded(false);
   };
@@ -543,6 +582,7 @@ export default function Onboard() {
               practiceName={practiceSuccessName}
               email={practiceSuccessEmail}
               newOfficeId={newOfficeId}
+              billingSetupUrl={billingSetupUrl}
               onAddStaff={handleAddStaff}
               onAddAnother={handleAddAnother}
             />
@@ -806,11 +846,40 @@ export default function Onboard() {
 
               </div>{/* end sections 3+4 grid */}
 
-              {/* ── Section 5: Pricing Agreement ── */}
+              {/* ── Section 5: Pricing & Twilio ── */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+                <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
+                  <div className="w-5 h-5 rounded-md bg-[#E0622A]/10 flex items-center justify-center">
+                    <span className="text-[#E0622A] font-bold text-[10px]">5</span>
+                  </div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex-1">Pricing & Twilio</p>
+                  <span className="text-[10px] text-slate-400">defaults: $35 referral · $35 gift card · $100 threshold</span>
+                </div>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Field label="Per-referral Fee ($)" hint="Charged to practice per confirmed referral">
+                    <input type="number" value={pf.per_referral_fee} onChange={setPf("per_referral_fee")}
+                      placeholder="35" min="0" max="999" className={inputClass} />
+                  </Field>
+                  <Field label="Gift Card Value ($)" hint="Default reward amount sent to referrers">
+                    <input type="number" value={pf.reward_value} onChange={setPf("reward_value")}
+                      placeholder="35" min="0" max="500" className={inputClass} />
+                  </Field>
+                  <Field label="GC Threshold ($)" hint="Auto-charge card when pass-through spend hits this">
+                    <input type="number" value={pf.gift_card_threshold} onChange={setPf("gift_card_threshold")}
+                      placeholder="100" min="10" max="10000" className={inputClass} />
+                  </Field>
+                  <Field label="Twilio Number" hint="E.164 format — e.g. +18776519202. Leave blank to use global.">
+                    <input value={pf.twilio_phone_number} onChange={setPf("twilio_phone_number")}
+                      placeholder="+18005551234" className={cn(inputClass, "font-mono text-sm")} />
+                  </Field>
+                </div>
+              </div>
+
+              {/* ── Section 6: Pricing Agreement ── */}
               <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
                 <div className="flex items-center gap-2 pb-3 mb-3 border-b border-slate-100">
                   <div className="w-5 h-5 rounded-md bg-[#E0622A]/10 flex items-center justify-center">
-                    <span className="text-[#E0622A] font-bold text-[10px]">5</span>
+                    <span className="text-[#E0622A] font-bold text-[10px]">6</span>
                   </div>
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Pricing Agreement</p>
                 </div>
