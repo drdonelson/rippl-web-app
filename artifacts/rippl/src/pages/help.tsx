@@ -1,9 +1,9 @@
-import { BookOpen, CheckCircle2, AlertTriangle, PlayCircle } from "lucide-react";
+import { BookOpen, CheckCircle2, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { usePractice } from "@/contexts/practice-context";
 
-const LOOM_VIDEO_1 = "https://www.loom.com/embed/d054cba4b20f4a5187c96cf05a4eb47a";
-const LOOM_VIDEO_2 = "https://www.loom.com/embed/84aad24c5ea34363acc8735b344ed046";
+const VIDEO_1 = "https://mpakerwvdgehxbcuylzq.supabase.co/storage/v1/object/public/training-videos/01-open-dental-workflow.mp4";
+const VIDEO_2 = "https://mpakerwvdgehxbcuylzq.supabase.co/storage/v1/object/public/training-videos/02-rippl-dashboard.mp4";
 
 const STEPS = [
   {
@@ -252,18 +252,13 @@ function HelpPageDental() {
             <p className="text-sm font-semibold text-foreground">Part 1 — Open Dental Workflow</p>
             <p className="text-xs text-muted-foreground mt-0.5">How to enter referrals and attach R0150</p>
           </div>
-          <div style={{ position: "relative", paddingBottom: "64.98194945848375%", height: 0 }}>
-            <iframe
-              src={LOOM_VIDEO_1}
-              frameBorder="0"
-              // @ts-ignore
-              webkitallowfullscreen="true"
-              mozallowfullscreen="true"
-              allowFullScreen
-              style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
-              title="Open Dental workflow walkthrough"
-            />
-          </div>
+          <video
+            src={VIDEO_1}
+            controls
+            playsInline
+            className="w-full"
+            style={{ display: "block" }}
+          />
         </div>
 
         {/* Video 2 */}
@@ -272,25 +267,13 @@ function HelpPageDental() {
             <p className="text-sm font-semibold text-foreground">Part 2 — Rippl Dashboard</p>
             <p className="text-xs text-muted-foreground mt-0.5">Reading referral events and admin tasks</p>
           </div>
-          {LOOM_VIDEO_2 ? (
-            <div style={{ position: "relative", paddingBottom: "64.98194945848375%", height: 0 }}>
-              <iframe
-                src={LOOM_VIDEO_2}
-                frameBorder="0"
-                // @ts-ignore
-                webkitallowfullscreen="true"
-                mozallowfullscreen="true"
-                allowFullScreen
-                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
-                title="Rippl dashboard walkthrough"
-              />
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center gap-3 py-12 px-6 text-center">
-              <PlayCircle className="w-8 h-8 text-muted-foreground/30" />
-              <p className="text-sm text-muted-foreground">Coming soon</p>
-            </div>
-          )}
+          <video
+            src={VIDEO_2}
+            controls
+            playsInline
+            className="w-full"
+            style={{ display: "block" }}
+          />
         </div>
       </div>
 
