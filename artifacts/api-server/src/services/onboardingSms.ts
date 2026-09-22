@@ -18,6 +18,11 @@ function toE164(phone: string | null | undefined): string {
   return phone;
 }
 
+// US/Canada only: +1 followed by area code 2-9 (area codes starting with 0 or 1 are invalid)
+function isValidSmsRecipient(e164Phone: string): boolean {
+  return /^\+1[2-9]\d{9}$/.test(e164Phone);
+}
+
 /** Generate a referral code: first 4 letters of first name + last 4 of a UUID segment */
 function generateReferralCode(fullName: string, uniqueSuffix: string): string {
   const firstName = fullName.trim().split(/\s+/)[0] ?? "ANON";
@@ -55,10 +60,15 @@ export async function sendOnboardingSmsNow(
       logger.info({ to: phone, referralCode, body }, "[SMS-SUPPRESSED] Onboarding SMS not sent (SMS_ENABLED=false)");
       return { success: true, smsSid: "suppressed" };
     }
+    const e164 = toE164(phone);
+    if (!isValidSmsRecipient(e164)) {
+      logger.warn({ to: phone, e164, referralCode }, "Onboarding SMS skipped — invalid or non-US phone number");
+      return { success: false, error: "invalid_phone_number" };
+    }
     const fromPhone = resolveTwilioPhone(practice ?? null);
     if (!fromPhone) throw new Error("TWILIO_PHONE_NUMBER not set");
     const client = resolveTwilioClient(practice ?? null);
-    const msg = await client.messages.create({ body, from: fromPhone, to: toE164(phone) });
+    const msg = await client.messages.create({ body, from: fromPhone, to: e164 });
     logger.info({ sid: msg.sid, to: phone, referralCode }, "Onboarding SMS sent");
     return { success: true, smsSid: msg.sid };
   } catch (err) {
@@ -271,14 +281,17 @@ function scheduleDelayedSms(
 
     const result = await sendOnboardingSmsNow(firstName, phone, referralCode, practiceName, undefined, practice ?? null);
 
+    // Always mark sent — failed sends (invalid number, carrier rejection) must not be retried
+    // indefinitely on server restart via recoverMissedOnboardingSms.
+    await db
+      .update(referrersTable)
+      .set({ onboarding_sms_sent: true, onboarding_sms_sent_at: new Date() })
+      .where(eq(referrersTable.id, referrerId));
+
     if (result.success) {
-      await db
-        .update(referrersTable)
-        .set({ onboarding_sms_sent: true, onboarding_sms_sent_at: new Date() })
-        .where(eq(referrersTable.id, referrerId));
       logger.info({ referrerId, smsSid: result.smsSid }, "Onboarding SMS delivered and flag set");
     } else {
-      logger.error({ referrerId, error: result.error }, "Onboarding SMS failed at send time");
+      logger.error({ referrerId, error: result.error }, "Onboarding SMS failed at send time — marked sent to prevent infinite retry");
     }
   }, ONBOARDING_DELAY_MS);
 }

@@ -22,7 +22,7 @@ const logReferralSchema = z.object({
   new_patient_phone: z.string().min(10, "Valid phone number is required"),
   referrer_id:       z.string().min(1, "Referrer is required"),
   team_source:       z.enum(["front", "back", "assistant"], { required_error: "Team source is required" }),
-  office:            z.string().min(1, "Office is required"),
+  office_id:         z.string().min(1, "Office is required"),
 });
 type LogReferralValues = z.infer<typeof logReferralSchema>;
 
@@ -670,19 +670,19 @@ export default function Events() {
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">Office</label>
               <select
-                {...logRegister("office")}
+                {...logRegister("office_id")}
                 className="w-full px-4 py-2.5 bg-background border border-border rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-foreground appearance-none"
               >
                 <option value="">Select…</option>
                 {offices.length > 0 ? offices.map(o => {
                   const dash = o.name.lastIndexOf("–");
                   const shortName = dash !== -1 ? o.name.slice(dash + 2).trim() : o.name;
-                  return <option key={o.id} value={o.name}>{shortName}</option>;
+                  return <option key={o.id} value={o.id}>{shortName}</option>;
                 }) : (
                   <option value="" disabled>No offices loaded</option>
                 )}
               </select>
-              {logErrors.office && <p className="text-destructive text-xs mt-1">{logErrors.office.message}</p>}
+              {logErrors.office_id && <p className="text-destructive text-xs mt-1">{logErrors.office_id.message}</p>}
             </div>
           </div>
 

@@ -321,7 +321,7 @@ router.post("/send", async (req, res) => {
 
       const practiceConfig = senderPracticeId ? await getPracticeConfig(senderPracticeId) : null;
       const practiceName = practiceConfig?.white_label_name ?? practiceConfig?.name ?? undefined;
-      const practiceFromName = practiceName ? `Rippl by ${practiceName}` : "Rippl";
+      const practiceFromName = practiceName ? `${practiceName} by Rippl` : "Rippl";
 
       // Set up clients
       const twilioClient = channel === "sms"
@@ -439,7 +439,7 @@ router.post("/test-send", async (req, res) => {
       ? await getPracticeConfig(req.authUser!.practice_id).catch(() => null)
       : null;
     const previewPracticeName = previewPractice?.white_label_name ?? previewPractice?.name ?? undefined;
-    const previewFromName = previewPracticeName ? `Rippl by ${previewPracticeName}` : "Rippl";
+    const previewFromName = previewPracticeName ? `${previewPracticeName} by Rippl` : "Rippl";
 
     const referrerData: ReferrerRow = patient ?? {
       id:                  "test",

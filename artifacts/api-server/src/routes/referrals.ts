@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { referralEventsTable, referrersTable, adminTasksTable, rewardClaimsTable, staffPoolConfigsTable } from "@workspace/db/schema";
+import { referralEventsTable, referrersTable, adminTasksTable, rewardClaimsTable, staffPoolConfigsTable, officesTable } from "@workspace/db/schema";
 import { eq, sql, and } from "drizzle-orm";
 import {
   CreateReferralBody,
@@ -113,11 +113,28 @@ router.post("/", async (req, res) => {
     body.new_patient_phone
   );
 
+  // Resolve office name from office_id when the form submits the UUID
+  let officeName = body.office ?? "";
+  const officeId = body.office_id ?? null;
+  if (officeId && !officeName) {
+    const [off] = await db
+      .select({ name: officesTable.name })
+      .from(officesTable)
+      .where(eq(officesTable.id, officeId))
+      .limit(1);
+    officeName = off?.name ?? "";
+  }
+
   const [event] = await db.insert(referralEventsTable).values({
-    ...body,
-    practice_id: user.practice_id,
-    status: "Lead",
-    household_id: householdResult.household_id,
+    new_patient_name:    body.new_patient_name,
+    new_patient_phone:   body.new_patient_phone,
+    referrer_id:         body.referrer_id,
+    team_source:         body.team_source,
+    office:              officeName,
+    office_id:           officeId,
+    practice_id:         user.practice_id,
+    status:              "Lead",
+    household_id:        householdResult.household_id,
     household_duplicate: householdResult.is_duplicate,
   }).returning();
 

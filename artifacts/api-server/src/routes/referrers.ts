@@ -220,6 +220,101 @@ router.post("/bulk-send-links", requireSuperAdmin, async (req, res) => {
   }
 });
 
+// POST /api/referrers/import-csv — bulk CSV import
+// practice_admin: imports to their own practice
+// super_admin: must supply practice_id in body
+router.post("/import-csv", async (req, res) => {
+  const user = req.authUser!;
+  if (user.role !== "super_admin" && user.role !== "practice_admin") {
+    res.status(403).json({ error: "Access denied" });
+    return;
+  }
+
+  const { practice_id, office_id, customers } = req.body as {
+    practice_id?: string;
+    office_id?: string;
+    customers: Array<{ name: string; phone: string; email?: string }>;
+  };
+
+  const effectivePracticeId =
+    user.role === "super_admin" ? (practice_id ?? null) : (user.practice_id ?? null);
+
+  if (!effectivePracticeId) {
+    res.status(400).json({ error: "practice_id is required" });
+    return;
+  }
+  if (!Array.isArray(customers) || customers.length === 0) {
+    res.status(400).json({ error: "customers array is required and must not be empty" });
+    return;
+  }
+
+  function normalizePhone(raw: string): string | null {
+    const digits = raw.replace(/\D/g, "");
+    if (digits.length === 10) return `+1${digits}`;
+    if (digits.length === 11 && digits[0] === "1") return `+${digits}`;
+    return null;
+  }
+
+  const [practice] = await db
+    .select({ reward_value: practicesTable.reward_value })
+    .from(practicesTable)
+    .where(eq(practicesTable.id, effectivePracticeId))
+    .limit(1);
+  const rewardValue = practice?.reward_value ?? 35;
+
+  let imported = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+
+  for (const row of customers) {
+    if (!row.name?.trim() || !row.phone?.trim()) { skipped++; continue; }
+    const phone = normalizePhone(row.phone.trim());
+    if (!phone) {
+      errors.push(`Skipped "${row.name}" — unrecognized phone: ${row.phone}`);
+      skipped++;
+      continue;
+    }
+    try {
+      const [existing] = await db
+        .select({ id: referrersTable.id })
+        .from(referrersTable)
+        .where(and(eq(referrersTable.practice_id, effectivePracticeId), eq(referrersTable.phone, phone)))
+        .limit(1);
+      if (existing) { skipped++; continue; }
+
+      let code = generateReferralCode(row.name.trim());
+      const [conflict] = await db
+        .select({ id: referrersTable.id })
+        .from(referrersTable)
+        .where(eq(referrersTable.referral_code, code))
+        .limit(1);
+      if (conflict) code = `${code.slice(0, 4)}${Math.floor(Math.random() * 9000 + 1000)}`;
+
+      await db.insert(referrersTable).values({
+        practice_id:         effectivePracticeId,
+        office_id:           office_id ?? undefined,
+        patient_id:          `csv_${phone.replace(/\D/g, "")}`,
+        name:                row.name.trim(),
+        phone,
+        email:               row.email?.trim() || null,
+        referral_code:       code,
+        reward_value:        rewardValue,
+        tier:                "starter",
+        onboarding_sms_sent: false,
+      });
+      imported++;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.error({ err, name: row.name }, "[import-csv] row failed");
+      errors.push(`Failed "${row.name}": ${msg}`);
+      skipped++;
+    }
+  }
+
+  logger.info({ imported, skipped, practice_id: effectivePracticeId }, "[import-csv] complete");
+  res.json({ imported, skipped, errors: errors.slice(0, 20) });
+});
+
 router.get("/:id/qr", async (req, res) => {
   try {
     const { id } = GetReferrerQrParams.parse(req.params);

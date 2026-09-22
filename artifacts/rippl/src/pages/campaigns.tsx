@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Megaphone, MessageSquare, Mail, Loader2, AlertTriangle,
   Users, CheckCircle2, Clock, Send, ChevronDown, Eye, RefreshCw,
-  Hash, Zap, Lock, FlaskConical, X, Layers, TrendingUp, Link2, ChevronRight,
+  Hash, Zap, Lock, FlaskConical, X, Layers, TrendingUp, Link2, ChevronRight, Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -1075,21 +1075,270 @@ function CampaignHistory({ isDemo, isAuto }: { isDemo?: boolean; isAuto: boolean
   );
 }
 
+// ── CSV Import Modal ───────────────────────────────────────────────────────────
+
+interface ParsedRow { name: string; phone: string; email: string }
+
+function parseCsv(text: string): string[][] {
+  const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n").filter(l => l.trim());
+  return lines.map(line => {
+    const fields: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+        else inQuotes = !inQuotes;
+      } else if (ch === "," && !inQuotes) { fields.push(current.trim()); current = ""; }
+      else current += ch;
+    }
+    fields.push(current.trim());
+    return fields;
+  });
+}
+
+function detectColumns(headers: string[]): { nameIdx: number; phoneIdx: number; emailIdx: number } {
+  const lower = headers.map(h => h.toLowerCase().trim());
+  return {
+    nameIdx:  lower.findIndex(h => h.includes("name")),
+    phoneIdx: lower.findIndex(h => h.includes("phone") || h.includes("mobile") || h.includes("cell") || h.includes("sms")),
+    emailIdx: lower.findIndex(h => h.includes("email")),
+  };
+}
+
+interface CsvPractice { id: string; name: string }
+
+type CsvImportPhase = "idle" | "previewing" | "importing" | "done" | "error";
+
+interface ImportResult { imported: number; skipped: number; errors: string[] }
+
+function ImportCsvModal({ open, onClose, onImported }: {
+  open: boolean;
+  onClose: () => void;
+  onImported: () => void;
+}) {
+  const { profile } = useAuth();
+  const isSuperAdmin = profile?.role === "super_admin";
+
+  const [phase, setPhase]             = useState<CsvImportPhase>("idle");
+  const [rows, setRows]               = useState<ParsedRow[]>([]);
+  const [practiceId, setPracticeId]   = useState<string>(profile?.practice_id ?? "");
+  const [practices, setPractices]     = useState<CsvPractice[]>([]);
+  const [result, setResult]           = useState<ImportResult | null>(null);
+  const [error, setError]             = useState<string>("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) { setPhase("idle"); setRows([]); setResult(null); setError(""); return; }
+    if (isSuperAdmin) {
+      customFetch<CsvPractice[]>(`${BASE}/api/practices`).then(setPractices).catch(() => {});
+    }
+  }, [open, isSuperAdmin]);
+
+  function handleFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = e.target?.result as string;
+      const parsed = parseCsv(text);
+      if (parsed.length < 2) { setError("CSV must have a header row and at least one data row."); return; }
+      const headers = parsed[0];
+      const { nameIdx, phoneIdx, emailIdx } = detectColumns(headers);
+      if (nameIdx === -1 || phoneIdx === -1) {
+        setError(`Could not detect columns. Found headers: ${headers.join(", ")}. CSV must have "name" and "phone" columns.`);
+        return;
+      }
+      const dataRows = parsed.slice(1).filter(r => r.some(c => c));
+      const mapped: ParsedRow[] = dataRows.map(r => ({
+        name:  r[nameIdx]  ?? "",
+        phone: r[phoneIdx] ?? "",
+        email: emailIdx !== -1 ? (r[emailIdx] ?? "") : "",
+      })).filter(r => r.name || r.phone);
+      setRows(mapped);
+      setError("");
+      setPhase("previewing");
+    };
+    reader.readAsText(file);
+  }
+
+  async function handleImport() {
+    if (!practiceId) { setError("Select a practice before importing."); return; }
+    setPhase("importing");
+    try {
+      const res = await customFetch<ImportResult>(`${BASE}/api/referrers/import-csv`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ practice_id: practiceId, customers: rows }),
+      });
+      setResult(res);
+      setPhase("done");
+      onImported();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Import failed");
+      setPhase("error");
+    }
+  }
+
+  if (!open) return null;
+
+  return (
+    <Modal open={open} onClose={onClose} title="Import Customers from CSV">
+      <div className="space-y-4 min-w-[480px] max-w-[600px]">
+
+        {isSuperAdmin && phase !== "done" && (
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Practice</label>
+            <select
+              value={practiceId}
+              onChange={e => setPracticeId(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground"
+            >
+              <option value="">— select practice —</option>
+              {practices.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </div>
+        )}
+
+        {phase === "idle" && (
+          <div>
+            <p className="text-sm text-muted-foreground mb-3">
+              Upload a CSV with columns: <code className="text-xs bg-muted px-1 py-0.5 rounded">name</code>, <code className="text-xs bg-muted px-1 py-0.5 rounded">phone</code>, and optionally <code className="text-xs bg-muted px-1 py-0.5 rounded">email</code>.
+            </p>
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="w-full flex flex-col items-center gap-2 px-4 py-8 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/20 transition-colors text-muted-foreground"
+            >
+              <Upload className="w-6 h-6" />
+              <span className="text-sm font-medium">Click to upload CSV file</span>
+            </button>
+            <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden"
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+            {error && <p className="mt-2 text-sm text-destructive flex items-start gap-1.5"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{error}</p>}
+          </div>
+        )}
+
+        {phase === "previewing" && (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Detected <span className="font-semibold text-foreground">{rows.length.toLocaleString()}</span> customers. Preview (first 5):
+            </p>
+            <div className="rounded-lg border border-border overflow-hidden text-xs">
+              <table className="w-full">
+                <thead className="bg-muted/30">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Name</th>
+                    <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Phone</th>
+                    <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Email</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.slice(0, 5).map((r, i) => (
+                    <tr key={i} className="border-t border-border">
+                      <td className="px-3 py-2 text-foreground">{r.name}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{r.phone}</td>
+                      <td className="px-3 py-2 text-muted-foreground truncate max-w-[180px]">{r.email || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {rows.length > 5 && <p className="text-xs text-muted-foreground">…and {rows.length - 5} more</p>}
+            {error && <p className="text-sm text-destructive flex items-start gap-1.5"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{error}</p>}
+            <div className="flex gap-2 pt-1">
+              <button onClick={() => { setPhase("idle"); setRows([]); setError(""); if (fileRef.current) fileRef.current.value = ""; }}
+                className="px-4 py-2 rounded-lg border border-border text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleImport}
+                className="flex-1 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
+                Import {rows.length.toLocaleString()} Customers
+              </button>
+            </div>
+          </div>
+        )}
+
+        {phase === "importing" && (
+          <div className="flex flex-col items-center gap-3 py-6">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Importing customers…</p>
+          </div>
+        )}
+
+        {phase === "done" && result && (
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-foreground">Import complete</p>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  <span className="text-foreground font-medium">{result.imported.toLocaleString()} imported</span>
+                  {result.skipped > 0 && <>, {result.skipped.toLocaleString()} skipped (already enrolled)</>}
+                </p>
+              </div>
+            </div>
+            {result.errors.length > 0 && (
+              <div className="rounded-lg bg-muted/30 border border-border p-3 space-y-1">
+                <p className="text-xs font-semibold text-muted-foreground">Warnings</p>
+                {result.errors.map((e, i) => <p key={i} className="text-xs text-muted-foreground">{e}</p>)}
+              </div>
+            )}
+            <p className="text-sm text-muted-foreground">
+              Use the <span className="font-medium text-foreground">Not yet contacted</span> filter in the campaign builder to reach these customers.
+            </p>
+            <button onClick={onClose}
+              className="w-full px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
+              Done
+            </button>
+          </div>
+        )}
+
+        {phase === "error" && (
+          <div className="space-y-3">
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20">
+              <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+              <p className="text-sm text-foreground">{error}</p>
+            </div>
+            <button onClick={() => setPhase("idle")}
+              className="w-full px-4 py-2 rounded-lg border border-border text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors">
+              Try Again
+            </button>
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function CampaignsPage() {
-  const { isDemo } = useAuth();
+  const { isDemo, profile } = useAuth();
   const vertical   = useVertical();
   const isAuto     = vertical === "automotive";
   const [activeChannel, setActiveChannel] = useState<Channel>("sms");
+  const [importOpen, setImportOpen]       = useState(false);
+  const qc = useQueryClient();
+
+  const canImport = profile?.role === "super_admin" || profile?.role === "practice_admin";
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">Campaigns</h1>
-        <p className="text-muted-foreground mt-1">
-          Send targeted SMS or email campaigns to your {isAuto ? "customer" : "patient"} referral network.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-foreground">Campaigns</h1>
+          <p className="text-muted-foreground mt-1">
+            Send targeted SMS or email campaigns to your {isAuto ? "customer" : "patient"} referral network.
+          </p>
+        </div>
+        {canImport && !isDemo && (
+          <button
+            onClick={() => setImportOpen(true)}
+            className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-card/30 hover:bg-muted/40 text-sm font-semibold text-foreground transition-colors"
+          >
+            <Upload className="w-4 h-4" />
+            Import CSV
+          </button>
+        )}
       </div>
 
       <div className="flex gap-1 p-1 bg-muted/20 border border-border rounded-xl w-fit">
@@ -1122,6 +1371,15 @@ export default function CampaignsPage() {
       <CampaignBuilder key={`${activeChannel}-${isAuto}`} channel={activeChannel} isDemo={isDemo} isAuto={isAuto} />
 
       <CampaignHistory isDemo={isDemo} isAuto={isAuto} />
+
+      <ImportCsvModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={() => {
+          qc.invalidateQueries({ queryKey: ["campaigns"] });
+          toast.success("Customers imported — use \"Not yet contacted\" filter to reach them.");
+        }}
+      />
     </div>
   );
 }

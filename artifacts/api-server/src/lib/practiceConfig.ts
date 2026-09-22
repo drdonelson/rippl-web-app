@@ -46,7 +46,7 @@ export function resolveTwilioClient(practice: Practice | null): ReturnType<typeo
 export function resolveFromEmail(practice: Practice | null): { email: string; name: string } {
   return {
     email: practice?.sendgrid_from_email ?? process.env.SENDGRID_FROM_EMAIL ?? "hello@joinrippl.com",
-    name:  practice?.sendgrid_from_name  ?? practice?.name ?? "Rippl",
+    name:  practice?.sendgrid_from_name  ?? (practice?.name ? `${practice.name} by Rippl` : "Rippl"),
   };
 }
 

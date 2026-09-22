@@ -81,7 +81,8 @@ export const CreateReferralBody = zod.object({
   new_patient_phone: zod.string(),
   referrer_id: zod.string(),
   team_source: zod.enum(["front", "back", "assistant"]),
-  office: zod.string(),
+  office: zod.string().optional(),
+  office_id: zod.string().optional(),
 });
 
 /**
