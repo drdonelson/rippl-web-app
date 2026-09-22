@@ -233,7 +233,7 @@ export default function Join({ vertical = "dental" }: { vertical?: string }) {
                   className="text-white font-black text-7xl lg:text-8xl leading-none"
                   style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
                 >
-                  $20
+                  $45
                 </span>
               </div>
               <p className="text-slate-300 text-xl font-semibold">per completed referral</p>

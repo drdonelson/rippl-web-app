@@ -9,7 +9,7 @@ const DENTAL_PLANS = [
   {
     name: "Per Referral",
     monthly: null,
-    perReferral: 55,
+    perReferral: 45,
     reward: 35,
     highlight: false,
     description: "No monthly commitment. Pay only when a verified referral completes their first appointment.",
@@ -17,7 +17,7 @@ const DENTAL_PLANS = [
   {
     name: "Growth",
     monthly: 149,
-    perReferral: 35,
+    perReferral: 25,
     reward: 35,
     highlight: true,
     description: "Best for practices generating 5+ referrals per month. Lower per-referral cost at scale.",

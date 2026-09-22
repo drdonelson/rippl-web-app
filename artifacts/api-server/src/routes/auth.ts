@@ -85,7 +85,7 @@ router.post("/onboard", requireAuth, requireSuperAdmin, async (req, res) => {
         show_powered_by_rippl:   show_powered_by_rippl !== undefined ? Boolean(show_powered_by_rippl) : true,
         in_house_credit_label:   in_house_credit_label ?? (isDental ? "$100 Dental Account Credit" : "$100 Account Credit"),
         in_house_credit_value:   in_house_credit_value !== undefined ? Number(in_house_credit_value) : 100,
-        per_referral_fee:          per_referral_fee !== undefined ? Number(per_referral_fee) : 35,
+        per_referral_fee:          per_referral_fee !== undefined ? Number(per_referral_fee) : 45,
         reward_value:              reward_value !== undefined ? Number(reward_value) : 35,
         gift_card_threshold_cents: gift_card_threshold !== undefined ? Number(gift_card_threshold) * 100 : 10000,
         twilio_phone_number:       twilio_phone_number ? String(twilio_phone_number) : null,

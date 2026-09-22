@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.0",
+  "product": "Rippl",
+  "legal_entity": "BD America",
+  "effective_date": "2026-09-22",
+  "currency": "USD",
+
+  "plans": [
+    {
+      "id": "per-referral",
+      "name": "Per-Referral Plan",
+      "description": "Pay only when a referral is rewarded. No monthly platform fee.",
+      "billing_model": "per_event",
+      "setup_fee_cents": 49900,
+      "tiers": [
+        {
+          "id": "solo",
+          "label": "Solo",
+          "location_range": { "min": 1, "max": 1 },
+          "price_per_referral_cents": 4500,
+          "deo_price_per_referral_cents": 4000
+        },
+        {
+          "id": "group",
+          "label": "Group",
+          "location_range": { "min": 2, "max": 5 },
+          "price_per_referral_cents": 4500,
+          "deo_price_per_referral_cents": 3500
+        },
+        {
+          "id": "multi",
+          "label": "Multi-Location",
+          "location_range": { "min": 6, "max": 19 },
+          "price_per_referral_cents": 4500,
+          "deo_price_per_referral_cents": 3000
+        },
+        {
+          "id": "enterprise",
+          "label": "Enterprise",
+          "location_range": { "min": 20, "max": null },
+          "price_per_referral_cents": 4500,
+          "deo_price_per_referral_cents": null,
+          "note": "Custom pricing — contact david@joinrippl.com"
+        }
+      ],
+      "gift_card_fee_cents": 0,
+      "gift_card_note": "Exact face value passthrough via Tango Card. Zero processing fee."
+    },
+    {
+      "id": "growth",
+      "name": "Growth Plan",
+      "description": "Monthly platform fee per location plus lower per-referral rate. Best for high-volume practices.",
+      "billing_model": "hybrid",
+      "setup_fee_cents": 49900,
+      "platform_fee_per_location_per_month_cents": 14900,
+      "price_per_referral_cents": 2500,
+      "deo_price_per_referral_cents": 2500,
+      "deo_platform_fee_per_location_per_month_cents": 14900,
+      "breakeven_referrals_per_location_per_month": 8,
+      "gift_card_fee_cents": 0
+    }
+  ],
+
+  "deo_benefits": {
+    "setup_fee_waived": true,
+    "volume_tiers_unlocked": true,
+    "priority_onboarding": true,
+    "standard_list_price_per_referral_cents": 4500,
+    "max_deo_discount_percent": 33
+  },
+
+  "verticals": {
+    "dental": {
+      "avg_new_patient_ltv_cents": 150000,
+      "referral_close_rate_multiplier": 3.5,
+      "plans": ["per-referral", "growth"]
+    },
+    "automotive": {
+      "avg_deal_gross_profit_cents": 400000,
+      "plans": ["per-referral"],
+      "note": "See automotive-pricing.md for separate rate card"
+    },
+    "salon": {
+      "plans": ["per-referral"],
+      "note": "See Hollow Ground channel partner agreement"
+    }
+  },
+
+  "cogs_per_location_per_month_cents": 400,
+  "cogs_breakdown": {
+    "render_hosting_cents": 150,
+    "twilio_phone_number_cents": 215,
+    "twilio_sms_per_location_cents": 16,
+    "brevo_email_cents": 1,
+    "supabase_cents": 0,
+    "note": "Gift cards are pure passthrough — not included in COGS"
+  }
+}

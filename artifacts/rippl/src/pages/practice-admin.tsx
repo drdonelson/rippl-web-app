@@ -349,7 +349,7 @@ const EMPTY_FORM: PracticeFormData = {
   vertical: "dental",
   plan: "per_referral",
   monthly_fee: "0",
-  per_referral_fee: "20",
+  per_referral_fee: "45",
   reward_value: "35",
   twilio_phone_number: "",
   twilio_account_sid: "",
@@ -582,7 +582,7 @@ function PracticeForm({
                 { value: "monthly", label: "Monthly" },
               ])}
               {field("Monthly Fee ($)", "monthly_fee", { type: "number", placeholder: "0" })}
-              {field("Per Referral Fee ($)", "per_referral_fee", { type: "number", placeholder: "20" })}
+              {field("Per Referral Fee ($)", "per_referral_fee", { type: "number", placeholder: "45" })}
               {field("Patient Reward Value ($)", "reward_value", { type: "number", placeholder: "35", hint: "Default reward amount sent to the referring patient." })}
             </div>
           </section>
@@ -742,7 +742,7 @@ export default function PracticeAdminPage() {
       vertical:                p.vertical ?? "dental",
       plan:                    p.plan ?? "per_referral",
       monthly_fee:             String(p.monthly_fee ?? 0),
-      per_referral_fee:        String(p.per_referral_fee ?? 20),
+      per_referral_fee:        String(p.per_referral_fee ?? 45),
       reward_value:            String(p.reward_value ?? 35),
       twilio_phone_number:     p.twilio_phone_number ?? "",
       twilio_account_sid:      p.twilio_account_sid ?? "",

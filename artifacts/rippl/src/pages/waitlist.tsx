@@ -61,7 +61,7 @@ export default function Waitlist() {
             <div className="grid grid-cols-3 gap-3 mb-10">
               {[
                 { icon: Zap,   label: "Fully automatic",    desc: "Detects completions in real time" },
-                { icon: Users, label: "Per-referral pricing", desc: "$20 per completed referral" },
+                { icon: Users, label: "Per-referral pricing", desc: "$45 per completed referral" },
                 { icon: Gift,  label: "Gift card rewards",   desc: "$35–$100 sent instantly" },
               ].map(({ icon: Icon, label, desc }) => (
                 <div key={label} className="bg-white border border-slate-200 rounded-2xl p-4">

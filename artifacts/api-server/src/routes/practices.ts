@@ -189,7 +189,7 @@ router.post("/", requireAuth, requireSuperAdmin, async (req, res) => {
         vertical:                vertical ? String(vertical) : "dental",
         plan:                    plan ? String(plan) : "per_referral",
         monthly_fee:             monthly_fee ? Number(monthly_fee) : 0,
-        per_referral_fee:        per_referral_fee ? Number(per_referral_fee) : 20,
+        per_referral_fee:        per_referral_fee ? Number(per_referral_fee) : 45,
         reward_value:            reward_value ? Number(reward_value) : 35,
         twilio_phone_number:     twilio_phone_number ? String(twilio_phone_number) : null,
         sendgrid_from_email:     sendgrid_from_email ? String(sendgrid_from_email) : null,

@@ -43,7 +43,7 @@ const CHANNELS = [
   },
   {
     name: "Rippl",
-    costPerPatient: "$55–$120",
+    costPerPatient: "$80–$145",
     leadQuality: "Peer-verified trust",
     effort: "Fully automated",
     automated: true,
@@ -68,7 +68,7 @@ const EDDM_PLAN = [
 ];
 
 const STATS = [
-  { value: "$20", label: "Per verified new patient", sub: "Only when they walk in the door" },
+  { value: "$45", label: "Per verified new patient", sub: "Only when they walk in the door" },
   { value: "4×", label: "Higher conversion rate", sub: "vs. cold advertising channels" },
   { value: "37%", label: "Better patient retention", sub: "Referred patients stay longer" },
   { value: "0", label: "Staff hours required", sub: "Fully automated end-to-end" },
@@ -119,7 +119,7 @@ const FAQS = [
   },
   {
     q: "How does billing work?",
-    a: "Two line items, that's it. A $499 one-time setup fee covers Open Dental integration, staff training, and office configuration (waived for Founding Practices — see below). After that, you pay $20 per verified referral — only when a new patient completes their first exam. Gift card rewards are billed at face value with zero markup. No monthly fees, no long-term contract, no card processing charges.",
+    a: "Two line items, that's it. A $499 one-time setup fee covers Open Dental integration, staff training, and office configuration (waived for Founding Practices — see below). After that, you pay $45 per verified referral — only when a new patient completes their first exam. Gift card rewards are billed at face value with zero markup. No monthly fees, no long-term contract, no card processing charges.",
   },
   {
     q: "What is the Founding Practice program?",
@@ -408,7 +408,7 @@ export default function Practices() {
             className="text-slate-500 text-lg leading-relaxed max-w-2xl mx-auto mb-8"
           >
             Rippl turns completed referrals into automated gift card rewards — fully
-            integrated with Open Dental. $499 one-time setup, then $20 when a new
+            integrated with Open Dental. $499 one-time setup, then $45 when a new
             patient actually walks in the door. No ad spend. No mailers. No staff work.
           </motion.p>
 
@@ -542,7 +542,7 @@ export default function Practices() {
               {
                 icon: "✅",
                 title: "Rippl reality check",
-                body: "Total all-in cost: $55–$120 per new patient ($20 platform fee + $35–$100 reward, tier-based). You pay only when they complete a visit — no-shows cost you nothing. Referred patients accept 4× more treatment and retain 37% longer than ad-sourced ones. No ads, no creative, no agency.",
+                body: "Total all-in cost: $80–$145 per new patient ($45 platform fee + $35–$100 reward, tier-based). You pay only when they complete a visit — no-shows cost you nothing. Referred patients accept 4× more treatment and retain 37% longer than ad-sourced ones. No ads, no creative, no agency.",
               },
             ].map((item) => (
               <div key={item.title} className="bg-white border border-slate-200 rounded-2xl p-4">
@@ -611,8 +611,8 @@ export default function Practices() {
                 <p className="text-orange-700 text-xs mb-4 font-semibold">Pay only when they walk in</p>
                 <div className="space-y-2.5 mb-5">
                   <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-slate-700">Platform fee (450 × $20)</span>
-                    <span className="font-semibold text-slate-900 tabular-nums">$9,000</span>
+                    <span className="text-slate-700">Platform fee (450 × $45)</span>
+                    <span className="font-semibold text-slate-900 tabular-nums">$20,250</span>
                   </div>
                   <div className="flex items-center justify-between gap-3 text-sm">
                     <span className="text-slate-700">Rewards (avg $65, face value)</span>
@@ -625,17 +625,17 @@ export default function Practices() {
                 </div>
                 <div className="flex items-center justify-between gap-3 pt-4 border-t border-orange-200">
                   <span className="text-slate-900 font-bold">Total / year</span>
-                  <span className="font-black text-orange-700 text-lg tabular-nums">$38,250</span>
+                  <span className="font-black text-orange-700 text-lg tabular-nums">$49,500</span>
                 </div>
                 <div className="flex items-center justify-between gap-3 mt-2">
                   <span className="text-slate-500 text-sm">Cost per new patient</span>
-                  <span className="font-bold text-orange-700 text-sm tabular-nums">$85</span>
+                  <span className="font-bold text-orange-700 text-sm tabular-nums">$110</span>
                 </div>
               </div>
             </div>
             <div className="mt-3 bg-[#E0622A] text-white rounded-xl px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
               <p className="font-bold text-sm">Savings vs. digital plan</p>
-              <span className="font-black text-lg tabular-nums">$34K–$88K / year</span>
+              <span className="font-black text-lg tabular-nums">$22K–$77K / year</span>
             </div>
           </motion.div>
 
@@ -678,8 +678,8 @@ export default function Practices() {
                 <p className="text-orange-700 text-xs mb-4 font-semibold">No print, no postage, no design cycle</p>
                 <div className="space-y-2.5 mb-5">
                   <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-slate-700">Platform fee (60 × $20)</span>
-                    <span className="font-semibold text-slate-900 tabular-nums">$1,200</span>
+                    <span className="text-slate-700">Platform fee (60 × $45)</span>
+                    <span className="font-semibold text-slate-900 tabular-nums">$2,700</span>
                   </div>
                   <div className="flex items-center justify-between gap-3 text-sm">
                     <span className="text-slate-700">Rewards (avg $65, face value)</span>
@@ -692,17 +692,17 @@ export default function Practices() {
                 </div>
                 <div className="flex items-center justify-between gap-3 pt-4 border-t border-orange-200">
                   <span className="text-slate-900 font-bold">Total / year</span>
-                  <span className="font-black text-orange-700 text-lg tabular-nums">$5,100</span>
+                  <span className="font-black text-orange-700 text-lg tabular-nums">$6,600</span>
                 </div>
                 <div className="flex items-center justify-between gap-3 mt-2">
                   <span className="text-slate-500 text-sm">Cost per new patient</span>
-                  <span className="font-bold text-orange-700 text-sm tabular-nums">$85</span>
+                  <span className="font-bold text-orange-700 text-sm tabular-nums">$110</span>
                 </div>
               </div>
             </div>
             <div className="mt-3 bg-[#E0622A] text-white rounded-xl px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
               <p className="font-bold text-sm">Savings vs. EDDM program</p>
-              <span className="font-black text-lg tabular-nums">$4.9K–$9.9K / year</span>
+              <span className="font-black text-lg tabular-nums">$3.4K–$8.4K / year</span>
             </div>
           </motion.div>
 
@@ -758,7 +758,7 @@ export default function Practices() {
         >
           <motion.div variants={fadeUp} className="text-center mb-8">
             <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">Everything included</h2>
-            <p className="text-slate-500 text-base">No add-ons. No monthly fees. One flat $20-per-referral model after onboarding.</p>
+            <p className="text-slate-500 text-base">No add-ons. No monthly fees. One flat $45-per-referral fee after onboarding.</p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-6">
@@ -849,7 +849,7 @@ export default function Practices() {
                   Per verified referral
                 </p>
                 <div className="flex items-end justify-center gap-1 mb-2">
-                  <span className="text-5xl font-black text-slate-900">$20</span>
+                  <span className="text-5xl font-black text-slate-900">$45</span>
                   <span className="text-slate-500 text-base mb-1">/ patient</span>
                 </div>
                 <p className="text-slate-500 text-sm leading-relaxed">
@@ -888,8 +888,8 @@ export default function Practices() {
               </div>
               <div className="space-y-2.5 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-600">Platform fee — 22 × $20</span>
-                  <span className="font-semibold text-slate-900 tabular-nums">$440</span>
+                  <span className="text-slate-600">Platform fee — 22 × $45</span>
+                  <span className="font-semibold text-slate-900 tabular-nums">$990</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-600">Rewards — face value, zero markup</span>
@@ -910,10 +910,10 @@ export default function Practices() {
               </div>
               <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-200">
                 <span className="text-slate-900 font-black">Your total</span>
-                <span className="font-black text-slate-900 text-lg tabular-nums">$1,760</span>
+                <span className="font-black text-slate-900 text-lg tabular-nums">$2,310</span>
               </div>
               <p className="text-slate-400 text-sm mt-3 leading-relaxed">
-                That's ~$80 per new patient, all-in. A typical Google Ads program in a
+                That's ~$105 per new patient, all-in. A typical Google Ads program in a
                 saturated metro would cost you $6,000+ for the same 22 patients.
               </p>
             </div>
