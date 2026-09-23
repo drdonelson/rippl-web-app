@@ -64,7 +64,7 @@ function useDashboard(officeId: string, practiceId: string | null, enabled: bool
 
 function useAdminTasks(practiceId: string | null, enabled: boolean) {
   return useQuery<AdminTask[]>({
-    queryKey: ["/api/admin-tasks", practiceId],
+    queryKey: ["admin-tasks", practiceId],
     queryFn: () => {
       const qs = practiceId ? `?practice_id=${encodeURIComponent(practiceId)}` : "";
       return customFetch<AdminTask[]>(`${BASE}/api/admin-tasks${qs}`);
@@ -89,7 +89,7 @@ function useCompleteTask() {
   return useMutation({
     mutationFn: (id: string) =>
       customFetch(`${BASE}/api/admin-tasks/${id}/complete`, { method: "PATCH" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/admin-tasks"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-tasks"] }),
   });
 }
 
