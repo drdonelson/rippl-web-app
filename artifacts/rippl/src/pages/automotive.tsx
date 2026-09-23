@@ -51,7 +51,7 @@ const CHANNELS = [
   { name: "Third-party leads (TrueCar, Cars.com)", costPerSale: "$300–$600", quality: "Price-shopping, low loyalty", effort: "Constant BDC follow-up", highlight: false },
   { name: "Digital advertising",                    costPerSale: "$500–$900", quality: "Strangers, unknown intent",   effort: "Agency + creative mgmt",  highlight: false },
   { name: "Conquest mailers",                        costPerSale: "$400–$700", quality: "Cold, ad-fatigued",           effort: "Design, print, mail each drop", highlight: false },
-  { name: "Rippl",                                   costPerSale: "$110–$175", quality: "Peer-verified trust",         effort: "Fully automated",          highlight: true  },
+  { name: "Rippl",                                   costPerSale: "$245–$300", quality: "Peer-verified trust",         effort: "Fully automated",          highlight: true  },
 ];
 
 const FAQS = [
@@ -61,7 +61,7 @@ const FAQS = [
   },
   {
     q: "What does the referring customer receive?",
-    a: "An SMS + email with a claim link. They choose from Amazon, Visa, Target, or Starbucks digital gift cards — $75–$150 depending on their referral tier.",
+    a: "An SMS + email with a claim link. They choose from Amazon, Visa, Target, or Starbucks digital gift cards — $150–$250 depending on their referral tier.",
   },
   {
     q: "Is there a setup fee?",
@@ -339,11 +339,11 @@ export default function Automotive() {
               <p className="font-bold text-slate-900 text-lg">Starter</p>
               <div>
                 <div className="flex items-baseline gap-1.5 mb-0.5">
-                  <span className="text-4xl font-bold text-slate-900" style={{ fontFamily: "var(--font-fraunces)" }}>$75</span>
+                  <span className="text-4xl font-bold text-slate-900" style={{ fontFamily: "var(--font-fraunces)" }}>$150</span>
                   <span className="text-slate-500 text-sm font-medium">/ verified sale</span>
                 </div>
                 <p className="text-sm text-slate-500">No monthly fee</p>
-                <p className="text-xs text-slate-400 mt-1">+ $75 default reward to your customer</p>
+                <p className="text-xs text-slate-400 mt-1">+ $150 default reward to your customer</p>
               </div>
               <p className="text-sm text-slate-500 leading-relaxed flex-1">
                 Try it with zero commitment. Pay only when a referred customer closes a deal — no monthly cost, no contracts.
@@ -367,11 +367,11 @@ export default function Automotive() {
                   <span className="text-4xl font-bold text-slate-900" style={{ fontFamily: "var(--font-fraunces)" }}>$249</span>
                   <span className="text-slate-500 text-sm font-medium">/ mo</span>
                 </div>
-                <p className="text-sm text-slate-500">+ <strong className="text-slate-700">$45</strong> per verified referral sale</p>
-                <p className="text-xs text-slate-400 mt-1">+ $75–$150 reward to your customer (customizable)</p>
+                <p className="text-sm text-slate-500">+ <strong className="text-slate-700">$95</strong> per verified referral sale</p>
+                <p className="text-xs text-slate-400 mt-1">+ $150–$250 reward to your customer (customizable)</p>
               </div>
               <p className="text-sm text-slate-500 leading-relaxed flex-1">
-                A fully branded customer rewards program — custom portal, tiered rewards, multi-rooftop dashboard, and dedicated support. Breaks even versus Starter at just 4 referral sales/month.
+                A fully branded customer rewards program — custom portal, tiered rewards, multi-rooftop dashboard, and dedicated support. Breaks even versus Starter at just 5 referral sales/month.
               </p>
               <button
                 onClick={() => setModalOpen(true)}
@@ -388,7 +388,7 @@ export default function Automotive() {
             <div className="grid sm:grid-cols-2 gap-2">
               {[
                 "Branded customer rewards portal",
-                "Tiered rewards ($75–$150 per referral tier)",
+                "Tiered rewards ($150–$250 per referral tier)",
                 "Custom reward catalog — gift cards, service credits",
                 "Multi-rooftop dashboard and reporting",
                 "Dedicated onboarding and ongoing support",
@@ -515,12 +515,12 @@ export default function Automotive() {
               <p className="text-orange-700 text-xs mb-4 font-semibold">Pay only when the deal closes</p>
               <div className="space-y-2.5 mb-5">
                 <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="text-slate-700">Platform fee (100 × $75)</span>
-                  <span className="font-semibold text-slate-900 tabular-nums">$7,500</span>
+                  <span className="text-slate-700">Platform fee (100 × $95 Program)</span>
+                  <span className="font-semibold text-slate-900 tabular-nums">$9,500</span>
                 </div>
                 <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="text-slate-700">Rewards (avg $100, face value)</span>
-                  <span className="font-semibold text-slate-900 tabular-nums">$10,000</span>
+                  <span className="text-slate-700">Rewards (avg $150, face value)</span>
+                  <span className="font-semibold text-slate-900 tabular-nums">$15,000</span>
                 </div>
                 <div className="flex items-center justify-between gap-3 text-sm">
                   <span className="text-slate-700">BDC / agency / subscriptions</span>
@@ -529,17 +529,17 @@ export default function Automotive() {
               </div>
               <div className="flex items-center justify-between gap-3 pt-4 border-t border-orange-200">
                 <span className="text-slate-900 font-bold">Total for 100 referral sales</span>
-                <span className="font-black text-orange-700 text-lg tabular-nums">$17,500</span>
+                <span className="font-black text-orange-700 text-lg tabular-nums">$24,500</span>
               </div>
               <div className="flex items-center justify-between gap-3 mt-2">
                 <span className="text-slate-500 text-sm">Cost per sold unit</span>
-                <span className="font-bold text-orange-700 text-sm tabular-nums">$175</span>
+                <span className="font-bold text-orange-700 text-sm tabular-nums">$245</span>
               </div>
             </div>
           </div>
           <div className="bg-[#E0622A] text-white rounded-xl px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
             <p className="font-bold text-sm">Savings vs. third-party leads</p>
-            <span className="font-black text-lg tabular-nums">$225–$525 per unit</span>
+            <span className="font-black text-lg tabular-nums">$55–$355 per unit</span>
           </div>
         </div>
       </section>
