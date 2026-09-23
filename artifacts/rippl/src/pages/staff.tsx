@@ -154,7 +154,7 @@ export function StaffPanel() {
   const { data: staff = [], isLoading, error } = useQuery<StaffAccount[]>({
     queryKey: ["/api/auth/staff-accounts"],
     queryFn: () => customFetch<StaffAccount[]>(`${BASE}/api/auth/staff-accounts`),
-    enabled: !isDemo && profile?.role === "practice_admin",
+    enabled: !isDemo && (profile?.role === "practice_admin" || profile?.role === "super_admin"),
   });
 
   const deleteMutation = useMutation({
