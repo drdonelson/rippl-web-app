@@ -173,7 +173,7 @@ async function getFilteredReferrers(filter: AudienceFilter, practiceId: string |
 // ── Template rendering ────────────────────────────────────────────────────────
 
 function renderTemplate(template: string, referrer: ReferrerRow, practiceName?: string): string {
-  const firstName   = referrer.name?.split(" ")[0] ?? "there";
+  const firstName   = (referrer.name?.split(" ")[0] ?? "there").replace(/['"]/g, "");
   const tierName    = TIER_NAMES[referrer.tier ?? "starter"] ?? "Influencer";
   const referralLink = `${APP_URL}/refer?code=${referrer.referral_code}`;
   const rewardValue = `$${referrer.reward_value ?? 35}`;
@@ -257,11 +257,12 @@ router.post("/send", async (req, res) => {
     return;
   }
 
-  const { name, channel, filter, message_template } = req.body as {
+  const { name, channel, filter, message_template, email_subject } = req.body as {
     name: string;
     channel: string;
     filter: string;
     message_template: string;
+    email_subject?: string;
   };
 
   if (!name?.trim() || !channel || !filter || !message_template?.trim()) {
@@ -363,7 +364,7 @@ router.post("/send", async (req, res) => {
             await sendEmail({
               to:      referrer.email,
               from:    { email: FROM_EMAIL, name: practiceFromName },
-              subject: name.trim(),
+              subject: (email_subject?.trim() || name.trim()),
               text:    emailText,
               html:    emailHtml,
             });
@@ -407,10 +408,12 @@ router.post("/test-send", async (req, res) => {
     return;
   }
 
-  const { filter, message_template, test_email } = req.body as {
+  const { filter, message_template, test_email, email_subject, practice_id: bodyPracticeId } = req.body as {
     filter: string;
     message_template: string;
     test_email?: string;
+    email_subject?: string;
+    practice_id?: string;
   };
 
   if (!filter || !message_template?.trim()) {
@@ -435,8 +438,9 @@ router.post("/test-send", async (req, res) => {
     const patient   = referrers[0] ?? null;
 
     // If no real patient, synthesise a placeholder referrer
-    const previewPractice = req.authUser!.practice_id
-      ? await getPracticeConfig(req.authUser!.practice_id).catch(() => null)
+    const effectivePracticeId = req.authUser!.practice_id ?? bodyPracticeId ?? null;
+    const previewPractice = effectivePracticeId
+      ? await getPracticeConfig(effectivePracticeId).catch(() => null)
       : null;
     const previewPracticeName = previewPractice?.white_label_name ?? previewPractice?.name ?? undefined;
     const previewFromName = previewPracticeName ? `${previewPracticeName} by Rippl` : "Rippl";
@@ -469,7 +473,7 @@ router.post("/test-send", async (req, res) => {
     await sendEmail({
       to:      recipientEmail,
       from:    { email: FROM_EMAIL, name: previewFromName },
-      subject: `[TEST] Campaign Preview — ${referrerData.name.split(" ")[0]}'s data`,
+      subject: email_subject?.trim() ? `[TEST] ${email_subject.trim()}` : `[TEST] Campaign Preview — ${referrerData.name.replace(/['"]/g, "").split(" ")[0]}'s data`,
       text:    emailText,
       html:    testHtml,
     });

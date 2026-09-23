@@ -536,6 +536,7 @@ function CampaignBuilder({ channel, isDemo, isAuto }: { channel: Channel; isDemo
     : (isAuto ? DEFAULT_EMAIL_AUTO : DEFAULT_EMAIL);
 
   const [campaignName, setCampaignName]   = useState("");
+  const [emailSubject, setEmailSubject]   = useState("");
   const [filter, setFilter]               = useState<AudienceFilter>(filterOptions[0].value);
   const [template, setTemplate]           = useState(defaultTemplate);
   const [countResult, setCountResult]     = useState<CountResult | null>(isDemo ? demoCount : null);
@@ -567,7 +568,13 @@ function CampaignBuilder({ channel, isDemo, isAuto }: { channel: Channel; isDemo
         `${BASE}/api/campaigns/test-send`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ filter, message_template: template, test_email: addr }),
+          body: JSON.stringify({
+            filter,
+            message_template: template,
+            test_email: addr,
+            email_subject: emailSubject.trim() || undefined,
+            practice_id: profile?.practice_id ?? undefined,
+          }),
         }
       );
       const dataNote = result.used_placeholder ? ` (placeholder data — no matching ${nounPlural})` : ` using ${result.patient_name}'s data`;
@@ -617,6 +624,7 @@ function CampaignBuilder({ channel, isDemo, isAuto }: { channel: Channel; isDemo
         channel,
         filter,
         message_template: template,
+        email_subject:    channel === "email" ? (emailSubject.trim() || undefined) : undefined,
       }),
       headers: { "Content-Type": "application/json" },
     }),
@@ -624,6 +632,7 @@ function CampaignBuilder({ channel, isDemo, isAuto }: { channel: Channel; isDemo
       toast.success("Campaign launched! Check history for status.");
       setConfirmOpen(false);
       setCampaignName("");
+      setEmailSubject("");
       setTemplate(defaultTemplate);
       qc.invalidateQueries({ queryKey: ["campaigns"] });
     },
@@ -673,6 +682,22 @@ function CampaignBuilder({ channel, isDemo, isAuto }: { channel: Channel; isDemo
             className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
           />
         </div>
+
+        {/* Email subject (email only) */}
+        {channel === "email" && (
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Email Subject <span className="text-primary">*</span>
+            </label>
+            <input
+              value={emailSubject}
+              onChange={e => setEmailSubject(e.target.value)}
+              placeholder="You're invited to join Carlock Rewards"
+              className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+            />
+            <p className="text-xs text-muted-foreground mt-1">This is the subject line recipients will see in their inbox.</p>
+          </div>
+        )}
 
         {/* Audience filter */}
         <div>

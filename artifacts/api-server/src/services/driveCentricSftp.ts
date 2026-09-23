@@ -321,7 +321,7 @@ export async function pollDriveCentricSftp(
 
       const dealId = deal["DealId"];
       const buyerCid   = deal["BuyerCustomerId"];
-      const buyerName  = buyerCid ? (customers.get(buyerCid)?.name ?? "Unknown Customer") : "Unknown Customer";
+      const buyerName  = buyerCid ? (customers.get(buyerCid)?.name?.replace(/"/g, "").trim() ?? "Unknown Customer") : "Unknown Customer";
       const buyerPhone = buyerCid ? customerPhones.get(buyerCid)?.value : undefined;
       const buyerEmail = buyerCid ? customerEmails.get(buyerCid) : undefined;
 
