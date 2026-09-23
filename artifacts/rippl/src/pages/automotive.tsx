@@ -65,7 +65,7 @@ const FAQS = [
   },
   {
     q: "Is there a setup fee?",
-    a: "There's a one-time $499 setup fee covering DriveCentric integration, team training, and go-live support. Founding Member dealerships that go live before January 1, 2027 get the fee waived. Ask us about Founding Member status.",
+    a: "There's a one-time $499 setup fee covering DriveCentric integration, team training, and go-live support. Ask on your demo call about how to get the setup fee waived.",
   },
   {
     q: "Does it work with our DMS?",
@@ -283,7 +283,7 @@ export default function Automotive() {
             A fully automated customer referral rewards program — built on DriveCentric. Your buyers share their link, a friend buys a car, and the reward fires automatically. No BDC work. No manual tracking.
           </p>
           <p className="text-white/50 text-sm mb-8">
-            Founding Member pricing: setup fee waived for dealerships that go live before January 1, 2027.
+            Ask on your demo call about how to get the setup fee waived.
           </p>
           <button
             onClick={() => setModalOpen(true)}
@@ -405,7 +405,7 @@ export default function Automotive() {
           <div className="mt-5 flex flex-col gap-1.5">
             <p className="text-xs text-slate-500">
               <span className="font-semibold text-slate-700">$499 one-time setup fee</span> — covers DriveCentric integration, team training, and go-live support.{" "}
-              <span className="text-slate-400">Waived for Founding Members — dealerships that go live before January 1, 2027.</span>
+              <span className="text-slate-400">Ask on your demo call about how to get the setup fee waived.</span>
             </p>
             <p className="text-xs text-slate-400">
               Questions?{" "}

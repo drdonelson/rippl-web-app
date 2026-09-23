@@ -316,7 +316,7 @@ export default function Specialists() {
             Pay only when it works.
           </h2>
           <p className="text-slate-500 text-sm mb-10 max-w-xl">
-            One-time $499 setup fee, then pay only per verified referral. Founding Member practices that go live before January 1, 2027 get the setup fee waived.
+            One-time $499 setup fee, then pay only per verified referral. Ask on your demo call about how to get the setup fee waived.
           </p>
 
           <div className="grid sm:grid-cols-2 gap-6 max-w-2xl">

@@ -91,7 +91,7 @@ const FAQS = [
   },
   {
     q: "Is there a setup fee?",
-    a: "There's a one-time $499 setup fee covering Open Dental integration, staff training, tier configuration, and go-live support — no recurring subscription, no minimum commitment. Founding Members — practices that go live before January 1, 2027 — get the setup fee waived. Ask us about Founding Member status.",
+    a: "There's a one-time $499 setup fee covering Open Dental integration, staff training, tier configuration, and go-live support — no recurring subscription, no minimum commitment. Ask on your demo call about how to get the setup fee waived.",
   },
   {
     q: "Does it work with my version of Open Dental?",
@@ -327,7 +327,7 @@ export default function Pricing() {
             One-time $499 setup, then $45 per verified new patient — only when they walk in the door and complete their first visit.
           </p>
           <p className="text-white/60 text-sm mb-8">
-            Founding Member pricing: setup fee waived for practices that go live before January 1, 2027.
+            Ask about how to get the setup fee waived on your demo call.
           </p>
           <button
             onClick={() => setModalOpen(true)}
@@ -436,7 +436,7 @@ export default function Pricing() {
           <div className="mt-6 flex flex-col gap-1.5">
             <p className="text-xs text-slate-500">
               <span className="font-semibold text-slate-700">$499 one-time setup fee</span> — covers integration, onboarding, and go-live support.{" "}
-              <span className="text-slate-400">Waived for Founding Members — practices that go live before January 1, 2027.</span>
+              <span className="text-slate-400">Ask on your demo call about how to get the setup fee waived.</span>
             </p>
             <p className="text-xs text-slate-400">
               Questions?{" "}

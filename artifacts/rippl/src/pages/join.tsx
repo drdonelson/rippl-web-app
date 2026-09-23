@@ -246,7 +246,7 @@ export default function Join({ vertical = "dental" }: { vertical?: string }) {
             <div className="space-y-5">
               {[
                 { icon: Zap,        label: "No monthly fees",  body: "Pay only for results, never for access." },
-                { icon: DollarSign, label: "No setup costs",   body: "We handle onboarding and integration at no charge." },
+                { icon: DollarSign, label: "One-time setup",    body: "One-time $499 setup fee covers integration, training, and go-live. Ask on the call about getting it waived." },
                 { icon: Clock,      label: "No contracts",     body: "Cancel any time. No lock-in, no commitments." },
               ].map(({ icon: Icon, label, body }) => (
                 <div key={label} className="flex items-start gap-4">

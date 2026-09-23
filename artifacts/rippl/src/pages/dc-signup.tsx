@@ -81,7 +81,7 @@ export default function DcSignup() {
   function buttonLabel() {
     if (mode === "demo") return "Request a demo";
     if (isNonOD) return "Join the waitlist";
-    return "Start free — DC member pricing";
+    return "Get started — DC member pricing";
   }
 
   return (
@@ -113,7 +113,7 @@ export default function DcSignup() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-50 border border-green-200 mb-7">
               <div className="w-1.5 h-1.5 rounded-full bg-[#1A7A3A]" />
-              <span className="text-green-800 text-xs font-bold tracking-wider uppercase">DC Member Pricing — 30% Off Standard</span>
+              <span className="text-green-800 text-xs font-bold tracking-wider uppercase">DC Member Exclusive Pricing</span>
             </div>
 
             <h1 className="text-4xl lg:text-5xl font-black text-slate-900 leading-[1.08] tracking-tight mb-5">
@@ -154,14 +154,14 @@ export default function DcSignup() {
             {/* Pricing */}
             <p className="text-[10px] font-black tracking-widest uppercase text-slate-400 mb-4">DC Member Pricing</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-10">
-              {/* Free */}
+              {/* Per-Referral */}
               <div className="border border-slate-200 rounded-2xl p-6">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Free</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Per-Referral</p>
                 <div className="text-4xl font-black text-slate-900 mb-1">$0<span className="text-base font-normal text-slate-400">/mo</span></div>
-                <div className="text-sm text-slate-500 mb-4">+ $55 per referral detected</div>
+                <div className="text-sm text-slate-500 mb-4">+ $40 per verified referral</div>
                 <div className="text-xs text-slate-400 pt-4 border-t border-slate-100 leading-relaxed">
-                  Standard rate: <span className="line-through">$85/ref</span><br />
-                  Start free. No upfront charge.
+                  Public rate: $45/ref<br />
+                  Setup fee waived for DC members.
                 </div>
               </div>
               {/* Growth */}
@@ -169,10 +169,10 @@ export default function DcSignup() {
                 <span className="absolute top-4 right-4 text-[9px] font-black uppercase tracking-wider text-white bg-[#1A7A3A] px-2 py-1 rounded-full">Most Popular</span>
                 <p className="text-[10px] font-bold text-[#1A7A3A] uppercase tracking-widest mb-3">Growth</p>
                 <div className="text-4xl font-black text-slate-900 mb-1">$149<span className="text-base font-normal text-slate-400">/mo</span></div>
-                <div className="text-sm text-slate-500 mb-4">+ $30 per referral detected</div>
+                <div className="text-sm text-slate-500 mb-4">+ $20 per verified referral</div>
                 <div className="text-xs text-slate-500 pt-4 border-t border-green-100 leading-relaxed">
-                  Standard rate: <span className="line-through text-slate-400">$199 + $35/ref</span><br />
-                  Breaks even with Free at <strong>6 referrals/month</strong>
+                  Public rate: $149 + $25/ref<br />
+                  Breaks even with Per-Referral at <strong>6 referrals/month</strong>
                 </div>
               </div>
             </div>
