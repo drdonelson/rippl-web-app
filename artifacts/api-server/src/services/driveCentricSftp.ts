@@ -292,14 +292,19 @@ export async function pollDriveCentricSftp(
 
     // Best phone per customer (Mobile > Home > Work)
     const customerPhones = new Map<string, { label: string; value: string }>();
+    // Primary email per customer (first non-bad email wins)
+    const customerEmails = new Map<string, string>();
     for (const row of parseCsv(contactCsv)) {
       if (row["IsDeleted"] === "1" || row["IsBad"] === "1") continue;
-      if (row["Type"] !== "Phone") continue;
-      const cid     = row["CustomerId"];
-      const label   = row["Label"] ?? "Work";
-      const current = customerPhones.get(cid);
-      if (!current || (PHONE_PRIORITY[label] ?? 99) < (PHONE_PRIORITY[current.label] ?? 99)) {
-        customerPhones.set(cid, { label, value: row["Value"] });
+      const cid = row["CustomerId"];
+      if (row["Type"] === "Phone") {
+        const label   = row["Label"] ?? "Work";
+        const current = customerPhones.get(cid);
+        if (!current || (PHONE_PRIORITY[label] ?? 99) < (PHONE_PRIORITY[current.label] ?? 99)) {
+          customerPhones.set(cid, { label, value: row["Value"] });
+        }
+      } else if (row["Type"] === "Email" && row["Value"]?.includes("@") && !customerEmails.has(cid)) {
+        customerEmails.set(cid, row["Value"].trim().toLowerCase());
       }
     }
 
@@ -318,6 +323,7 @@ export async function pollDriveCentricSftp(
       const buyerCid   = deal["BuyerCustomerId"];
       const buyerName  = buyerCid ? (customers.get(buyerCid)?.name ?? "Unknown Customer") : "Unknown Customer";
       const buyerPhone = buyerCid ? customerPhones.get(buyerCid)?.value : undefined;
+      const buyerEmail = buyerCid ? customerEmails.get(buyerCid) : undefined;
 
       try {
         // Auto-enroll buyer as a Carlock Rewards member if not already enrolled
@@ -338,6 +344,7 @@ export async function pollDriveCentricSftp(
               patient_id:    `dc-${dealId}`,
               name:          buyerName,
               phone:         phoneLast10,
+              email:         buyerEmail ?? null,
               referral_code: referralCode,
               sms_opt_out:   false,
               reward_value:  practice.reward_value ?? 100,
