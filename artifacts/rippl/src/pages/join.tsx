@@ -41,7 +41,7 @@ const CONTENT: Record<string, VerticalContent> = {
       },
       {
         title: "Friend completes their first visit",
-        body:  "Rippl detects the completed appointment in Open Dental automatically when the R0150 procedure code is posted — no staff input needed.",
+        body:  "Rippl confirms the completed appointment automatically through your Open Dental connection — no staff input needed.",
       },
       {
         title: "Gift card delivered in minutes",

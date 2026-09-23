@@ -18,18 +18,18 @@ const PLANS = [
   {
     name: "Per Referral",
     monthly: null,
-    perReferral: 95,
-    reward: 50,
+    perReferral: 45,
+    reward: 35,
     highlight: false,
     description: "No monthly commitment. Pay only when a verified new patient completes their first appointment.",
   },
   {
     name: "Growth",
-    monthly: 199,
-    perReferral: 55,
-    reward: 50,
+    monthly: 149,
+    perReferral: 25,
+    reward: 35,
     highlight: true,
-    description: "Best for practices generating 4+ referrals per month. Lower per-referral cost as your word-of-mouth scales.",
+    description: "Best for practices generating 5+ referrals per month. Lower per-referral cost as your word-of-mouth scales.",
   },
 ];
 
@@ -285,7 +285,7 @@ export default function Specialists() {
               {
                 Icon: TrendingUp,
                 title: "High-value cases, low referral cost",
-                body: "An implant case runs $3,000–$6,000. An ortho case, $5,000–$8,000. A $50 reward and $95 Rippl fee is a fraction of the margin.",
+                body: "An implant case runs $3,000–$6,000. An ortho case, $5,000–$8,000. A $35 reward and $45 Rippl fee is a fraction of the margin.",
               },
               {
                 Icon: Zap,
@@ -316,7 +316,7 @@ export default function Specialists() {
             Pay only when it works.
           </h2>
           <p className="text-slate-500 text-sm mb-10 max-w-xl">
-            No setup fee. Card billed automatically per verified referral. Monthly statement sent for reconciliation.
+            One-time $499 setup fee, then pay only per verified referral. Founding Member practices that go live before January 1, 2027 get the setup fee waived.
           </p>
 
           <div className="grid sm:grid-cols-2 gap-6 max-w-2xl">
@@ -369,7 +369,7 @@ export default function Specialists() {
           </div>
 
           <p className="text-xs text-slate-400 mt-6">
-            All plans include a 30-day trial. Questions?{" "}
+            Questions?{" "}
             <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer" className="text-[#E0622A] hover:underline font-medium">
               Book a 30-minute call
             </a>

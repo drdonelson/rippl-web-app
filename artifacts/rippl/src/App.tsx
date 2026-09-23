@@ -48,6 +48,7 @@ const SmsOptIn        = lazy(() => import("@/pages/sms-opt-in"));
 const SmsConsentForm  = lazy(() => import("@/pages/sms-consent-form"));
 const SmsQrPrint      = lazy(() => import("@/pages/sms-qr-print"));
 const Practices      = lazy(() => import("@/pages/practices"));
+const Automotive     = lazy(() => import("@/pages/automotive"));
 const PracticeAdmin  = lazy(() => import("@/pages/practice-admin"));
 const PatientJourney = lazy(() => import("@/pages/patient-journey"));
 const ResetPassword  = lazy(() => import("@/pages/reset-password"));
@@ -98,7 +99,8 @@ function Router() {
         <Route path="/sms-opt-in" component={SmsOptIn} />
         <Route path="/sms-consent-form" component={SmsConsentForm} />
         <Route path="/sms-qr-print" component={SmsQrPrint} />
-        <Route path="/practices"      component={Practices}     />
+        <Route path="/practices">{() => { window.location.replace("/pricing"); return null; }}</Route>
+        <Route path="/automotive"     component={Automotive}    />
         <Route path="/reset-password" component={ResetPassword} />
 
         {/* Onboarding — no sidebar, auth-protected inside component */}
@@ -112,7 +114,7 @@ function Router() {
         <Route path="/join" component={JoinDental} />
         <Route path="/dc" component={DcSignup} />
         <Route path="/billing/setup" component={BillingSetup} />
-        <Route path="/join-waitlist" component={Waitlist} />
+        <Route path="/join-waitlist">{() => { window.location.replace("/pricing"); return null; }}</Route>
         <Route path="/icon" component={IconExport} />
         <Route path="/card-print" component={CardPrint} />
         <Route path="/card-back" component={CardBack} />
