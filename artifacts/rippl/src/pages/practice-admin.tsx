@@ -1,12 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Building2, Plus, X, Loader2, AlertTriangle, ChevronRight,
   CheckCircle2, Pencil, Globe, DollarSign, CreditCard, Copy, Check,
-  Zap, Link2,
+  Zap, Link2, Upload, Image,
 } from "lucide-react";
 import { customFetch } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
+import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -37,6 +38,8 @@ interface Practice {
   tier_reward_rippler: number | null;
   tier_reward_super_rippler: number | null;
   tier_reward_legend: number | null;
+  white_label_name: string | null;
+  white_label_logo_url: string | null;
   created_at: string;
   office_count?: number;
 }
@@ -321,6 +324,124 @@ function VagaroPanel({ practiceId }: { practiceId: string }) {
   );
 }
 
+// ── Logo Upload Panel ─────────────────────────────────────────────────────────
+
+function LogoUploadPanel({
+  practiceId,
+  currentLogoUrl,
+  onUpdated,
+}: {
+  practiceId: string;
+  currentLogoUrl: string | null;
+  onUpdated: (url: string | null) => void;
+}) {
+  const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(currentLogoUrl);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const qc = useQueryClient();
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+    setError(null);
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+      const path = `${practiceId}/logo.${ext}`;
+      const { error: uploadErr } = await supabase.storage
+        .from("office-logos")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (uploadErr) throw new Error(uploadErr.message);
+      const { data: { publicUrl } } = supabase.storage.from("office-logos").getPublicUrl(path);
+      await customFetch(`${BASE_URL}/api/practices/${practiceId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ white_label_logo_url: publicUrl }),
+      });
+      URL.revokeObjectURL(objectUrl);
+      setPreviewUrl(publicUrl);
+      onUpdated(publicUrl);
+      qc.invalidateQueries({ queryKey: ["/api/practices"] });
+    } catch (err: any) {
+      setError(err?.data?.error ?? err?.message ?? "Upload failed");
+      URL.revokeObjectURL(objectUrl);
+      setPreviewUrl(currentLogoUrl);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function handleRemove() {
+    setError(null);
+    setUploading(true);
+    try {
+      await customFetch(`${BASE_URL}/api/practices/${practiceId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ white_label_logo_url: null }),
+      });
+      setPreviewUrl(null);
+      onUpdated(null);
+      qc.invalidateQueries({ queryKey: ["/api/practices"] });
+    } catch (err: any) {
+      setError(err?.data?.error ?? err?.message ?? "Remove failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <section className="border-t border-border pt-6 mt-2">
+      <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Brand Logo</h3>
+      <div className="p-4 rounded-xl bg-muted/20 border border-border space-y-3">
+        {previewUrl ? (
+          <div className="flex items-center gap-3">
+            <div className="w-28 h-14 rounded-lg border border-border bg-white flex items-center justify-center overflow-hidden shrink-0">
+              <img src={previewUrl} alt="Logo preview" className="max-h-11 max-w-24 object-contain" />
+            </div>
+            <p className="text-xs text-muted-foreground font-mono break-all line-clamp-3 flex-1 min-w-0">{previewUrl}</p>
+          </div>
+        ) : (
+          <div className="w-28 h-14 rounded-lg border border-dashed border-border bg-muted/30 flex items-center justify-center">
+            <Image className="w-5 h-5 text-muted-foreground/40" />
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground">
+          Shown in campaign emails. PNG or SVG on a transparent background recommended.
+        </p>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-border text-sm font-semibold hover:bg-muted/40 disabled:opacity-60 transition-colors"
+          >
+            {uploading ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Uploading…</>
+            ) : (
+              <><Upload className="w-4 h-4" /> {previewUrl ? "Replace Logo" : "Upload Logo"}</>
+            )}
+          </button>
+          {previewUrl && !uploading && (
+            <button
+              type="button"
+              onClick={handleRemove}
+              className="px-3 py-2 rounded-xl border border-border text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+        {error && <p className="text-xs text-destructive font-medium">{error}</p>}
+      </div>
+    </section>
+  );
+}
+
 interface PracticeFormData {
   name: string;
   slug: string;
@@ -341,6 +462,8 @@ interface PracticeFormData {
   tier_reward_rippler: string;
   tier_reward_super_rippler: string;
   tier_reward_legend: string;
+  white_label_name: string;
+  white_label_logo_url: string;
 }
 
 const EMPTY_FORM: PracticeFormData = {
@@ -363,6 +486,8 @@ const EMPTY_FORM: PracticeFormData = {
   tier_reward_rippler: "",
   tier_reward_super_rippler: "",
   tier_reward_legend: "",
+  white_label_name: "",
+  white_label_logo_url: "",
 };
 
 // ── API helpers ───────────────────────────────────────────────────────────────
@@ -414,6 +539,7 @@ function updatePractice(id: string, data: Partial<PracticeFormData>): Promise<Pr
       tier_reward_rippler:       data.tier_reward_rippler !== undefined ? (data.tier_reward_rippler || null) : undefined,
       tier_reward_super_rippler: data.tier_reward_super_rippler !== undefined ? (data.tier_reward_super_rippler || null) : undefined,
       tier_reward_legend:        data.tier_reward_legend !== undefined ? (data.tier_reward_legend || null) : undefined,
+      white_label_name:          data.white_label_name !== undefined ? (data.white_label_name || null) : undefined,
     }),
   });
 }
@@ -570,8 +696,18 @@ function PracticeForm({
                 { value: "inactive", label: "Inactive" },
               ])}
               {field("Brand Color", "primary_color", { placeholder: "E0622A", hint: "Hex without #. Used for buttons and badges." })}
+              {field("White-label Name", "white_label_name", { placeholder: "Carlock Rewards", hint: "Display name used in emails and the patient portal. Defaults to practice name if blank.", wide: true })}
             </div>
           </section>
+
+          {/* Logo — only in edit mode */}
+          {isEdit && (
+            <LogoUploadPanel
+              practiceId={initial.id!}
+              currentLogoUrl={initial.white_label_logo_url || null}
+              onUpdated={() => {}}
+            />
+          )}
 
           {/* Billing */}
           <section>
@@ -756,6 +892,8 @@ export default function PracticeAdminPage() {
       tier_reward_rippler:       p.tier_reward_rippler != null ? String(p.tier_reward_rippler) : "",
       tier_reward_super_rippler: p.tier_reward_super_rippler != null ? String(p.tier_reward_super_rippler) : "",
       tier_reward_legend:        p.tier_reward_legend != null ? String(p.tier_reward_legend) : "",
+      white_label_name:          p.white_label_name ?? "",
+      white_label_logo_url:      p.white_label_logo_url ?? "",
     };
   }
 
