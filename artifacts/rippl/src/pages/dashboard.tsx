@@ -102,9 +102,12 @@ export default function Dashboard() {
   // Without !authIsLoading, queries fire before profile resolves (isDemo=false
   // on first render) and bypass the hardcoded demo data entirely.
   const queryEnabled = !authIsLoading && !isDemo;
+  const isSuperAdmin = profile?.role === "super_admin";
+  // super_admin admin-tasks must wait for practice selection to avoid returning all-practice tasks
+  const adminTasksEnabled = queryEnabled && (!isSuperAdmin || !!selectedPracticeId);
 
   const { data: fetchedStats, isLoading, error } = useDashboard(selectedOfficeId, selectedPracticeId, queryEnabled);
-  const { data: adminTasks = [] } = useAdminTasks(selectedPracticeId, queryEnabled);
+  const { data: adminTasks = [] } = useAdminTasks(selectedPracticeId, adminTasksEnabled);
   const { data: poolData } = usePoolBalance(queryEnabled && !!profile?.practice_id, selectedOfficeId);
   const completeTask = useCompleteTask();
 

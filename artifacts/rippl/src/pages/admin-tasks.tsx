@@ -235,16 +235,18 @@ export default function AdminTasksPage() {
   const qc = useQueryClient();
   const [completing, setCompleting] = useState<string | null>(null);
   const [backfillResult, setBackfillResult] = useState<BackfillReport | null>(null);
-  const { session, isLoading: authLoading, isDemo, demoVertical } = useAuth();
+  const { session, isLoading: authLoading, isDemo, demoVertical, profile } = useAuth();
   const { selectedOfficeId } = useOffice();
   const { selectedPracticeId } = usePractice();
 
   const demoTasks = demoVertical === "automotive" ? DEMO_ADMIN_TASKS_AUTO : DEMO_ADMIN_TASKS;
 
+  const isSuperAdmin = profile?.role === "super_admin";
+
   const { data: tasks, isLoading, isError } = useQuery<AdminTask[]>({
     queryKey: ["admin-tasks", demoVertical, selectedOfficeId, selectedPracticeId],
     queryFn: isDemo ? () => Promise.resolve(demoTasks as AdminTask[]) : () => fetchTasks(selectedOfficeId, selectedPracticeId),
-    enabled: isDemo || (!authLoading && !!session),
+    enabled: isDemo || (!authLoading && !!session && (!isSuperAdmin || !!selectedPracticeId)),
     staleTime: 0, // always re-fetch when office selection changes
   });
 

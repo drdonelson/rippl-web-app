@@ -172,19 +172,29 @@ async function getFilteredReferrers(filter: AudienceFilter, practiceId: string |
 
 // ── Template rendering ────────────────────────────────────────────────────────
 
-function renderTemplate(template: string, referrer: ReferrerRow, practiceName?: string): string {
+function renderTemplate(
+  template: string,
+  referrer: ReferrerRow,
+  practiceName?: string,
+  practiceLogoUrl?: string,
+): string {
   const firstName   = (referrer.name?.split(" ")[0] ?? "there").replace(/['"]/g, "");
   const tierName    = TIER_NAMES[referrer.tier ?? "starter"] ?? "Influencer";
   const referralLink = `${APP_URL}/refer?code=${referrer.referral_code}`;
   const rewardValue = `$${referrer.reward_value ?? 35}`;
   const officeName  = referrer.office_name ?? practiceName ?? "your practice";
 
+  const logoBlock = practiceLogoUrl
+    ? `<img src="${practiceLogoUrl}" style="height:44px;max-width:180px;object-fit:contain;display:block;margin:0 auto 16px" alt="${officeName}" />`
+    : "";
+
   return template
-    .replace(/\{\{first_name\}\}/g,    firstName)
-    .replace(/\{\{referral_link\}\}/g, referralLink)
-    .replace(/\{\{tier_name\}\}/g,     tierName)
-    .replace(/\{\{reward_value\}\}/g,  rewardValue)
-    .replace(/\{\{office_name\}\}/g,   officeName);
+    .replace(/\{\{first_name\}\}/g,           firstName)
+    .replace(/\{\{referral_link\}\}/g,        referralLink)
+    .replace(/\{\{tier_name\}\}/g,            tierName)
+    .replace(/\{\{reward_value\}\}/g,         rewardValue)
+    .replace(/\{\{office_name\}\}/g,          officeName)
+    .replace(/\{\{practice_logo_block\}\}/g,  logoBlock);
 }
 
 function sleep(ms: number) {
@@ -223,13 +233,14 @@ router.post("/count", async (req, res) => {
     res.status(403).json({ error: "Access denied" });
     return;
   }
-  const { filter } = req.body as { filter: string };
+  const { filter, practice_id: bodyPracticeId } = req.body as { filter: string; practice_id?: string };
   if (!VALID_FILTERS.includes(filter as AudienceFilter)) {
     res.status(400).json({ error: "Invalid filter" });
     return;
   }
   try {
-    const referrers = await getFilteredReferrers(filter as AudienceFilter, req.authUser!.practice_id ?? null);
+    const effectivePracticeId = req.authUser!.practice_id ?? bodyPracticeId ?? null;
+    const referrers = await getFilteredReferrers(filter as AudienceFilter, effectivePracticeId);
     const first     = referrers[0] ?? null;
     res.json({
       count: referrers.length,
@@ -257,12 +268,13 @@ router.post("/send", async (req, res) => {
     return;
   }
 
-  const { name, channel, filter, message_template, email_subject } = req.body as {
+  const { name, channel, filter, message_template, email_subject, practice_id: bodyPracticeId } = req.body as {
     name: string;
     channel: string;
     filter: string;
     message_template: string;
     email_subject?: string;
+    practice_id?: string;
   };
 
   if (!name?.trim() || !channel || !filter || !message_template?.trim()) {
@@ -305,7 +317,7 @@ router.post("/send", async (req, res) => {
     .returning();
 
   // Capture before res.json so we don't reference req in the background closure
-  const senderPracticeId = req.authUser!.practice_id ?? null;
+  const senderPracticeId = req.authUser!.practice_id ?? bodyPracticeId ?? null;
 
   // Respond immediately — processing continues in background
   res.json({
@@ -323,6 +335,7 @@ router.post("/send", async (req, res) => {
       const practiceConfig = senderPracticeId ? await getPracticeConfig(senderPracticeId) : null;
       const practiceName = practiceConfig?.white_label_name ?? practiceConfig?.name ?? undefined;
       const practiceFromName = practiceName ? `${practiceName} by Rippl` : "Rippl";
+      const practiceLogoUrl = practiceConfig?.white_label_logo_url ?? practiceConfig?.logo_url ?? undefined;
 
       // Set up clients
       const twilioClient = channel === "sms"
@@ -337,7 +350,7 @@ router.post("/send", async (req, res) => {
         if (i > 0 && i % 10 === 0) await sleep(1000);
 
         const referrer = referrers[i];
-        const message  = renderTemplate(message_template.trim(), referrer, practiceName);
+        const message  = renderTemplate(message_template.trim(), referrer, practiceName, practiceLogoUrl);
 
         try {
           if (channel === "sms") {
@@ -433,17 +446,18 @@ router.post("/test-send", async (req, res) => {
   }
 
   try {
-    // Get the first matching referrer for real template data
-    const referrers = await getFilteredReferrers(filter as AudienceFilter, req.authUser!.practice_id ?? null);
+    const effectivePracticeId = req.authUser!.practice_id ?? bodyPracticeId ?? null;
+
+    // Get the first matching referrer for real template data — scoped to the effective practice
+    const referrers = await getFilteredReferrers(filter as AudienceFilter, effectivePracticeId);
     const patient   = referrers[0] ?? null;
 
-    // If no real patient, synthesise a placeholder referrer
-    const effectivePracticeId = req.authUser!.practice_id ?? bodyPracticeId ?? null;
     const previewPractice = effectivePracticeId
       ? await getPracticeConfig(effectivePracticeId).catch(() => null)
       : null;
     const previewPracticeName = previewPractice?.white_label_name ?? previewPractice?.name ?? undefined;
     const previewFromName = previewPracticeName ? `${previewPracticeName} by Rippl` : "Rippl";
+    const previewLogoUrl = previewPractice?.white_label_logo_url ?? previewPractice?.logo_url ?? undefined;
 
     const referrerData: ReferrerRow = patient ?? {
       id:                  "test",
@@ -458,7 +472,7 @@ router.post("/test-send", async (req, res) => {
       office_name:         null,
     };
 
-    const renderedMessage = renderTemplate(message_template.trim(), referrerData, previewPracticeName);
+    const renderedMessage = renderTemplate(message_template.trim(), referrerData, previewPracticeName, previewLogoUrl);
     const { text: emailText, html: emailBodyHtml } = buildEmailPayload(renderedMessage);
 
     const testBannerHtml = `<div style="background:#0d9488;color:#fff;padding:8px 16px;border-radius:6px 6px 0 0;font-size:12px;font-weight:600;letter-spacing:.05em;font-family:system-ui,sans-serif;max-width:600px;margin:0 auto">

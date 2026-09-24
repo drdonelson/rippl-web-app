@@ -25,8 +25,11 @@ router.get("/", async (req, res) => {
       : ((req.query["practice_id"] as string | undefined)?.trim() || null);
     const queryOfficeId  = (req.query["office_id"] as string | undefined)?.trim() || null;
 
-    // Effective office filter: role-assigned office takes precedence; super_admin uses query param if set
-    const effectiveOfficeId = roleOfficeId ?? (queryOfficeId && queryOfficeId !== "all" ? queryOfficeId : null);
+    // super_admin is scoped only by practice_id — never filter by office_id to prevent
+    // stale office context from a different practice bleeding cross-practice tasks in.
+    const effectiveOfficeId = user.role === "super_admin"
+      ? null
+      : (roleOfficeId ?? (queryOfficeId && queryOfficeId !== "all" ? queryOfficeId : null));
 
     const { rows } = await db.execute(
       effectiveOfficeId

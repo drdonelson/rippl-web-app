@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { customFetch } from "@workspace/api-client-react";
 import { Modal } from "@/components/ui/modal";
 import { useAuth } from "@/contexts/auth-context";
+import { usePractice } from "@/contexts/practice-context";
 import { useVertical } from "@/lib/useVertical";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
@@ -109,7 +110,7 @@ function renderPreview(
   isAuto: boolean
 ): string {
   if (!patient) return template;
-  const firstName    = patient.name?.split(" ")[0] ?? "Sarah";
+  const firstName    = (patient.name?.split(" ")[0] ?? "Sarah").replace(/['"]/g, "");
   const tierName     = TIER_NAMES[patient.tier ?? "starter"] ?? "Influencer";
   const referralLink = `${APP_URL}/refer?code=${patient.referral_code}`;
   const rewardValue  = `$${patient.reward_value ?? (isAuto ? 100 : 35)}`;
@@ -163,6 +164,7 @@ const TPL_WELCOME = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//
     <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;line-height:1.3">Welcome, {{first_name}}! 🎉</h1>
   </div>
   <div style="padding:32px">
+    {{practice_logo_block}}
     <p style="margin:0 0 18px;color:#374151;font-size:15px;line-height:1.7">Hi {{first_name}},</p>
     <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.7">Thank you for being a patient at <strong>{{office_name}}</strong>. You're now enrolled in the <strong>Rippl Rewards</strong> program — share our practice with friends and earn gift cards automatically.</p>
 
@@ -240,6 +242,7 @@ const TPL_TIER_STATUS = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transition
     <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;line-height:1.3">{{first_name}}, you're a <span style="color:#0d9488">{{tier_name}}</span></h1>
   </div>
   <div style="padding:32px">
+    {{practice_logo_block}}
     <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7">Hi {{first_name}},</p>
     <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.7">Here's a quick look at your current Rippl Rewards status at <strong>{{office_name}}</strong>.</p>
 
@@ -295,6 +298,7 @@ const TPL_SIMPLE_LINK = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transition
     <p style="margin:0;color:#0d9488;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase">Rippl Rewards · {{office_name}}</p>
   </div>
   <div style="padding:36px 32px">
+    {{practice_logo_block}}
     <p style="margin:0 0 16px;color:#111827;font-size:16px;line-height:1.7">Hi {{first_name}},</p>
     <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.7">Know someone who could use a great dentist? Share your referral link — when they complete their first visit, you earn <strong style="color:#0d9488">{{reward_value}}</strong> as a digital gift card.</p>
     <p style="margin:0 0 28px;color:#374151;font-size:15px;line-height:1.7">No limits, no forms — just share and earn.</p>
@@ -323,6 +327,7 @@ const TPL_WELCOME_AUTO = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitio
     <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:800;line-height:1.3">Know someone buying a car?<br>Earn $100 when they do.</h1>
   </div>
   <div style="background:#ffffff;padding:32px">
+    {{practice_logo_block}}
     <p style="margin:0 0 18px;color:#374151;font-size:15px;line-height:1.7">Hi {{first_name}},</p>
     <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.7">Thanks for being a valued customer at <strong>{{office_name}}</strong>. We'd love it if you referred friends or family who are in the market for a vehicle — you'll earn a <strong style="color:#E0622A">$100 gift card</strong> automatically when they complete their purchase.</p>
 
@@ -383,6 +388,7 @@ const TPL_SIMPLE_LINK_AUTO = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Trans
     <p style="margin:0;color:#E0622A;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase">Rippl Referral Rewards · {{office_name}}</p>
   </div>
   <div style="background:#ffffff;padding:36px 32px">
+    {{practice_logo_block}}
     <p style="margin:0 0 16px;color:#111827;font-size:16px;line-height:1.7">Hi {{first_name}},</p>
     <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.7">Know someone who's in the market for a vehicle? Send them your referral link — when they complete their purchase at {{office_name}}, you earn <strong style="color:#E0622A">$100</strong> as a digital gift card. No paperwork, no waiting.</p>
     <p style="margin:0 0 28px;color:#374151;font-size:15px;line-height:1.7">Refer as many people as you'd like — there's no limit.</p>
@@ -522,6 +528,8 @@ const DEMO_CAMPAIGNS_AUTO: DemoCampaign[] = [
 
 function CampaignBuilder({ channel, isDemo, isAuto }: { channel: Channel; isDemo?: boolean; isAuto: boolean }) {
   const qc = useQueryClient();
+  const { profile } = useAuth();
+  const { selectedPracticeId } = usePractice();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const filterOptions  = isAuto ? FILTER_OPTIONS_AUTO  : FILTER_OPTIONS;
@@ -573,7 +581,7 @@ function CampaignBuilder({ channel, isDemo, isAuto }: { channel: Channel; isDemo
             message_template: template,
             test_email: addr,
             email_subject: emailSubject.trim() || undefined,
-            practice_id: profile?.practice_id ?? undefined,
+            practice_id: selectedPracticeId ?? profile?.practice_id ?? undefined,
           }),
         }
       );
@@ -598,7 +606,7 @@ function CampaignBuilder({ channel, isDemo, isAuto }: { channel: Channel; isDemo
     try {
       const result = await customFetch<CountResult>(`${BASE}/api/campaigns/count`, {
         method: "POST",
-        body: JSON.stringify({ filter: f }),
+        body: JSON.stringify({ filter: f, practice_id: selectedPracticeId ?? undefined }),
         headers: { "Content-Type": "application/json" },
       });
       setCountResult(result);
@@ -625,6 +633,7 @@ function CampaignBuilder({ channel, isDemo, isAuto }: { channel: Channel; isDemo
         filter,
         message_template: template,
         email_subject:    channel === "email" ? (emailSubject.trim() || undefined) : undefined,
+        practice_id:      selectedPracticeId ?? profile?.practice_id ?? undefined,
       }),
       headers: { "Content-Type": "application/json" },
     }),
