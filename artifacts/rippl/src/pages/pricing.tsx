@@ -667,8 +667,8 @@ export default function Pricing() {
           >
             What your invoice looks like.
           </h2>
-          <div className="max-w-lg">
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-5">
+          <div className="grid sm:grid-cols-2 gap-6">
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200">
                 <p className="text-slate-900 font-bold text-sm">Monthly statement</p>
                 <p className="text-slate-400 text-xs">22 referrals, mixed tiers</p>
@@ -700,11 +700,16 @@ export default function Pricing() {
               </p>
             </div>
 
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
-              <p className="text-sm font-bold text-slate-900 mb-2">How billing works</p>
-              <p className="text-slate-500 text-sm leading-relaxed mb-3">
-                Rippl uses threshold-based billing — similar to how Google Ads charges. Your account accumulates a running balance as referrals complete. When that balance hits <strong className="text-slate-700">$500</strong>, your card on file is automatically charged. If you don't reach the threshold, you receive a single invoice at month end. Most practices see one charge per month.
-              </p>
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex flex-col justify-between">
+              <div>
+                <p className="text-sm font-bold text-slate-900 mb-2">How billing works</p>
+                <p className="text-slate-500 text-sm leading-relaxed mb-3">
+                  Rippl uses threshold-based billing — similar to how Google Ads charges. Your account accumulates a running balance as referrals complete. When that balance hits <strong className="text-slate-700">$100</strong>, your card on file is automatically charged for the gift card pass-through cost. High-volume practices may see several charges in a single month — each one is exactly a $100 gift card batch.
+                </p>
+                <p className="text-slate-500 text-sm leading-relaxed mb-4">
+                  Platform fees (your per-referral rate) are invoiced separately at month end.
+                </p>
+              </div>
               <p className="text-xs text-slate-400 leading-relaxed">
                 We'll walk through the full billing setup on your demo call — including how to view your live balance, update your payment method, and set spend notifications.
               </p>
