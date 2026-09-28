@@ -256,6 +256,7 @@ function HelpPageDental() {
             src={VIDEO_1}
             controls
             playsInline
+            preload="metadata"
             className="w-full"
             style={{ display: "block" }}
           />
@@ -271,6 +272,7 @@ function HelpPageDental() {
             src={VIDEO_2}
             controls
             playsInline
+            preload="metadata"
             className="w-full"
             style={{ display: "block" }}
           />
