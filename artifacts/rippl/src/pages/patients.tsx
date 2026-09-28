@@ -434,7 +434,7 @@ export default function Patients() {
   // ── Form ───────────────────────────────────────────────────────────────────
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({ resolver: zodResolver(formSchema) });
   const openAddModal = () => {
-    const defaultOfficeId = isStaff && profile?.practice_id ? profile.practice_id : importTargetOffice?.id ?? "";
+    const defaultOfficeId = (isStaff && profile?.office_id) ? profile.office_id : importTargetOffice?.id ?? "";
     reset({ name: "", patient_id: "", phone: "", email: "", office_id: defaultOfficeId });
     setIsAddModalOpen(true);
   };
@@ -1369,18 +1369,25 @@ export default function Patients() {
           </div>
           {offices.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-                Location {isStaff && <Lock className="w-3 h-3 text-muted-foreground" />}
-              </label>
-              <select {...register("office_id")} disabled={isStaff}
-                className={cn("w-full px-4 py-2.5 bg-background border border-border rounded-xl transition-all text-foreground",
-                  isStaff ? "opacity-60 cursor-not-allowed" : "focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary")}>
-                {offices.map(office => {
-                  const d = office.name.lastIndexOf("–");
-                  return <option key={office.id} value={office.id}>{d !== -1 ? office.name.slice(d + 2).trim() : office.name}</option>;
-                })}
-              </select>
-              {isStaff && <p className="text-muted-foreground text-xs mt-1">Locked to your assigned location.</p>}
+              {(() => {
+                const lockedToOffice = isStaff && !!profile?.office_id;
+                return (
+                  <>
+                    <label className="block text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                      Location {lockedToOffice && <Lock className="w-3 h-3 text-muted-foreground" />}
+                    </label>
+                    <select {...register("office_id")} disabled={lockedToOffice}
+                      className={cn("w-full px-4 py-2.5 bg-background border border-border rounded-xl transition-all text-foreground",
+                        lockedToOffice ? "opacity-60 cursor-not-allowed" : "focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary")}>
+                      {offices.map(office => {
+                        const d = office.name.lastIndexOf("–");
+                        return <option key={office.id} value={office.id}>{d !== -1 ? office.name.slice(d + 2).trim() : office.name}</option>;
+                      })}
+                    </select>
+                    {lockedToOffice && <p className="text-muted-foreground text-xs mt-1">Locked to your assigned location.</p>}
+                  </>
+                );
+              })()}
               {errors.office_id && <p className="text-destructive text-xs mt-1">{errors.office_id.message}</p>}
             </div>
           )}

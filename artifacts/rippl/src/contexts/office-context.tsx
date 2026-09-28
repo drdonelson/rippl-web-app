@@ -78,6 +78,7 @@ export function OfficeProvider({ children }: { children: React.ReactNode }) {
     }
     if (profile.role.startsWith("staff_")) {
       const locationCode = profile.role.replace("staff_", "");
+      if (locationCode === "all") return allOffices;
       return allOffices.filter(o => o.location_code === locationCode);
     }
     // practice_admin — /managed already scopes to their practice

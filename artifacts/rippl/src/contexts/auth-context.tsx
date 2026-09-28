@@ -19,6 +19,7 @@ export interface UserProfile {
   id: string;
   role: UserRole;
   practice_id: string | null;
+  office_id: string | null;
   full_name: string | null;
   vertical: string | null;
 }
