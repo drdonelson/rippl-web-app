@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { referrersTable, officesTable } from "@workspace/db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import { previewOnboardingSweep } from "../services/openDentalPoller";
 
 const router: IRouter = Router();
 
@@ -416,5 +417,40 @@ router.post("/patients/import", async (req, res) => {
   });
 });
 
+
+// ── Onboarding sweep preview (read-only) ─────────────────────────────────────
+// GET /api/opendental/onboarding-preview?dateStart=2026-09-20&dateEnd=2026-09-30[&detail=1]
+//
+// Answers "who did we miss?" after a poller outage. The live sweep only looks back 24 hours,
+// so anyone whose completed visit fell outside that window while polling was down is never
+// enrolled and never receives a referral link. This endpoint writes nothing and sends nothing.
+//
+// Without `detail` it is cheap (one appointments call per office plus one DB cross-reference).
+// With `detail=1` it also fetches each unmatched patient record to classify eligibility the
+// same way the sweep does, which costs one Open Dental call per patient.
+router.get("/onboarding-preview", async (req, res) => {
+  if (req.authUser!.role !== "super_admin") {
+    res.status(403).json({ error: "super_admin only" });
+    return;
+  }
+
+  const dateStart = typeof req.query.dateStart === "string" ? req.query.dateStart : "";
+  const dateEnd   = typeof req.query.dateEnd   === "string" ? req.query.dateEnd   : "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStart) || !/^\d{4}-\d{2}-\d{2}$/.test(dateEnd)) {
+    res.status(400).json({ error: "dateStart and dateEnd are required as YYYY-MM-DD" });
+    return;
+  }
+
+  const detail = req.query.detail === "1" || req.query.detail === "true";
+  const detailLimit = Math.min(Number(req.query.detailLimit) || 150, 500);
+
+  try {
+    const result = await previewOnboardingSweep({ dateStart, dateEnd, detail, detailLimit });
+    res.json(result);
+  } catch (err) {
+    logger.error({ err }, "[onboarding-preview] failed");
+    res.status(500).json({ error: err instanceof Error ? err.message : "preview failed" });
+  }
+});
 
 export default router;

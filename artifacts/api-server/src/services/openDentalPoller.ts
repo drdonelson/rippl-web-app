@@ -1,6 +1,5 @@
 import { db } from "@workspace/db";
 import { referralEventsTable, referrersTable, officesTable, rewardClaimsTable, practicesTable, adminTasksTable } from "@workspace/db/schema";
-import type { Practice } from "@workspace/db/schema";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { sendRewardNotification } from "./notifications";
@@ -10,6 +9,7 @@ import { checkHouseholdDuplicate } from "./householdDuplicate";
 import { chargeReferralCompletion } from "./billingService";
 import { checkAndAlertTangoBalance } from "./tango";
 import { getPracticeConfig } from "../lib/practiceConfig";
+import { sendEmail } from "../lib/email";
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const OPEN_DENTAL_URL = process.env.OPEN_DENTAL_URL;
@@ -881,8 +881,20 @@ export async function syncOpenDental(options?: {
 
 // ── Vertical-specific pollers ─────────────────────────────────────────────────
 
+/**
+ * The only practice fields the vertical routing actually needs. Selecting these explicitly
+ * instead of the whole row keeps the poller working when the Drizzle schema declares a column
+ * the database does not yet have — a bare select() emits every declared column, so one missing
+ * column takes down all polling (see the Sept 2026 agreement_accepted_at outage).
+ */
+type PracticeRouting = {
+  id: string;
+  name: string;
+  vertical: string | null;
+};
+
 /** Poll Open Dental offices for a single dental practice. */
-async function syncDentalPractice(practice: Practice, options?: { force?: boolean }, results: SyncResult[] = []): Promise<void> {
+async function syncDentalPractice(practice: PracticeRouting, options?: { force?: boolean }, results: SyncResult[] = []): Promise<void> {
   const offices = await db
     .select()
     .from(officesTable)
@@ -909,7 +921,7 @@ async function syncDentalPractice(practice: Practice, options?: { force?: boolea
 }
 
 /** Stub — DriveCentric integration pending API access grant. */
-async function pollDriveCentric(practice: Practice): Promise<void> {
+async function pollDriveCentric(practice: PracticeRouting): Promise<void> {
   logger.info(
     { practiceId: practice.id, practiceName: practice.name },
     "[DriveCentric] Poll stub — implementation pending API access",
@@ -921,8 +933,14 @@ async function pollDriveCentric(practice: Practice): Promise<void> {
  * Falls back to single-key dental mode if no practices are configured.
  */
 export async function syncAllOffices(options?: { force?: boolean }): Promise<SyncResult[]> {
+  // Explicit column list on purpose — see PracticeRouting above. Do not change this back to
+  // a bare .select(); it couples every poll to the whole practices schema being in sync.
   const practices = await db
-    .select()
+    .select({
+      id:       practicesTable.id,
+      name:     practicesTable.name,
+      vertical: practicesTable.vertical,
+    })
     .from(practicesTable)
     .where(eq(practicesTable.status, "active"));
 
@@ -954,6 +972,206 @@ export async function syncAllOffices(options?: { force?: boolean }): Promise<Syn
   return results;
 }
 
+// ── Read-only onboarding sweep preview ────────────────────────────────────────────────────
+
+export interface OnboardingPreviewOffice {
+  office_id: string;
+  office_name: string;
+  appointments: number;
+  unique_patients: number;
+  already_in_referrers: number;
+  not_in_referrers: number;
+  ineligible_no_phone?: number;
+  ineligible_medicaid?: number;
+  eligible?: number;
+  detail_truncated?: boolean;
+  error?: string;
+}
+
+export interface OnboardingPreviewResult {
+  window: { dateStart: string; dateEnd: string };
+  offices: OnboardingPreviewOffice[];
+  totals: { unique_patients: number; already_in_referrers: number; not_in_referrers: number; eligible?: number };
+  candidates: Array<{ office_id: string; pat_num: number; name?: string; phone?: string }>;
+}
+
+/**
+ * Dry run of the onboarding sweep over an arbitrary date window. Writes nothing, sends nothing.
+ *
+ * This exists because runOnboardingSweep only looks back 24 hours, so any patient whose visit
+ * fell outside that window while the poller was down is silently never enrolled and never gets
+ * a referral link. After an outage this is the only way to see who was missed.
+ *
+ * Cheap by default: one appointments call per office, then a single patient_id cross-reference
+ * against the referrers table. Pass `detail` to additionally fetch patient records for the
+ * unmatched PatNums and classify eligibility (phone present, non-Medicaid) the same way the
+ * live sweep does — that costs one OD call per patient, so it is capped by `detailLimit`.
+ */
+export async function previewOnboardingSweep(opts: {
+  dateStart: string;
+  dateEnd: string;
+  detail?: boolean;
+  detailLimit?: number;
+}): Promise<OnboardingPreviewResult> {
+  const { dateStart, dateEnd, detail = false, detailLimit = 150 } = opts;
+
+  const offices = await db
+    .select({
+      id:           officesTable.id,
+      name:         officesTable.name,
+      customer_key: officesTable.customer_key,
+      od_url:       officesTable.od_url,
+    })
+    .from(officesTable)
+    .where(eq(officesTable.active, true));
+
+  const result: OnboardingPreviewResult = {
+    window: { dateStart, dateEnd },
+    offices: [],
+    totals: { unique_patients: 0, already_in_referrers: 0, not_in_referrers: 0 },
+    candidates: [],
+  };
+
+  let detailBudget = detailLimit;
+
+  for (const office of offices) {
+    const odUrl = office.od_url ?? OPEN_DENTAL_URL ?? null;
+    // Offices with no customer key are non-dental (webhook/SFTP verticals) — nothing to sweep.
+    if (!odUrl || !office.customer_key) continue;
+
+    const row: OnboardingPreviewOffice = {
+      office_id: office.id,
+      office_name: office.name,
+      appointments: 0,
+      unique_patients: 0,
+      already_in_referrers: 0,
+      not_in_referrers: 0,
+    };
+
+    try {
+      const headers = buildHeaders(office.customer_key);
+      const appointments = await fetchCompletedAppointments(headers, dateStart, dateEnd, odUrl);
+      row.appointments = appointments.length;
+
+      const patNums = [...new Set(appointments.map(a => a.PatNum).filter((n): n is number => !!n))];
+      row.unique_patients = patNums.length;
+
+      // One query instead of N: which of these PatNums do we already know about?
+      const known = patNums.length
+        ? await db
+            .select({ patient_id: referrersTable.patient_id })
+            .from(referrersTable)
+            .where(inArray(referrersTable.patient_id, patNums.map(String)))
+        : [];
+      const knownSet = new Set(known.map(k => k.patient_id));
+
+      const unmatched = patNums.filter(n => !knownSet.has(String(n)));
+      row.already_in_referrers = patNums.length - unmatched.length;
+      row.not_in_referrers = unmatched.length;
+
+      if (detail) {
+        row.ineligible_no_phone = 0;
+        row.ineligible_medicaid = 0;
+        row.eligible = 0;
+        for (const patNum of unmatched) {
+          if (detailBudget <= 0) { row.detail_truncated = true; break; }
+          detailBudget--;
+          const patient = await fetchOdPatient(patNum, headers, odUrl).catch(() => null);
+          if (!patient) continue;
+          const phone = (patient.WirelessPhone || patient.HmPhone || "").trim();
+          if (!phone) { row.ineligible_no_phone!++; continue; }
+          if (patient.MedicaidID && patient.MedicaidID.trim() !== "") { row.ineligible_medicaid!++; continue; }
+          row.eligible!++;
+          result.candidates.push({
+            office_id: office.id,
+            pat_num: patNum,
+            name: `${patient.FName ?? ""} ${patient.LName ?? ""}`.trim(),
+            phone,
+          });
+        }
+      } else {
+        for (const patNum of unmatched) result.candidates.push({ office_id: office.id, pat_num: patNum });
+      }
+    } catch (err) {
+      row.error = err instanceof Error ? err.message : String(err);
+    }
+
+    result.totals.unique_patients     += row.unique_patients;
+    result.totals.already_in_referrers += row.already_in_referrers;
+    result.totals.not_in_referrers     += row.not_in_referrers;
+    if (detail) result.totals.eligible = (result.totals.eligible ?? 0) + (row.eligible ?? 0);
+    result.offices.push(row);
+  }
+
+  return result;
+}
+
+// ── Poller staleness watchdog ─────────────────────────────────────────────────────────────
+const STALE_POLL_THRESHOLD_MS = 30 * 60 * 1000; // 6 missed poll cycles
+let lastStaleAlertSent = 0;
+
+/**
+ * Alerts when an active office has stopped polling successfully.
+ *
+ * Deliberately independent of syncAllOffices() — it reads last_poll_at straight from the DB
+ * rather than observing the sync — so it still fires when the poll itself is what's broken.
+ * That is exactly the gap that let the Sept 2026 outage run silently for 12 days: the process
+ * was healthy, /healthz was green, and the only symptom was last_poll_at standing still.
+ *
+ * Only dental offices write last_poll_at; automotive and salon practices are SFTP- and
+ * webhook-driven and legitimately leave it null, so nulls are skipped rather than alerted on.
+ * The tradeoff is that an office which has never polled once will not trigger this.
+ */
+export async function checkPollerStaleness(): Promise<void> {
+  const offices = await db
+    .select({
+      id:           officesTable.id,
+      name:         officesTable.name,
+      last_poll_at: officesTable.last_poll_at,
+    })
+    .from(officesTable)
+    .where(eq(officesTable.active, true));
+
+  const now = Date.now();
+  const stale = offices
+    .filter((o): o is typeof o & { last_poll_at: Date } => o.last_poll_at != null)
+    .map(o => ({ ...o, staleMs: now - new Date(o.last_poll_at).getTime() }))
+    .filter(o => o.staleMs > STALE_POLL_THRESHOLD_MS);
+
+  if (stale.length === 0) return;
+
+  // Log every cycle so the condition is greppable in Render even while email is rate-limited.
+  logger.error(
+    { staleOffices: stale.map(o => ({ id: o.id, staleMinutes: Math.round(o.staleMs / 60_000) })) },
+    "Poller staleness detected — offices have not polled successfully",
+  );
+
+  if (now - lastStaleAlertSent < 86_400_000) return; // email at most once per day
+  lastStaleAlertSent = now;
+
+  const alertEmail = process.env.ALERT_EMAIL || "david@hallmarkdds.com";
+  const rows = stale
+    .map(o => `<li><strong>${o.name}</strong> — last successful poll ${Math.round(o.staleMs / 60_000)} minutes ago</li>`)
+    .join("");
+
+  try {
+    await sendEmail({
+      to:      alertEmail,
+      from:    { email: process.env.SENDGRID_FROM_EMAIL ?? "hello@joinrippl.com", name: "Rippl" },
+      subject: `🚨 Rippl poller stalled — ${stale.length} office${stale.length === 1 ? "" : "s"} not syncing`,
+      html:
+        `<p>The Open Dental poller has not completed a successful sync for:</p><ul>${rows}</ul>` +
+        `<p>No referrals are being detected and no rewards are being issued for these offices.</p>` +
+        `<p>Check the Render logs for <code>Open Dental poll error</code> (the poll is failing as a whole) ` +
+        `or <code>Error syncing dental office</code> (a single office is failing). A schema/database ` +
+        `mismatch or an unreachable eConnector are the usual causes.</p>`,
+    });
+    logger.warn({ alertSentTo: alertEmail, staleCount: stale.length }, "Poller staleness alert sent");
+  } catch (err) {
+    logger.error({ err }, "Failed to send poller staleness alert email");
+  }
+}
+
 let pollerTimer: ReturnType<typeof setInterval> | null = null;
 
 export function startOpenDentalPoller(): void {
@@ -972,6 +1190,10 @@ export function startOpenDentalPoller(): void {
       logger.error({ err }, "Open Dental poll error");
     });
     checkAndAlertTangoBalance().catch(() => {}); // non-blocking, rate-limited to once/day
+    // Runs independently of the sync above so it still reports when the sync is what's failing.
+    checkPollerStaleness().catch((err) => {
+      logger.error({ err }, "Poller staleness check failed");
+    });
   }, POLL_INTERVAL_MS);
 
   pollerTimer.unref();
