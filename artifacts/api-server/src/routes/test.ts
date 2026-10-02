@@ -19,7 +19,7 @@ import { logger } from "../lib/logger";
 const router: IRouter = Router();
 
 // POST /api/test/notification — sends a test reward SMS and email
-router.post("/notification", async (req, res) => {
+router.post("/notification", requireAuth, requireSuperAdmin, async (req, res) => {
   const testPhone = req.body.phone || "+15550000000";
   const testEmail = req.body.email || null;
 
@@ -49,7 +49,7 @@ router.post("/notification", async (req, res) => {
 });
 
 // POST /api/test/onboarding-sms — immediately sends the post-visit onboarding SMS (no 2h delay)
-router.post("/onboarding-sms", async (req, res) => {
+router.post("/onboarding-sms", requireAuth, requireSuperAdmin, async (req, res) => {
   const name  = (req.body.name  as string | undefined)?.trim() || "Test Patient";
   const phone = (req.body.phone as string | undefined)?.trim() || "+15550000000";
   const code  = (req.body.referral_code as string | undefined)?.trim() || "TEST-0001";
