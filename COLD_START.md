@@ -1,6 +1,6 @@
 # Rippl — Cold Start Document
 
-**Version:** 1.9.0  
+**Version:** 1.9.2  
 **Classification:** Agent Orientation & Operating Doctrine  
 **Scope:** All agents and sessions operating on the Rippl codebase  
 **Authority:** Dr. David Donelson, Principal — Hallmark Dental / david@hallmarkdds.com
@@ -199,7 +199,7 @@ Rippl is a **multi-vertical patient/customer referral rewards platform**. It:
 | Frontend | React/Vite (`@workspace/rippl`) |
 | Backend | Node.js/Express (`@workspace/api-server`) |
 | Database | Supabase PostgreSQL (RLS on ALL tables) |
-| SMS | Twilio +16158824095 |
+| SMS | Twilio toll-free — Hallmark `+18555027538` (see Part V; `+16158824095` is dead) |
 | Email | Brevo (hello@joinrippl.com) — `lib/email.ts` `sendEmail()` helper, `BREVO_API_KEY` |
 | Gift cards | Tango Card (Account A78876593) |
 | Dental EMR | Open Dental API via eConnector |
@@ -297,6 +297,53 @@ rippl-web-app/
 ## Part IV — Complete Build History
 
 Understanding what was built, why, and when is essential to not regressing past decisions or re-solving solved problems.
+
+### v1.9.2 (October 2026) — Poller Outage Repair, Drift Hardening, Security Fix
+
+**The 12-day silent outage.** From 2026-09-20 00:55 UTC to 2026-10-01 16:36 UTC the Open Dental
+poller detected nothing. No referrals, no rewards, no SMS. The API stayed healthy and `/healthz`
+stayed green the entire time, so nothing surfaced it.
+
+Cause: commit 44ba4f2 (2026-09-19) added `agreement_accepted_at` to the `practices` Drizzle
+schema, its commit message asserting the column "existed in DB, was missing from types." It did
+not — that column is on `offices`. `syncAllOffices()` opened with a bare `db.select()`, which
+makes Drizzle emit every declared column, so Postgres threw `42703` on the first query of every
+5-minute cycle. The throw was swallowed by the `setInterval`'s `.catch()`, which logged
+`"Open Dental poll error"` and kept ticking. Because `last_poll_at` is only written on success,
+the DB symptom was three offices frozen at the same instant — indistinguishable from an offline
+eConnector.
+
+Fixed by migration, not code: `003_schema_drift_repair` / `20261001000000_schema_drift_repair`.
+The poller recovered on its own within 5 minutes, no redeploy needed, and the catch-up produced
+23 referrers, 4 referral events with reward claims, and 50 onboarding SMS.
+
+**Migrations (staged locally against a hand-built prod replica first):**
+- `003_schema_drift_repair` — adds `practices.agreement_accepted_at`; adds
+  `campaigns.audience_filter` + `failed_count` and relaxes the superseded `campaigns.filter_type`
+  NOT NULL; creates the `referral_leads` table, declared in the schema since 2026-04-02 but never
+  created, which meant `POST /api/referral/leads` had **always** failed and the `/refer` lead form
+  had always shown "Something went wrong." The campaigns work is guarded by an
+  `information_schema` check because local staging and prod have diverged on `filter_type`.
+- `004_referrers_advisor` — backfills the missing migration file for `referrers.advisor`, applied
+  straight to prod by 0ead80e with no migration. No-op on prod; brings local staging into line.
+
+**Hardening (`cb8efa7`):**
+- `syncAllOffices()` selects an explicit 3-column list via a `PracticeRouting` type
+- `checkPollerStaleness()` — alerts after 30 min of staleness, reading `last_poll_at` directly so
+  it fires when the sync itself is broken. Independent of `syncAllOffices()` by design.
+- `GET /api/opendental/onboarding-preview` — read-only dry run of the sweep over any date window
+
+**Security (`e3ec77e`): open SMS relay closed.** `POST /api/test/notification` and
+`POST /api/test/onboarding-sms` were mounted under "Always-public routes" with no auth — any
+unauthenticated caller could send an SMS from the approved toll-free number to any number.
+Verified reachable on production. Both now require `requireAuth + requireSuperAdmin`. Pre-existing;
+the two Vagaro routes in the same file were already guarded.
+
+Also repaired: `lib/api-zod/dist` was stale from 2026-09-01 against src from 2026-09-22, so
+`pnpm typecheck` was red on main and could not catch anything. Rebuilt. `dist` is gitignored and
+esbuild bundles from `src`, so no runtime impact — the Add Patient `office_id` fix does work.
+
+---
 
 ### Foundation (April 2026) — Core Infrastructure
 
@@ -556,11 +603,27 @@ Super_admin (David) could only see Hallmark Dental because the office picker was
 
 ### Twilio SMS
 
-- **Number:** +16158824095
-- **A2P status:** Campaign registration in progress — brand `BU6555c65665431bd7cef0337f70e0e0f2`
-- **`SMS_ENABLED` flag:** Must be `true` in env. Currently `false` during A2P review — do not enable until Twilio approves.
+**SMS IS LIVE.** `SMS_ENABLED=true` on Render. Earlier revisions of this document said
+`false` / "do not enable" — that is obsolete. Verified sending as of 2026-10-01.
+
+| Client | Number | Twilio account | Status |
+|--------|--------|----------------|--------|
+| Hallmark Dental | `+18555027538` | global env creds | **LIVE** — approved 2026-07-10 |
+| North Star Family Dental | `+18776519202` | global env creds | approved |
+| Carlock Motorcars | `+18885496615` | **separate account** (SID is in the Twilio approval email — deliberately not stored in this repo) | approved 2026-10-02, **not yet wired** |
+
+- **Dead number:** `+16158824095` (local 10DLC). All five 10DLC campaign attempts were
+  rejected; 10DLC is permanently abandoned in favour of toll-free. Do not use this number.
+- **Carlock is not live yet:** `practices.twilio_phone_number` is still NULL for Carlock
+  Automotive (slug `carlock`). Because its number sits in a *different* Twilio account, it
+  needs all three of `twilio_phone_number`, `twilio_account_sid`, `twilio_auth_token` set on
+  the practice row — enter them in `/practice-admin`, never paste a token into a chat log.
+- **Per-practice resolution:** `resolveTwilioPhone()` / `resolveTwilioClient()` in
+  `lib/practiceConfig.ts` fall back to global env vars when the practice row is empty.
 - **Opt-out:** Check `sms_opt_out` on the referrer at fire time, not just at schedule time
-- **Onboarding delay:** 2 hours post-appointment
+- **Onboarding delay:** 2 hours post-appointment (dental); at SFTP processing time (automotive)
+- **Kill switch:** `SMS_ENABLED=false` on Render suppresses every send with no code change.
+  Note it returns `{ success: true, smsSid: "suppressed" }`, so callers mark the message sent.
 
 ---
 
@@ -726,7 +789,7 @@ cat ~/.ssh/id_ed25519.pub    # paste this at github.com/settings/keys if auth fa
 | Tango amount | Dollars not cents. $35 = `35`, NOT `3500`. |
 | RLS | Enabled on ALL Supabase tables. Always use service role key in backend. |
 | Dedup | One reward per `new_patient_pat_num + office_id`. Never double-reward. |
-| SMS_ENABLED | `false` during A2P review. Do not enable without Twilio approval. |
+| SMS_ENABLED | `true` — SMS is LIVE as of 2026-07-10. Set `false` only as a deliberate kill switch. The suppressed path returns `success: true`, so callers still mark messages sent. |
 | Opt-out timing | Check `sms_opt_out` at fire time, not just at schedule time. |
 | Proxy trust | Add `app.set('trust proxy', 1)` before rate limiter or you'll get `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR`. |
 | Claim URL | Always a UUID token. Never expose the referral code in the claim URL. |
@@ -742,7 +805,16 @@ cat ~/.ssh/id_ed25519.pub    # paste this at github.com/settings/keys if auth fa
 | DriveCentric Source is predefined dropdown (NOT free text) | Salespeople cannot type referrer codes or names in the Source field. "Carlock Rewards" is a Lead Source added under Showroom (2026-08-14). Salesperson workflow: Type=Showroom → Source=Carlock Rewards. Attribution comes from pre-referral capture (Tier 0) and auto-enrollment — not source field text. |
 | pre_referrals table (v1.9.0) | New table migrated 2026-08-14. Stores contact info for people who clicked an automotive referral link before visiting. Schema: `lib/db/src/schema/pre_referrals.ts`. Migration: `supabase/migrations/20260814_pre_referrals.sql`. RLS enabled; service role key bypasses. Phone stored as last-10-digits normalized. |
 | Custom rewards via integration_config (v1.9.0) | `integration_config.custom_rewards` array per practice: `[{ id, label, description, value }]`. Selecting on claim page creates `admin_task` with `task_type='custom-reward'` instead of calling Tango. Volvo/Carlock has merch credit, service credit, detail package. |
-| Automotive onboarding SMS fires at SFTP processing time | Unlike dental (2-hour delay), automotive onboarding SMS fires when the SFTP nightly job runs. `sendAutomotiveOnboardingSms()` in `onboardingSms.ts`. Still suppressed globally while `SMS_ENABLED=false`. |
+| Automotive onboarding SMS fires at SFTP processing time | Unlike dental (2-hour delay), automotive onboarding SMS fires when the SFTP nightly job runs. `sendAutomotiveOnboardingSms()` in `onboardingSms.ts`. No longer suppressed — `SMS_ENABLED=true`. |
+| **Never use a bare `db.select()` in a background job** | Drizzle emits *every* column declared in the schema, so one column present in code but missing from the DB throws Postgres `42703` and kills the whole query. This took the Open Dental poller down for 12 days (2026-09-20 → 2026-10-01). `syncAllOffices()` now uses an explicit column list. Select explicitly in anything on a timer. |
+| Schema drift is invisible until it is fatal | A Drizzle schema column with no matching migration passes typecheck, passes build, and passes review. Audit it by parsing each `pgTable("name", {...})` block in `lib/db/src/schema/*.ts` and diffing the declared column names against `information_schema.columns`. Watch out: a naive regex takes the table name from only the first `pgTable` in a file (`staff_pool.ts` defines two) and yields false positives. |
+| Never trust a commit message that says a column "already exists" | Commit 44ba4f2 added `practices.agreement_accepted_at` on the stated assumption it was already in the DB. It was not — that column is on `offices`. Verify against `information_schema` before relying on it. |
+| `offices.last_poll_at` only updates on SUCCESS | Written after `syncOpenDental()` returns (openDentalPoller.ts). A failing poll leaves it frozen, so a missing env var and an unreachable eConnector look identical in the DB. `checkPollerStaleness()` now alerts after 30 min. |
+| `onboarding_sms_sent` is set even when the send FAILS | Deliberate (onboardingSms.ts:286-295) to prevent infinite retry of a bad number. Consequence: DB counts prove *attempts*, never deliveries. Twilio console → Monitor → Logs → Messaging is the only authority on actual delivery. |
+| Onboarding sweep looks back only 24 hours | `runOnboardingSweep` queries completed appointments for `now - 86_400_000` only. Any patient whose visit falls outside that rolling window while the poller is down is never enrolled and never gets a referral link — silently, with no admin task. ~10 days of enrollments were lost this way in the Sept 2026 outage. `GET /api/opendental/onboarding-preview` measures the damage read-only. |
+| Check the mount in `routes/index.ts`, not just the route body | Auth lives in two places. `router.use("/test", testRouter)` sat under "Always-public routes" with no `requireAuth`, leaving two SMS-sending endpoints world-reachable. Fixed e3ec77e. Safe probe for reachability without sending: POST an invalid phone (`"phone":"123"`) — `401` is guarded, `500 invalid_phone_number` means it reached the send path. |
+| `reward_claims.reward_value` is the gift-card equivalent, not the credit amount | An in-house-credit claim stores `35` while the `apply-credit` admin task correctly carries `amount: 100`. Read the admin task, not the claim row, for what staff should apply. |
+| Zero gift-card claims is usually NOT a bug | Historical split across claimed rewards: ~56% in-house credit, ~41% gift card, ~3% charity. The claim UI deliberately pushes the $100 credit first. An untouched Tango balance is normal. |
 
 ### Session Startup Checklist
 
@@ -762,7 +834,26 @@ cd /Users/drdonelson/Documents/code/hallmark/referral/rippl-web-app && git pull
 
 # 7. Confirm last deploy
 git log --oneline -5
+
+# 8. Is the poller alive? Any office stale > 30 min means referrals are NOT being detected.
+#    This is the single highest-value health check in the system.
+#    SELECT id, now() - last_poll_at AS stale FROM offices WHERE active ORDER BY 2 DESC;
+
+# 9. Schema drift check — run after ANY Drizzle schema change, and when anything
+#    background-job-shaped misbehaves. Diff declared columns against information_schema.
 ```
+
+**Reaching the production database.** Claude's Supabase MCP is scoped to a different org and
+cannot see this project. The Supabase CLI's keychain token *can*, and runs DDL:
+
+```bash
+TOKEN=$(security find-generic-password -s "Supabase CLI" -w)
+curl -s -X POST "https://api.supabase.com/v1/projects/mpakerwvdgehxbcuylzq/database/query" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"query":"SELECT 1;"}'
+```
+
+`psql` is NOT installed on this machine, so `./db/migrate.sh` will fail. Use the call above.
 
 ### Environment Variables (Render)
 
@@ -787,6 +878,33 @@ SMS_ENABLED                         SYNC_SECRET
 ## Part VIII — Deferred Work (P2)
 
 These are intentionally deferred. Do not pull them into scope without David's explicit direction.
+
+### T0: Open items as of 2026-10-03
+
+Carried out of the v1.9.2 session. These are live, not hypothetical.
+
+| Item | State |
+|------|-------|
+| **Tango balance** | $115 on hand. Hallmark worst case $315 (8 live claims × $35 + $35 already owed on a failed `gift-card` admin task). Carlock rewards are **$100 each**. Fund to $600–700. Nothing is currently drawing on it, so this is important but not an emergency. |
+| **Carlock Twilio not wired** | Set all three Twilio fields on the Carlock practice in `/practice-admin` — its number is in a separate account. Until then Carlock sends nothing. |
+| **Carlock's 6 referrers never texted** | Enrolled 2026-08-14, `onboarding_sms_sent = false`, no approved number at the time. They will NOT auto-fire (outside the 3-day `RECOVERY_WINDOW_DAYS`). Deliberate decision required. |
+| **2 pending `apply-credit` tasks** | Emma Mullin and Annalysse Padilla each claimed a reward on 2026-10-01 and are owed a $100 dental credit applied in Open Dental. |
+| **~40–50 lost enrollments** | Patients with completed exams 2026-09-20 → 09-30, never enrolled because of the 24h sweep window. Measure with `GET /api/opendental/onboarding-preview?dateStart=2026-09-19&dateEnd=2026-10-01&detail=1` (needs a super_admin Bearer token; a browser cookie will not authenticate it). Backfill is an open decision — weigh against the no-retroactive-blasts rule. |
+| **Duplicate referrer records** | "Hannah Ann Funk" exists twice, one texted and one pending. Onboarding matches on phone last-10, so differing formats or two Open Dental records create duplicates and duplicate welcome texts. Unquantified. |
+| **Carlock billing not set up** | `billing_status = pending`, no card, no agreement. Does NOT block rewards — `chargeReferralCompletion` returns early when status != 'active', so rewards deliver and the practice simply is not invoiced. |
+
+### T4: Widen the onboarding sweep window (trigger: before the next outage)
+
+The 24-hour lookback in `runOnboardingSweep` is what converted 12 days of downtime into
+*permanently* lost enrollments rather than recoverable ones. Either widen the window or give it a
+catch-up pass keyed off `offices.last_poll_at`. Deferred because it changes who gets enrolled and
+therefore who gets texted — it needs an explicit decision, not a quiet default.
+
+### T5: Audit the rest of the public route surface
+
+`e3ec77e` fixed the two unguarded `/test` SMS endpoints. Only those two were verified. Every
+mount under "Always-public routes" in `artifacts/api-server/src/routes/index.ts` deserves the same
+read, especially anything that spends money or sends a message.
 
 ### T1: Role Migration (trigger: 5+ practices)
 
@@ -874,5 +992,5 @@ The work is the argument. The output is the proof. The standard is non-negotiabl
 
 ---
 
-*Last updated: 2026-08-14 — Rippl v1.9.0*  
+*Last updated: 2026-10-03 — Rippl v1.9.2*  
 *Read CLAUDE.md next. Read DESIGN.md before any UI work.*
