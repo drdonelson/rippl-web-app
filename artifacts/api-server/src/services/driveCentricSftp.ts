@@ -468,10 +468,30 @@ async function runDriveCentricSftp(
 
         if (!matchResult) {
           result.unmatched++;
+          // Dedup guard. Unmatched referrals never create a referral_event, so the normal
+          // external_proc_num dedup does not cover them — without this, every hourly run re-files
+          // the same deal forever. Keyed off the `deal <id>` string the notes always carry.
+          const [existingTask] = await db
+            .select({ id: adminTasksTable.id })
+            .from(adminTasksTable)
+            .where(and(
+              eq(adminTasksTable.task_type, "unmatched-referral"),
+              eq(adminTasksTable.practice_id, practiceId),
+              sql`${adminTasksTable.notes} LIKE ${'%deal ' + dealId + '%'}`,
+            ))
+            .limit(1);
+
+          if (existingTask) {
+            logger.info({ dealId, practiceId, taskId: existingTask.id }, "[dc-sftp] Unmatched referral already filed — skipping");
+            result.alreadyProcessed++;
+            continue;
+          }
+
           await db.insert(adminTasksTable).values({
             task_type:   "unmatched-referral",
             practice_id: practiceId,
-            notes: [
+            notes: [  // the `deal ${dealId}` prefix is load-bearing — the dedup guard above matches on it
+
               `DriveCentric SFTP — deal ${dealId}.`,
               `Buyer: ${buyerName} (${buyerPhone ?? "no phone"}).`,
               `Source group: "${groupName ?? "unknown"}".`,
