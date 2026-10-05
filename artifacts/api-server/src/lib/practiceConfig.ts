@@ -1,4 +1,5 @@
 import twilio from "twilio";
+import { logger } from "./logger";
 import { db } from "@workspace/db";
 import { practicesTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
@@ -29,6 +30,28 @@ export function invalidatePracticeCache(practiceId: string) {
 
 /** Resolve the Twilio from-number for a practice, falling back to the global env var. */
 export function resolveTwilioPhone(practice: Practice | null): string {
+  if (practice && !practice.twilio_phone_number) {
+    // The global fallback is Hallmark Dental's approved toll-free number. A practice row that
+    // exists but has no number of its own will send from it — so a Volvo or Carlock customer
+    // receives a text from a dental office, and traffic for an unapproved use case rides a
+    // toll-free registration that took months and five 10DLC rejections to obtain.
+    //
+    // Deliberately NOT thrown. sendOnboardingSmsNow marks onboarding_sms_sent = true even when
+    // the send fails (to stop infinite retries), so throwing here would silently burn the
+    // enrollment — swapping one invisible failure for another. Loud and logged beats both.
+    // Legacy referrers with no practice_id at all are unaffected: for them the global number is
+    // correct, which is why this only fires when a practice row exists.
+    logger.error(
+      {
+        practiceId: practice.id,
+        practiceName: practice.name,
+        vertical: practice.vertical,
+        fallbackNumber: process.env.TWILIO_PHONE_NUMBER,
+      },
+      "practices.twilio_phone_number is not set — SMS will send from the GLOBAL number, which " +
+      "is wrong for any practice that is not Hallmark Dental. Set it in /practice-admin.",
+    );
+  }
   return practice?.twilio_phone_number ?? process.env.TWILIO_PHONE_NUMBER ?? "";
 }
 

@@ -215,7 +215,41 @@ function generateReferralCode(name: string): string {
   return `${clean}${rand}`;
 }
 
+/**
+ * Records the outcome of a sync run on the practice so the automotive path has the same
+ * observability the dental path gets from offices.last_poll_at.
+ *
+ * last_sync_at advances ONLY on a clean run. A run that scanned files but hit errors leaves the
+ * timestamp where it was and stores the first error, so "stale" reliably means "nothing has fully
+ * succeeded recently" rather than "the job merely executed". That distinction is the whole point:
+ * before this existed, the admin_tasks.amount failure returned {"success":false} every hour for
+ * weeks and nothing anywhere recorded that referrals were being found and dropped.
+ */
 export async function pollDriveCentricSftp(
+  practiceId: string,
+): Promise<DriveCentricSftpResult> {
+  const result = await runDriveCentricSftp(practiceId);
+
+  // Built as one object rather than a ternary so Drizzle sees a single type, not a union.
+  const patch: { last_sync_at?: Date; last_sync_error: string | null } = {
+    last_sync_error: result.errors.length === 0 ? null : result.errors[0]!.slice(0, 2000),
+  };
+  if (result.errors.length === 0) patch.last_sync_at = new Date();
+
+  try {
+    await db
+      .update(practicesTable)
+      .set(patch)
+      .where(eq(practicesTable.id, practiceId));
+  } catch (err) {
+    // Never let bookkeeping mask the sync result the caller needs.
+    logger.error({ err, practiceId }, "[dc-sftp] Failed to record sync state");
+  }
+
+  return result;
+}
+
+async function runDriveCentricSftp(
   practiceId: string,
 ): Promise<DriveCentricSftpResult> {
   const result: DriveCentricSftpResult = {

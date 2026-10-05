@@ -1107,7 +1107,8 @@ export async function previewOnboardingSweep(opts: {
 }
 
 // ── Poller staleness watchdog ─────────────────────────────────────────────────────────────
-const STALE_POLL_THRESHOLD_MS = 30 * 60 * 1000; // 6 missed poll cycles
+const STALE_POLL_THRESHOLD_MS = 30 * 60 * 1000;      // dental polls every 5 min → 6 missed cycles
+const STALE_SYNC_THRESHOLD_MS = 3 * 60 * 60 * 1000;  // automotive syncs hourly → 3 missed cycles
 let lastStaleAlertSent = 0;
 
 /**
@@ -1118,9 +1119,17 @@ let lastStaleAlertSent = 0;
  * That is exactly the gap that let the Sept 2026 outage run silently for 12 days: the process
  * was healthy, /healthz was green, and the only symptom was last_poll_at standing still.
  *
- * Only dental offices write last_poll_at; automotive and salon practices are SFTP- and
- * webhook-driven and legitimately leave it null, so nulls are skipped rather than alerted on.
- * The tradeoff is that an office which has never polled once will not trigger this.
+ * Covers BOTH paths:
+ *   - dental     → offices.last_poll_at (written per office by syncDentalPractice)
+ *   - automotive → practices.last_sync_at (written per practice by pollDriveCentricSftp)
+ *
+ * Nulls are skipped in both cases: a salon practice is webhook-driven and legitimately never
+ * sets either column, and a brand-new client has not synced once yet. The tradeoff is that
+ * something which has NEVER succeeded will not alert — only something that used to work and
+ * stopped. Worth revisiting if a client is ever onboarded and then forgotten.
+ *
+ * Automotive runs hourly, not every 5 minutes, so it gets its own wider threshold. Alerting a
+ * 1-hour job at 30 minutes would fire on every healthy gap.
  */
 export async function checkPollerStaleness(): Promise<void> {
   const offices = await db
@@ -1132,35 +1141,67 @@ export async function checkPollerStaleness(): Promise<void> {
     .from(officesTable)
     .where(eq(officesTable.active, true));
 
+  // Automotive practices sync via SFTP and record state on the practice, not the office.
+  // Carlock has zero offices, so office-level tracking cannot see it at all.
+  const autoPractices = await db
+    .select({
+      id:              practicesTable.id,
+      name:            practicesTable.name,
+      last_sync_at:    practicesTable.last_sync_at,
+      last_sync_error: practicesTable.last_sync_error,
+    })
+    .from(practicesTable)
+    .where(and(eq(practicesTable.vertical, "automotive"), eq(practicesTable.status, "active")));
+
   const now = Date.now();
   const stale = offices
     .filter((o): o is typeof o & { last_poll_at: Date } => o.last_poll_at != null)
     .map(o => ({ ...o, staleMs: now - new Date(o.last_poll_at).getTime() }))
     .filter(o => o.staleMs > STALE_POLL_THRESHOLD_MS);
 
-  if (stale.length === 0) return;
+  const staleSyncs = autoPractices
+    .filter((p): p is typeof p & { last_sync_at: Date } => p.last_sync_at != null)
+    .map(p => ({ ...p, staleMs: now - new Date(p.last_sync_at).getTime() }))
+    .filter(p => p.staleMs > STALE_SYNC_THRESHOLD_MS);
+
+  // A practice whose last run errored is worth reporting even before it crosses the staleness
+  // threshold — that is exactly the signal that was missing while referrals were being dropped.
+  const erroring = autoPractices.filter(p => p.last_sync_error != null);
+
+  if (erroring.length > 0) {
+    logger.error(
+      { practices: erroring.map(p => ({ id: p.id, name: p.name, error: p.last_sync_error })) },
+      "Integration sync reported errors on its most recent run",
+    );
+  }
+
+  if (stale.length === 0 && staleSyncs.length === 0) return;
 
   // Log every cycle so the condition is greppable in Render even while email is rate-limited.
   logger.error(
-    { staleOffices: stale.map(o => ({ id: o.id, staleMinutes: Math.round(o.staleMs / 60_000) })) },
-    "Poller staleness detected — offices have not polled successfully",
+    {
+      staleOffices:   stale.map(o => ({ id: o.id, staleMinutes: Math.round(o.staleMs / 60_000) })),
+      staleSyncs:     staleSyncs.map(p => ({ id: p.id, name: p.name, staleMinutes: Math.round(p.staleMs / 60_000) })),
+    },
+    "Integration staleness detected — a poller or sync has not succeeded recently",
   );
 
   if (now - lastStaleAlertSent < 86_400_000) return; // email at most once per day
   lastStaleAlertSent = now;
 
   const alertEmail = process.env.ALERT_EMAIL || "david@hallmarkdds.com";
-  const rows = stale
-    .map(o => `<li><strong>${o.name}</strong> — last successful poll ${Math.round(o.staleMs / 60_000)} minutes ago</li>`)
-    .join("");
+  const rows = [
+    ...stale.map(o => `<li><strong>${o.name}</strong> (dental office) — last successful poll ${Math.round(o.staleMs / 60_000)} minutes ago</li>`),
+    ...staleSyncs.map(p => `<li><strong>${p.name}</strong> (automotive SFTP) — last clean sync ${Math.round(p.staleMs / 60_000)} minutes ago${p.last_sync_error ? ` — last error: ${p.last_sync_error.slice(0, 200)}` : ""}</li>`),
+  ].join("");
 
   try {
     await sendEmail({
       to:      alertEmail,
       from:    { email: process.env.SENDGRID_FROM_EMAIL ?? "hello@joinrippl.com", name: "Rippl" },
-      subject: `🚨 Rippl poller stalled — ${stale.length} office${stale.length === 1 ? "" : "s"} not syncing`,
+      subject: `🚨 Rippl integration stalled — ${stale.length + staleSyncs.length} not syncing`,
       html:
-        `<p>The Open Dental poller has not completed a successful sync for:</p><ul>${rows}</ul>` +
+        `<p>An integration has not completed a successful sync for:</p><ul>${rows}</ul>` +
         `<p>No referrals are being detected and no rewards are being issued for these offices.</p>` +
         `<p>Check the Render logs for <code>Open Dental poll error</code> (the poll is failing as a whole) ` +
         `or <code>Error syncing dental office</code> (a single office is failing). A schema/database ` +

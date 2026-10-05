@@ -50,6 +50,10 @@ export const practicesTable = pgTable("practices", {
   stripe_payment_method_id:  text("stripe_payment_method_id"),
   billing_status:            text("billing_status").default("pending"), // pending | active | failed | exempt
 
+  // Integration sync observability (automotive SFTP path — see migration 006)
+  last_sync_at:    timestamp("last_sync_at"),
+  last_sync_error: text("last_sync_error"),
+
   // Gift card pass-through threshold billing
   gift_card_balance_cents:   integer("gift_card_balance_cents").default(0).notNull(),
   gift_card_threshold_cents: integer("gift_card_threshold_cents").default(10000).notNull(),
