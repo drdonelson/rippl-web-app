@@ -116,18 +116,11 @@ async function resolveReferralCode(
 
   if (existing) return existing.referral_code;
 
-  // Also check by email to avoid creating duplicates for existing patients
-  const [byEmail] = await db
-    .select({ referral_code: referrersTable.referral_code })
-    .from(referrersTable)
-    .where(
-      and(
-        eq(referrersTable.email, email),
-        eq(referrersTable.office_id, officeId)
-      )
-    );
-
-  if (byEmail) return byEmail.referral_code;
+  // Deliberately NO email fallback here. Families share an email address, so matching on
+  // it hands the second family member the first one's referral code — every referral they
+  // make then credits a relative. (patient_id + office_id already prevents real duplicates,
+  // and it identifies a person rather than a household.) Same reason we never dedup on
+  // phone or surname: shared home numbers and same-name relatives are not the same human.
 
   // Create new referrer
   const newId = crypto.randomUUID();

@@ -77,6 +77,14 @@ router.get("/by-token/:token", async (req, res) => {
     return;
   }
 
+  // Only "pending" is claimable. This used to check "claimed" alone, which left every
+  // voided claim redeemable — voiding a wrongly-attributed reward did not actually stop
+  // the wrong person from cashing it, it only looked like it had.
+  if (claim.status !== "pending") {
+    res.status(410).json({ error: "voided" });
+    return;
+  }
+
   const [referrer, referral] = await Promise.all([
     db.select().from(referrersTable)
       .where(eq(referrersTable.id, claim.referrer_id!))
@@ -183,6 +191,12 @@ router.post("/", async (req, res) => {
 
   if (claim.status === "claimed") {
     res.status(409).json({ error: "already_claimed", claimedAt: claim.claimed_at });
+    return;
+  }
+
+  // See the matching guard on GET — a voided claim must not be redeemable.
+  if (claim.status !== "pending") {
+    res.status(410).json({ error: "voided" });
     return;
   }
 
