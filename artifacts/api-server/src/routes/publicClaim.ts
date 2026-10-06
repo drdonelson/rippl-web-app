@@ -128,7 +128,14 @@ router.get("/by-token/:token", async (req, res) => {
       : Promise.resolve(null),
   ]);
 
-  [localPartner, { logo_url: officeLogo } = { logo_url: null }] = officeData as unknown as [typeof localPartner, { logo_url: string | null }];
+  // Read the office row defensively rather than destructuring it. The `= { logo_url: null }`
+  // default only applies to `undefined`, but both branches above yield `null` here (either
+  // `r[0] ?? null` or the `[null, null]` no-office case) — so destructuring threw
+  // "Cannot destructure property 'logo_url' of 'null'" and returned 500 on a public page
+  // for any claim whose event has no resolvable office.
+  const [partnerRow, officeRow] = officeData as unknown as [typeof localPartner, { logo_url: string | null } | null];
+  localPartner = partnerRow ?? null;
+  officeLogo   = officeRow?.logo_url ?? null;
 
   res.json({
     claim,
