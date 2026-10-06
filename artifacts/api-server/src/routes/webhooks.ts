@@ -116,7 +116,7 @@ router.post("/vagaro", async (req, res) => {
   }
 
   // Match to an existing referrer.
-  const matchResult = await matchReferrerByName(referralName, practiceId, clientPhone);
+  const matchResult = await matchReferrerByName(referralName, practiceId);
 
   if (!matchResult) {
     // Create unmatched-referral admin task so no referral is lost.

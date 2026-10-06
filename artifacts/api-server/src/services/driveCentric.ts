@@ -191,7 +191,7 @@ export async function pollDriveCentric(
         referralSignal === "__customer_referral__" ? null : referralSignal;
 
       const matchResult = nameToMatch
-        ? await matchReferrerByName(nameToMatch, practiceId, deal.customerPhone)
+        ? await matchReferrerByName(nameToMatch, practiceId)
         : null;
 
       if (!matchResult) {

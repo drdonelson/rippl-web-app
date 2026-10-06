@@ -438,7 +438,7 @@ async function runDriveCentricSftp(
           if (!matchResult) {
             referrerName = extractPersonName(rawDesc);
             if (referrerName) {
-              matchResult = await matchReferrerByName(referrerName, practiceId, buyerPhone);
+              matchResult = await matchReferrerByName(referrerName, practiceId);
             }
           }
         }

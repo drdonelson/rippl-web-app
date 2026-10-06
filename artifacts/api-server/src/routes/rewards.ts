@@ -14,6 +14,7 @@ import { eq, sql, and } from "drizzle-orm";
 import { CreateRewardBody } from "@workspace/api-zod";
 import { sendAmazonRewardLink } from "../services/tango";
 import { chargeGiftCardThreshold } from "../services/billingService";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
@@ -104,6 +105,15 @@ router.post("/claim", async (req, res) => {
     return;
   }
 
+  // Only "pending" may be redeemed. This route is the authenticated twin of
+  // /api/claim and had the same hole: it checked "claimed" and expiry but not
+  // "voided", so voiding a wrongly-attributed reward did not stop this path
+  // paying it out. Fixing the public route alone left this one open.
+  if (claim.status !== "pending") {
+    res.status(410).json({ error: "voided" });
+    return;
+  }
+
   if (claim.expires_at && new Date() > new Date(claim.expires_at)) {
     res.status(410).json({ error: "expired" });
     return;
@@ -117,6 +127,26 @@ router.post("/claim", async (req, res) => {
   if (!referrer) {
     res.status(404).json({ error: "Referrer not found" });
     return;
+  }
+
+  // Tenant ownership: this route took a claim token and never checked it belonged to
+  // the caller's practice, so one tenant's staff could redeem another's claim. Blocks
+  // only a definite mismatch — a caller with no practice_id is logged rather than
+  // refused, so existing accounts keep working. Tighten once profiles are backfilled.
+  const actor = req.authUser!;
+  if (actor.role !== "super_admin") {
+    const claimPractice = claim.practice_id ?? referrer.practice_id ?? null;
+    if (actor.practice_id && claimPractice && actor.practice_id !== claimPractice) {
+      logger.warn(
+        { actorPractice: actor.practice_id, claimPractice, claimId: claim.id },
+        "[rewards] Cross-tenant redemption attempt refused"
+      );
+      res.status(403).json({ error: "forbidden" });
+      return;
+    }
+    if (!actor.practice_id) {
+      logger.warn({ claimId: claim.id, role: actor.role }, "[rewards] Redeemer has no practice_id — ownership unverified");
+    }
   }
 
   const rewardValue = claim.reward_value;

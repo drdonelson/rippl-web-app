@@ -5,7 +5,7 @@ import type { Referrer } from "@workspace/db/schema";
 
 export interface MatchResult {
   referrer: Referrer;
-  matchType: "code" | "exact" | "partial" | "phone";
+  matchType: "code" | "exact" | "partial";
 }
 
 /**
@@ -36,12 +36,19 @@ export async function matchReferrerByCode(
  *
  * Tier 1: Exact full-name match (case-insensitive).
  * Tier 2: First + last partial match (split on whitespace, check both tokens present).
- * Tier 3: Phone match (only if phone is provided and non-empty).
+ *
+ * There is deliberately NO phone tier. Every caller only ever had the REFERRED person's
+ * phone to offer (Vagaro clientPhone, DriveCentric customerPhone/buyerPhone) — never the
+ * referrer's. Matching on it meant the referred person identified their own referrer:
+ * the SFTP processor auto-enrols the buyer first, so a name that failed Tier 1/2 then
+ * matched the buyer's own brand-new row and credited them for referring themselves. It
+ * also pre-empted the pre-referral-link fallback, and it collapsed households onto
+ * whichever family member sorted first. Buyer identity and referrer identity must stay
+ * distinct. Unmatched names belong in staff review, not in an automatic payout.
  */
 export async function matchReferrerByName(
   inputName: string,
   practiceId: string,
-  inputPhone?: string,
 ): Promise<MatchResult | null> {
   const normalized = inputName.trim().toLowerCase();
   if (!normalized) return null;
@@ -67,19 +74,6 @@ export async function matchReferrerByName(
       const rNorm = r.name.trim().toLowerCase();
       if (rNorm.includes(first) && rNorm.includes(last)) {
         return { referrer: r, matchType: "partial" };
-      }
-    }
-  }
-
-  // Tier 3: phone match
-  if (inputPhone) {
-    const digits = inputPhone.replace(/\D/g, "");
-    if (digits.length >= 7) {
-      for (const r of referrers) {
-        const rDigits = r.phone.replace(/\D/g, "");
-        if (rDigits && rDigits.endsWith(digits.slice(-10))) {
-          return { referrer: r, matchType: "phone" };
-        }
       }
     }
   }

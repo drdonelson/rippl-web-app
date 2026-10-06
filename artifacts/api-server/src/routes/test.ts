@@ -138,7 +138,7 @@ router.post("/vagaro-webhook", requireAuth, requireSuperAdmin, async (req, res) 
   if (practice.vertical !== "salon") { res.status(400).json({ error: "Practice must be salon vertical" }); return; }
 
   const referralNameTrimmed = referral_name.trim();
-  const matchResult = await matchReferrerByName(referralNameTrimmed, practice_id, client_phone);
+  const matchResult = await matchReferrerByName(referralNameTrimmed, practice_id);
 
   if (!matchResult) {
     await db.insert(adminTasksTable).values({
