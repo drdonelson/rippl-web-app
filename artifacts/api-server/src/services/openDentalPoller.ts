@@ -203,16 +203,23 @@ export async function resolveNewPatientName(
   headers: Record<string, string>,
   baseUrl: string = OPEN_DENTAL_URL ?? ""
 ): Promise<string> {
-  // ── 1. Check referrers table ──────────────────────────────────────────────
+  // ── 1. Check referrers table (only when we know which office's namespace) ──
+  //
+  // With no officeId there is no safe query to run: PatNum alone can match a different
+  // office's patient and return the wrong person's name. Skip to Open Dental, which is
+  // authoritative and already scoped by the caller's customer key.
   try {
-    const conditions = officeId
-      ? and(eq(referrersTable.patient_id, newPatientPatNum), eq(referrersTable.office_id, officeId))
-      : eq(referrersTable.patient_id, newPatientPatNum);
+    if (!officeId) throw new Error("no office scope — skipping referrers lookup");
 
     const [found] = await db
       .select({ name: referrersTable.name })
       .from(referrersTable)
-      .where(conditions)
+      .where(
+        and(
+          eq(referrersTable.patient_id, newPatientPatNum),
+          eq(referrersTable.office_id, officeId)
+        )
+      )
       .limit(1);
 
     if (found?.name) {
@@ -461,6 +468,23 @@ export async function syncOpenDental(options?: {
     od_total: 0, fetched: 0, inserted: 0, skipped: 0, unmatched: 0, errors: [],
   };
 
+  // Identity scope is mandatory — do not relax this to a warning.
+  //
+  // An Open Dental PatNum is unique only inside one office's database, and Hallmark
+  // alone runs three. A referrer lookup without an office is therefore not a broader
+  // search, it is a lookup in the wrong namespace: between 2026-06-11 and 2026-09-10
+  // seven Brentwood referrals were credited to Lewisburg patients who merely shared a
+  // PatNum (Brentwood 8385 "Brent Macknew" paid out to Lewisburg 8385 "Raul Padilla").
+  // A missing office means the source is unknown, which is not a scope we can process
+  // in — so refuse the run rather than guess at it.
+  if (!office?.id) {
+    const msg =
+      "Refusing to sync Open Dental without office context — PatNums are unique only per office database";
+    logger.error(msg);
+    result.errors.push(msg);
+    return result;
+  }
+
   const odUrl = office?.od_url ?? OPEN_DENTAL_URL;
   if (!odUrl) {
     const msg = office
@@ -540,14 +564,20 @@ export async function syncOpenDental(options?: {
     try {
       // Dedup check (skipped in force mode)
       if (!force) {
+        // ProcNum, like PatNum, is unique only within one office's database — scope it.
         const existing = await db
           .select({ id: referralEventsTable.id })
           .from(referralEventsTable)
-          .where(eq(referralEventsTable.external_proc_num, procNum));
+          .where(
+            and(
+              eq(referralEventsTable.external_proc_num, procNum),
+              eq(referralEventsTable.office_id, office.id)
+            )
+          );
 
         if (existing.length > 0) {
           result.skipped++;
-          logger.debug({ procNum }, "Procedure already synced — skipping");
+          logger.debug({ procNum, officeId: office.id }, "Procedure already synced — skipping");
           continue;
         }
       }
@@ -576,12 +606,19 @@ export async function syncOpenDental(options?: {
       }
 
       // ── Look up referrer in Rippl DB ──────────────────────────────────────
+      // Scoped to this office on purpose — see the identity-scope note in syncOpenDental.
+      // An unscoped match here is what credited Brentwood referrals to Lewisburg patients.
       let referrer: typeof referrersTable.$inferSelect | undefined;
       if (referringPatNum) {
         [referrer] = await db
           .select()
           .from(referrersTable)
-          .where(eq(referrersTable.patient_id, referringPatNum));
+          .where(
+            and(
+              eq(referrersTable.patient_id, referringPatNum),
+              eq(referrersTable.office_id, office.id)
+            )
+          );
       }
 
       // ── Force-mode debug entry ────────────────────────────────────────────
@@ -639,15 +676,27 @@ export async function syncOpenDental(options?: {
               phone,
               ...(email ? { email } : {}),
               referral_code,
-              office_id:    office?.id    ?? null,
-              practice_id:  office?.practice_id ?? null,
+              office_id:    office.id,
+              practice_id:  office.practice_id ?? null,
             })
             .onConflictDoNothing()
             .returning();
 
-          // Handle race condition — if another cycle enrolled them simultaneously
+          // Handle race condition — if another cycle enrolled them simultaneously.
+          // This re-fetch MUST carry the office filter: without it a conflict on another
+          // office's row resolves to that office's patient, turning a duplicate insert
+          // into a silent cross-office misattribution.
           referrer = enrolled ?? (
-            await db.select().from(referrersTable).where(eq(referrersTable.patient_id, referringPatNum)).limit(1)
+            await db
+              .select()
+              .from(referrersTable)
+              .where(
+                and(
+                  eq(referrersTable.patient_id, referringPatNum),
+                  eq(referrersTable.office_id, office.id)
+                )
+              )
+              .limit(1)
           )[0];
 
           if (!referrer) {
@@ -672,11 +721,16 @@ export async function syncOpenDental(options?: {
         const existing = await db
           .select({ id: referralEventsTable.id })
           .from(referralEventsTable)
-          .where(eq(referralEventsTable.external_proc_num, procNum));
+          .where(
+            and(
+              eq(referralEventsTable.external_proc_num, procNum),
+              eq(referralEventsTable.office_id, office.id)
+            )
+          );
 
         if (existing.length > 0) {
           result.skipped++;
-          logger.debug({ procNum }, "Force mode — event already present, skipping duplicate");
+          logger.debug({ procNum, officeId: office.id }, "Force mode — event already present, skipping duplicate");
           continue;
         }
       }
@@ -1066,11 +1120,18 @@ export async function previewOnboardingSweep(opts: {
       row.unique_patients = patNums.length;
 
       // One query instead of N: which of these PatNums do we already know about?
+      // Scoped to this office — an unscoped IN would count another office's patients
+      // as already-enrolled and silently understate the backfill.
       const known = patNums.length
         ? await db
             .select({ patient_id: referrersTable.patient_id })
             .from(referrersTable)
-            .where(inArray(referrersTable.patient_id, patNums.map(String)))
+            .where(
+              and(
+                inArray(referrersTable.patient_id, patNums.map(String)),
+                eq(referrersTable.office_id, office.id)
+              )
+            )
         : [];
       const knownSet = new Set(known.map(k => k.patient_id));
 

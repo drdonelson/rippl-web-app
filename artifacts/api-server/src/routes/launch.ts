@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { launchEmailsTable, referrersTable } from "@workspace/db/schema";
+import { launchEmailsTable, referrersTable, officesTable } from "@workspace/db/schema";
 import { eq, and, count } from "drizzle-orm";
 import { sendLaunchEmail } from "../services/launchEmail";
 import { logger } from "../lib/logger";
@@ -96,13 +96,23 @@ async function resolveReferralCode(
   name: string,
   firstName: string,
   email: string,
-  phone: string
+  phone: string,
+  officeId: string,
+  practiceId: string | null
 ): Promise<string> {
-  // Check by patient_id first
+  // Both lookups below are office-scoped. Unscoped, either one can return a different
+  // office's patient: patient_id is only unique within one Open Dental database, and an
+  // email is shared across tenants more often than it looks (family addresses, and the
+  // same person being a patient at two practices).
   const [existing] = await db
     .select({ referral_code: referrersTable.referral_code })
     .from(referrersTable)
-    .where(eq(referrersTable.patient_id, patientId));
+    .where(
+      and(
+        eq(referrersTable.patient_id, patientId),
+        eq(referrersTable.office_id, officeId)
+      )
+    );
 
   if (existing) return existing.referral_code;
 
@@ -110,7 +120,12 @@ async function resolveReferralCode(
   const [byEmail] = await db
     .select({ referral_code: referrersTable.referral_code })
     .from(referrersTable)
-    .where(eq(referrersTable.email, email));
+    .where(
+      and(
+        eq(referrersTable.email, email),
+        eq(referrersTable.office_id, officeId)
+      )
+    );
 
   if (byEmail) return byEmail.referral_code;
 
@@ -134,6 +149,8 @@ async function resolveReferralCode(
     phone:         phone || "launch-import",
     email,
     referral_code: referralCode,
+    office_id:     officeId,
+    practice_id:   practiceId,
   });
 
   logger.info({ patientId, referralCode }, "New referrer created via launch blast");
@@ -142,6 +159,22 @@ async function resolveReferralCode(
 
 // ── POST /api/launch/email-blast ──────────────────────────────────────────────
 router.post("/email-blast", async (req, res) => {
+  // This endpoint creates referrer rows, so it must know which office they belong to —
+  // a referrer with no office cannot be matched safely by the Open Dental poller.
+  const officeId = typeof req.query.office_id === "string" ? req.query.office_id.trim() : "";
+  if (!officeId) {
+    res.status(400).json({ error: "office_id query parameter is required" });
+    return;
+  }
+  const [office] = await db
+    .select({ id: officesTable.id, practice_id: officesTable.practice_id })
+    .from(officesTable)
+    .where(eq(officesTable.id, officeId));
+  if (!office) {
+    res.status(400).json({ error: `Unknown office_id "${officeId}"` });
+    return;
+  }
+
   const validation = validateBlastBody(req.body);
   if (!validation.valid) {
     res.status(400).json({ error: validation.error });
@@ -192,7 +225,9 @@ router.post("/email-blast", async (req, res) => {
         patient.name,
         patient.firstName,
         patient.email,
-        patient.phone ?? ""
+        patient.phone ?? "",
+        office.id,
+        office.practice_id ?? null
       );
 
       await db.insert(launchEmailsTable).values({

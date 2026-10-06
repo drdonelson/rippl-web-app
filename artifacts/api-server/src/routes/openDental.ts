@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { referrersTable, officesTable } from "@workspace/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { previewOnboardingSweep } from "../services/openDentalPoller";
 
@@ -357,12 +357,26 @@ router.post("/patients/import", async (req, res) => {
 
   // Validate office_id if provided
   let resolvedOfficeId: string | null = null;
-  if (officeId) {
+  // An office is required and must exist. Previously an unknown officeId silently
+  // became NULL and the patients were imported with no office at all — rows that the
+  // poller then cannot match safely, since a PatNum only identifies a person within
+  // one office's database.
+  let resolvedPracticeId: string | null = null;
+  if (!officeId) {
+    res.status(400).json({ error: "office_id is required" });
+    return;
+  }
+  {
     const [office] = await db
-      .select({ id: officesTable.id })
+      .select({ id: officesTable.id, practice_id: officesTable.practice_id })
       .from(officesTable)
       .where(eq(officesTable.id, officeId));
-    resolvedOfficeId = office?.id ?? null;
+    if (!office) {
+      res.status(400).json({ error: `Unknown office_id "${officeId}"` });
+      return;
+    }
+    resolvedOfficeId  = office.id;
+    resolvedPracticeId = office.practice_id ?? null;
   }
 
   let imported = 0;
@@ -376,7 +390,12 @@ router.post("/patients/import", async (req, res) => {
       const [existing] = await db
         .select({ id: referrersTable.id })
         .from(referrersTable)
-        .where(eq(referrersTable.patient_id, p.patNum));
+        .where(
+          and(
+            eq(referrersTable.patient_id, p.patNum),
+            eq(referrersTable.office_id, resolvedOfficeId)
+          )
+        );
 
       if (existing) { skipped++; continue; }
 
@@ -398,6 +417,7 @@ router.post("/patients/import", async (req, res) => {
         email:         p.email || null,
         referral_code: finalCode,
         office_id:     resolvedOfficeId,
+        practice_id:   resolvedPracticeId,
       });
 
       imported++;

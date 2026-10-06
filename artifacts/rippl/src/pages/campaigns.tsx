@@ -1216,7 +1216,7 @@ function ImportCsvModal({ open, onClose, onImported }: {
   if (!open) return null;
 
   return (
-    <Modal open={open} onClose={onClose} title="Import Customers from CSV">
+    <Modal isOpen={open} onClose={onClose} title="Import Customers from CSV">
       <div className="space-y-4 min-w-[480px] max-w-[600px]">
 
         {isSuperAdmin && phase !== "done" && (

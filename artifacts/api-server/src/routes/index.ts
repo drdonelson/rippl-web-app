@@ -26,7 +26,7 @@ import staffPoolRouter from "./staffPool";
 import billingRouter from "./billing";
 import enrollRouter from "./enroll";
 import analyticsRouter from "./analytics";
-import { requireAuth } from "../middleware/auth";
+import { requireAuth, requireSuperAdmin } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -36,7 +36,6 @@ router.use("/enroll", enrollRouter);
 router.use(healthRouter);
 router.use(smsOptInRouter);
 router.use("/webhooks", webhooksRouter);
-router.use("/launch", launchRouter);
 router.use("/auth", authRouter);
 router.use("/test", testRouter);
 router.use("/referral", referralRouter);
@@ -63,5 +62,8 @@ router.use("/opendental", requireAuth, openDentalRouter);
 router.use("/import", requireAuth, importJobsRouter);
 router.use("/backfill", requireAuth, backfillRouter);
 router.use("/practice", requireAuth, staffPoolRouter);
+// Sends branded email to up to 5,000 addresses per call and creates referrer rows —
+// was mounted public, which made it an open relay. super_admin only.
+router.use("/launch", requireAuth, requireSuperAdmin, launchRouter);
 
 export default router;

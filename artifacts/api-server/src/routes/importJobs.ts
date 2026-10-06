@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { referrersTable, officesTable } from "@workspace/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -74,28 +74,36 @@ router.post("/patients/chunk", async (req, res) => {
     }
 
     const body         = req.body as { office_id?: string | null; offset?: number; limit?: number };
-    const officeId     = typeof body.office_id === "string" ? body.office_id : null;
+    const officeId     = typeof body.office_id === "string" ? body.office_id.trim() : "";
     const startOffset  = Math.max(0, Number(body.offset  ?? 0));
     const limit        = Math.min(CHUNK_LIMIT_MAX, Math.max(1, Number(body.limit ?? CHUNK_LIMIT_MAX)));
     const pagesToFetch = Math.ceil(limit / OD_PAGE_SIZE); // 2 pages for default limit=200
 
-    // ── Validate office ─────────────────────────────────────────────────
-    if (officeId) {
-      try {
-        const [office] = await db
-          .select({ id: officesTable.id })
-          .from(officesTable)
-          .where(eq(officesTable.id, officeId));
-        if (!office) {
-          res.status(404).json({ error: `Office '${officeId}' not found` });
-          return;
-        }
-      } catch (dbErr) {
-        const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
-        logger.error({ dbErr, officeId }, "import-chunk: DB error validating office");
-        res.status(500).json({ error: `Database error validating office: ${msg}` });
+    // ── Validate office (required) ──────────────────────────────────────
+    // office_id used to be optional: omitting it imported patients using the default
+    // customer key and stored them with office_id = NULL. A PatNum identifies a person
+    // only within one office's Open Dental database, so rows with no office cannot be
+    // matched safely afterwards. Demand the office up front.
+    if (!officeId) {
+      res.status(400).json({ error: "office_id is required" });
+      return;
+    }
+    let officePracticeId: string | null = null;
+    try {
+      const [office] = await db
+        .select({ id: officesTable.id, practice_id: officesTable.practice_id })
+        .from(officesTable)
+        .where(eq(officesTable.id, officeId));
+      if (!office) {
+        res.status(404).json({ error: `Office '${officeId}' not found` });
         return;
       }
+      officePracticeId = office.practice_id ?? null;
+    } catch (dbErr) {
+      const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
+      logger.error({ dbErr, officeId }, "import-chunk: DB error validating office");
+      res.status(500).json({ error: `Database error validating office: ${msg}` });
+      return;
     }
 
     // ── Resolve auth header ─────────────────────────────────────────────
@@ -187,10 +195,19 @@ router.post("/patients/chunk", async (req, res) => {
     // ── Upsert into referrers table ─────────────────────────────────────
     try {
       const patNums      = normalized.map(p => p.patNum);
+      // Scoped to this office: a PatNum is unique only inside one office's Open Dental
+      // database, so an unscoped IN would treat another office's patients as already
+      // imported and skip real ones. (The referral_code check below stays global on
+      // purpose — codes appear in /refer?ref=XXXX links and must be unique platform-wide.)
       const existingRows = await db
         .select({ patient_id: referrersTable.patient_id })
         .from(referrersTable)
-        .where(inArray(referrersTable.patient_id, patNums));
+        .where(
+          and(
+            inArray(referrersTable.patient_id, patNums),
+            eq(referrersTable.office_id, officeId)
+          )
+        );
 
       const existingSet = new Set(existingRows.map(r => r.patient_id));
       const toInsert    = normalized.filter(p => !existingSet.has(p.patNum));
@@ -222,6 +239,7 @@ router.post("/patients/chunk", async (req, res) => {
             email:         p.email || null,
             referral_code: finalCode,
             office_id:     officeId,
+            practice_id:   officePracticeId,
           };
         });
 
