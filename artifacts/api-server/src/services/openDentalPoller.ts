@@ -381,12 +381,19 @@ async function runOnboardingSweep(
         .from(referrersTable)
         .where(sql`RIGHT(REGEXP_REPLACE(${referrersTable.phone}, '[^0-9]', '', 'g'), 10) = ${phoneLast10}`);
 
-      if (existing.length > 0 && existing[0].sms_opt_out_permanent) {
+      // These checks consider ANY row matching the phone, not existing[0]. The lookup is an
+      // unordered multi-row query, and duplicate referrer rows for one person are known to
+      // exist (two enrolment paths mint different patient_id namespaces). Reading only the
+      // first row made consent and already-sent state nondeterministic: on a pair where one
+      // row says sent/opted-out and the other does not, the sweep could pick the permissive
+      // one and text somebody twice — or text somebody who opted out. Every variant here is
+      // fail-safe: it can only suppress a send, never add one.
+      if (existing.some(e => e.sms_opt_out_permanent)) {
         logger.info({ patNum, officeId }, "[onboarding-sweep] Skipping onboarding — patient permanently opted out (No SMS Ever)");
         continue;
       }
 
-      if (existing.length > 0 && existing[0].sms_opt_out) {
+      if (existing.some(e => e.sms_opt_out)) {
         logger.info({ patNum, officeId }, "[onboarding-sweep] Skipping onboarding — patient chose 'Skip next SMS', resetting flag");
         await db
           .update(referrersTable)
@@ -396,12 +403,14 @@ async function runOnboardingSweep(
       }
 
       if (existing.length > 0) {
-        const rec = existing[0];
-        if (rec.onboarding_sms_sent) {
-          logger.debug({ patNum, officeId }, "[onboarding-sweep] Already onboarded — skipping");
+        if (existing.some(e => e.onboarding_sms_sent)) {
+          logger.debug({ patNum, officeId }, "[onboarding-sweep] Already onboarded on at least one record — skipping");
           continue;
         }
-        if (rec.onboarding_sms_scheduled_at && new Date(rec.onboarding_sms_scheduled_at).getTime() > Date.now()) {
+        const scheduled = existing
+          .map(e => e.onboarding_sms_scheduled_at)
+          .filter((d): d is Date => d != null);
+        if (scheduled.some(d => new Date(d).getTime() > Date.now())) {
           // setTimeout is still alive — nothing to do
           logger.debug({ patNum, officeId }, "[onboarding-sweep] SMS scheduled for future — skipping");
           continue;
