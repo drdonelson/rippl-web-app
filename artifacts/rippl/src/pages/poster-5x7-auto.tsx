@@ -1,10 +1,15 @@
-const FLOWCODE_QR_URL = "/flowcode-qr-poster.png";
 
 const BG     = "#1c1c1e";
 const ACCENT = "#a8a8b0";
 const BRIGHT = "#d0d0d8";
 
+import { usePrintBranding } from "@/lib/usePrintBranding";
+
 export default function Poster5x7Auto() {
+  // Name, lookup URL and QR all come from the logged-in practice. The QR used to be a
+  // checked-in Flowcode PNG encoding the DENTAL /find link, so an automotive poster sent
+  // customers to another tenant's lookup.
+  const { name, findLabel, qrSrc } = usePrintBranding({ qrWidth: 296, dark: "#1c1c1e" });
   return (
     <>
       <style>{`
@@ -29,7 +34,7 @@ export default function Poster5x7Auto() {
 
           {/* Header */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 36px 0" }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", color: ACCENT, textTransform: "uppercase" }}>[Your Dealership]</div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", color: ACCENT, textTransform: "uppercase" }}>{name}</div>
             <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Referral Rewards</div>
           </div>
 
@@ -40,7 +45,7 @@ export default function Poster5x7Auto() {
               <span style={{ color: BRIGHT, fontStyle: "italic" }}>the Drive.</span>
             </div>
             <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginTop: 14, lineHeight: 1.6 }}>
-              Tell a friend about [Your Dealership] and earn a{" "}
+              Tell a friend about {name} and earn a{" "}
               <span style={{ color: BRIGHT, fontWeight: 600 }}>$100 gift card</span>{" "}
               when they buy their next car.
             </div>
@@ -54,11 +59,11 @@ export default function Poster5x7Auto() {
             {/* QR */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, flexShrink: 0 }}>
               <div style={{ padding: 8, background: "white", borderRadius: 10 }}>
-                <img src={FLOWCODE_QR_URL} alt="Scan to find your referral link" width={148} height={148} />
+                <img src={qrSrc} alt="Scan to find your referral link" width={148} height={148} />
               </div>
               <div style={{ textAlign: "center" }}>
                 <div style={{ color: "white", fontWeight: 700, fontSize: 11 }}>Scan to get your link</div>
-                <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 10, fontFamily: "monospace", marginTop: 2 }}>joinrippl.com/find</div>
+                <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 10, fontFamily: "monospace", marginTop: 2 }}>{findLabel}</div>
               </div>
             </div>
 

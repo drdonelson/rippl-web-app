@@ -3,13 +3,18 @@
  * Open /card-print-auto in browser, Cmd+P → Save as PDF → print on card stock.
  */
 
-const FLOWCODE_QR_URL = "/flowcode-qr.png";
 
 const BG     = "#1c1c1e";
 const ACCENT = "#a8a8b0";
 const BRIGHT = "#d0d0d8";
 
+import { usePrintBranding } from "@/lib/usePrintBranding";
+
 export default function CardPrintAuto() {
+  // Name, lookup URL and QR all come from the logged-in practice. The QR used to be a
+  // checked-in Flowcode PNG encoding the DENTAL /find link, so an automotive poster sent
+  // customers to another tenant's lookup.
+  const { name, findLabel, qrSrc } = usePrintBranding({ qrWidth: 216, dark: "#1c1c1e" });
   return (
     <div style={{ background: "white", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 48, padding: "64px 32px", fontFamily: "system-ui, -apple-system, sans-serif" }}>
       <style>{`
@@ -32,7 +37,7 @@ export default function CardPrintAuto() {
           {/* Left half — light silver/white */}
           <div style={{ width: "50%", height: "100%", background: "#f4f4f5", display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: 32 }}>
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", color: "#606068", textTransform: "uppercase" }}>[Your Dealership]</div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", color: "#606068", textTransform: "uppercase" }}>{name}</div>
             </div>
             <div style={{ width: 32, height: 2, background: ACCENT, marginBottom: 12 }} />
             <p style={{ fontSize: 9, color: "#94a3b8", lineHeight: 1.6, margin: 0 }}>
@@ -93,13 +98,13 @@ export default function CardPrintAuto() {
                 </div>
               ))}
             </div>
-            <p style={{ color: ACCENT, fontSize: 9, fontFamily: "monospace", margin: 0 }}>joinrippl.com/find</p>
+            <p style={{ color: ACCENT, fontSize: 9, fontFamily: "monospace", margin: 0 }}>{findLabel}</p>
           </div>
 
           {/* Right — QR */}
           <div style={{ width: "50%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
             <div style={{ padding: 8, background: "white", borderRadius: 10 }}>
-              <img src={FLOWCODE_QR_URL} alt="Scan to find your referral link" width={108} height={108} />
+              <img src={qrSrc} alt="Scan to find your referral link" width={108} height={108} />
             </div>
             <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 9, textAlign: "center", padding: "0 16px", margin: 0 }}>
               Scan to find your<br />personal referral link

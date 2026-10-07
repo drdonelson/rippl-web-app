@@ -3,9 +3,14 @@
  * Open /card-print in browser, Cmd+P → Save as PDF → send to printer.
  */
 
-const FLOWCODE_QR_URL = "/flowcode-qr.png";
+
+import { usePrintBranding } from "@/lib/usePrintBranding";
 
 export default function CardPrint() {
+  // Name, lookup URL and QR come from the logged-in practice. These were hard-coded to
+  // Hallmark, so a second dental office printed another practice's name and a QR code
+  // resolving to that practice's lookup.
+  const { name, findLabel, qrSrc } = usePrintBranding({ qrWidth: 216, dark: "#0a1628" });
   return (
     <div className="bg-white min-h-screen flex flex-col items-center justify-center gap-12 py-16 px-8">
       <style>{`
@@ -30,9 +35,9 @@ export default function CardPrint() {
         >
           {/* Left half — white */}
           <div className="w-1/2 h-full bg-white flex flex-col justify-end p-8">
-            {/* Hallmark logo placeholder — replace src with actual logo file */}
+            {/* Practice name — swap for a logo file when one is configured */}
             <div className="mb-4">
-              <div className="text-[10px] font-bold tracking-widest text-[#8b7340] uppercase mb-0.5">Hallmark</div>
+              <div className="text-[10px] font-bold tracking-widest text-[#8b7340] uppercase mb-0.5">{name}</div>
               <div className="text-[10px] font-bold tracking-widest text-[#8b7340] uppercase">Dental</div>
             </div>
             <div className="w-8 h-0.5 bg-[#8b7340] mb-3" />
@@ -88,13 +93,13 @@ export default function CardPrint() {
                 </div>
               ))}
             </div>
-            <p className="text-teal-300 text-[9px] font-mono mt-1">joinrippl.com/find</p>
+            <p className="text-teal-300 text-[9px] font-mono mt-1">{findLabel}</p>
           </div>
 
           {/* Right — QR */}
           <div className="w-1/2 h-full flex flex-col items-center justify-center gap-3">
             <img
-              src={FLOWCODE_QR_URL}
+              src={qrSrc}
               alt="Scan to find your referral link"
               width={120}
               height={120}

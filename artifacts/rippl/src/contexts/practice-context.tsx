@@ -9,6 +9,8 @@ export interface Practice {
   slug: string;
   vertical: string | null;
   status?: string;
+  /** Returned by /api/practices/mine — preferred over `name` on anything customer-facing. */
+  white_label_name?: string | null;
 }
 
 interface PracticeContextValue {
@@ -78,9 +80,17 @@ export function PracticeProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setIsLoading(false));
   }, [authLoading, isChannelPartner, session?.access_token]);
 
-  // practice_admin (and any role with a practice_id): load own practice for vertical-aware pages
+  // practice_admin / staff: load own practice for vertical-aware pages.
+  //
+  // Deliberately skipped for super_admin and channel_partner. Those roles choose a practice
+  // from the picker and get myPractice from the effect below — but a super_admin can ALSO
+  // have a practice_id of their own, and then both effects set myPractice and whichever
+  // fetch resolved last won. That is why viewing another practice could show your own
+  // practice's name (e.g. the slide-deck name field), and why switching the picker appeared
+  // to fix it: only the picker effect re-runs on a switch.
   useEffect(() => {
     if (authLoading || !profile?.practice_id || !session?.access_token) return;
+    if (isSuperAdmin || isChannelPartner) return;
 
     fetch(`${BASE}/api/practices/mine`, {
       headers: { Authorization: `Bearer ${session.access_token}` },
@@ -90,7 +100,7 @@ export function PracticeProvider({ children }: { children: React.ReactNode }) {
         if (data && typeof data === "object") setMyPractice(data as Practice);
       })
       .catch(() => {});
-  }, [authLoading, profile?.practice_id, session?.access_token]);
+  }, [authLoading, profile?.practice_id, session?.access_token, isSuperAdmin, isChannelPartner]);
 
   // For super_admin and channel_partner, set myPractice from the selected practice
   useEffect(() => {

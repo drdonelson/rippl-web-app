@@ -1,6 +1,11 @@
-const FLOWCODE_QR_URL = "/flowcode-qr-poster.png";
+
+import { usePrintBranding } from "@/lib/usePrintBranding";
 
 export default function Poster5x7() {
+  // Name, lookup URL and QR come from the logged-in practice. These were hard-coded to
+  // Hallmark, so a second dental office printed another practice's name and a QR code
+  // resolving to that practice's lookup.
+  const { name, findLabel, qrSrc } = usePrintBranding({ qrWidth: 320, dark: "#0a1628" });
   return (
     <>
       <style>{`
@@ -26,7 +31,7 @@ export default function Poster5x7() {
           {/* Header */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 36px 0" }}>
             <div>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", color: "#c9a84c", textTransform: "uppercase" }}>Hallmark Dental</div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", color: "#c9a84c", textTransform: "uppercase" }}>{name}</div>
             </div>
             <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Referral Rewards</div>
           </div>
@@ -38,7 +43,7 @@ export default function Poster5x7() {
               <span style={{ color: "#2dd4bf", fontStyle: "italic" }}>Smile.</span>
             </div>
             <div style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", marginTop: 16, lineHeight: 1.6 }}>
-              Refer a friend to Hallmark Dental and earn a{" "}
+              Refer a friend to {name} and earn a{" "}
               <span style={{ color: "#5eead4", fontWeight: 600 }}>gift card reward</span>{" "}
               when they become a patient.
             </div>
@@ -51,10 +56,10 @@ export default function Poster5x7() {
           <div style={{ display: "flex", flex: 1, padding: "24px 36px", gap: 28, alignItems: "center" }}>
             {/* QR */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, flexShrink: 0 }}>
-              <img src={FLOWCODE_QR_URL} alt="Scan to find your referral link" width={160} height={160} />
+              <img src={qrSrc} alt="Scan to find your referral link" width={160} height={160} />
               <div style={{ textAlign: "center" }}>
                 <div style={{ color: "white", fontWeight: 700, fontSize: 11 }}>Scan to get your link</div>
-                <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, fontFamily: "monospace", marginTop: 2 }}>joinrippl.com/find</div>
+                <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, fontFamily: "monospace", marginTop: 2 }}>{findLabel}</div>
               </div>
             </div>
 

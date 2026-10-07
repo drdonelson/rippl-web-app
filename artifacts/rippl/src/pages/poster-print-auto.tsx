@@ -1,4 +1,3 @@
-const FLOWCODE_QR_URL = "/flowcode-qr-poster.png";
 
 const STEPS = [
   { n: "1", text: "Scan the QR code below" },
@@ -11,7 +10,13 @@ const BG     = "#1c1c1e";
 const ACCENT = "#a8a8b0";
 const BRIGHT = "#d0d0d8";
 
+import { usePrintBranding } from "@/lib/usePrintBranding";
+
 export default function PosterPrintAuto() {
+  // Name, lookup URL and QR all come from the logged-in practice. The QR used to be a
+  // checked-in Flowcode PNG encoding the DENTAL /find link, so an automotive poster sent
+  // customers to another tenant's lookup.
+  const { name, findLabel, qrSrc } = usePrintBranding({ qrWidth: 392, dark: "#1c1c1e" });
   return (
     <>
       <style>{`
@@ -37,7 +42,7 @@ export default function PosterPrintAuto() {
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "40px 64px 24px" }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", color: ACCENT, textTransform: "uppercase" }}>[Your Dealership]</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", color: ACCENT, textTransform: "uppercase" }}>{name}</div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 999, padding: "6px 16px" }}>
             <div style={{ width: 8, height: 8, borderRadius: "50%", background: ACCENT }} />
@@ -90,11 +95,11 @@ export default function PosterPrintAuto() {
           {/* QR */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, flexShrink: 0 }}>
             <div style={{ padding: 12, background: "white", borderRadius: 16 }}>
-              <img src={FLOWCODE_QR_URL} alt="Scan to find your referral link" width={196} height={196} />
+              <img src={qrSrc} alt="Scan to find your referral link" width={196} height={196} />
             </div>
             <div style={{ textAlign: "center" }}>
               <div style={{ color: "white", fontWeight: 700, fontSize: 14 }}>Scan to get your link</div>
-              <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, fontFamily: "monospace", marginTop: 4 }}>joinrippl.com/find</div>
+              <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, fontFamily: "monospace", marginTop: 4 }}>{findLabel}</div>
             </div>
           </div>
         </div>

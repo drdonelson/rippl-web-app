@@ -3,9 +3,14 @@
  * Cmd+P → Save as PDF → print on card stock.
  */
 
-const FLOWCODE_QR_URL = "/flowcode-qr.png";
+
+import { usePrintBranding } from "@/lib/usePrintBranding";
 
 export default function CardBack() {
+  // Name, lookup URL and QR come from the logged-in practice. These were hard-coded to
+  // Hallmark, so a second dental office printed another practice's name and a QR code
+  // resolving to that practice's lookup.
+  const { findLabel, qrSrc } = usePrintBranding({ qrWidth: 216, dark: "#0a1628" });
   return (
     <div className="bg-white min-h-screen flex flex-col items-center justify-center py-12 px-8">
       <style>{`
@@ -46,13 +51,13 @@ export default function CardBack() {
             ))}
           </div>
 
-          <p className="text-teal-300 text-[10px] font-mono">joinrippl.com/find</p>
+          <p className="text-teal-300 text-[10px] font-mono">{findLabel}</p>
         </div>
 
         {/* Right — QR */}
         <div className="w-1/2 h-full flex flex-col items-center justify-center gap-4">
           <img
-            src={FLOWCODE_QR_URL}
+            src={qrSrc}
             alt="Scan to find your referral link"
             width={160}
             height={160}

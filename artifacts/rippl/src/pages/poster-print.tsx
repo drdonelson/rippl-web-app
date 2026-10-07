@@ -1,4 +1,3 @@
-const FLOWCODE_QR_URL = "/flowcode-qr-poster.png";
 
 const STEPS = [
   { n: "1", text: "Scan the QR code below" },
@@ -7,7 +6,13 @@ const STEPS = [
   { n: "4", text: "Earn a gift card when they become a patient" },
 ];
 
+import { usePrintBranding } from "@/lib/usePrintBranding";
+
 export default function PosterPrint() {
+  // Name, lookup URL and QR come from the logged-in practice. These were hard-coded to
+  // Hallmark, so a second dental office printed another practice's name and a QR code
+  // resolving to that practice's lookup.
+  const { name, findLabel, qrSrc } = usePrintBranding({ qrWidth: 440, dark: "#0a1628" });
   return (
     <>
       <style>{`
@@ -33,7 +38,7 @@ export default function PosterPrint() {
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "40px 64px 24px" }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", color: "#c9a84c", textTransform: "uppercase" }}>Hallmark</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", color: "#c9a84c", textTransform: "uppercase" }}>{name}</div>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", color: "#c9a84c", textTransform: "uppercase" }}>Dental</div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 999, padding: "6px 16px" }}>
@@ -87,10 +92,10 @@ export default function PosterPrint() {
 
           {/* QR */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, flexShrink: 0 }}>
-            <img src={FLOWCODE_QR_URL} alt="Scan to find your referral link" width={220} height={220} />
+            <img src={qrSrc} alt="Scan to find your referral link" width={220} height={220} />
             <div style={{ textAlign: "center" }}>
               <div style={{ color: "white", fontWeight: 700, fontSize: 14 }}>Scan to get your link</div>
-              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontFamily: "monospace", marginTop: 4 }}>joinrippl.com/find</div>
+              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontFamily: "monospace", marginTop: 4 }}>{findLabel}</div>
             </div>
           </div>
         </div>
