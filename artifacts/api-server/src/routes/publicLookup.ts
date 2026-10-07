@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db } from "@workspace/db";
-import { referrersTable, practicesTable } from "@workspace/db/schema";
+import { referrersTable, practicesTable, officesTable } from "@workspace/db/schema";
 import { sql, eq, and } from "drizzle-orm";
 import rateLimit from "express-rate-limit";
 import { SMS_ENABLED } from "../lib/smsEnabled";
@@ -22,6 +22,9 @@ function normalizePhone(raw: string): string {
   return digits.length >= 10 ? digits.slice(-10) : digits;
 }
 
+// The practice a bare /find link resolves to. See the note in POST /lookup.
+const DEFAULT_LOOKUP_PRACTICE_SLUG = "hallmark-dental";
+
 const inviteLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 5,
@@ -33,9 +36,63 @@ const inviteLimiter = rateLimit({
 });
 
 router.post("/lookup", lookupLimiter, async (req: Request, res: Response) => {
-  const { phone } = req.body as { phone?: string };
+  const { phone, office, practiceSlug } = req.body as {
+    phone?: string; office?: string; practiceSlug?: string;
+  };
   if (!phone || typeof phone !== "string") {
     res.status(400).json({ error: "Phone number required" });
+    return;
+  }
+
+  // A phone number alone does not say whose customer this is. Unscoped, this endpoint
+  // returned a name and referral code for ANY number in ANY tenant — so once a second
+  // client's members share the table, one client's customer could look up another's.
+  // The caller must name the location (existing /find?office=<id> links) or the practice.
+  let practiceId: string | null = null;
+  if (typeof office === "string" && office.trim()) {
+    const [row] = await db
+      .select({ practice_id: officesTable.practice_id })
+      .from(officesTable)
+      .where(eq(officesTable.id, office.trim().toLowerCase()))
+      .limit(1);
+    practiceId = row?.practice_id ?? null;
+  } else if (typeof practiceSlug === "string" && practiceSlug.trim()) {
+    const [row] = await db
+      .select({ id: practicesTable.id })
+      .from(practicesTable)
+      .where(eq(practicesTable.slug, practiceSlug.trim().toLowerCase()))
+      .limit(1);
+    practiceId = row?.id ?? null;
+  }
+  // INTERIM, with a defined removal condition.
+  //
+  // Eight print assets (posters, cards, the slide deck) show a bare "joinrippl.com/find"
+  // with no location, so hard-requiring a tenant would break every QR code already printed.
+  // Falling back to one named practice still fixes the actual defect: the query stops
+  // searching EVERY tenant and searches exactly one. A customer of another practice
+  // scanning a Hallmark poster now correctly gets "not found" instead of someone else's
+  // name and code.
+  //
+  // REMOVE THIS as soon as a second practice prints /find materials — at that point a bare
+  // link is genuinely ambiguous and must be refused. Carlock's posters need ?p=carlock, and
+  // the automotive poster/card templates still carry the dental QR target.
+  if (!practiceId) {
+    const [fallback] = await db
+      .select({ id: practicesTable.id })
+      .from(practicesTable)
+      .where(eq(practicesTable.slug, DEFAULT_LOOKUP_PRACTICE_SLUG))
+      .limit(1);
+    practiceId = fallback?.id ?? null;
+    logger.warn(
+      { office, practiceSlug, resolvedTo: DEFAULT_LOOKUP_PRACTICE_SLUG },
+      "[lookup] No location in request — fell back to the default practice. " +
+      "A printed asset is still pointing at a bare /find link.",
+    );
+  }
+  if (!practiceId) {
+    res.status(400).json({
+      error: "This lookup link is missing its location. Please use the link or QR code from your practice, or ask the front desk.",
+    });
     return;
   }
 
@@ -50,7 +107,10 @@ router.post("/lookup", lookupLimiter, async (req: Request, res: Response) => {
   const rows = await db
     .select({ name: referrersTable.name, referral_code: referrersTable.referral_code })
     .from(referrersTable)
-    .where(sql`right(regexp_replace(${referrersTable.phone}, '[^0-9]', '', 'g'), 10) = ${normalized}`)
+    .where(and(
+      sql`right(regexp_replace(${referrersTable.phone}, '[^0-9]', '', 'g'), 10) = ${normalized}`,
+      eq(referrersTable.practice_id, practiceId),
+    ))
     .limit(1);
 
   if (rows.length === 0) {

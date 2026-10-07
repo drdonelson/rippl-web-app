@@ -28,8 +28,15 @@ export default function FindPage() {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const officeCode = params.get("office")?.toLowerCase() ?? "";
+  // ?p=<practice-slug> is the multi-tenant form; ?office=<id> keeps existing Hallmark links working.
+  const practiceSlug = params.get("p")?.toLowerCase() ?? "";
   const officeName = OFFICE_NAMES[officeCode] ?? "";
-  const practiceLabel = officeName ? `Hallmark Dental · ${officeName}` : "Hallmark Dental";
+  // OFFICE_NAMES is Hallmark-only. A ?p= link belongs to another practice, so fall back to
+  // generic copy rather than greeting their customer with a dental practice's name.
+  const specificLabel = practiceSlug
+    ? ""
+    : officeName ? `Hallmark Dental · ${officeName}` : "Hallmark Dental";
+  const practiceLabel = specificLabel || "your practice";
 
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
@@ -52,7 +59,7 @@ export default function FindPage() {
       const res = await fetch(`${API_BASE}/api/public/lookup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: digits }),
+        body: JSON.stringify({ phone: digits, office: officeCode, practiceSlug }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -93,7 +100,7 @@ export default function FindPage() {
         </div>
         <div>
           <p className="text-sm font-semibold text-slate-900">Rippl</p>
-          <p className="text-xs text-slate-400">Referral rewards · {practiceLabel}</p>
+          <p className="text-xs text-slate-400">Referral rewards{specificLabel ? ` · ${specificLabel}` : ""}</p>
         </div>
       </div>
 
