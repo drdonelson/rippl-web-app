@@ -2,7 +2,7 @@ import { SMS_ENABLED } from "../lib/smsEnabled";
 import { db } from "@workspace/db";
 import { referrersTable, referralEventsTable } from "@workspace/db/schema";
 import type { Practice } from "@workspace/db/schema";
-import { eq, sql, and, lt, isNotNull, gte } from "drizzle-orm";
+import { eq, sql, and, lt, isNotNull, gte, asc } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { getPracticeConfig, resolveTwilioPhone, resolveTwilioClient } from "../lib/practiceConfig";
 
@@ -88,20 +88,41 @@ export async function scheduleOnboardingSms(params: {
   newPatientName: string;
   newPatientPhone: string;
   referralEventId: string;
+  /** Tenant of the visit. Pass explicitly — see the note below. */
+  officeId?: string | null;
+  practiceId?: string | null;
 }): Promise<OnboardingResult> {
   const { newPatientName, newPatientPhone, referralEventId } = params;
 
-  // Look up practice so the SMS uses the right name + Twilio credentials
-  let practice: Practice | null = null;
-  let practiceName: string | undefined;
-  try {
-    const [evt] = await db.select({ practice_id: referralEventsTable.practice_id })
-      .from(referralEventsTable).where(eq(referralEventsTable.id, referralEventId)).limit(1);
-    if (evt?.practice_id) {
-      practice = await getPracticeConfig(evt.practice_id);
-      practiceName = practice?.white_label_name ?? practice?.name ?? undefined;
-    }
-  } catch { /* non-fatal — falls back to generic copy */ }
+  // Resolve the tenant. Callers pass it explicitly because the event lookup below cannot
+  // always find it: the appointment sweep calls this with a synthetic `apt-{AptNum}` id that
+  // is not a referral_events row, so the lookup silently returned nothing and the referrer
+  // was created with no practice and no office at all. That is how 724 untenanted
+  // `exam-*` rows accumulated, and why their SMS used generic copy and the global number.
+  let practiceId: string | null = params.practiceId ?? null;
+  const officeId: string | null = params.officeId ?? null;
+  if (!practiceId) {
+    try {
+      const [evt] = await db
+        .select({ practice_id: referralEventsTable.practice_id })
+        .from(referralEventsTable).where(eq(referralEventsTable.id, referralEventId)).limit(1);
+      practiceId = evt?.practice_id ?? null;
+    } catch { /* non-fatal — handled by the tenant guard below */ }
+  }
+
+  // No tenant means we cannot tell whose patient this is, cannot scope the duplicate check,
+  // and cannot pick the right Twilio number. Refuse rather than create an orphan membership.
+  if (!practiceId) {
+    logger.error(
+      { referralEventId, officeId },
+      "[onboarding] No practice could be resolved — refusing to enrol or text. " +
+      "Pass practiceId from the caller.",
+    );
+    return { success: false, skipped: true, error: "no_tenant" };
+  }
+
+  const practice: Practice | null = await getPracticeConfig(practiceId);
+  const practiceName: string | undefined = practice?.white_label_name ?? practice?.name ?? undefined;
 
   // Normalise phone for lookup and Twilio
   const phoneRaw = newPatientPhone.trim();
@@ -109,19 +130,42 @@ export async function scheduleOnboardingSms(params: {
   // Normalize to last 10 digits so (615) 555-1234 matches +16155551234
   const phoneLast10 = phone.replace(/\D/g, "").slice(-10);
 
-  // Check if this patient is already a referrer — match on last 10 digits to handle format differences
+  // Check if this patient is already a referrer — match on last 10 digits to handle format
+  // differences. Scoped to the tenant: unscoped, a Hallmark patient's number could match a
+  // Carlock buyer's. Ordered by created_at so the row we act on is deterministic rather than
+  // whatever Postgres returned first — households legitimately share a phone, so this query
+  // can return several people. See the fail-safe guards immediately below.
   const existing = await db
     .select()
     .from(referrersTable)
-    .where(sql`RIGHT(REGEXP_REPLACE(${referrersTable.phone}, '[^0-9]', '', 'g'), 10) = ${phoneLast10}`);
+    .where(and(
+      sql`RIGHT(REGEXP_REPLACE(${referrersTable.phone}, '[^0-9]', '', 'g'), 10) = ${phoneLast10}`,
+      eq(referrersTable.practice_id, practiceId),
+    ))
+    .orderBy(asc(referrersTable.created_at));
 
   if (existing.length > 0) {
-    const referrer = existing[0];
-
-    if (referrer.onboarding_sms_sent) {
-      logger.info({ phone, referrerId: referrer.id }, "Onboarding SMS already sent — skipping");
-      return { success: true, skipped: true, referrerId: referrer.id, referralCode: referrer.referral_code };
+    // Fail-safe across EVERY row sharing this number, not just the first. Reading one
+    // arbitrary row was the mechanism behind 21 production double-texts, and it could text
+    // someone who had opted out. These can only ever suppress a send.
+    if (existing.some(e => e.sms_opt_out_permanent || e.sms_opt_out)) {
+      logger.info({ phone }, "Onboarding SMS skipped — a record on this number has opted out");
+      return { success: true, skipped: true };
     }
+    if (existing.some(e => e.onboarding_sms_sent)) {
+      logger.info({ phone }, "Onboarding SMS skipped — already sent on a record with this number");
+      return { success: true, skipped: true };
+    }
+    const futureScheduled = existing
+      .map(e => e.onboarding_sms_scheduled_at)
+      .filter((d): d is Date => d != null)
+      .some(d => new Date(d).getTime() > Date.now());
+    if (futureScheduled) {
+      logger.info({ phone }, "Onboarding SMS skipped — already scheduled on this number");
+      return { success: true, skipped: true };
+    }
+
+    const referrer = existing[0];
 
     if (referrer.onboarding_sms_scheduled_at) {
       const scheduledMs = new Date(referrer.onboarding_sms_scheduled_at).getTime();
@@ -198,6 +242,8 @@ export async function scheduleOnboardingSms(params: {
     phone,
     referral_code:       finalCode,
     onboarding_sms_sent: false,
+    office_id:           officeId,
+    practice_id:         practiceId,
   }).returning();
 
   logger.info({ referrerId: newReferrer.id, referralCode: finalCode }, "New referrer created from exam completion");

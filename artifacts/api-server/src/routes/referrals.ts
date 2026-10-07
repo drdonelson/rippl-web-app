@@ -281,6 +281,8 @@ router.patch("/:id/status", async (req, res) => {
         newPatientName:  event.new_patient_name,
         newPatientPhone: event.new_patient_phone,
         referralEventId: id,
+        officeId:        event.office_id ?? null,
+        practiceId:      event.practice_id ?? null,
       }).then((result) => {
         if (result.skipped) {
           req.log.info({ referralId: id }, "Onboarding SMS skipped — patient already enrolled");

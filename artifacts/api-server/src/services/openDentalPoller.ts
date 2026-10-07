@@ -334,8 +334,15 @@ async function fetchOdPatient(
 async function runOnboardingSweep(
   headers: Record<string, string>,
   officeId: string,
+  practiceId: string | null,
   baseUrl: string = OPEN_DENTAL_URL ?? ""
 ): Promise<void> {
+  // Every read and write below keys on a phone number, which is shared by households AND
+  // now by tenants. Without a tenant there is no safe query to run here.
+  if (!practiceId) {
+    logger.error({ officeId }, "[onboarding-sweep] Office has no practice_id — skipping sweep");
+    return;
+  }
   const dateEnd   = new Date().toISOString().split("T")[0];
   const dateStart = new Date(Date.now() - 86_400_000).toISOString().split("T")[0];
 
@@ -386,7 +393,10 @@ async function runOnboardingSweep(
           sms_opt_out_permanent:       referrersTable.sms_opt_out_permanent,
         })
         .from(referrersTable)
-        .where(sql`RIGHT(REGEXP_REPLACE(${referrersTable.phone}, '[^0-9]', '', 'g'), 10) = ${phoneLast10}`);
+        .where(and(
+          sql`RIGHT(REGEXP_REPLACE(${referrersTable.phone}, '[^0-9]', '', 'g'), 10) = ${phoneLast10}`,
+          eq(referrersTable.practice_id, practiceId),
+        ));
 
       // These checks consider ANY row matching the phone, not existing[0]. The lookup is an
       // unordered multi-row query, and duplicate referrer rows for one person are known to
@@ -405,7 +415,12 @@ async function runOnboardingSweep(
         await db
           .update(referrersTable)
           .set({ sms_opt_out: false })
-          .where(sql`RIGHT(REGEXP_REPLACE(${referrersTable.phone}, '[^0-9]', '', 'g'), 10) = ${phoneLast10}`);
+          // Scoped to the tenant: unscoped this cleared the "skip next SMS" flag for anyone
+          // sharing the number, including another practice's customer.
+          .where(and(
+            sql`RIGHT(REGEXP_REPLACE(${referrersTable.phone}, '[^0-9]', '', 'g'), 10) = ${phoneLast10}`,
+            eq(referrersTable.practice_id, practiceId),
+          ));
         continue;
       }
 
@@ -434,6 +449,10 @@ async function runOnboardingSweep(
         newPatientName:  fullName,
         newPatientPhone: phone,
         referralEventId: `apt-${apt.AptNum}`,
+        // Passed explicitly — `apt-*` is not a referral_events id, so the callee cannot
+        // resolve the tenant by looking it up.
+        officeId,
+        practiceId,
       });
 
       logger.info(
@@ -934,7 +953,7 @@ export async function syncOpenDental(options?: {
   // Runs after REF-COMP processing. Errors here are isolated — they never
   // affect the SyncResult returned to the caller.
   try {
-    await runOnboardingSweep(headers, office?.id ?? "default", odUrl);
+    await runOnboardingSweep(headers, office.id, office.practice_id ?? null, odUrl);
   } catch (err) {
     logger.error({ err }, "[onboarding-sweep] Uncaught sweep error — REF-COMP results unaffected");
   }
