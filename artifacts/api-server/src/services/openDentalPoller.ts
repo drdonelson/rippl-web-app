@@ -450,9 +450,12 @@ async function runOnboardingSweep(
         newPatientPhone: phone,
         referralEventId: `apt-${apt.AptNum}`,
         // Passed explicitly — `apt-*` is not a referral_events id, so the callee cannot
-        // resolve the tenant by looking it up.
+        // resolve the tenant by looking it up. patientId is the real Open Dental PatNum,
+        // so the row this creates is the same identity the REF-COMP poller looks for
+        // rather than an unfindable `exam-apt-*` shell.
         officeId,
         practiceId,
+        patientId: String(patNum),
       });
 
       logger.info(

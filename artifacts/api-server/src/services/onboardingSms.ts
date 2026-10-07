@@ -91,6 +91,15 @@ export async function scheduleOnboardingSms(params: {
   /** Tenant of the visit. Pass explicitly — see the note below. */
   officeId?: string | null;
   practiceId?: string | null;
+  /**
+   * The real external patient id (Open Dental PatNum). Pass it whenever it is known.
+   * Without it this function falls back to a synthetic `exam-*` id, which creates a shell
+   * that no other code path can ever find: the poller looks patients up by
+   * (patient_id, office_id) with a numeric PatNum, so it never matches a shell and enrols a
+   * second row for the same human instead. 768 such shells exist, 50 of them sharing an id
+   * because AptNum — like PatNum — is only unique within one office's database.
+   */
+  patientId?: string | null;
 }): Promise<OnboardingResult> {
   const { newPatientName, newPatientPhone, referralEventId } = params;
 
@@ -121,6 +130,8 @@ export async function scheduleOnboardingSms(params: {
     return { success: false, skipped: true, error: "no_tenant" };
   }
 
+  const externalPatientId = params.patientId?.trim() || null;
+
   const practice: Practice | null = await getPracticeConfig(practiceId);
   const practiceName: string | undefined = practice?.white_label_name ?? practice?.name ?? undefined;
 
@@ -129,6 +140,31 @@ export async function scheduleOnboardingSms(params: {
   const phone = toE164(phoneRaw) || phoneRaw;
   // Normalize to last 10 digits so (615) 555-1234 matches +16155551234
   const phoneLast10 = phone.replace(/\D/g, "").slice(-10);
+
+  // Exact identity first, when we have one. (patient_id, office_id) is how the poller
+  // identifies a patient, so checking it here means the sweep and the poller agree on who
+  // this person is instead of racing to create two rows for them.
+  if (externalPatientId && officeId) {
+    const [byIdentity] = await db
+      .select()
+      .from(referrersTable)
+      .where(and(
+        eq(referrersTable.patient_id, externalPatientId),
+        eq(referrersTable.office_id, officeId),
+      ))
+      .limit(1);
+    if (byIdentity) {
+      if (byIdentity.sms_opt_out_permanent || byIdentity.sms_opt_out || byIdentity.onboarding_sms_sent) {
+        return { success: true, skipped: true, referrerId: byIdentity.id, referralCode: byIdentity.referral_code };
+      }
+      const sched = byIdentity.onboarding_sms_scheduled_at;
+      if (sched && new Date(sched).getTime() > Date.now()) {
+        return { success: true, skipped: true, referrerId: byIdentity.id, referralCode: byIdentity.referral_code };
+      }
+      scheduleDelayedSms(byIdentity.id, newPatientName, phone, byIdentity.referral_code, practiceName, practice);
+      return { success: true, referrerId: byIdentity.id, referralCode: byIdentity.referral_code };
+    }
+  }
 
   // Check if this patient is already a referrer — match on last 10 digits to handle format
   // differences. Scoped to the tenant: unscoped, a Hallmark patient's number could match a
@@ -237,7 +273,7 @@ export async function scheduleOnboardingSms(params: {
 
   const [newReferrer] = await db.insert(referrersTable).values({
     id:                  newId,
-    patient_id:          `exam-${referralEventId}`,
+    patient_id:          externalPatientId ?? `exam-${referralEventId}`,
     name:                newPatientName,
     phone,
     referral_code:       finalCode,
