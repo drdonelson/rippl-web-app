@@ -1,4 +1,5 @@
-import { pgTable, text, boolean, timestamp, integer } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { pgTable, text, boolean, timestamp, integer, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { practicesTable } from "./practices";
@@ -24,7 +25,12 @@ export const referralEventsTable = pgTable("referral_events", {
   stripe_charge_id:     text("stripe_charge_id"),     // PaymentIntent ID — set when per-referral charge fires
   charged_at:           timestamp("charged_at"),       // when charge succeeded
   charge_amount_cents:  integer("charge_amount_cents"), // amount charged in cents
-});
+}, table => [
+  uniqueIndex("referral_events_od_source_unique").on(table.office_id, table.external_proc_num)
+    .where(sql`${table.office_id} IS NOT NULL AND ${table.external_proc_num} IS NOT NULL AND ${table.team_source} = 'open-dental-sync'`),
+  uniqueIndex("referral_events_dc_source_unique").on(table.practice_id, table.external_proc_num)
+    .where(sql`${table.practice_id} IS NOT NULL AND ${table.external_proc_num} IS NOT NULL AND ${table.team_source} IN ('drivecentric-sftp', 'drivecentric-poll')`),
+]);
 
 export const insertReferralEventSchema = createInsertSchema(referralEventsTable).omit({ id: true, created_at: true });
 export type InsertReferralEvent = z.infer<typeof insertReferralEventSchema>;

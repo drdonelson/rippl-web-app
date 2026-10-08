@@ -1,6 +1,8 @@
+import { resolveHouseholdReview, completeManualReferral, deliverCompletionNotification } from "../services/referralCompletion";
+import { assertTenant, RewardError } from "../services/rewardRedemption";
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { referralEventsTable, referrersTable, adminTasksTable, rewardClaimsTable, staffPoolConfigsTable, officesTable } from "@workspace/db/schema";
+import { referralEventsTable, referrersTable, adminTasksTable, rewardClaimsTable, officesTable } from "@workspace/db/schema";
 import { eq, sql, and } from "drizzle-orm";
 import {
   CreateReferralBody,
@@ -10,12 +12,20 @@ import {
 } from "@workspace/api-zod";
 import { sendRewardNotification } from "../services/notifications";
 import { scheduleOnboardingSms } from "../services/onboardingSms";
-import { checkHouseholdDuplicate } from "../services/householdDuplicate";
-import { calculateTier } from "../lib/tierUtils";
 import { chargeReferralCompletion } from "../services/billingService";
-import { getPracticeConfig } from "../lib/practiceConfig";
 
 const router: IRouter = Router();
+
+router.use((req, res, next) => {
+  if (req.authUser?.role !== "super_admin" && !req.authUser?.practice_id) { res.status(403).json({ error: "Tenant membership required" }); return; }
+  next();
+});
+router.param("id", async (req, res, next, id) => {
+  const [event] = await db.select({ practice_id: referralEventsTable.practice_id }).from(referralEventsTable).where(eq(referralEventsTable.id, id));
+  if (!event) { res.status(404).json({ error: "Referral event not found" }); return; }
+  try { assertTenant(event.practice_id, req.authUser); next(); }
+  catch (err) { if (err instanceof RewardError) { res.status(err.status).json({ error: err.message }); return; } next(err); }
+});
 
 router.get("/", async (req, res) => {
   const user = req.authUser!;
@@ -69,62 +79,22 @@ router.post("/", async (req, res) => {
 
   // Block self-referrals and circular referrals (A referred B → B cannot refer A back)
   const [currentReferrer] = await db
-    .select({ phone: referrersTable.phone, name: referrersTable.name })
+    .select({ phone: referrersTable.phone, name: referrersTable.name, practice_id: referrersTable.practice_id })
     .from(referrersTable)
     .where(eq(referrersTable.id, body.referrer_id));
 
-  if (currentReferrer) {
-    const normalize = (p: string | null | undefined) =>
-      (p ?? "").replace(/\D/g, "").slice(-10);
-
-    const referrerPhone    = normalize(currentReferrer.phone);
-    const newPatientPhone  = normalize(body.new_patient_phone);
-
-    // Self-referral: same phone number
-    if (referrerPhone && newPatientPhone && referrerPhone === newPatientPhone) {
-      res.status(400).json({ error: "A patient cannot refer themselves." });
-      return;
-    }
-
-    // Circular referral: new patient previously referred the current referrer
-    if (newPatientPhone && referrerPhone) {
-      const circular = await db.execute(sql`
-        SELECT re.id FROM referral_events re
-        JOIN referrers r ON re.referrer_id = r.id
-        WHERE RIGHT(REGEXP_REPLACE(r.phone, '[^0-9]', '', 'g'), 10) = ${newPatientPhone}
-        AND RIGHT(REGEXP_REPLACE(re.new_patient_phone, '[^0-9]', '', 'g'), 10) = ${referrerPhone}
-        LIMIT 1
-      `);
-      if ((circular.rows as unknown[]).length > 0) {
-        req.log.warn(
-          { referrerId: body.referrer_id, newPatientPhone },
-          "Circular referral blocked — new patient previously referred this referrer"
-        );
-        res.status(400).json({
-          error: `Circular referral: ${currentReferrer.name} was previously referred by this patient. This referral cannot be created.`,
-        });
-        return;
-      }
-    }
-  }
-
-  const householdResult = await checkHouseholdDuplicate(
-    body.new_patient_name,
-    body.new_patient_phone
-  );
-
-  // Resolve office name from office_id when the form submits the UUID
+  if (!currentReferrer) { res.status(404).json({ error: "Referrer not found" }); return; }
+  try { assertTenant(currentReferrer.practice_id, user); }
+  catch (err) { if (err instanceof RewardError) { res.status(err.status).json({ error: err.message }); return; } throw err; }
+  // A shared phone is not proof of self/circular referral. Manual intake is a lead;
+  // qualification and identity confirmation happen before completion.
+  const officeId = user.role !== "super_admin" && user.office_id ? user.office_id : body.office_id ?? null;
   let officeName = body.office ?? "";
-  const officeId = body.office_id ?? null;
-  if (officeId && !officeName) {
-    const [off] = await db
-      .select({ name: officesTable.name })
-      .from(officesTable)
-      .where(eq(officesTable.id, officeId))
-      .limit(1);
-    officeName = off?.name ?? "";
+  if (officeId) {
+    const [office] = await db.select().from(officesTable).where(eq(officesTable.id, officeId));
+    if (!office || office.practice_id !== currentReferrer.practice_id) { res.status(400).json({ error: "Office ownership mismatch" }); return; }
+    officeName = office.name;
   }
-
   const [event] = await db.insert(referralEventsTable).values({
     new_patient_name:    body.new_patient_name,
     new_patient_phone:   body.new_patient_phone,
@@ -132,254 +102,74 @@ router.post("/", async (req, res) => {
     team_source:         body.team_source,
     office:              officeName,
     office_id:           officeId,
-    practice_id:         user.practice_id,
+    practice_id:         currentReferrer.practice_id,
     status:              "Lead",
-    household_id:        householdResult.household_id,
-    household_duplicate: householdResult.is_duplicate,
+    household_id:        null,
+    household_duplicate: false,
   }).returning();
 
-  await db
-    .update(referrersTable)
-    .set({ total_referrals: sql`${referrersTable.total_referrals} + 1` })
-    .where(eq(referrersTable.id, body.referrer_id));
-
-  if (householdResult.is_duplicate) {
-    req.log.warn(
-      { eventId: event.id, householdId: householdResult.household_id, conflictingEventId: householdResult.conflicting_event_id },
-      "Household duplicate detected — creating admin review task"
-    );
-
-    await db.insert(adminTasksTable).values({
-      practice_id:       user.practice_id,
-      task_type:         "household-duplicate-review",
-      referrer_id:       body.referrer_id,
-      referral_event_id: event.id,
-      amount:            0,
-      notes: `Household duplicate detected. Existing completed event: ${householdResult.conflicting_event_id ?? "unknown"}. Address match: ${householdResult.od_address_found ? "yes (OD address)" : "name only"}. Review and override if legitimate.`,
-      status: "pending",
-    });
-
-    res.status(201).json({ ...event, referrer_name: null });
-    return;
-  }
-
-  res.status(201).json({ ...event, referrer_name: null });
+  res.status(201).json({ ...event, referrer_name: currentReferrer.name });
 });
 
 router.patch("/:id/status", async (req, res) => {
   const { id } = UpdateReferralStatusParams.parse(req.params);
   const body = UpdateReferralStatusBody.parse(req.body);
-
-  const [event] = await db
-    .update(referralEventsTable)
-    .set({ status: body.status })
-    .where(eq(referralEventsTable.id, id))
-    .returning();
-
-  if (!event) {
-    res.status(404).json({ error: "Referral event not found" });
-    return;
-  }
-
-  const [referrer] = await db.select().from(referrersTable).where(eq(referrersTable.id, event.referrer_id));
-
-  if (body.status === "Exam Completed") {
-    chargeReferralCompletion(id).catch(err => req.log.error({ err }, "[billing] Manual charge error"));
-
-    if (referrer) {
-      const practiceConfig = await getPracticeConfig(event.practice_id ?? null).catch(() => null);
-      try {
-        const newTotal    = (referrer.total_referrals ?? 0) + 1;
-        const oldTier     = referrer.tier ?? "starter";
-        const newTierData = calculateTier(newTotal, practiceConfig);
-
-        await db
-          .update(referrersTable)
-          .set({
-            total_referrals: newTotal,
-            tier: newTierData.name,
-            reward_value: newTierData.rewardValue,
-            ...(newTierData.name !== oldTier ? { tier_unlocked_at: new Date() } : {}),
-          })
-          .where(eq(referrersTable.id, referrer.id));
-
-        if (newTierData.name !== oldTier) {
-          req.log.info({ referrerId: referrer.id, oldTier, newTier: newTierData.name }, "Tier upgraded");
-        }
-      } catch (tierErr) {
-        req.log.error({ err: tierErr }, "Failed to update referrer tier");
+  try {
+    if (body.status === "Exam Completed") {
+      const completion = await completeManualReferral(id, req.authUser!);
+      if (completion?.created) {
+        chargeReferralCompletion(id).catch(err => req.log.error({ err }, "Manual completion billing failed"));
+        await deliverCompletionNotification(completion);
+        const event = completion.event;
+        if (event.new_patient_phone) scheduleOnboardingSms({ newPatientName: event.new_patient_name,
+          newPatientPhone: event.new_patient_phone, referralEventId: id, officeId: event.office_id,
+          practiceId: event.practice_id, patientId: event.new_patient_pat_num,
+        }).catch(err => req.log.error({ err }, "Onboarding failed"));
       }
-
-      // Staff pool: add contribution entry if practice has pool enabled
-      if (event.practice_id) {
-        try {
-          const [poolConfig] = await db
-            .select()
-            .from(staffPoolConfigsTable)
-            .where(eq(staffPoolConfigsTable.practice_id, event.practice_id));
-          if (poolConfig?.enabled) {
-            await db.execute(sql`
-              INSERT INTO staff_pool_entries (id, practice_id, office_id, referral_event_id, amount)
-              VALUES (gen_random_uuid(), ${event.practice_id}, ${event.office_id ?? null}, ${id}, ${poolConfig.amount_per_referral})
-              ON CONFLICT (referral_event_id) WHERE referral_event_id IS NOT NULL DO NOTHING
-            `);
-          }
-        } catch (poolErr) {
-          req.log.error({ err: poolErr }, "Failed to insert staff pool entry");
-        }
-      }
-
-      let claimToken: string = referrer.referral_code;
-      try {
-        claimToken = crypto.randomUUID();
-        await db.insert(rewardClaimsTable).values({
-          practice_id:       event.practice_id,
-          claim_token:       claimToken,
-          referral_event_id: id,
-          referrer_id:       referrer.id,
-          reward_value:      calculateTier((referrer.total_referrals ?? 0) + 1, practiceConfig).rewardValue,
-          status:            "pending",
-        });
-      } catch (claimErr) {
-        try {
-          const [existing] = await db
-            .select({ claim_token: rewardClaimsTable.claim_token })
-            .from(rewardClaimsTable)
-            .where(eq(rewardClaimsTable.referral_event_id, id));
-          if (existing?.claim_token) {
-            claimToken = existing.claim_token;
-            req.log.info({ claimToken, referralId: id }, "Using existing claim token for event");
-          } else {
-            req.log.error({ err: claimErr }, "Failed to create reward_claims record — falling back to referral_code");
-            claimToken = referrer.referral_code;
-          }
-        } catch {
-          req.log.error({ err: claimErr }, "Failed to look up reward_claims record — falling back to referral_code");
-          claimToken = referrer.referral_code;
-        }
-      }
-
-      req.log.info({ referralId: id, referrerId: referrer.id }, "Exam completed — sending reward notification");
-      sendRewardNotification(
-        referrer.name,
-        referrer.phone,
-        referrer.email ?? null,
-        event.new_patient_name,
-        claimToken,
-        event.office ?? "Hallmark Dental",
-        calculateTier((referrer.total_referrals ?? 0) + 1, practiceConfig).rewardValue,
-        event.practice_id ?? undefined,
-      ).then((result) => {
-        req.log.info({ result }, "Reward notification result");
-      }).catch((err) => {
-        req.log.error({ err }, "Reward notification error");
-      });
+    } else {
+      // Financial transitions cannot be bypassed with a status edit or rolled back by
+      // a concurrent request. Reward Sent is written only by redemption.
+      const updated = await db.update(referralEventsTable).set({ status: body.status }).where(and(
+        eq(referralEventsTable.id, id), sql`${referralEventsTable.status} NOT IN ('Exam Completed', 'Completed', 'Reward Sent')`,
+        sql`${body.status} <> 'Reward Sent'`,
+      )).returning();
+      if (!updated.length) throw new RewardError(409, "Completed referrals require reconciliation");
     }
+    const [event] = await db.select().from(referralEventsTable).where(eq(referralEventsTable.id, id));
+    const [referrer] = await db.select().from(referrersTable).where(eq(referrersTable.id, event.referrer_id));
+    res.json({ ...event, referrer_name: referrer?.name ?? null });
+  } catch (err) {
+    if (err instanceof RewardError) { res.status(err.status).json({ error: err.message }); return; }
+    throw err;
+  }
+});
 
-    if (event.new_patient_phone) {
-      scheduleOnboardingSms({
-        newPatientName:  event.new_patient_name,
-        newPatientPhone: event.new_patient_phone,
-        referralEventId: id,
-        officeId:        event.office_id ?? null,
-        practiceId:      event.practice_id ?? null,
-        patientId:       event.new_patient_pat_num ?? null,
-      }).then((result) => {
-        if (result.skipped) {
-          req.log.info({ referralId: id }, "Onboarding SMS skipped — patient already enrolled");
-        } else {
-          req.log.info({ referralId: id, referrerId: result.referrerId, code: result.referralCode }, "Onboarding SMS scheduled");
-        }
-      }).catch((err) => {
-        req.log.error({ err, referralId: id }, "Failed to schedule onboarding SMS");
-      });
+for (const [path, approve] of [["override-household", true], ["dismiss-household", false]] as const) {
+  router.patch(`/:id/${path}`, async (req, res) => {
+    try {
+      const result = await resolveHouseholdReview(String(req.params.id), req.authUser!, approve);
+      await deliverCompletionNotification(result);
+      res.json(result.event);
+    } catch (err) {
+      if (err instanceof RewardError) { res.status(err.status).json({ error: err.message }); return; }
+      throw err;
     }
-  }
-
-  res.json({ ...event, referrer_name: referrer?.name ?? null });
-});
-
-router.patch("/:id/override-household", async (req, res) => {
-  const { id } = req.params;
-
-  const [event] = await db
-    .select()
-    .from(referralEventsTable)
-    .where(eq(referralEventsTable.id, id));
-
-  if (!event) { res.status(404).json({ error: "Referral event not found" }); return; }
-  if (!event.household_duplicate) { res.status(400).json({ error: "This event is not flagged as a household duplicate" }); return; }
-
-  const [updatedEvent] = await db
-    .update(referralEventsTable)
-    .set({ household_duplicate: false })
-    .where(eq(referralEventsTable.id, id))
-    .returning();
-
-  await db
-    .update(adminTasksTable)
-    .set({ status: "completed", completed: true })
-    .where(and(
-      eq(adminTasksTable.referral_event_id, id),
-      eq(adminTasksTable.task_type, "household-duplicate-review"),
-      eq(adminTasksTable.status, "pending")
-    ));
-
-  const [referrer] = await db.select().from(referrersTable).where(eq(referrersTable.id, event.referrer_id));
-
-  req.log.info({ eventId: id, referrerId: event.referrer_id }, "Household duplicate overridden by admin");
-  res.json({ ...updatedEvent, referrer_name: referrer?.name ?? null });
-});
-
-router.patch("/:id/dismiss-household", async (req, res) => {
-  const { id } = req.params;
-
-  const [event] = await db.select().from(referralEventsTable).where(eq(referralEventsTable.id, id));
-  if (!event) { res.status(404).json({ error: "Referral event not found" }); return; }
-  if (!event.household_duplicate) { res.status(400).json({ error: "This event is not flagged as a household duplicate" }); return; }
-
-  // Void the existing claim, or insert a voided placeholder if none exists
-  const [existingClaim] = await db.select().from(rewardClaimsTable).where(eq(rewardClaimsTable.referral_event_id, id));
-  if (existingClaim) {
-    await db.update(rewardClaimsTable).set({ status: "voided" }).where(eq(rewardClaimsTable.id, existingClaim.id));
-  } else {
-    await db.insert(rewardClaimsTable).values({
-      claim_token:       crypto.randomUUID(),
-      referral_event_id: id,
-      referrer_id:       event.referrer_id,
-      practice_id:       event.practice_id,
-      reward_value:      0,
-      status:            "voided",
-    });
-  }
-
-  // Close the admin task
-  await db.update(adminTasksTable)
-    .set({ status: "completed", completed: true })
-    .where(and(
-      eq(adminTasksTable.referral_event_id, id),
-      eq(adminTasksTable.task_type, "household-duplicate-review"),
-      eq(adminTasksTable.status, "pending")
-    ));
-
-  const [referrer] = await db.select().from(referrersTable).where(eq(referrersTable.id, event.referrer_id));
-
-  req.log.info({ eventId: id }, "Household duplicate dismissed — no reward issued");
-  res.json({ ...event, referrer_name: referrer?.name ?? null });
-});
+  });
+}
 
 router.post("/:id/resend-notification", async (req, res) => {
   const { id } = req.params;
 
   const [event] = await db.select().from(referralEventsTable).where(eq(referralEventsTable.id, id));
   if (!event) { res.status(404).json({ error: "Referral event not found" }); return; }
-  if (event.status !== "Exam Completed") { res.status(400).json({ error: "Can only resend for events with status 'Exam Completed'" }); return; }
+  if (!["Exam Completed", "Completed"].includes(event.status)) { res.status(400).json({ error: "Can only resend for events with status 'Exam Completed'" }); return; }
 
   const [referrer] = await db.select().from(referrersTable).where(eq(referrersTable.id, event.referrer_id));
   if (!referrer) { res.status(404).json({ error: "Referrer not found" }); return; }
 
   const [claim] = await db.select().from(rewardClaimsTable).where(eq(rewardClaimsTable.referral_event_id, id));
-  const claimToken  = claim?.claim_token ?? referrer.referral_code;
+  if (!claim || claim.status !== "pending") { res.status(409).json({ error: "No pending claim to resend" }); return; }
+  const claimToken = claim.claim_token;
   const rewardValue = claim?.reward_value ?? referrer.reward_value ?? 35;
 
   req.log.info({ eventId: id, referrerId: referrer.id, claimToken }, "Resending reward notification");
@@ -395,7 +185,10 @@ router.post("/:id/resend-notification", async (req, res) => {
     event.practice_id ?? undefined,
   );
 
-  res.json({ success: true, ...result });
+  if (!result.errors.length) await db.update(adminTasksTable).set({ status: "completed", completed: true }).where(and(
+    eq(adminTasksTable.referral_event_id, id), eq(adminTasksTable.task_type, "reward-notification"),
+  ));
+  res.json({ success: !result.errors.length, ...result });
 });
 
 router.get("/by-token/:token", async (req, res) => {
@@ -403,6 +196,8 @@ router.get("/by-token/:token", async (req, res) => {
 
   const [referrer] = await db.select().from(referrersTable).where(eq(referrersTable.referral_code, token));
   if (!referrer) { res.status(404).json({ error: "Invalid referral token" }); return; }
+  try { assertTenant(referrer.practice_id, req.authUser); }
+  catch (err) { if (err instanceof RewardError) { res.status(err.status).json({ error: err.message }); return; } throw err; }
 
   const [referral] = await db
     .select()

@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, timestamp, uuid, uniqueIndex } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { practicesTable } from "./practices";
 import { referralEventsTable } from "./referral_events";
@@ -22,7 +22,10 @@ export const rewardClaimsTable = pgTable("reward_claims", {
   tango_order_id: text("tango_order_id"),
   pin_code: text("pin_code"),
   created_at: timestamp("created_at").defaultNow(),
-});
+}, table => [
+  uniqueIndex("reward_claims_live_event_unique").on(table.referral_event_id)
+    .where(sql`${table.referral_event_id} IS NOT NULL AND ${table.status} IS DISTINCT FROM 'voided'`),
+]);
 
 export type RewardClaim = typeof rewardClaimsTable.$inferSelect;
 export type InsertRewardClaim = typeof rewardClaimsTable.$inferInsert;

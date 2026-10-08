@@ -25,7 +25,11 @@ function requireSyncAuth(req: Request, res: Response, next: NextFunction) {
   }
 
   // Fall through to standard Supabase Bearer-token auth
-  requireAuth(req, res, next);
+  requireAuth(req, res, (err?: unknown) => {
+    if (err) { next(err); return; }
+    if (req.authUser?.role !== "super_admin") { res.status(403).json({ error: "Super admin required for integration sync" }); return; }
+    next();
+  });
 }
 
 // POST /api/sync/opendental — manually trigger an Open Dental sync across all active offices

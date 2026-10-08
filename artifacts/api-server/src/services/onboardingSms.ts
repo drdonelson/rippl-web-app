@@ -280,7 +280,17 @@ export async function scheduleOnboardingSms(params: {
     onboarding_sms_sent: false,
     office_id:           officeId,
     practice_id:         practiceId,
-  }).returning();
+  }).onConflictDoNothing().returning();
+  if (!newReferrer) {
+    if (externalPatientId && officeId) {
+      const [winner] = await db.select().from(referrersTable).where(and(
+        eq(referrersTable.patient_id, externalPatientId), eq(referrersTable.office_id, officeId),
+        eq(referrersTable.practice_id, practiceId),
+      ));
+      if (winner) return { success: true, skipped: true, referrerId: winner.id, referralCode: winner.referral_code };
+    }
+    return { success: false, error: "Enrollment conflict; retry on next sweep" };
+  }
 
   logger.info({ referrerId: newReferrer.id, referralCode: finalCode }, "New referrer created from exam completion");
 

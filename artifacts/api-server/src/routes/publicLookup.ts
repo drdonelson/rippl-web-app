@@ -111,8 +111,9 @@ router.post("/lookup", lookupLimiter, async (req: Request, res: Response) => {
       sql`right(regexp_replace(${referrersTable.phone}, '[^0-9]', '', 'g'), 10) = ${normalized}`,
       eq(referrersTable.practice_id, practiceId),
     ))
-    .limit(1);
+    .limit(2);
 
+  if (rows.length > 1) { res.status(409).json({ error: "More than one member uses this number. Ask your office for your personal referral link." }); return; }
   if (rows.length === 0) {
     res.status(404).json({ error: "No referral account found for that number. Ask the front desk for help." });
     return;
@@ -175,8 +176,9 @@ router.post("/send-invitation", inviteLimiter, async (req: Request, res: Respons
       sql`right(regexp_replace(${referrersTable.phone}, '[^0-9]', '', 'g'), 10) = ${myNorm}`,
       eq(referrersTable.practice_id, practice.id),
     ))
-    .limit(1);
+    .limit(2);
 
+  if (rows.length > 1) { res.status(409).json({ error: "More than one member uses this number. Ask your office for your personal referral link." }); return; }
   if (rows.length === 0) {
     res.status(404).json({ error: "We couldn't find your account. Ask the front desk to look you up." });
     return;

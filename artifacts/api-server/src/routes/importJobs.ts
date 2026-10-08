@@ -1,3 +1,4 @@
+import { requireOdOffice } from "../middleware/odOffice";
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { referrersTable, officesTable } from "@workspace/db/schema";
@@ -65,14 +66,9 @@ async function resolveCustomerKey(officeId: string | null): Promise<string | nul
 //   done === true when OD returned fewer rows than limit (no more pages)
 //
 // All errors are caught and returned as JSON — this handler never crashes.
-router.post("/patients/chunk", async (req, res) => {
+router.post("/patients/chunk", requireOdOffice, async (req, res) => {
   // ── Top-level guard: catch any unexpected throw ───────────────────────
   try {
-    if (!OPEN_DENTAL_URL) {
-      res.status(503).json({ error: "Open Dental API not configured (OPEN_DENTAL_URL missing)" });
-      return;
-    }
-
     const body         = req.body as { office_id?: string | null; offset?: number; limit?: number };
     const officeId     = typeof body.office_id === "string" ? body.office_id.trim() : "";
     const startOffset  = Math.max(0, Number(body.offset  ?? 0));
@@ -88,40 +84,11 @@ router.post("/patients/chunk", async (req, res) => {
       res.status(400).json({ error: "office_id is required" });
       return;
     }
-    let officePracticeId: string | null = null;
-    try {
-      const [office] = await db
-        .select({ id: officesTable.id, practice_id: officesTable.practice_id })
-        .from(officesTable)
-        .where(eq(officesTable.id, officeId));
-      if (!office) {
-        res.status(404).json({ error: `Office '${officeId}' not found` });
-        return;
-      }
-      officePracticeId = office.practice_id ?? null;
-    } catch (dbErr) {
-      const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
-      logger.error({ dbErr, officeId }, "import-chunk: DB error validating office");
-      res.status(500).json({ error: `Database error validating office: ${msg}` });
-      return;
-    }
-
-    // ── Resolve auth header ─────────────────────────────────────────────
-    let authHeader: string | null;
-    try {
-      const customerKey = await resolveCustomerKey(officeId);
-      authHeader = buildAuthHeader(customerKey);
-    } catch (dbErr) {
-      const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
-      logger.error({ dbErr }, "import-chunk: DB error resolving customer key");
-      res.status(500).json({ error: `Database error resolving credentials: ${msg}` });
-      return;
-    }
-
-    if (!authHeader) {
-      res.status(503).json({ error: "No customer key configured for this office" });
-      return;
-    }
+    const configured = res.locals.odOffice;
+    const officePracticeId: string = configured.practice_id;
+    const odUrl = configured.od_url || OPEN_DENTAL_URL;
+    const authHeader = configured.customer_key ? buildAuthHeader(configured.customer_key) : null;
+    if (!odUrl || !authHeader) { res.status(503).json({ error: "Office Open Dental connection is incomplete" }); return; }
 
     // ── Fetch pagesToFetch pages from Open Dental ───────────────────────
     const allPatients: OdPatient[] = [];
@@ -130,7 +97,7 @@ router.post("/patients/chunk", async (req, res) => {
 
     try {
       for (let page = 0; page < pagesToFetch; page++) {
-        const url = new URL("/api/v1/patients", OPEN_DENTAL_URL!);
+        const url = new URL("/api/v1/patients", odUrl);
         url.searchParams.set("Limit",  String(OD_PAGE_SIZE));
         url.searchParams.set("Offset", String(odOffset));
 
@@ -211,7 +178,7 @@ router.post("/patients/chunk", async (req, res) => {
 
       const existingSet = new Set(existingRows.map(r => r.patient_id));
       const toInsert    = normalized.filter(p => !existingSet.has(p.patNum));
-      const skipped     = normalized.length - toInsert.length;
+      let skipped = normalized.length - toInsert.length;
 
       let imported = 0;
 
@@ -243,8 +210,9 @@ router.post("/patients/chunk", async (req, res) => {
           };
         });
 
-        await db.insert(referrersTable).values(rows).onConflictDoNothing();
-        imported = toInsert.length;
+        const inserted = await db.insert(referrersTable).values(rows).onConflictDoNothing().returning({ id: referrersTable.id });
+        imported = inserted.length;
+        skipped += toInsert.length - inserted.length;
       }
 
       logger.info(

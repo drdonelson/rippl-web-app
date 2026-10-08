@@ -56,7 +56,7 @@ router.get("/:slug", async (req, res) => {
 
 // POST /api/enroll — self-enrollment (public, no auth)
 // Creates a referrer record with explicit SMS consent.
-// Deduplicates on phone + practice_id — safe to call twice.
+// Retries use a browser-generated request ID. Shared phones never select another member.
 router.post("/", async (req, res) => {
   try {
     const body = validateEnrollBody(req.body);
@@ -65,7 +65,13 @@ router.post("/", async (req, res) => {
       return;
     }
 
+    const requestId = req.body?.request_id;
+    if (typeof requestId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId)) {
+      res.status(400).json({ error: "Refresh the enrollment page and try again." }); return;
+    }
     const phoneDigits = body.phone.replace(/\D/g, "").slice(-10);
+    if (phoneDigits.length !== 10) { res.status(400).json({ error: "A valid phone number is required" }); return; }
+    const patientId = `self-v2-${requestId.toLowerCase()}`;
 
     const [practice] = await db
       .select({
@@ -84,21 +90,25 @@ router.post("/", async (req, res) => {
 
     const fullName = `${body.first_name} ${body.last_name}`;
 
-    // Dedup: already enrolled with this phone at this practice
+    // A request ID deduplicates retries, not people sharing contact information.
     const existing = await db
       .select({
         id:            referrersTable.id,
         referral_code: referrersTable.referral_code,
         name:          referrersTable.name,
+        phone:         referrersTable.phone,
       })
       .from(referrersTable)
       .where(and(
         eq(referrersTable.practice_id, practice.id),
-        eq(referrersTable.phone, phoneDigits),
+        eq(referrersTable.patient_id, patientId),
       ))
       .limit(1);
 
     if (existing.length > 0) {
+      if (existing[0].name !== fullName || existing[0].phone !== phoneDigits) {
+        res.status(409).json({ error: "This enrollment request was already used. Refresh to enroll another person." }); return;
+      }
       res.json({ ...existing[0], already_enrolled: true });
       return;
     }
@@ -108,7 +118,7 @@ router.post("/", async (req, res) => {
       .insert(referrersTable)
       .values({
         practice_id:   practice.id,
-        patient_id:    `self-${phoneDigits}`,
+        patient_id:    patientId,
         name:          fullName,
         phone:         phoneDigits,
         referral_code,
@@ -116,12 +126,19 @@ router.post("/", async (req, res) => {
         reward_value:  practice.reward_value ?? 35,
         tier:          "starter",
       })
+      .onConflictDoNothing()
       .returning({
         id:            referrersTable.id,
         referral_code: referrersTable.referral_code,
         name:          referrersTable.name,
       });
 
+    if (!referrer) {
+      const [winner] = await db.select({ id: referrersTable.id, name: referrersTable.name, referral_code: referrersTable.referral_code }).from(referrersTable)
+        .where(and(eq(referrersTable.practice_id, practice.id), eq(referrersTable.patient_id, patientId)));
+      if (!winner) { res.status(409).json({ error: "Enrollment conflict. Please retry." }); return; }
+      res.json({ ...winner, already_enrolled: true }); return;
+    }
     logger.info({ practice_id: practice.id, name: fullName, slug: body.slug }, "Self-enrollment via /enroll");
     res.status(201).json({ ...referrer, already_enrolled: false });
   } catch (err) {

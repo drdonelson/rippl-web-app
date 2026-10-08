@@ -1,3 +1,4 @@
+import { requireOdOffice } from "../middleware/odOffice";
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { referrersTable, officesTable } from "@workspace/db/schema";
@@ -6,6 +7,10 @@ import { logger } from "../lib/logger";
 import { previewOnboardingSweep } from "../services/openDentalPoller";
 
 const router: IRouter = Router();
+router.use("/test", (req, res, next) => {
+  if (req.authUser?.role !== "super_admin") { res.status(403).json({ error: "Super admin required" }); return; }
+  next();
+});
 
 const OPEN_DENTAL_URL        = process.env.OPEN_DENTAL_URL;
 const DEFAULT_CUSTOMER_KEY   = process.env.OPEN_DENTAL_CUSTOMER_KEY || process.env.OPEN_DENTAL_KEY;
@@ -240,20 +245,13 @@ router.get("/test/refattaches", async (req, res) => {
 // ── GET /api/opendental/patients/active?office_id= ─────────────────────────
 // Fetches all active patients from Open Dental for a specific office (or default).
 // Pass office_id to use that office's customer key; omit for the default key.
-router.get("/patients/active", async (req, res) => {
-  if (!OPEN_DENTAL_URL) {
-    res.status(503).json({ error: "Open Dental API is not configured (OPEN_DENTAL_URL missing)" });
-    return;
-  }
-
-  const officeIdParam = typeof req.query.office_id === "string" ? req.query.office_id : undefined;
-  const { officeId, customerKey, officeName } = await resolveOffice(officeIdParam);
-
-  const authHeader = buildAuthHeader(customerKey);
-  if (!authHeader) {
-    res.status(503).json({ error: "Open Dental auth header could not be built — customer key missing" });
-    return;
-  }
+router.get("/patients/active", requireOdOffice, async (req, res) => {
+  const configured = res.locals.odOffice;
+  const officeId: string = configured.id;
+  const officeName: string = configured.name;
+  const odUrl = configured.od_url || OPEN_DENTAL_URL;
+  const authHeader = configured.customer_key ? buildAuthHeader(configured.customer_key) : null;
+  if (!odUrl || !authHeader) { res.status(503).json({ error: "Office Open Dental connection is incomplete" }); return; }
 
   const BATCH_SIZE = 100;
   const all: OdPatient[] = [];
@@ -263,7 +261,7 @@ router.get("/patients/active", async (req, res) => {
 
   try {
     while (true) {
-      const url = new URL("/api/v1/patients", OPEN_DENTAL_URL);
+      const url = new URL("/api/v1/patients", odUrl);
       url.searchParams.set("Limit",  String(BATCH_SIZE));
       url.searchParams.set("Offset", String(offset));
 
@@ -334,7 +332,7 @@ router.get("/patients/active", async (req, res) => {
 // ── POST /api/opendental/patients/import ───────────────────────────────────
 // Accepts the patient list from GET /patients/active and bulk-inserts referrers.
 // Pass office_id in the body to tag inserted referrers to that office.
-router.post("/patients/import", async (req, res) => {
+router.post("/patients/import", requireOdOffice, async (req, res) => {
   const body = req.body as {
     patients: Array<{
       patNum: string;

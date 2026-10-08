@@ -18,7 +18,7 @@ function useCountUp(target: number, duration = 0.9) {
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 const PUBLIC_APP_URL = "https://www.joinrippl.com";
 
-type Phase = "loading" | "invalid" | "expired" | "already_claimed" | "selecting" | "confirming" | "success";
+type Phase = "loading" | "invalid" | "expired" | "already_claimed" | "processing" | "voided" | "selecting" | "confirming" | "success";
 
 type RewardType = "gift-card" | "local-partner" | "in-house-credit" | "charity" | `custom:${string}`;
 
@@ -274,8 +274,8 @@ export default function Claim() {
       .then(async (res) => {
         const body = await res.json().catch(() => ({}));
         if (res.status === 404) { setPhase("invalid"); return; }
-        if (res.status === 410) { setErrorDetail({ expiresAt: body.expiresAt }); setPhase("expired"); return; }
-        if (res.status === 409) { setErrorDetail({ claimedAt: body.claimedAt }); setPhase("already_claimed"); return; }
+        if (res.status === 410) { setErrorDetail({ expiresAt: body.expiresAt }); setPhase(body.error === "voided" ? "voided" : "expired"); return; }
+        if (res.status === 409) { setErrorDetail({ claimedAt: body.claimedAt }); setPhase(body.error === "already_claimed" ? "already_claimed" : "processing"); return; }
         if (!res.ok) { setPhase("invalid"); return; }
         setClaimData(body);
         setPhase("selecting");
@@ -294,7 +294,7 @@ export default function Claim() {
         body: JSON.stringify({ token, reward_type: selected, gift_card_brand: brand }),
       });
       const data = await res.json().catch(() => ({}));
-      if (res.status === 409) { setErrorDetail({ claimedAt: data.claimedAt }); setPhase("already_claimed"); return; }
+      if (res.status === 409) { setErrorDetail({ claimedAt: data.claimedAt }); setPhase(data.error === "already_claimed" ? "already_claimed" : "processing"); return; }
       if (!res.ok) { setSubmitError(data.error ?? "Something went wrong. Please try again."); return; }
       setResult({ ...data, referral_code: claimData.referrer.referral_code });
       setPhase("success");
@@ -359,6 +359,14 @@ export default function Claim() {
           : "This reward link has expired."}
       />
     );
+  }
+
+  if (phase === "processing" || phase === "voided") {
+    return <ErrorCard icon={<CheckCircle2 className="w-8 h-8 text-[#E0622A]" />}
+      title={phase === "processing" ? "Reward under review" : "Reward unavailable"}
+      body={phase === "processing"
+        ? "Your reward needs a processing check. Contact your office for help; please do not request a replacement reward."
+        : "This reward is no longer available. Contact your office if you think this is a mistake."} />;
   }
 
   if (phase === "already_claimed") {

@@ -1,4 +1,5 @@
-import { pgTable, text, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { pgTable, text, integer, boolean, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { practicesTable } from "./practices";
@@ -29,7 +30,9 @@ export const referrersTable = pgTable("referrers", {
   // Timestamps for Today's Activity view
   onboarding_sms_scheduled_at: timestamp("onboarding_sms_scheduled_at"), // when the 2-hour delay was queued
   onboarding_sms_sent_at: timestamp("onboarding_sms_sent_at"),           // when the SMS actually fired
-});
+}, table => [
+  uniqueIndex("referrers_self_request_unique").on(table.practice_id, table.patient_id).where(sql`${table.practice_id} IS NOT NULL AND ${table.patient_id} LIKE 'self-v2-%'`),
+  uniqueIndex("referrers_od_identity_unique").on(table.office_id, table.patient_id).where(sql`${table.office_id} IS NOT NULL AND ${table.patient_id} ~ '^[0-9]+$'`)]);
 
 export const insertReferrerSchema = createInsertSchema(referrersTable).omit({ id: true, created_at: true });
 export type InsertReferrer = z.infer<typeof insertReferrerSchema>;

@@ -1,19 +1,15 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type RequestHandler } from "express";
 import { db } from "@workspace/db";
 import {
   rewardClaimsTable,
   referralEventsTable,
   referrersTable,
-  adminTasksTable,
   localPartnersTable,
   officesTable,
   practicesTable,
 } from "@workspace/db/schema";
-import { eq, sql, and } from "drizzle-orm";
-import { sendAmazonRewardLink } from "../services/tango";
-import { chargeGiftCardThreshold } from "../services/billingService";
-import { getPracticeConfig, resolveTangoTemplate } from "../lib/practiceConfig";
-import pino from "pino";
+import { eq, and } from "drizzle-orm";
+import { redeemReward, assertClaimable, assertTenant, RewardError } from "../services/rewardRedemption";
 
 const router: IRouter = Router();
 
@@ -22,15 +18,15 @@ const router: IRouter = Router();
 // to "pending" after 60 seconds so the next demo visitor can use it.
 const DEMO_TOKEN      = "demo-claim-preview-token-screenshot";
 const DEMO_TOKEN_AUTO = "demo-claim-preview-token-auto";
-const demoLog = pino({ name: "demo-claim" });
+
 
 // ── GET /api/claim/by-token/:token ────────────────────────────────────────────
 // Validate a claim token and return everything needed to render the reward page.
 // No auth — patients open this from their phone without a Rippl account.
-router.get("/by-token/:token", async (req, res) => {
+export const getClaim: RequestHandler = async (req, res) => {
   const { token } = req.params;
 
-  if (!token) {
+  if (typeof token !== "string" || !token) {
     res.status(400).json({ error: "invalid" });
     return;
   }
@@ -67,22 +63,12 @@ router.get("/by-token/:token", async (req, res) => {
     return;
   }
 
-  if (claim.expires_at && new Date() > new Date(claim.expires_at)) {
-    res.status(410).json({ error: "expired", expiresAt: claim.expires_at });
-    return;
-  }
-
-  if (claim.status === "claimed") {
-    res.status(409).json({ error: "already_claimed", claimedAt: claim.claimed_at });
-    return;
-  }
-
-  // Only "pending" is claimable. This used to check "claimed" alone, which left every
-  // voided claim redeemable — voiding a wrongly-attributed reward did not actually stop
-  // the wrong person from cashing it, it only looked like it had.
-  if (claim.status !== "pending") {
-    res.status(410).json({ error: "voided" });
-    return;
+  try {
+    assertTenant(claim.practice_id, req.authUser);
+    assertClaimable(claim);
+  } catch (err) {
+    if (err instanceof RewardError) { res.status(err.status).json({ error: err.message }); return; }
+    throw err;
   }
 
   const [referrer, referral] = await Promise.all([
@@ -95,6 +81,11 @@ router.get("/by-token/:token", async (req, res) => {
           .then(r => r[0] ?? null)
       : Promise.resolve(null),
   ]);
+
+  if (!referrer || referrer.practice_id !== claim.practice_id ||
+      (claim.referral_event_id && (!referral || referral.practice_id !== claim.practice_id || referral.referrer_id !== referrer.id))) {
+    res.status(409).json({ error: "Referral ownership requires review" }); return;
+  }
 
   let localPartner = null;
   let officeLogo: string | null = null;
@@ -144,264 +135,29 @@ router.get("/by-token/:token", async (req, res) => {
     localPartner,
     practice: practiceData,
   });
-});
+};
 
-// ── POST /api/claim ───────────────────────────────────────────────────────────
-// Process the patient's reward selection and mark the claim as used.
-// No auth — token is the sole credential.
-router.post("/", async (req, res) => {
-  const { token, reward_type, gift_card_brand } = req.body as {
-    token: string;
-    reward_type: string;
-    gift_card_brand?: string;
-  };
-
-  if (!token || !reward_type) {
-    res.status(400).json({ error: "token and reward_type are required" });
-    return;
+export const redeemClaim: RequestHandler = async (req, res) => {
+  const { token, reward_type, gift_card_brand } = req.body ?? {};
+  if (typeof token !== "string" || typeof reward_type !== "string" ||
+      (gift_card_brand !== undefined && typeof gift_card_brand !== "string")) {
+    res.status(400).json({ error: "token and reward_type are required" }); return;
   }
-
-  // Demo tokens: return fake success immediately — no DB side-effects
   if (token === DEMO_TOKEN || token === DEMO_TOKEN_AUTO) {
-    const pinCode = reward_type === "local-partner" ? String(Math.floor(1000 + Math.random() * 9000)) : null;
-    req.log.info({ reward_type, token }, "[demo-claim] skipping real side-effects");
-    res.status(200).json({
-      success:             true,
-      reward_type,
-      reward_value:        token === DEMO_TOKEN_AUTO ? 100 : 35,
-      pin_code:            pinCode,
-      tango_order_id:      null,
-      admin_task_created:  false,
-      gift_card_brand:     reward_type === "gift-card" ? (gift_card_brand ?? "Amazon") : null,
-      referral_code:       token === DEMO_TOKEN_AUTO ? "CARLOSM" : "SARAHJ",
-      custom_reward_label: null,
-    });
-    return;
+    res.json({ success: true, reward_type, reward_value: token === DEMO_TOKEN_AUTO ? 100 : 35,
+      pin_code: reward_type === "local-partner" ? "1234" : null, tango_order_id: null,
+      admin_task_created: false, referral_code: token === DEMO_TOKEN_AUTO ? "CARLOSM" : "SARAHJ" }); return;
   }
-
-  const isCustomReward = reward_type.startsWith("custom:");
-  const validTypes = ["gift-card", "local-partner", "in-house-credit", "charity"];
-  if (!isCustomReward && !validTypes.includes(reward_type)) {
-    res.status(400).json({ error: `Invalid reward_type` });
-    return;
+  try {
+    const result = await redeemReward({ token, reward_type, gift_card_brand }, req.authUser);
+    res.status(result.success ? 200 : 409).json(result);
+  } catch (err) {
+    if (err instanceof RewardError) { res.status(err.status).json({ error: err.message }); return; }
+    req.log.error({ err }, "Redemption failed; inspect durable reconciliation task before retrying fulfilment");
+    res.status(503).json({ error: "Reward processing interrupted. Contact support before requesting another reward." });
   }
+};
 
-  const [claim] = await db
-    .select()
-    .from(rewardClaimsTable)
-    .where(eq(rewardClaimsTable.claim_token, token));
-
-  if (!claim) {
-    res.status(404).json({ error: "Invalid token" });
-    return;
-  }
-
-  if (claim.status === "claimed") {
-    res.status(409).json({ error: "already_claimed", claimedAt: claim.claimed_at });
-    return;
-  }
-
-  // See the matching guard on GET — a voided claim must not be redeemable.
-  if (claim.status !== "pending") {
-    res.status(410).json({ error: "voided" });
-    return;
-  }
-
-  if (claim.expires_at && new Date() > new Date(claim.expires_at)) {
-    res.status(410).json({ error: "expired" });
-    return;
-  }
-
-  const [referrer] = await db
-    .select()
-    .from(referrersTable)
-    .where(eq(referrersTable.id, claim.referrer_id!));
-
-  if (!referrer) {
-    res.status(404).json({ error: "Referrer not found" });
-    return;
-  }
-
-  const practiceForClaim = await getPracticeConfig(claim.practice_id ?? null);
-  const tangoTemplateId = resolveTangoTemplate(practiceForClaim);
-
-  const rewardValue    = claim.reward_value;
-  const isDemo         = token === DEMO_TOKEN || token === DEMO_TOKEN_AUTO;
-  let pinCode: string | null = null;
-  let tangoOrderId: string | null = null;
-  let adminTaskCreated = false;
-
-  // For custom rewards, look up the reward option from the practice's integration_config
-  let customRewardLabel: string | null = null;
-  let customRewardDescription: string | null = null;
-  let customRewardValue: number = rewardValue;
-  if (isCustomReward) {
-    const customRewardId = reward_type.slice("custom:".length);
-    const practiceForCustom = practiceForClaim;
-    const cfg = practiceForCustom?.integration_config as Record<string, unknown> | null;
-    const customRewards = (cfg?.custom_rewards ?? []) as Array<{ id: string; label: string; description: string; value: number }>;
-    const found = customRewards.find(r => r.id === customRewardId);
-    customRewardLabel = found?.label ?? customRewardId;
-    customRewardDescription = found?.description ?? "";
-    customRewardValue = found?.value ?? rewardValue;
-  }
-
-  // Helper: only include referral_event_id when it's non-null (column has NOT NULL constraint)
-  const maybeEventId = claim.referral_event_id
-    ? { referral_event_id: claim.referral_event_id }
-    : {};
-
-  if (!isDemo) {
-    // ── Real claims: run all side-effects ───────────────────────────────────
-    if (reward_type === "gift-card") {
-      const referrerEmail = referrer.email ?? null;
-      let tangoResult: { success: boolean; orderId?: string; error?: string } | null = null;
-
-      if (referrerEmail) {
-        const nameParts = referrer.name?.trim().split(" ") ?? ["Valued", "Patient"];
-        const tangoRecipient = {
-          email:     referrerEmail,
-          firstName: nameParts[0] ?? "Valued",
-          lastName:  nameParts.slice(1).join(" ") || "Patient",
-        };
-        tangoResult = await sendAmazonRewardLink(tangoRecipient, rewardValue, claim.id, tangoTemplateId);
-        // One retry after 3 seconds if transient failure
-        if (!tangoResult.success) {
-          await new Promise(r => setTimeout(r, 3000));
-          tangoResult = await sendAmazonRewardLink(tangoRecipient, rewardValue, claim.id, tangoTemplateId);
-        }
-      }
-
-      if (tangoResult?.success && tangoResult.orderId) {
-        tangoOrderId = tangoResult.orderId;
-        if (claim.practice_id) {
-          chargeGiftCardThreshold(claim.practice_id, rewardValue * 100)
-            .catch(err => req.log.error({ err }, "[billing] gift card threshold charge failed"));
-        }
-      } else {
-        const failReason = !referrerEmail
-          ? `No email on file for referrer.`
-          : `Tango failed: ${tangoResult?.error ?? "unknown"}.`;
-        await db.insert(adminTasksTable).values({
-          task_type:   "gift-card",
-          referrer_id: claim.referrer_id!,
-          ...maybeEventId,
-          amount:      rewardValue,
-          notes:       `${failReason} Brand: ${gift_card_brand ?? "Amazon"}. Send $${rewardValue} gift card manually.`,
-          status:      "pending",
-        });
-        adminTaskCreated = true;
-      }
-    } else if (reward_type === "local-partner") {
-      pinCode = Math.floor(1000 + Math.random() * 9000).toString();
-    } else if (reward_type === "in-house-credit") {
-      await db.insert(adminTasksTable).values({
-        task_type:   "apply-credit",
-        referrer_id: claim.referrer_id!,
-        ...maybeEventId,
-        amount:      100,
-        notes:       `Apply $100 dental credit to account: ${referrer.name}.`,
-        status:      "pending",
-      });
-      adminTaskCreated = true;
-    } else if (reward_type === "charity") {
-      await db.insert(adminTasksTable).values({
-        task_type:   "charity-donation",
-        referrer_id: claim.referrer_id!,
-        ...maybeEventId,
-        amount:      rewardValue,
-        notes:       `Donate $${rewardValue} to charity in ${referrer.name}'s name. Email: ${referrer.email ?? "none on file"}.`,
-        status:      "pending",
-      });
-      adminTaskCreated = true;
-    } else if (isCustomReward) {
-      await db.insert(adminTasksTable).values({
-        task_type:   "custom-reward",
-        referrer_id: claim.referrer_id!,
-        practice_id: claim.practice_id ?? undefined,
-        ...maybeEventId,
-        amount:      customRewardValue > 0 ? customRewardValue : null,
-        notes:       [
-          `Fulfill custom reward: ${customRewardLabel}.`,
-          customRewardDescription ? customRewardDescription : null,
-          `Referrer: ${referrer.name}.`,
-          referrer.phone ? `Phone: ${referrer.phone}.` : null,
-          referrer.email ? `Email: ${referrer.email}.` : null,
-          `Claim ID: ${claim.id}.`,
-        ].filter(Boolean).join(" "),
-        status:      "pending",
-      });
-      adminTaskCreated = true;
-    }
-  } else {
-    // ── Demo claims: generate a fake PIN for local-partner so the UI renders ─
-    if (reward_type === "local-partner") {
-      pinCode = Math.floor(1000 + Math.random() * 9000).toString();
-    }
-    req.log.info({ reward_type }, "[demo-claim] skipping real side-effects");
-  }
-
-  // Mark the claim as used (real and demo alike — demo resets below)
-  await db
-    .update(rewardClaimsTable)
-    .set({
-      status:         "claimed",
-      claimed_at:     new Date(),
-      reward_type,
-      pin_code:       pinCode,
-      tango_order_id: tangoOrderId,
-    })
-    .where(eq(rewardClaimsTable.id, claim.id));
-
-  if (!isDemo) {
-    if (claim.referral_event_id) {
-      await db
-        .update(referralEventsTable)
-        .set({ status: "Reward Sent", reward_type })
-        .where(eq(referralEventsTable.id, claim.referral_event_id));
-    }
-
-    await db
-      .update(referrersTable)
-      .set({ total_rewards_issued: sql`${referrersTable.total_rewards_issued} + 1` })
-      .where(eq(referrersTable.id, referrer.id));
-  }
-
-  req.log.info({ referrerId: referrer.id, reward_type, rewardValue, isDemo }, "Reward claimed");
-
-  res.status(200).json({
-    success:             true,
-    reward_type,
-    reward_value:        reward_type === "in-house-credit" ? 100 : isCustomReward ? customRewardValue : rewardValue,
-    pin_code:            pinCode,
-    tango_order_id:      tangoOrderId,
-    admin_task_created:  adminTaskCreated,
-    gift_card_brand:     reward_type === "gift-card" ? (gift_card_brand ?? "Amazon") : null,
-    referral_code:       referrer.referral_code,
-    custom_reward_label: isCustomReward ? customRewardLabel : null,
-  });
-
-  // ── Demo reset: restore claim to "pending" after 60 s ─────────────────────
-  if (isDemo) {
-    const claimId = claim.id;
-    setTimeout(async () => {
-      try {
-        await db
-          .update(rewardClaimsTable)
-          .set({
-            status:         "pending",
-            claimed_at:     null,
-            reward_type:    null,
-            pin_code:       null,
-            tango_order_id: null,
-          })
-          .where(eq(rewardClaimsTable.id, claimId));
-        demoLog.info({ claimId }, "[demo-claim] reset to pending after 60s");
-      } catch (err) {
-        demoLog.error({ err, claimId }, "[demo-claim] reset failed");
-      }
-    }, 60_000);
-  }
-});
-
+router.get("/by-token/:token", getClaim);
+router.post("/", redeemClaim);
 export default router;

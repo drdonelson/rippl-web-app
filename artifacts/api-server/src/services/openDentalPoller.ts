@@ -1,14 +1,12 @@
+import { recordCompletion, deliverCompletionNotification } from "./referralCompletion";
 import { db } from "@workspace/db";
-import { referralEventsTable, referrersTable, officesTable, rewardClaimsTable, practicesTable, adminTasksTable } from "@workspace/db/schema";
+import { referralEventsTable, referrersTable, officesTable, practicesTable } from "@workspace/db/schema";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
-import { sendRewardNotification } from "./notifications";
-import { calculateTier } from "../lib/tierUtils";
 import { scheduleOnboardingSms } from "./onboardingSms";
 import { checkHouseholdDuplicate } from "./householdDuplicate";
 import { chargeReferralCompletion } from "./billingService";
 import { checkAndAlertTangoBalance } from "./tango";
-import { getPracticeConfig } from "../lib/practiceConfig";
 import { sendEmail } from "../lib/email";
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
@@ -818,130 +816,19 @@ export async function syncOpenDental(options?: {
         return { household_id: null as unknown as string, is_duplicate: false, od_address_found: false, conflicting_event_id: undefined };
       });
 
-      // ── Create referral event ─────────────────────────────────────────────
-      const [newEvent] = await db
-        .insert(referralEventsTable)
-        .values({
-          new_patient_name:    newPatientName,
-          new_patient_phone:   proc.PatientPhone ?? "",
-          new_patient_pat_num: newPatientPatNum,
-          referrer_id:         referrer.id,
-          team_source:         "open-dental-sync",
-          office:              office?.name ?? "Hallmark Dental",
-          office_id:           office?.id ?? null,
-          practice_id:         office?.practice_id ?? null,
-          status:              "Exam Completed",
-          external_proc_num:   procNum,
-          household_id:        householdResult.household_id ?? null,
-          household_duplicate: householdResult.is_duplicate,
-        })
-        .returning();
-
-      result.inserted++;
-
-      chargeReferralCompletion(newEvent.id).catch(err => logger.error({ err }, "[billing] OD charge error"));
-
-      // ── Household duplicate — record for review, skip reward ─────────────
-      if (householdResult.is_duplicate) {
-        logger.warn(
-          { procNum, newPatientPatNum, referrerId: referrer.id, conflictingEventId: householdResult.conflicting_event_id },
-          "Household duplicate detected — event recorded but no reward issued"
-        );
-        await db.insert(adminTasksTable).values({
-          practice_id:       office?.practice_id ?? null,
-          task_type:         "household-duplicate-review",
-          referrer_id:       referrer.id,
-          referral_event_id: newEvent.id,
-          amount:            0,
-          notes: `Household duplicate detected for ${newPatientName}. Conflicting event: ${householdResult.conflicting_event_id ?? "unknown"}. Address match: ${householdResult.od_address_found ? "yes" : "name only"}. Override in Admin Tasks if this referral is legitimate.`,
-        }).catch(err => logger.error({ err }, "Failed to create household-duplicate admin task"));
-        continue;
-      }
-
-      logger.info(
-        { procNum, newPatientPatNum, referringPatNum, referrerId: referrer.id, force },
-        "Synced new referral event from Open Dental"
-      );
-
-      // ── Update referrer tier ──────────────────────────────────────────────
-      // Hoisted so newTierData is always defined for the claim + notification blocks below
-      const practiceConfig = await getPracticeConfig(office?.practice_id ?? null).catch(() => null);
-      let newTierData = calculateTier((referrer.total_referrals ?? 0) + 1, practiceConfig);
-      try {
-        const [current] = await db
-          .select({ total_referrals: referrersTable.total_referrals, tier: referrersTable.tier })
-          .from(referrersTable)
-          .where(eq(referrersTable.id, referrer.id))
-          .limit(1);
-
-        const newTotal = (current?.total_referrals ?? 0) + 1;
-        const oldTier  = current?.tier ?? "starter";
-        newTierData    = calculateTier(newTotal, practiceConfig);
-
-        await db
-          .update(referrersTable)
-          .set({
-            total_referrals: newTotal,
-            tier: newTierData.name,
-            reward_value: newTierData.rewardValue,
-            ...(newTierData.name !== oldTier ? { tier_unlocked_at: new Date() } : {}),
-          })
-          .where(eq(referrersTable.id, referrer.id));
-
-        if (newTierData.name !== oldTier) {
-          logger.info({ referrerId: referrer.id, oldTier, newTier: newTierData.name }, "Tier upgraded");
-        }
-      } catch (tierErr) {
-        logger.error({ err: tierErr }, "Failed to update referrer tier");
-      }
-
-      // ── Generate one-time claim token ────────────────────────────────────
-      let claimToken: string = referrer.referral_code; // last-resort fallback
-      try {
-        claimToken = crypto.randomUUID();
-        await db.insert(rewardClaimsTable).values({
-          claim_token:       claimToken,
-          referral_event_id: newEvent.id,
-          referrer_id:       referrer.id,
-          reward_value:      newTierData.rewardValue,
-          practice_id:       office?.practice_id ?? null,
-          status:            "pending",
-        });
-      } catch (claimErr) {
-        // Insert failed (likely duplicate referral_event_id) — look up the existing claim token
-        try {
-          const [existing] = await db
-            .select({ claim_token: rewardClaimsTable.claim_token })
-            .from(rewardClaimsTable)
-            .where(eq(rewardClaimsTable.referral_event_id, newEvent.id));
-          if (existing?.claim_token) {
-            claimToken = existing.claim_token;
-            logger.info({ claimToken, eventId: newEvent.id }, "Using existing claim token for event");
-          } else {
-            logger.error({ err: claimErr }, "Failed to create reward_claims record and no existing token found — falling back to referral_code");
-            claimToken = referrer.referral_code;
-          }
-        } catch {
-          logger.error({ err: claimErr }, "Failed to create or look up reward_claims record — falling back to referral_code");
-          claimToken = referrer.referral_code;
-        }
-      }
-
-      // Notify the referrer
-      sendRewardNotification(
-        referrer.name,
-        referrer.phone,
-        referrer.email ?? null,
-        newEvent.new_patient_name,
-        claimToken,
-        office?.name ?? "Hallmark Dental",
-        newTierData.rewardValue,
-        office?.practice_id ?? undefined,
-      ).then((notifResult) => {
-        logger.info({ notifResult, procNum }, "Notification sent for synced referral");
-      }).catch((err) => {
-        logger.error({ err, procNum }, "Notification failed for synced referral");
+      const completion = await recordCompletion({
+        new_patient_name: newPatientName, new_patient_phone: proc.PatientPhone ?? "",
+        new_patient_pat_num: newPatientPatNum, referrer_id: referrer.id,
+        team_source: "open-dental-sync", office: office.name, office_id: office.id,
+        practice_id: office.practice_id, status: "Exam Completed", external_proc_num: procNum,
+        household_id: householdResult.household_id, household_duplicate: householdResult.is_duplicate,
       });
+      if (!completion) { result.skipped++; continue; }
+      result.inserted++;
+      if (completion.created) {
+        chargeReferralCompletion(completion.event.id).catch(err => logger.error({ err }, "[billing] OD charge error"));
+        await deliverCompletionNotification(completion);
+      }
 
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

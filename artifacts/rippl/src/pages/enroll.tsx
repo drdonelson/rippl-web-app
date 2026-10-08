@@ -37,6 +37,7 @@ export default function Enroll() {
   const [loading, setLoading] = useState(true);
 
   const [form, setForm] = useState<FormState>({ first_name: "", last_name: "", phone: "", consent: false });
+  const [requestId] = useState(() => crypto.randomUUID());
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [alreadyEnrolled, setAlreadyEnrolled] = useState(false);
@@ -84,6 +85,7 @@ export default function Enroll() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           slug,
+          request_id: requestId,
           first_name: form.first_name.trim(),
           last_name:  form.last_name.trim(),
           phone:      form.phone,

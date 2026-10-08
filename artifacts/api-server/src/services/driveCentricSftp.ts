@@ -1,3 +1,4 @@
+import { recordCompletion, deliverCompletionNotification } from "./referralCompletion";
 /**
  * DriveCentric SFTP integration — v2 data export format
  *
@@ -17,17 +18,13 @@ import { db } from "@workspace/db";
 import {
   referralEventsTable,
   referrersTable,
-  rewardClaimsTable,
   adminTasksTable,
   practicesTable,
-  preReferralsTable,
 } from "@workspace/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
-import { sendRewardNotification } from "./notifications";
 import { matchReferrerByName, matchReferrerByCode } from "../lib/matchReferrer";
 import { sendAutomotiveOnboardingSms } from "./onboardingSms";
-import { calculateTier } from "../lib/tierUtils";
 // @ts-ignore — ssh2-sftp-client ships CJS; ssh2 is externalised in esbuild config
 import SftpClient from "ssh2-sftp-client";
 
@@ -279,6 +276,10 @@ async function runDriveCentricSftp(
   const groupsRaw      = cfg["referral_source_groups"] ?? "Customer Referral,Referral,Friend,Word of Mouth";
   const referralGroups = groupsRaw.split(",").map((s: string) => s.trim().toLowerCase()).filter(Boolean);
 
+  if (!storeNumFilter) {
+    result.errors.push("sftp_store_num must be configured before importing a tenant's feed");
+    return result;
+  }
   if (!sftpHost || !sftpUsername) {
     logger.warn({ practiceId }, "[dc-sftp] Missing SFTP host/username — skipping");
     return result;
@@ -443,29 +444,9 @@ async function runDriveCentricSftp(
           }
         }
 
-        // Tier 0: pre-referral link click — buyer clicked referral link before visiting
-        if (!matchResult && buyerPhone) {
-          const phoneLast10 = buyerPhone.replace(/\D/g, "").slice(-10);
-          const [preReferralRow] = await db
-            .select({ id: preReferralsTable.id, referral_code: preReferralsTable.referral_code })
-            .from(preReferralsTable)
-            .where(and(
-              eq(preReferralsTable.practice_id, practiceId),
-              eq(preReferralsTable.phone, phoneLast10),
-              eq(preReferralsTable.matched, "no"),
-            ));
-
-          if (preReferralRow) {
-            matchResult = await matchReferrerByCode(preReferralRow.referral_code, practiceId);
-            if (matchResult) {
-              await db.update(preReferralsTable)
-                .set({ matched: "yes" })
-                .where(eq(preReferralsTable.id, preReferralRow.id));
-              logger.info({ dealId, referralCode: preReferralRow.referral_code }, "[dc-sftp] Matched via pre-referral link click");
-            }
-          }
-        }
-
+        // A pre-referral phone match identifies a contact destination, not the buyer.
+        // Keep those submissions available for staff review; a shared phone must not
+        // turn someone else's referral code into an automatic entitlement.
         if (!matchResult) {
           result.unmatched++;
           // Dedup guard. Unmatched referrals never create a referral_event, so the normal
@@ -507,44 +488,14 @@ async function runDriveCentricSftp(
 
         const { referrer } = matchResult;
 
-        const [newEvent] = await db.insert(referralEventsTable).values({
-          new_patient_name:    buyerName,
-          new_patient_phone:   buyerPhone ?? "",
-          new_patient_pat_num: dealId,
-          referrer_id:         referrer.id,
-          team_source:         "drivecentric-sftp",
-          office:              practice.name,
-          office_id:           null,
-          practice_id:         practiceId,
-          external_proc_num:   dealId,
-          status:              "Completed",
-        }).returning();
-
-        if (!newEvent) continue;
-
-        const tierData = calculateTier(referrer.total_referrals + 1, practice);
-
-        await db.update(referrersTable).set({
-          total_referrals:  referrer.total_referrals + 1,
-          tier:             tierData.name,
-          tier_unlocked_at: tierData.name !== referrer.tier ? new Date() : referrer.tier_unlocked_at,
-          reward_value:     tierData.rewardValue,
-        }).where(eq(referrersTable.id, referrer.id));
-
-        const claimToken = crypto.randomUUID();
-        await db.insert(rewardClaimsTable).values({
-          claim_token:       claimToken,
-          referral_event_id: newEvent.id,
-          referrer_id:       referrer.id,
-          reward_value:      tierData.rewardValue,
-          practice_id:       practiceId,
-          status:            "pending",
+        const completion = await recordCompletion({
+          new_patient_name: buyerName, new_patient_phone: buyerPhone ?? "",
+          new_patient_pat_num: dealId, referrer_id: referrer.id, team_source: "drivecentric-sftp",
+          office: practice.name, office_id: null, practice_id: practiceId,
+          external_proc_num: dealId, status: "Completed",
         });
-
-        sendRewardNotification(
-          referrer.name, referrer.phone, referrer.email ?? null,
-          buyerName, claimToken, practice.name, tierData.rewardValue, practiceId,
-        ).catch(err => logger.error({ err, dealId }, "[dc-sftp] Notification failed"));
+        if (!completion) { result.alreadyProcessed++; continue; }
+        await deliverCompletionNotification(completion);
 
         logger.info(
           { dealId, referrerId: referrer.id, matchType: matchResult.matchType },
