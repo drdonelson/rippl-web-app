@@ -28,46 +28,7 @@ import { sendAutomotiveOnboardingSms } from "./onboardingSms";
 // @ts-ignore — ssh2-sftp-client ships CJS; ssh2 is externalised in esbuild config
 import SftpClient from "ssh2-sftp-client";
 
-// ── CSV parser (RFC 4180) ─────────────────────────────────────────────────────
-
-function parseCsvLine(line: string): string[] {
-  const result: string[] = [];
-  let i = 0;
-  while (i < line.length) {
-    if (line[i] === '"') {
-      let field = "";
-      i++;
-      while (i < line.length) {
-        if (line[i] === '"' && line[i + 1] === '"') { field += '"'; i += 2; }
-        else if (line[i] === '"') { i++; break; }
-        else { field += line[i++]; }
-      }
-      result.push(field);
-      if (line[i] === ",") i++;
-    } else {
-      const end = line.indexOf(",", i);
-      if (end === -1) { result.push(line.slice(i)); break; }
-      result.push(line.slice(i, end));
-      i = end + 1;
-    }
-  }
-  return result;
-}
-
-function parseCsv(content: string): Record<string, string>[] {
-  const lines = content.split("\n").filter(l => l.trim() !== "");
-  if (lines.length < 2) return [];
-  const headers = parseCsvLine(lines[0]);
-  const rows: Record<string, string>[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const vals = parseCsvLine(lines[i]);
-    if (vals.length === 0) continue;
-    const row: Record<string, string> = {};
-    headers.forEach((h, idx) => { row[h] = vals[idx] ?? ""; });
-    rows.push(row);
-  }
-  return rows;
-}
+import { parseCsv, selectLatestBatch, validateStoreRows } from "./driveCentricFiles";
 
 // ── SFTP helpers ──────────────────────────────────────────────────────────────
 
@@ -93,83 +54,6 @@ async function downloadText(
 ): Promise<string> {
   const buffer = await sftp.get(remotePath) as Buffer;
   return buffer.toString("utf-8");
-}
-
-/**
- * Find the latest export batch on the SFTP server.
- * Returns paths to deal, customer, customercontact, and sourcedescriptiongroup CSVs
- * that share the same {storeNum}_{timestamp} batch identifier.
- *
- * storeNumFilter: when set, only processes files whose store number prefix matches.
- * This prevents wrong-store files from being processed if DriveCentric accidentally
- * deposits multiple stores' files into the same SFTP directory.
- */
-async function findLatestBatch(
-  sftp: InstanceType<typeof SftpClient>,
-  remotePath: string,
-  storeNumFilter?: string,
-): Promise<{ deal: string; customer: string | null; contact: string | null; sourceGroup: string; storeNum: string } | null> {
-  type SftpEntry = { name: string; type: string };
-  const entries = await sftp.list(remotePath) as SftpEntry[];
-  const csvFiles = entries
-    .filter(f => f.type === "-" && f.name.endsWith(".csv"))
-    .map(f => f.name);
-
-  // Sort deal files descending (timestamp is the last segment so lexicographic = chronological)
-  // If storeNumFilter is configured, discard files from any other store number.
-  const dealFiles = csvFiles
-    .filter(n => {
-      if (!n.includes("_v2_deal_")) return false;
-      if (storeNumFilter && !n.startsWith(`${storeNumFilter}_`)) return false;
-      return true;
-    })
-    .sort()
-    .reverse();
-
-  if (dealFiles.length === 0) {
-    if (storeNumFilter) {
-      logger.warn({ remotePath, storeNumFilter }, "[dc-sftp] No deal files found for expected store number — directory may contain wrong-store files");
-    }
-    return null;
-  }
-
-  const latestDeal = dealFiles[0];
-  const nameParts  = latestDeal.replace(".csv", "").split("_");
-  const timestamp  = nameParts[nameParts.length - 1];
-  const storeNum   = nameParts[0];
-
-  if (storeNumFilter && storeNum !== storeNumFilter) {
-    logger.error({ storeNum, storeNumFilter, latestDeal }, "[dc-sftp] Store number mismatch — skipping batch to prevent wrong-practice attribution");
-    return null;
-  }
-
-  const find = (table: string) => {
-    const hit = csvFiles.find(
-      n => n.startsWith(`${storeNum}_v2_${table}_`) && n.endsWith(`_${timestamp}.csv`)
-    );
-    return hit ? `${remotePath.replace(/\/$/, "")}/${hit}` : null;
-  };
-
-  const customerPath    = find("customer");
-  const contactPath     = find("customercontact");
-  const sourceGroupPath = find("sourcedescriptiongroup");
-
-  if (!sourceGroupPath) {
-    logger.warn({ latestDeal, timestamp }, "[dc-sftp] Missing sourcedescriptiongroup CSV — cannot process batch");
-    return null;
-  }
-
-  if (!customerPath || !contactPath) {
-    logger.warn({ latestDeal, timestamp }, "[dc-sftp] Missing customer/contact CSVs — buyer name/phone will be unknown");
-  }
-
-  return {
-    deal:        `${remotePath.replace(/\/$/, "")}/${latestDeal}`,
-    customer:    customerPath,
-    contact:     contactPath,
-    sourceGroup: sourceGroupPath,
-    storeNum,
-  };
 }
 
 // ── Referral detection ────────────────────────────────────────────────────────
@@ -293,31 +177,36 @@ async function runDriveCentricSftp(
       password: sftpPassword, privateKey: sftpKey,
     });
 
-    const batch = await findLatestBatch(sftp, sftpPath, storeNumFilter);
-    if (!batch) {
-      result.errors.push("No export files found on SFTP server");
-      return result;
-    }
+    const batch = selectLatestBatch(await sftp.list(sftpPath), sftpPath, storeNumFilter);
 
     logger.info({ batch }, "[dc-sftp] Downloading batch files");
 
-    const [dealCsv, customerCsv, contactCsv, sourceGroupCsv] = await Promise.all([
+    const [dealCsv, customerCsv, contactCsv, sourceGroupCsv, storeInfoCsv] = await Promise.all([
       downloadText(sftp, batch.deal),
       batch.customer ? downloadText(sftp, batch.customer) : Promise.resolve(""),
       batch.contact  ? downloadText(sftp, batch.contact)  : Promise.resolve(""),
       downloadText(sftp, batch.sourceGroup),
+      downloadText(sftp, batch.storeInfo),
     ]);
+
+    const deals = parseCsv(dealCsv);
+    const customerRows = parseCsv(customerCsv);
+    const contactRows = parseCsv(contactCsv);
+    const groupRows = parseCsv(sourceGroupCsv);
+    validateStoreRows(cfg["sftp_store_id"], parseCsv(storeInfoCsv), {
+      deal: deals, customer: customerRows, contact: contactRows, sourceGroup: groupRows,
+    });
 
     // ── Build lookup maps ─────────────────────────────────────────────────────
 
     const sourceGroups = new Map<string, string>(
-      parseCsv(sourceGroupCsv)
+      groupRows
         .filter(r => r["IsDeleted"] !== "1")
         .map(r => [r["SourceDescriptionGroupId"], r["Name"].toLowerCase()])
     );
 
     const customers = new Map<string, { name: string }>(
-      parseCsv(customerCsv)
+      customerRows
         .filter(r => r["IsDeleted"] !== "1")
         .map(r => [
           r["CustomerId"],
@@ -329,7 +218,7 @@ async function runDriveCentricSftp(
     const customerPhones = new Map<string, { label: string; value: string }>();
     // Primary email per customer (first non-bad email wins)
     const customerEmails = new Map<string, string>();
-    for (const row of parseCsv(contactCsv)) {
+    for (const row of contactRows) {
       if (row["IsDeleted"] === "1" || row["IsBad"] === "1") continue;
       const cid = row["CustomerId"];
       if (row["Type"] === "Phone") {
@@ -345,7 +234,6 @@ async function runDriveCentricSftp(
 
     // ── Process deals ─────────────────────────────────────────────────────────
 
-    const deals = parseCsv(dealCsv);
     result.dealsScanned = deals.length;
 
     for (const deal of deals) {

@@ -1,3 +1,5 @@
+> **October 11 correction:** Live `StoreInfo` and deal rows prove store **3364 = Volvo Cars Cool Springs** (`9ae8c205-5cc7-4ccb-852f-0ea5690b1bd8`), and **3367 = Carlock Motorcars Nashville** (`19d38b15-ab29-4806-8a61-8a99a1ae9a1a`). Older store-number assignments below are obsolete. The named directories are correct. See `docs/carlock-rollout.md` for the verified mapping and remaining launch work. October 7 also removed phone/name-only automatic reward attribution; older descriptions of it below are historical.
+
 # Rippl — Cold Start Document
 
 **Version:** 1.9.2  
