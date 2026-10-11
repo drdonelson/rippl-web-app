@@ -153,7 +153,7 @@ async function runDriveCentricSftp(
   const sftpPassword   = cfg["sftp_password"];
   const sftpKey        = cfg["sftp_private_key"];
   const sftpPath       = cfg["sftp_path"] ?? "/";
-  // sftp_store_num: expected DriveCentric store number (e.g. "3364" for Carlock, "3367" for Volvo).
+  // sftp_store_num: expected DriveCentric store number (e.g. "3367" for Carlock, "3364" for Volvo).
   // When set, only files whose filename prefix matches are processed — prevents wrong-store
   // attribution if DriveCentric accidentally deposits multiple stores' files in one directory.
   const storeNumFilter = cfg["sftp_store_num"] ?? undefined;
@@ -166,6 +166,7 @@ async function runDriveCentricSftp(
   }
   if (!sftpHost || !sftpUsername) {
     logger.warn({ practiceId }, "[dc-sftp] Missing SFTP host/username — skipping");
+    result.errors.push("SFTP host/username not configured; no import performed");
     return result;
   }
 
