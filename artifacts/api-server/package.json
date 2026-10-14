@@ -9,7 +9,8 @@
     "start": "node --enable-source-maps --max-old-space-size=460 ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:safety": "node tests/run-safety.mjs",
-    "test:drivecentric": "node tests/run-drivecentric.mjs"
+    "test:drivecentric": "node tests/run-drivecentric.mjs",
+    "test:campaigns": "node tests/run-campaigns.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.101.0",

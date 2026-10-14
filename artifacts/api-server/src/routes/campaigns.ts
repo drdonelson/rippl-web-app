@@ -5,18 +5,14 @@ import {
   campaignsTable,
 } from "@workspace/db/schema";
 import { eq, sql, desc } from "drizzle-orm";
-import twilio from "twilio";
 import { SMS_ENABLED } from "../lib/smsEnabled";
 import { sendEmail } from "../lib/email";
 import { logger } from "../lib/logger";
-import { getPracticeConfig } from "../lib/practiceConfig";
+import { getPracticeConfig, resolveTwilioClient, resolveTwilioPhone } from "../lib/practiceConfig";
 
 const router: IRouter = Router();
 
 const APP_URL = (process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://www.joinrippl.com").replace(/\/$/, "");
-const TWILIO_ACCOUNT_SID  = process.env.TWILIO_ACCOUNT_SID;
-const TWILIO_AUTH_TOKEN   = process.env.TWILIO_AUTH_TOKEN;
-const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
 const FROM_EMAIL          = process.env.SENDGRID_FROM_EMAIL || "hello@joinrippl.com";
 
 // ── HTML template detection & helpers ─────────────────────────────────────────
@@ -99,7 +95,7 @@ interface ReferrerRow {
 }
 
 async function getFilteredReferrers(filter: AudienceFilter, practiceId: string | null): Promise<ReferrerRow[]> {
-  const practiceWhere = practiceId ? sql`AND o.practice_id = ${practiceId}` : sql``;
+  const practiceWhere = practiceId ? sql`AND r.practice_id = ${practiceId}` : sql`AND false`;
 
   // Complex subquery: no referrals in the last 90 days
   if (filter === "no_referrals_90d") {
@@ -112,7 +108,7 @@ async function getFilteredReferrers(filter: AudienceFilter, practiceId: string |
         o.name AS office_name
       FROM referrers r
       LEFT JOIN offices o ON o.id = r.office_id
-      WHERE r.sms_opt_out = false
+      WHERE r.sms_opt_out = false AND r.sms_opt_out_permanent IS NOT TRUE
         ${practiceWhere}
         AND NOT EXISTS (
           SELECT 1 FROM referral_events re
@@ -135,7 +131,7 @@ async function getFilteredReferrers(filter: AudienceFilter, practiceId: string |
         o.name AS office_name
       FROM referrers r
       INNER JOIN offices o ON o.id = r.office_id
-      WHERE r.sms_opt_out = false
+      WHERE r.sms_opt_out = false AND r.sms_opt_out_permanent IS NOT TRUE
         ${practiceWhere}
         AND o.location_code = ${locationCode}
       ORDER BY r.name
@@ -162,7 +158,7 @@ async function getFilteredReferrers(filter: AudienceFilter, practiceId: string |
       o.name AS office_name
     FROM referrers r
     LEFT JOIN offices o ON o.id = r.office_id
-    WHERE r.sms_opt_out = false
+    WHERE r.sms_opt_out = false AND r.sms_opt_out_permanent IS NOT TRUE
     ${practiceWhere}
     ${extraWhere}
     ORDER BY r.name
@@ -239,7 +235,10 @@ router.post("/count", async (req, res) => {
     return;
   }
   try {
-    const effectivePracticeId = req.authUser!.practice_id ?? bodyPracticeId ?? null;
+    const effectivePracticeId = req.authUser!.role === "super_admin"
+      ? bodyPracticeId ?? req.authUser!.practice_id ?? null
+      : req.authUser!.practice_id ?? null;
+    if (!effectivePracticeId) { res.status(400).json({ error: "Select a practice before previewing a campaign" }); return; }
     const referrers = await getFilteredReferrers(filter as AudienceFilter, effectivePracticeId);
     const first     = referrers[0] ?? null;
     res.json({
@@ -290,10 +289,20 @@ router.post("/send", async (req, res) => {
     return;
   }
 
-  // Check credentials early
-  if (channel === "sms" && (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER)) {
-    res.status(500).json({ error: "Twilio not configured (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER)" });
-    return;
+  // Resolve one tenant before creating a campaign or starting background delivery.
+  const senderPracticeId = req.authUser!.role === "super_admin"
+    ? bodyPracticeId ?? req.authUser!.practice_id ?? null
+    : req.authUser!.practice_id ?? null;
+  if (!senderPracticeId) { res.status(400).json({ error: "Select a practice before sending a campaign" }); return; }
+  const practiceConfig = await getPracticeConfig(senderPracticeId);
+  if (!practiceConfig) { res.status(404).json({ error: "Practice not found" }); return; }
+  const fromPhone = resolveTwilioPhone(practiceConfig);
+  let twilioClient: ReturnType<typeof resolveTwilioClient> | null = null;
+  if (channel === "sms") {
+    if (!SMS_ENABLED) { res.status(409).json({ error: "SMS sending is disabled" }); return; }
+    if (!fromPhone) { res.status(409).json({ error: "Configure this practice's Twilio number before sending" }); return; }
+    try { twilioClient = resolveTwilioClient(practiceConfig); }
+    catch { res.status(409).json({ error: "Configure this practice's Twilio credentials before sending" }); return; }
   }
   if (channel === "email" && !process.env.BREVO_API_KEY) {
     res.status(500).json({ error: "BREVO_API_KEY not configured" });
@@ -310,14 +319,12 @@ router.post("/send", async (req, res) => {
       message_template: message_template.trim(),
       status:           "draft",
       created_by:       req.authUser!.id,
-      practice_id:      req.authUser!.practice_id ?? undefined,
+      practice_id:      senderPracticeId,
       sent_count:       0,
       failed_count:     0,
     })
     .returning();
 
-  // Capture before res.json so we don't reference req in the background closure
-  const senderPracticeId = req.authUser!.practice_id ?? bodyPracticeId ?? null;
 
   // Respond immediately — processing continues in background
   res.json({
@@ -332,15 +339,9 @@ router.post("/send", async (req, res) => {
     try {
       const referrers = await getFilteredReferrers(filter as AudienceFilter, senderPracticeId);
 
-      const practiceConfig = senderPracticeId ? await getPracticeConfig(senderPracticeId) : null;
       const practiceName = practiceConfig?.white_label_name ?? practiceConfig?.name ?? undefined;
       const practiceFromName = practiceName ? `${practiceName} by Rippl` : "Rippl";
       const practiceLogoUrl = practiceConfig?.white_label_logo_url ?? practiceConfig?.logo_url ?? undefined;
-
-      // Set up clients
-      const twilioClient = channel === "sms"
-        ? twilio(TWILIO_ACCOUNT_SID!, TWILIO_AUTH_TOKEN!)
-        : null;
 
       let sentCount  = 0;
       let failCount  = 0;
@@ -360,7 +361,7 @@ router.post("/send", async (req, res) => {
             } else {
               await twilioClient!.messages.create({
                 body: message,
-                from: TWILIO_PHONE_NUMBER!,
+                from: fromPhone,
                 to:   referrer.phone,
               });
             }
@@ -446,7 +447,10 @@ router.post("/test-send", async (req, res) => {
   }
 
   try {
-    const effectivePracticeId = req.authUser!.practice_id ?? bodyPracticeId ?? null;
+    const effectivePracticeId = req.authUser!.role === "super_admin"
+      ? bodyPracticeId ?? req.authUser!.practice_id ?? null
+      : req.authUser!.practice_id ?? null;
+    if (!effectivePracticeId) { res.status(400).json({ error: "Select a practice before previewing a campaign" }); return; }
 
     // Get the first matching referrer for real template data — scoped to the effective practice
     const referrers = await getFilteredReferrers(filter as AudienceFilter, effectivePracticeId);
